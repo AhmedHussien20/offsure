@@ -1,0 +1,582 @@
+{
+  "HEADER": {
+    "PROFILE": "الملف الشخصي",
+    "SETTINGS": "الاعدادات",
+    "LOGOUT": "تسجيل الخروج"
+  },
+  "DASHBOARD": {
+    "WELCOME": "مرحبًا بك في لوحة التحكم",
+    "HOME": "الرئيسية",
+    "DAYS": "يوم",
+    "HOURS": "ساعة",
+    "TODAY" : "اليوم",
+    "MONTH" : "الشهر",
+    "YEAR" : "السنه"
+
+  },
+  "MENU": {
+    "HOME": "الرئيسية",
+    "BATCHES": "الدفعات",
+    "ORGANIZATION_STRUCTURE": "الهيكل الاداري",
+    "EDUCATION": "التعليم",
+    "EMPLOYEES": "الموظفين",
+    "EMPLOYMENT": "التشغيل",
+    "REPORTS": "التقارير",
+    "LEAVES": "الاجازات"
+  },
+  "OPS": {
+    "TITLE": "العمليات",
+    "DASHBOARD": "لوحة التحكم",
+    "BATCHES": "الدفعات",
+    "DEAD_LETTER": "المعاملات الفاشلة",
+    "RECONCILIATION": "المطابقة"
+  },
+  "COMMON": {
+    "welcome": "مرحباً",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "register": "تسجيل جديد",
+    "dashboard": "لوحة التحكم",
+    "SEND": "إرسال",
+    "CANCEL": "إلغاء",
+    "DELETE": "حذف",
+    "CONFIRM_DELETE_TITLE": "تأكيد الحذف",
+    "CONFIRM_DELETE_TEXT": "هل أنت متأكد من الحذف؟",
+    "DELETE_BUTTON": "نعم، احذف",
+    "CANCEL_BUTTON": "إلغاء",
+    "DELETE_SUCCESS": "تم الحذف بنجاح",
+    "LOADING": "جاري التحميل",
+    "APPLY": "تطبيق",
+    "ERROR_LOADING_DATA": "حدث خطأ أثناء تحميل البيانات",
+    "VIEW_ALL": "عرض الكل",
+    "OPEN": "فتح",
+    "REVIEW": "مراجعة",
+    "DETAILS": "تفاصيل",
+    "QUICK_ACTIONS": "إجراءات سريعة"
+  },
+  "ADMIN_DASHBOARD": {
+    "ALL_TIME": "كل الوقت",
+    "TOTAL": "الإجمالي",
+    "TOTAL_AMOUNT": "إجمالي المبلغ",
+    "LAST_24H": "آخر 24 ساعة",
+    "LATEST": "الأحدث",
+    "GENERATED": "تم التوليد",
+    "DEAD_LETTER": "المعاملات الفاشلة",
+    "RECON_RUNS": "عمليات المطابقة",
+    "BATCHES_BY_STATUS": "الدفعات حسب الحالة",
+    "RECON_BY_STATUS": "المطابقة حسب الحالة",
+    "TOP_DEADLETTER_REASONS": "أهم أسباب الفشل",
+    "DEADLETTER_REASON": "السبب",
+    "COUNT": "العدد"
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "email": "يرجى إدخال بريد إلكتروني صحيح",
+    "password": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل"
+  },
+  "nav": {
+    "dashboard": {
+      "header": "لوحة التحكم",
+      "title": "لوحة التحكم"
+    },
+    "notifications": {
+      "title": "الإشعارات",
+      "unread": "غير مقروءة",
+      "viewAll": "عرض الكل",
+      "empty": "لا توجد إشعارات جديدة",
+      "notification": "اشعار جديد"
+    },
+    "applications": {
+      "header": "التطبيقات"
+    },
+    "shortcuts": {
+      "title": "اختصارات سريعة"
+    },
+    "apps": {
+      "name": "إدارة المهام",
+      "shortName": "م.م",
+      "title": "التطبيقات",
+      "area": {
+        "title": "المناطق",
+        "list": "قائمة المناطق"
+      },
+      "branch": {
+        "title": "الفروع",
+        "list": "قائمة الفروع"
+      },
+      "department": {
+        "title": "الأقسام",
+        "list": "قائمة الأقسام",
+        "customers": "العملاء"
+      },
+      "task": {
+        "title": "المهام",
+        "list": "قائمة المهام"
+      },
+      "employee": {
+        "header": "المستخدمون",
+        "title": "الموظفين",
+        "list": "قائمة الموظفين"
+      },
+      "role": {
+        "title": "الصلاحيات",
+        "list": "قائمة الصلاحيات"
+      },
+      "permission": {
+        "title": "التصاريح",
+        "list": "قائمة التصاريح"
+      },
+      "calender": {
+        "title": "التقويم"
+      },
+      "student": {
+        "title": " الطلاب",
+        "list": "قائمة الطلاب"
+      },
+      "course": {
+        "title": "الدورات",
+        "list": "قائمة الدورات",
+        "offer_list": "قائمة العروض"
+      },
+      "configurations": {
+        "title": "الإعدادات",
+        "onlineOrders": "الطلبات عبر الإنترنت",
+        "expiry": "الصلاحية",
+        "externalIntegration": "التكامل الخارجي",
+        "moduleAvailability": "توفر الوحدة",
+        "modules": "الوحدات",
+        "branches": "الفروع",
+        "campaigns": "الحملات",
+        "ads": "الإعلانات",
+        "notifications": "الإشعارات"
+      },
+      "organization": {
+        "title": "الهيكل الإداري"
+      },
+      "operations": {
+        "header": "التشغيل",
+        "title": "التشغيل"
+      },
+      "education": {
+        "header": "التعليم",
+        "title": "التعليم"
+      },
+      "reports": {
+        "header": "التقارير",
+        "title": "التقارير",
+        "dashboard": "لوحة التقارير"
+      },
+      "leaves": {
+        "header": "الاجازات",
+        "title": "الاجازات",
+        "leaves_type": "انواع الاجازات",
+        "Leaves_requests": "الاجازات المقدمة"
+      },
+      "npe": {
+        "admin": {
+          "header": "إدارة NPE",
+          "portal": "بوابة الإدارة",
+          "customers": {
+            "header": "العملاء",
+            "title": "العملاء",
+            "list": "قائمة العملاء"
+          }
+        }
+      }
+    },
+    "components": {
+      "header": "المكونات",
+      "submenus": {
+        "title": "القوائم الفرعية",
+        "level1": "المستوى 1",
+        "level2": {
+          "title": "المستوى 2",
+          "level2_0": "المستوى 2.0",
+          "level2_1": "المستوى 2.1",
+          "level2_2": {
+            "title": "المستوى 2.2",
+            "level2_2_1": "المستوى 2.2.1",
+            "level2_2_2": "المستوى 2.2.2"
+          }
+        },
+        "level3": "المستوى 3"
+      }
+    },
+    "products": "المنتجات",
+    "product-list": "قائمة المنتجات",
+    "product-categories": "التصنيفات"
+  },
+  "LOGIN": {
+    "TITLE": "تسجيل الدخول",
+    "USERNAME": "اسم المستخدم",
+    "USERNAME_PLACEHOLDER": "أدخل اسم المستخدم",
+    "PASSWORD": "كلمة المرور",
+    "PASSWORD_PLACEHOLDER": "أدخل كلمة المرور",
+    "SUBMIT": "إرسال",
+    "FORGOT_PASSWORD": "نسيت كلمة السر؟",
+    "DONT_HAVE_ACCOUNT": "ليس لديك حساب؟",
+    "REGISTER_HERE": "سجل هنا",
+    "SUBTITLE": "الرجاء تسجيل الدخول للمتابعة",
+    "TAB_PASSWORD": "تسجيل بكلمة المرور",
+    "TAB_FIRST_LOGIN": "أول دخول (OTP)",
+    "USERNAME_REQUIRED": "اسم المستخدم مطلوب",
+    "PASSWORD_REQUIRED": "كلمة المرور مطلوبة",
+    "TOGGLE_PASSWORD": "إظهار/إخفاء كلمة المرور",
+    "LOADING": "جاري التحميل...",
+    "FIRST_LOGIN_TITLE": "أول دخول / كلمة مرور مؤقتة",
+    "FIRST_LOGIN_DESC": "إذا تم تزويدك بكلمة مرور لمرة واحدة، أكمل هنا لتعيين كلمة مرور دائمة.",
+    "STEP1_HINT": "أدخل اسم المستخدم أو البريد الإلكتروني",
+    "STEP2_HINT": "أدخل كلمة المرور لمرة واحدة (OTP)",
+    "STEP3_HINT": "عيّن كلمة مرور جديدة",
+    "SEND_OTP": "متابعة",
+    "SENDING_OTP": "جاري المتابعة...",
+    "ERROR_INVALID_CREDENTIALS": "بيانات الدخول غير صحيحة"
+  },
+  "ADMIN_LOGIN": {
+    "TITLE": "بوابة الإدارة",
+    "SUBTITLE": "سجّل الدخول بحساب العمليات أو الدعم أو المسؤول.",
+    "LINK_PORTAL_STAFF": "دخول موظفي الإدارة",
+    "BACK_CUSTOMER_LOGIN": "دخول بوابة العملاء"
+  },
+  "BATCH": {
+    "UPLOAD_BATCH": "رفع دفعة",
+    "LIST_TITLE": "الدفعات المعلقة",
+    "DETAILS_TITLE": "تفاصيل الدفعة",
+    "SUMMARY_TITLE": "ملخص الدفعة",
+    "SUBMIT_SUCCESS": "تم إرسال الدفعة بنجاح",
+    "APPROVE_SUCCESS": "تم اعتماد الدفعة بنجاح",
+    "REJECT_SUCCESS": "تم رفض الدفعة بنجاح",
+    "STATUS": {
+      "PENDING": "معلقة",
+      "AWAITING_APPROVAL": "بانتظار الاعتماد",
+      "PROCESSING": "قيد المعالجة",
+      "COMPLETED": "مكتملة",
+      "PARTIALLY_FAILED": "فشل جزئي",
+      "FAILED": "فشلت",
+      "REJECTED": "مرفوضة",
+      "CANCELLED": "ملغاة",
+      "SENT": "تم الإرسال",
+      "APPROVED": "تم الاعتماد"
+    },
+    "COLUMNS": {
+      "ID": "الرقم",
+      "REFERENCE": "المرجع",
+      "BANK_ID": "رقم البنك",
+      "STATUS": "الحالة",
+      "STAGE": "المرحلة",
+      "ITEM_COUNT": "عدد العناصر",
+      "TOTAL_AMOUNT": "إجمالي المبلغ",
+      "CREATED_AT": "تاريخ الإنشاء"
+    },
+    "ACTIONS": {
+      "TITLE": "الإجراءات",
+      "SUBMIT": "إرسال",
+      "APPROVE": "اعتماد",
+      "REJECT": "رفض",
+      "REVIEW": "مراجعة",
+      "REJECT_REASON": "سبب الرفض",
+      "REJECT_REASON_PLACEHOLDER": "أدخل سبب الرفض"
+    },
+    "CREATE": {
+      "BUTTON": "إنشاء دفعة",
+      "PAGE_TITLE": "إنشاء دفعة",
+      "MODAL_TITLE": "إنشاء دفعة",
+      "MODAL_HINT": "إنشاء دفعة بسطر دفع واحد (POST /v1/batches). استخدم مرجعاً جديداً في كل مرة.",
+      "SUBMIT": "إنشاء الدفعة",
+      "SUCCESS": "تم إنشاء الدفعة بنجاح",
+      "DUPLICATE_KEY": "مفتاح التحقق من التكرار",
+      "INITIATOR_ONLY": "يمكن لمستخدمي المُنشئ فقط إنشاء الدفعات."
+    },
+    "ITEMS": {
+      "TITLE": "عناصر الدفعة",
+      "ADD": "إضافة عملية",
+      "EMPTY": "لا توجد عمليات مضافة",
+      "ADD_AT_LEAST_ONE": "أضف عملية واحدة على الأقل (أو أكمل نموذج العملية).",
+      "TRANSACTION_ID": "رقم العملية",
+      "TRANSACTION_REF": "مرجع العملية",
+      "END_TO_END_ID": "معرف من طرف لطرف",
+      "BENEFICIARY_NAME": "اسم المستفيد",
+      "NARRATION": "البيان",
+      "AMOUNT": "المبلغ",
+      "CURRENCY": "العملة",
+      "DEBIT_ACCOUNT": "حساب الخصم",
+      "CREDIT_ACCOUNT": "حساب المستفيد",
+      "EXTERNAL_REFERENCE": "المرجع الخارجي",
+      "STATUS": "الحالة"
+    },
+    "ITEM_STATUS": {
+      "PENDING": "معلقة",
+      "SUCCESS": "ناجحة",
+      "FAILED": "فاشلة"
+    }
+  },
+  "LOGIN_OTP": {
+    "STEP_USERNAME": "اسم المستخدم",
+    "STEP_OTP": "OTP",
+    "STEP_PASSWORD": "كلمة مرور جديدة",
+    "TITLE": "إدخال رمز OTP",
+    "SUBTITLE": "أدخل كلمة المرور لمرة واحدة (OTP) التي تم تزويدك بها.",
+    "CHANGE_USER": "تغيير",
+    "CODE_LABEL": "كلمة المرور لمرة واحدة",
+    "CODE_PLACEHOLDER": "أدخل OTP",
+    "CODE_REQUIRED": "رمز OTP مطلوب",
+    "CODE_HINT": "قد يحتوي OTP على أحرف أو أرقام أو رموز.",
+    "SUBMIT": "تحقق",
+    "VERIFYING": "جاري التحقق...",
+    "NO_CODE": "لم تستلم رمزاً؟",
+    "CONTACT_ADMIN": "تواصل مع قسم العمليات لإعادة إصدار كلمة مرور لمرة واحدة.",
+    "BACK_TO_LOGIN": "العودة لتسجيل الدخول"
+  },
+  "FIRST_LOGIN": {
+    "STEP_USERNAME": "اسم المستخدم",
+    "STEP_OTP": "OTP",
+    "STEP_PASSWORD": "كلمة مرور جديدة",
+    "VERIFYING_SESSION": "جارٍ التحقق من الجلسة...",
+    "SESSION_EXPIRED_TITLE": "انتهت صلاحية الجلسة",
+    "SESSION_EXPIRED_DESC": "جلسة OTP غير موجودة أو منتهية. يرجى إعادة بدء عملية أول دخول.",
+    "RESTART_FLOW": "إعادة البدء",
+    "TITLE": "تعيين كلمة مرور جديدة",
+    "SUBTITLE": "أنشئ كلمة مرور قوية لحماية حسابك.",
+    "NEW_PASSWORD": "كلمة المرور الجديدة",
+    "NEW_PASSWORD_PLACEHOLDER": "أدخل كلمة مرور جديدة",
+    "CONFIRM_PASSWORD": "تأكيد كلمة المرور",
+    "CONFIRM_PASSWORD_PLACEHOLDER": "أعد إدخال كلمة المرور الجديدة",
+    "PASSWORDS_NOT_MATCH": "كلمتا المرور غير متطابقتين",
+    "PASSWORD_TOO_SHORT": "كلمة المرور قصيرة جداً",
+    "PASSWORD_COMPLEXITY": "استخدم 12 حرفاً على الأقل مع أحرف كبيرة وصغيرة ورقم ورمز خاص.",
+    "RULE_MIN_LENGTH": "12 حرفاً على الأقل",
+    "RULE_UPPERCASE": "حرف كبير واحد على الأقل",
+    "RULE_LOWERCASE": "حرف صغير واحد على الأقل",
+    "RULE_NUMBER": "رقم واحد على الأقل",
+    "RULE_SPECIAL": "رمز خاص واحد على الأقل",
+    "STRENGTH_WEAK": "ضعيفة",
+    "STRENGTH_FAIR": "متوسطة",
+    "STRENGTH_MEDIUM": "مقبولة",
+    "STRENGTH_GOOD": "جيدة",
+    "STRENGTH_STRONG": "قوية",
+    "SUBMIT": "حفظ كلمة المرور",
+    "SUBMITTING": "جاري الحفظ..."
+  },
+  "FIRST_LOGIN_SUCCESS": {
+    "TITLE": "تم تحديث كلمة المرور",
+    "SUBTITLE": "تم الإعداد بنجاح.",
+    "DESC": "تم تحديث كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.",
+    "BENEFIT_1": "تم تأمين حسابك بكلمة المرور الجديدة.",
+    "BENEFIT_2": "حافظ على كلمة المرور سرّية ولا تشاركها.",
+    "AUTO_REDIRECT": "سيتم تحويلك إلى صفحة تسجيل الدخول خلال {{seconds}} ثانية...",
+    "GO_TO_LOGIN": "الذهاب لتسجيل الدخول"
+  },
+  "CUSTOMER": {
+    "HOME":"الرئيسية",
+    "LIST_TITLE": "العملاء",
+    "CREATE_TITLE": "إنشاء عميل",
+    "ADD_NEW": "إضافة عميل",
+    "CREATED_SUCCESS": "تم إنشاء العميل بنجاح",
+    "CREATED_FAILED": "فشل إنشاء العميل",
+    "APPROVED_SUCCESS": "تم اعتماد العميل بنجاح",
+    "APPROVED_FAILED": "فشل اعتماد العميل",
+    "REJECTED_SUCCESS": "تم رفض العميل بنجاح",
+    "REJECTED_FAILED": "فشل رفض العميل",
+    "FIELDS": {
+      "ORG_NAME": "اسم المنظمة",
+      "ADDRESS_STREET": "الشارع",
+      "ADDRESS_CITY": "المدينة",
+      "ADDRESS_COUNTRY": "الدولة",
+      "CONTACT_NAME": "اسم جهة الاتصال",
+      "CONTACT_EMAIL": "بريد جهة الاتصال",
+      "CONTACT_PHONE": "هاتف جهة الاتصال",
+      "BANK_ID": "معرف البنك",
+      "BANK_NAME": "البنك",
+      "SETTLEMENT_ACCOUNT": "حساب التسوية",
+      "DAILY_LIMIT": "الحد اليومي (ZMW)",
+      "REQUIRED_APPROVALS": "عدد الموافقات المطلوبة"
+    },
+    "ACTIONS": {
+      "DEFINE": "تعريف العميل",
+      "APPROVE": "اعتماد",
+      "APPROVE_STAGE_1": "اعتماد (المرحلة 1)",
+      "APPROVE_STAGE_2": "اعتماد (المرحلة 2)",
+      "REJECT": "رفض",
+      "REVIEW": "مراجعة"
+    },
+    "COLUMNS": {
+      "ID": "المعرف",
+      "ORG_NAME": "المنظمة",
+      "CONTACT_NAME": "جهة الاتصال",
+      "CONTACT_EMAIL": "البريد",
+      "CONTACT_PHONE": "الهاتف",
+      "STATUS": "الحالة",
+      "ACTIVATED_AT": "تاريخ التفعيل"
+    }
+  },
+  "CUSTOMER_USER": {
+    "LIST_TITLE": "مستخدمو العميل",
+    "CREATE_TITLE": "إنشاء مستخدم للعميل",
+    "ADD_NEW": "إضافة مستخدم",
+    "CREATED_SUCCESS": "تم إنشاء مستخدم العميل بنجاح",
+    "CREATED_FAILED": "فشل إنشاء مستخدم العميل",
+    "APPROVED_SUCCESS": "تم اعتماد مستخدم العميل بنجاح",
+    "APPROVED_FAILED": "فشل اعتماد مستخدم العميل",
+    "REJECTED_SUCCESS": "تم رفض مستخدم العميل بنجاح",
+    "REJECTED_FAILED": "فشل رفض مستخدم العميل",
+    "FIELDS": {
+      "FULL_NAME": "الاسم الكامل",
+      "USERNAME": "اسم المستخدم",
+      "EMAIL": "البريد الإلكتروني",
+      "MOBILE": "الجوال",
+      "ROLE": "الدور"
+    },
+    "ACTIONS": {
+      "APPROVE": "اعتماد",
+      "APPROVE_STAGE_1": "اعتماد (المرحلة 1)",
+      "APPROVE_STAGE_2": "اعتماد (المرحلة 2)",
+      "REJECT": "رفض",
+      "REVIEW": "مراجعة"
+    },
+    "NO_USERS": "لا يوجد مستخدمون لهذا العميل",
+    "COLUMNS": {
+      "ID": "المعرف",
+      "FULL_NAME": "الاسم الكامل",
+      "USERNAME": "اسم المستخدم",
+      "EMAIL": "البريد الإلكتروني",
+      "MOBILE": "الجوال",
+      "ROLE": "الدور",
+      "STATUS": "الحالة",
+      "LAST_LOGIN": "آخر دخول",
+      "ORGANIZATION": "المؤسسة"
+    },
+    "ROLES": {
+      "INITIATOR": "مُنشئ",
+      "APPROVER": "مُعتمد"
+    }
+  },
+  "ADMIN": {
+    "PORTAL": "الإدارة",
+    "CUSTOMERS_TITLE": "ملفات العملاء (مشرف)",
+    "CUSTOMER_DETAIL_TITLE": "ملف العميل",
+    "USER_DETAIL_TITLE": "مستخدم العميل",
+    "BACK_TO_USERS_LIST": "العودة لمستخددي العميل"
+  },
+  "FORGOT_PASSWORD":
+  {
+    "TITLE": "نسيت كلمة السر؟",
+    "EMAIL_ADDRESS" :"البريد الإلكتروني",
+    "EMAIL_PLACEHOLDER" : "ادخل البريد الالكتروني الخاص بك",
+    "SUBMIT" : "إرسال",
+    "BACK_TO_LOGIN" : "الرجوع لتسجيل الدخول",
+    "RESET_PASSWORD" : "كلمة السر الجديدة" ,
+    "NEW_PASSWORD" : "كلمة السر الجديدة",
+    "NEW_PASSWORD_PLACE_HOLDER" : "ادخل كلمة السر الجديدة",
+    "CONFIRM" : "تأكيد",
+    "GO_BACK_TO_LOGIN" : "العودة لتسجيل الدخول",
+    "RESET_CODE_CHECK" : "تأكد من صحة رمز التحقق",
+    "VERIFY_CODE" : "رمز التحقق" ,
+    "VERIFY_NOTE" : "أدخل الكود المكون من 6 أرقام الذي أُرسل إلى بريدك الإلكتروني لإعادة تعيين كلمة المرور.",
+    "6_CODE_DIGITS": "ادخل الكود المكون من 6 ارقام",
+    "PASSWORDS_NOT_MATCH" : "كلمة المرور غير متطابقة",
+    "CONFIRM_PASSWORD_PLACE_HOLDER" : "تأكيد كلمة المرور الجديدة" , 
+    "CONFIRM_PASSWORD" : "تأكيد كلمة المرور",
+    "PASSWORD_MISMATCH": "كلمة المرور وتأكيدها غير متطابقين",
+    "RESET_SUCCESS": "تم إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.",
+    "RESET_FAILED": "فشل في إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.",
+    "CODE_RESENT_SUCCESS": "تم إرسال رمز التحقق الجديد إلى بريدك الإلكتروني.",
+    "CODE_RESEND_FAILED": "فشل في إرسال رمز التحقق. يرجى المحاولة مرة أخرى.",
+    "CODE_SENT_SUCCESS": "تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني."
+
+
+  },
+  "TABLE": {
+    "SEARCH": "بحث",
+    "CLEAR_FILTERS": "مسح الفلاتر",
+    "ADD_NEW": "إضافة جديد",
+    "ACTIONS": "الإجراءات",
+    "EDIT_ITEM": "تعديل العنصر",
+    "DELETE_ITEM": "حذف العنصر",
+    "TOTAL_RECORDS": "إجمالي السجلات",
+    "TOTAL_PAGES": "إجمالي الصفحات",
+    "SHOW": "عرض",
+    "ENTRIES": "سجل",
+    "PREV": "السابق",
+    "NEXT": "التالي",
+    "SELECT_ENTRIES": "اختر عدد السجلات",
+    "LOADING": "جاري التحميل",
+    "ACTIVE": "نشط",
+    "INACTIVE": "غير نشط",
+    "SELECT_STATUS": "اختر الحالة",
+    "SELECT_ASSIGNMENT": "اختر التعيين",
+    "SELECT_ACTIVE_STATUS": "اختر حالة النشاط",
+    "FILTERS": "الفلاتر",
+    "EXPORT_EXCEL": "تصدير Excel",
+    "NO_DATA": "لا توجد بيانات متاحة",
+    "EXPORT_PDF": "تصدير pdf"
+  },
+  "FORM": {
+    "BACK": "رجوع",
+    "CANCEL": "إلغاء",
+    "SAVE": "حفظ",
+    "UPDATE": "تحديث",
+    "GENERATE": "توليد",
+    "SHOW_PASSWORD": "إظهار كلمة المرور",
+    "HIDE_PASSWORD": "إخفاء كلمة المرور",
+    "IS_REQUIRED": "مطلوب",
+    "MINIMUM_LENGTH": "الحد الأدنى للطول هو",
+    "MAXIMUM_LENGTH": "الحد الأقصى للطول هو",
+    "CHARACTERS": "حرف",
+    "PASSWORD_MISMATCH": "كلمة المرور وتأكيدها غير متطابقين",
+    "SELECT_AREA": "اختر المنطقة",
+    "SELECT_COMPANY": "اختر الشركة",
+    "SELECT_STATUS": "اختر الحالة",
+    "SELECT_OPTION": "اختر خيار",
+    "VALIDATION_ERROR": "هناك أخطاء في النموذج. يرجى التحقق من الحقول.",
+    "ERROR": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "SELECT": "اختر",
+    "PATTERN_INVALID_NUMBER": "ادخل رقم صحيح",
+    "PATTERN_INVALID_EMAIL": "ادخل بريد إلكتروني صحيح",
+    "INVALID_MOBILE": "الرجاء إدخال رقم جوال صحيح",
+    "MOBILE_IS_REQUIRED": "رقم الجوال مطلوب"
+  },
+  "VALIDATION": {
+    "REQUIRED": "هذا الحقل مطلوب",
+    "MIN_LENGTH": "الحد الأدنى للطول هو",
+    "MAX_LENGTH": "الحد الأقصى للطول هو",
+    "EMAIL": "الرجاء إدخال بريد إلكتروني صحيح",
+    "NUMBER": "الرجاء إدخال رقم صحيح",
+    "PASSWORD_MISMATCH": "كلمات المرور غير متطابقة"
+  },
+  "AUTH": {
+    "SESSION_EXPIRED": "انتهت صلاحية الجلسة. من فضلك قم بتسجيل الدخول مرة أخرى.",
+    "UNAUTHORIZED": "غير مصرح"
+  },
+
+  "PROFILE": {
+    "PROFILE": "الملف الشخصي",
+    "PAGES": "الصفحات",
+    "PROJECTS": "المشاريع",
+    "ABOUT": "حول",
+    "PERSONAL_PROFILE": "الملف الشخصي",
+    "BIO_DATA": "البيانات الأساسية",
+    "FULL_NAME": "الاسم الكامل",
+    "OFFICIAL_ACCOUNT_FOR": "الحساب الرسمي لـ",
+    "EXPERIENCE": "الخبرة",
+    "NO_TITLE_PROVIDED": "لا يوجد عنوان",
+    "QUALIFICATION_NOT_LISTED": "المؤهلات غير مدرجة",
+    "ID": "رقم التعريف",
+    "ORGANIZATION": "المنظمة",
+    "DEPARTMENT": "القسم",
+    "BRANCH": "الفرع",
+    "UNASSIGNED": "غير معين",
+    "COMPANY": "الشركة",
+    "CONTACT_INFORMATION": "معلومات الاتصال",
+    "MOBILE": "الهاتف المحمول",
+    "N_A": "غير متوفر",
+    "EMAIL_ADDRESS": "البريد الإلكتروني",
+    "LOCATION": "الموقع",
+    "NOT_PROVIDED": "غير متوفر",
+    "EDIT_PROFILE": "تعديل الملف الشخصي",
+    "QUALIFICATION" :"المؤهل",
+    "OFFICIAL_EMAIL" : "البريد الالكتروني",
+    "TITLE" : "المسمى الوظيفي"
+    
+  }
+
+}

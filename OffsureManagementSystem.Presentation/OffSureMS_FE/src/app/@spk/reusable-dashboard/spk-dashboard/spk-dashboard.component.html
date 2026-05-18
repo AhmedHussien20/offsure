@@ -1,0 +1,49 @@
+<div class="card custom-card dashboard-card"
+  [class.clickable]="card.clickable"
+  (click)="onClick()">
+  <div class="card-body">
+    <div class="card-item">
+
+      <!-- ICON -->
+      <div
+        class="card-item-icon card-icon"
+        *ngIf="card.svg"
+        [innerHTML]="sanitizeIcon(card.svg)">
+      </div>
+
+      <!-- TITLE + SUBTITLE -->
+      <div class="card-item-title mb-2">
+        <label class="main-content-label fs-13 font-weight-bold mb-1">
+          {{ card.title | translate }}
+        </label>
+
+        <span
+          *ngIf="card.subtitle"
+          class="d-block fs-12 mb-0 text-muted">
+          {{ card.subtitle | translate }}
+        </span>
+      </div>
+
+      <!-- VALUE + PERCENTAGE -->
+      <div class="card-item-body">
+        <div class="card-item-stat">
+          <h4 class="font-weight-bold">
+            {{ card.value | translate }}
+            
+          </h4>
+
+          <small *ngIf="card.percentage">
+            <b [class]="card.percentageClass">
+              {{ card.percentage | translate }}
+            </b>
+            <span *ngIf="card.percentage1">
+              {{ card.percentage1 | translate }}
+            </span>
+          </small>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

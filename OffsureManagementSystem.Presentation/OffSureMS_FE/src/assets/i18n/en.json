@@ -1,0 +1,664 @@
+{
+  "HEADER": {
+    "PROFILE": "Profile",
+    "SETTINGS": "Settings",
+    "LOGOUT": "Logout"
+  },
+ 
+  "DASHBOARD": {
+    "WELCOME": "Welcome to the Dashboard",
+    "HOME": "Home",
+    "TOTAL_EMPLOYEES": "Total Employees",
+    "ACTIVE_TASKS": "Active Tasks",
+    "OVERDUE_TASKS": "Overdue Tasks",
+    "COMPLETED_TASKS": "Completed Tasks",
+    "TOP_DELAYED_EMPLOYEES": "Top Delayed Employees",
+    "TOP_DELAYED_EMPLOYEES_DESC": "Employees with the highest number of overdue tasks",
+    "TODAY_INPROGRESS_TASKS": "In-Progress Tasks Updated Today",
+    "TODAY_INPROGRESS_DESC": "Latest tasks updated today and currently in progress",
+    "COMPLETED_TODAY": "Tasks Completed Today",
+    "COMPLETED_TODAY_DESC": "Top employees who completed tasks today",
+    "TASKS": "Tasks",
+    "NO_COMPLETED_TODAY": "No tasks completed today",
+    "NO_TASKS_TODAY": "No tasks updated today",
+    "MY_ACTIVE_TASKS": "My Active Tasks",
+    "DUE_SOON": "Due Soon",
+    "MY_WARNINGS": "My Warnings",
+    "MY_TASKS": "My Tasks",
+    "TASK_PROGRESS": "Progress",
+    "PENALTIES": "Penalties",
+    "HIGH_PRIORITY": "High Priority Tasks",
+    "ON_TIME_RATE": "On-Time Rate",
+    "AVG_COMPLETION_TIME": "Avg Completion Time",
+    "DAYS": "Days",
+    "HOURS": "Hours",
+    "NOT_COMMENTED_TODAY": "Incoming tasks have no comments today",
+    "TODAY": "Today",
+    "MONTH": "Month",
+    "YEAR": "Year"
+  },
+  "MENU": {
+    "HOME": "Home",
+    "CUSTOMERS": "Customers",
+    "BATCHES": "Batches"
+ 
+  },
+  "OPS": {
+    "TITLE": "Operations",
+    "DASHBOARD": "Dashboard",
+    "BATCHES": "Batches",
+    "DEAD_LETTER": "Dead-letter",
+    "RECONCILIATION": "Reconciliation"
+  },
+  "COMMON": {
+    "welcome": "Welcome",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "SEND": "Send",
+    "CANCEL": "Cancel",
+    "DELETE": "Delete",
+    "CONFIRM_DELETE_TITLE": "Confirm Delete",
+    "CONFIRM_DELETE_TEXT": "Are you sure you want to delete?",
+    "DELETE_BUTTON": "Yes, Delete",
+    "CANCEL_BUTTON": "Cancel",
+    "DELETE_SUCCESS": "Deleted successfully",
+    "LOADING": "Loading",
+    "APPLY": "Apply",
+    "ERROR_LOADING_DATA": "An error occurred while loading data"
+    ,
+    "VIEW_ALL": "View all",
+    "OPEN": "Open",
+    "REVIEW": "Review",
+    "DETAILS": "Details",
+    "QUICK_ACTIONS": "Quick actions"
+  },
+  "ADMIN_DASHBOARD": {
+    "ALL_TIME": "All time",
+    "TOTAL": "Total",
+    "TOTAL_AMOUNT": "Total amount",
+    "LAST_24H": "Last 24h",
+    "LATEST": "Latest",
+    "GENERATED": "Generated",
+    "DEAD_LETTER": "Dead-letter",
+    "RECON_RUNS": "Reconciliation runs",
+    "BATCHES_BY_STATUS": "Batches by status",
+    "RECON_BY_STATUS": "Reconciliation by status",
+    "TOP_DEADLETTER_REASONS": "Top dead-letter reasons",
+    "DEADLETTER_REASON": "Reason",
+    "COUNT": "Count"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "password": "Password must be at least 6 characters"
+  },
+  "nav": {
+    "dashboard": {
+      "header": "Dashboard",
+      "title": "Dashboard"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "Unread",
+      "viewAll": "View All",
+      "empty": "No new notifications",
+      "notification": "New Notification"
+    },
+    "applications": {
+      "header": "Applications"
+    },
+    "shortcuts": {
+      "title": "Quick Shortcuts"
+    },
+    "apps": {
+      "name": "NPE",
+      "shortName": "TM",
+      "title": "Applications",
+      "area": {
+        "title": "Areas",
+        "list": "Area List"
+      },
+      "branch": {
+        "title": "Branches",
+        "list": "Branch List"
+      },
+      "reports": {
+        "header": "Reports",
+        "title": "Reports",
+        "dashboard": "Reports Dashboard"
+      },
+      "department": {
+        "title": "Departments",
+        "list": "Department List",
+        "customers": "Customers"
+      },
+      "task": {
+        "title": "Tasks",
+        "list": "Task List"
+      },
+      "employee": {
+        "header": "Users",
+        "title": "Employees",
+        "list": "Employee List"
+      },
+      "role": {
+        "title": "Roles",
+        "list": "Role List"
+      },
+      "permission": {
+        "title": "Permissions",
+        "list": "Permission List"
+      },
+      "calender": {
+        "title": "Calendar"
+      },
+      "student": {
+        "title": "Students",
+        "list": "Student List"
+      },
+      "course": {
+        "title": "Courses",
+        "list": "Course List",
+        "offer_list": "Offer List"
+      },
+      "configurations": {
+        "title": "Settings",
+        "onlineOrders": "Online Orders",
+        "expiry": "Expiry",
+        "externalIntegration": "External Integration",
+        "moduleAvailability": "Module Availability",
+        "modules": "Modules",
+        "branches": "Branches",
+        "campaigns": "Campaigns",
+        "ads": "Advertisements",
+        "notifications": "Notifications"
+      },
+      "organization": {
+        "title": "Organization Structure"
+      },
+      "operations": {
+        "header": "Operations",
+        "title": "Operations"
+      },
+      "education": {
+        "header": "Education",
+        "title": "Education"
+      },
+      "leaves": {
+        "header": "Leaves",
+        "title": "Leaves",
+        "leaves_type": "Leaves types",
+        "Leaves_requests": "Leaves request"
+      },
+      "npe": {
+        "admin": {
+          "header": "NPE Administration",
+          "portal": "Admin portal",
+          "customers": {
+            "header": "Customers",
+            "title": "Customers",
+            "list": "Customer list"
+          }
+        }
+      }
+    },
+    "components": {
+      "header": "Components",
+      "submenus": {
+        "title": "Sub Menus",
+        "level1": "Level 1",
+        "level2": {
+          "title": "Level 2",
+          "level2_0": "Level 2.0",
+          "level2_1": "Level 2.1",
+          "level2_2": {
+            "title": "Level 2.2",
+            "level2_2_1": "Level 2.2.1",
+            "level2_2_2": "Level 2.2.2"
+          }
+        },
+        "level3": "Level 3"
+      }
+    },
+    "products": "Products",
+    "product-list": "Product List",
+    "product-categories": "Categories"
+  },
+  "LOGIN": {
+    "TITLE": "Login",
+    "USERNAME": "Username",
+    "USERNAME_PLACEHOLDER": "Enter username",
+    "PASSWORD": "Password",
+    "PASSWORD_PLACEHOLDER": "Enter password",
+    "SUBMIT": "Submit",
+    "FORGOT_PASSWORD": "Forgot password?",
+    "DONT_HAVE_ACCOUNT": "Don't have an account?",
+    "REGISTER_HERE": "Register here",
+    "SUBTITLE": "Please login to continue",
+    "TAB_PASSWORD": "Password login",
+    "TAB_FIRST_LOGIN": "First login (OTP)",
+    "USERNAME_REQUIRED": "Username is required",
+    "PASSWORD_REQUIRED": "Password is required",
+    "TOGGLE_PASSWORD": "Toggle password visibility",
+    "LOADING": "Loading...",
+    "FIRST_LOGIN_TITLE": "First login / temporary password",
+    "FIRST_LOGIN_DESC": "If you were given a one-time password, continue here to set your permanent password.",
+    "STEP1_HINT": "Enter your username",
+    "STEP2_HINT": "Enter the one-time password (OTP)",
+    "STEP3_HINT": "Set your new password",
+    "SEND_OTP": "Continue",
+    "SENDING_OTP": "Continuing...",
+    "ERROR_INVALID_CREDENTIALS": "Invalid credentials"
+    
+  },
+  "ADMIN_LOGIN": {
+    "TITLE": "Administration portal",
+    "SUBTITLE": "Sign in with your internal Operations, Support, or Admin account.",
+    "LINK_PORTAL_STAFF": "Administration portal login (staff)",
+    "BACK_CUSTOMER_LOGIN": "Customer portal login"
+  },
+  "LOGIN_OTP": {
+    "STEP_USERNAME": "Username",
+    "STEP_OTP": "OTP",
+    "STEP_PASSWORD": "New password",
+    "TITLE": "Enter OTP",
+    "SUBTITLE": "Enter the one-time password provided to you.",
+    "CHANGE_USER": "Change",
+    "CODE_LABEL": "One-time password",
+    "CODE_PLACEHOLDER": "Enter OTP",
+    "CODE_REQUIRED": "OTP is required",
+    "CODE_HINT": "OTP may contain letters, numbers, or symbols.",
+    "SUBMIT": "Verify",
+    "VERIFYING": "Verifying...",
+    "NO_CODE": "Didn’t receive a code?",
+    "CONTACT_ADMIN": "Contact Operations to re-issue a one-time password.",
+    "BACK_TO_LOGIN": "Back to login"
+  },
+  "FIRST_LOGIN": {
+    "STEP_USERNAME": "Username",
+    "STEP_OTP": "OTP",
+    "STEP_PASSWORD": "New password",
+    "VERIFYING_SESSION": "Verifying your session...",
+    "SESSION_EXPIRED_TITLE": "Session expired",
+    "SESSION_EXPIRED_DESC": "Your OTP session is missing or expired. Please restart the first login flow.",
+    "RESTART_FLOW": "Restart",
+    "TITLE": "Set a new password",
+    "SUBTITLE": "Create a strong password to secure your account.",
+    "NEW_PASSWORD": "New password",
+    "NEW_PASSWORD_PLACEHOLDER": "Enter a new password",
+    "CONFIRM_PASSWORD": "Confirm password",
+    "CONFIRM_PASSWORD_PLACEHOLDER": "Re-enter the new password",
+    "PASSWORDS_NOT_MATCH": "Passwords do not match",
+    "PASSWORD_TOO_SHORT": "Password is too short",
+    "PASSWORD_COMPLEXITY": "Use at least 12 characters with upper and lower case, a number, and a special character.",
+    "RULE_MIN_LENGTH": "At least 12 characters",
+    "RULE_UPPERCASE": "At least 1 uppercase letter",
+    "RULE_LOWERCASE": "At least 1 lowercase letter",
+    "RULE_NUMBER": "At least 1 number",
+    "RULE_SPECIAL": "At least 1 special character",
+    "STRENGTH_WEAK": "Weak",
+    "STRENGTH_FAIR": "Fair",
+    "STRENGTH_MEDIUM": "Okay",
+    "STRENGTH_GOOD": "Good",
+    "STRENGTH_STRONG": "Strong",
+    "SUBMIT": "Save password",
+    "SUBMITTING": "Saving..."
+  },
+  "FIRST_LOGIN_SUCCESS": {
+    "TITLE": "Password updated",
+    "SUBTITLE": "You're all set.",
+    "DESC": "Your password has been updated successfully. You can now login with your new password.",
+    "BENEFIT_1": "Your account is protected with your new password.",
+    "BENEFIT_2": "Keep your password private and do not share it.",
+    "AUTO_REDIRECT": "Redirecting to login in {{seconds}} seconds...",
+    "GO_TO_LOGIN": "Go to login"
+  },
+  "CUSTOMER": {
+    "HOME": "Home",
+    "DASHBOARD": {
+      "TITLE": "Dashboard",
+      "PIPELINE_TITLE": "Batches by status",
+      "PIPELINE_SUBTITLE": "How many batches are in each status right now (counts only, not amounts).",
+      "PIPELINE_HINT": "Each slice is your organization’s batch count for that status (Pending, Awaiting approval, Processing, Sent, Approved, Completed, Partially failed, Failed, Rejected, Cancelled, Sent failed). Only statuses with at least one batch are shown.",
+      "HISTORY_TITLE": "Approval history (30 days)",
+      "HISTORY_SUBTITLE": "All approval events in the last 30 days, loaded per page.",
+      "DRAFTS_TITLE": "Draft batches (not submitted)",
+      "DRAFTS_SUBTITLE": "Other initiators' drafts you can open or submit. Batches you created yourself are not listed (another initiator submits them).",
+      "VIEW_ALL_BATCHES": "View all batches",
+      "PENDING_TITLE": "Batches awaiting your approval",
+      "PENDING_SUBTITLE": "Excludes batches you have already approved.",
+      "KPI_PENDING_OVER_2H": "Batches pending approval > 2 hours for approval",
+      "REVIEW_NEXT": "Review next in queue",
+      "COL_ID": "ID",
+      "COL_REFERENCE": "Reference",
+      "COL_STATUS": "Status",
+      "COL_CREATED_BY": "Created by",
+      "COL_STAGE": "Stage",
+      "COL_ITEMS": "Items",
+      "COL_AMOUNT": "Amount",
+      "COL_CREATED": "Created"
+    },
+    "LIST_TITLE": "Customers",
+    "CREATE_TITLE": "Create customer",
+    "ADD_NEW": "Add customer",
+    "CREATED_SUCCESS": "Customer created successfully",
+    "CREATED_FAILED": "Failed to create customer",
+    "APPROVED_SUCCESS": "Customer approved successfully",
+    "APPROVED_FAILED": "Failed to approve customer",
+    "REJECTED_SUCCESS": "Customer rejected successfully",
+    "REJECTED_FAILED": "Failed to reject customer",
+    "FIELDS": {
+      "ORG_NAME": "Organization name",
+      "ADDRESS": "Address",
+      "ADDRESS_STREET": "Street",
+      "ADDRESS_CITY": "City",
+      "ADDRESS_COUNTRY": "Country",
+      "CONTACT_NAME": "Contact name",
+      "CONTACT_EMAIL": "Contact email",
+      "CONTACT_PHONE": "Contact phone",
+      "BANK_ID": "Bank ID",
+      "BANK_NAME": "Bank",
+      "SETTLEMENT_ACCOUNT": "Settlement account",
+      "DAILY_LIMIT": "Daily limit (ZMW)",
+      "REQUIRED_APPROVALS": "Required approvals",
+      "WEBHOOK_URL": "Webhook URL",
+      "WEBHOOK_SECRET": "Webhook secret",
+      "WEBHOOK_ENABLED": "Webhook enabled",
+      "REGION_CODE" : "Region code"
+    },
+    "SECTION_CONTACT": "Contact",
+    "SECTION_BANK_LIMITS": "Bank & limits",
+    "ACTIONS": {
+      "DEFINE": "Define customer",
+      "APPROVE": "Approve",
+      "APPROVE_STAGE_1": "Approve (stage 1)",
+      "APPROVE_STAGE_2": "Approve (stage 2)",
+      "REJECT": "Reject",
+      "REVIEW": "Review"
+    },
+    "COLUMNS": {
+      "ID": "ID",
+      "ORG_NAME": "Organization",
+      "CONTACT_NAME": "Contact",
+      "CONTACT_EMAIL": "Email",
+      "CONTACT_PHONE": "Phone",
+      "NON_ACTIVE_USERS": "Non-active users",
+      "STATUS": "Status",
+      "ACTIVATED_AT": "Activated at"
+    }
+  },
+  "CUSTOMER_USER": {
+    "LIST_TITLE": "Customer users",
+    "CREATE_TITLE": "Create customer user",
+    "ADD_NEW": "Add user",
+    "CREATED_SUCCESS": "Customer user created successfully",
+    "CREATED_FAILED": "Failed to create customer user",
+    "APPROVED_SUCCESS": "Customer user approved successfully",
+    "APPROVED_FAILED": "Failed to approve customer user",
+    "REJECTED_SUCCESS": "Customer user rejected successfully",
+    "REJECTED_FAILED": "Failed to reject customer user",
+    "FIELDS": {
+      "FULL_NAME": "Full name",
+      "USERNAME": "Username",
+      "EMAIL": "Email",
+      "MOBILE": "Mobile",
+      "ROLE": "Role"
+    },
+    "ACTIONS": {
+      "APPROVE": "Approve",
+      "APPROVE_STAGE_1": "Approve (stage 1)",
+      "APPROVE_STAGE_2": "Approve (stage 2)",
+      "REJECT": "Reject",
+      "REVIEW": "Review"
+    },
+    "NO_USERS": "No users for this customer",
+    "SECTION_ACCOUNT": "Account",
+    "SECTION_ACTIVITY": "Activity",
+    "CUSTOMER_ID_SHORT": "Customer",
+    "COLUMNS": {
+      "ID": "ID",
+      "FULL_NAME": "Full name",
+      "USERNAME": "Username",
+      "EMAIL": "Email",
+      "MOBILE": "Mobile",
+      "ROLE": "Role",
+      "STATUS": "Status",
+      "LAST_LOGIN": "Last login",
+      "ORGANIZATION": "Organization"
+    },
+    "ROLES": {
+      "INITIATOR": "Initiator",
+      "APPROVER": "Approver"
+    }
+  },
+  "ADMIN": {
+    "DASHBOARD": "Dashboard",
+    "PORTAL": "Administration",
+    "CUSTOMERS_TITLE": "Customer profiles (admin)",
+    "CUSTOMER_DETAIL_TITLE": "Customer profile",
+    "USER_DETAIL_TITLE": "Customer user",
+    "FILTER_STATUS": "Status",
+    "FILTER_USER_STATUS": "Customer user status",
+    "FILTER_ALL_STATUS": "All statuses",
+    "STATUS_PENDING_APPROVAL": "Pending approval",
+    "STATUS_AWAITING_2": "Awaiting 2nd approval",
+    "STATUS_ACTIVE": "Active",
+    "STATUS_REJECTED": "Rejected",
+    "STATUS_SUSPENDED": "Suspended",
+    "PROFILE_CARD": "Profile",
+    "USER_PROFILE": "User",
+    "APPROVAL_HISTORY": "Approval history",
+    "EDIT_CUSTOMER_TAB": "Edit customer",
+    "H_STAGE": "Stage",
+    "H_ACTION": "Action",
+    "H_ACTOR": "Actor",
+    "H_TIME": "Time",
+    "MANAGE_USERS": "Users",
+    "USER_PREVIEW_VIEW_ALL": "View all users",
+    "USER_PREVIEW_MORE": "{{count}} more — open full list",
+    "VIEW_USER": "View",
+    "NO_USERS": "No users yet",
+    "BACK_TO_CUSTOMER": "Back to customer",
+    "BACK_TO_USERS_LIST": "Back to customer users",
+    "BACK_TO_USERS_EMBEDDED": "Back to list",
+    "RESET_FIRST_LOGIN": "Reissue one-time password",
+    "RESET_OTP_SUCCESS": "A new one-time password was sent by email."
+  },
+  "BATCH": {
+    "UPLOAD_BATCH": "Upload batch",
+    "LIST_TITLE": "Batches list",
+    "DETAILS_TITLE": "Batch details",
+    "SUMMARY_TITLE": "Batch summary",
+    "SUBMIT_SUCCESS": "Batch submitted successfully",
+    "APPROVE_SUCCESS": "Batch approved successfully",
+    "REJECT_SUCCESS": "Batch rejected successfully",
+    "STATUS": {
+      "PENDING": "Pending",
+      "AWAITING_APPROVAL": "Awaiting approval",
+      "PROCESSING": "Processing",
+      "COMPLETED": "Completed",
+      "PARTIALLY_FAILED": "Partially failed",
+      "FAILED": "Failed",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled",
+      "SENT": "Sent",
+      "APPROVED": "Approved"
+    },
+    "COLUMNS": {
+      "ID": "ID",
+      "REFERENCE": "Reference",
+      "BANK_ID": "Bank ID",
+      "BANK_NAME": "Bank",
+      "STATUS": "Status",
+      "STAGE": "Stage",
+      "ITEM_COUNT": "Items",
+      "TOTAL_AMOUNT": "Total amount",
+      "CREATED_AT": "Created at",
+      "REQUIRED_APPROVALS": "Required approvals",
+      "REMAINING_STAGES": "Remaining stages"
+      
+    },
+    "ACTIONS": {
+      "TITLE": "Actions",
+      "SUBMIT": "Submit",
+      "APPROVE": "Approve",
+      "REJECT": "Reject",
+      "REVIEW": "Review",
+      "REJECT_REASON": "Reject reason",
+      "REJECT_REASON_PLACEHOLDER": "Enter rejection reason"
+    },
+    "CREATE": {
+      "BUTTON": "Create batch",
+      "PAGE_TITLE": "Create batch",
+      "MODAL_TITLE": "Create batch",
+      "MODAL_HINT": "Creates a batch with one payment line (POST /v1/batches). Use a new reference each time.",
+      "SUBMIT": "Create batch",
+      "SUCCESS": "Batch created successfully",
+      "DUPLICATE_KEY": "Duplicate check key",
+      "INITIATOR_ONLY": "Only initiator users can create batches."
+    },
+    "ITEMS": {
+      "TITLE": "Batch items",
+      "ADD": "Add transaction",
+      "EMPTY": "No transactions added",
+      "ADD_AT_LEAST_ONE": "Add at least one transaction (or complete the transaction form).",
+      "TRANSACTION_ID": "Transaction ID",
+      "TRANSACTION_REF": "Transaction ref",
+      "END_TO_END_ID": "End-to-end ID",
+      "BENEFICIARY_NAME": "Beneficiary",
+      "NARRATION": "Narration",
+      "AMOUNT": "Amount",
+      "CURRENCY": "Currency",
+      "DEBIT_ACCOUNT": "Debit account",
+      "CREDIT_ACCOUNT": "Beneficiary account",
+      "EXTERNAL_REFERENCE": "External reference",
+      "STATUS": "Status"
+    },
+    "ITEM_STATUS": {
+      "PENDING": "Pending",
+      "SUCCESS": "Success",
+      "FAILED": "Failed"
+    }
+  },
+  "FORGOT_PASSWORD": {
+    "TITLE": "Forgot Password?",
+    "EMAIL_ADDRESS": "Email Address",
+    "EMAIL_PLACEHOLDER": "Enter your email address",
+    "SUBMIT": "Submit",
+    "BACK_TO_LOGIN": "Back to Login",
+    "RESET_PASSWORD": "New Password",
+    "NEW_PASSWORD": "New Password",
+    "NEW_PASSWORD_PLACE_HOLDER": "Enter your new password",
+    "CONFIRM": "Confirm",
+    "GO_BACK_TO_LOGIN": "Go back to login",
+    "RESET_CODE_CHECK": "Verify your code",
+    "VERIFY_CODE": "Verification Code",
+    "VERIFY_NOTE": "Enter the 6-digit code sent to your email to reset your password.",
+    "6_CODE_DIGITS": "Enter the 6-digit code",
+    "PASSWORDS_NOT_MATCH": "Passwords do not match",
+    "CONFIRM_PASSWORD_PLACE_HOLDER": "Confirm your new password",
+    "CONFIRM_PASSWORD": "Confirm Password",
+     "PASSWORD_MISMATCH": "Password and confirmation do not match",
+    "RESET_SUCCESS": "Password reset successfully. You can now login with your new password.",
+    "RESET_FAILED": "Failed to reset password. Please try again.",
+    "CODE_RESENT_SUCCESS": "New verification code sent to your email.",
+    "CODE_RESEND_FAILED": "Failed to send verification code. Please try again.",
+    "CODE_SENT_SUCCESS": "Password reset code sent to your email."
+
+  },
+  "TABLE": {
+    "SEARCH": "Search",
+    "CLEAR_FILTERS": "Clear Filters",
+    "ADD_NEW": "Add New",
+    "ACTIONS": "Actions",
+    "EDIT_ITEM": "Edit Item",
+    "DELETE_ITEM": "Delete Item",
+    "TOTAL_RECORDS": "Total Records",
+    "TOTAL_PAGES": "Total Pages",
+    "SHOW": "Show",
+    "ENTRIES": "Entries",
+    "PREV": "Previous",
+    "NEXT": "Next",
+    "SELECT_ENTRIES": "Select Entries",
+    "LOADING": "Loading",
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "SELECT_STATUS": "Select Status",
+    "SELECT_ASSIGNMENT": "Select Assignment",
+    "SELECT_ACTIVE_STATUS": "Select Active Status",
+    "FILTERS": "Filters",
+    "EXPORT": "Export",
+    "NO_DATA": "No data available",
+    "EXPORT_PDF": "Export PDF",
+    "EXPORT_EXCEL": "Export EXCEL"
+  },
+  "FORM": {
+    "BACK": "Back",
+    "CANCEL": "Cancel",
+    "SAVE": "Save",
+    "UPDATE": "Update",
+    "GENERATE": "Generate",
+    "SHOW_PASSWORD": "Show Password",
+    "HIDE_PASSWORD": "Hide Password",
+    "IS_REQUIRED": "Required",
+    "MINIMUM_LENGTH": "Minimum length is",
+    "MAXIMUM_LENGTH": "Maximum length is",
+    "CHARACTERS": "characters",
+    "PASSWORD_MISMATCH": "Password and confirmation do not match",
+    "SELECT_AREA": "Select Area",
+    "SELECT_COMPANY": "Select Company",
+    "SELECT_STATUS": "Select Status",
+    "SELECT_OPTION": "Select Option",
+    "VALIDATION_ERROR": "There are validation errors. Please check the fields.",
+    "ERROR": "Something went wrong. Please try again.",
+    "SELECT": "Select",
+    "PATTERN_INVALID_NUMBER": "Enter a valid number",
+    "PATTERN_INVALID_EMAIL": "Enter a valid email",
+    "INVALID_MOBILE": "Please enter a valid mobile number",
+    "MOBILE_IS_REQUIRED": "Mobile number is required"
+  },
+  "VALIDATION": {
+    "REQUIRED": "This field is required",
+    "MIN_LENGTH": "Minimum length is",
+    "MAX_LENGTH": "Maximum length is",
+    "EMAIL": "Please enter a valid email",
+    "NUMBER": "Please enter a valid number",
+    "PASSWORD_MISMATCH": "Passwords do not match"
+  },
+  "AUTH": {
+    "SESSION_EXPIRED": "Session expired. Please login again.",
+    "UNAUTHORIZED": "Unauthorized"
+  },
+ 
+  "PROFILE": {
+    "PROFILE": "Profile",
+    "PAGES": "Pages",
+    "PROJECTS": "Projects",
+    "ABOUT": "About",
+    "PERSONAL_PROFILE": "Personal Profile",
+    "BIO_DATA": "Basic Information",
+    "FULL_NAME": "Full Name",
+    "OFFICIAL_ACCOUNT_FOR": "Official Account For",
+    "EXPERIENCE": "Experience",
+    "NO_TITLE_PROVIDED": "No title provided",
+    "QUALIFICATION_NOT_LISTED": "Qualifications not listed",
+    "ID": "ID",
+    "ORGANIZATION": "Organization",
+    "DEPARTMENT": "Department",
+    "BRANCH": "Branch",
+    "UNASSIGNED": "Unassigned",
+    "COMPANY": "Company",
+    "CONTACT_INFORMATION": "Contact Information",
+    "MOBILE": "Mobile",
+    "N_A": "N/A",
+    "EMAIL_ADDRESS": "Email Address",
+    "LOCATION": "Location",
+    "NOT_PROVIDED": "Not Provided",
+    "EDIT_PROFILE": "Edit Profile",
+    "QUALIFICATION": "Qualifications",
+    "OFFICIAL_EMAIL": "Email",
+    "TITLE": "Job title"
+  }
+}

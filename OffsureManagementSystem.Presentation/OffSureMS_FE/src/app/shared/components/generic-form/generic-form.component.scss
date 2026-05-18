@@ -1,0 +1,107 @@
+.generic-form input[ng-reflect-is-disabled="true"],
+.generic-form select[ng-reflect-is-disabled="true"],
+.generic-form textarea[ng-reflect-is-disabled="true"] {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.8;
+}
+
+.generic-form {
+
+  label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  // Hide browser-provided password reveal icons (prevents "double eye" when we render our own).
+  input[type='password']::-ms-reveal,
+  input[type='password']::-ms-clear {
+    display: none;
+  }
+
+  .form-control,
+  .ng-select {
+    font-size: 0.95rem;
+    min-height: 42px;
+  }
+
+  /* Match ng-select height and baseline to adjacent `.form-control` columns */
+  .generic-form__select-wrap {
+    margin-bottom: 0;
+    width: 100%;
+  }
+
+  .custom-ng-select.ng-select {
+    display: block;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .custom-ng-select.ng-select .ng-select-container {
+    min-height: 42px;
+    align-items: center;
+  }
+
+  .custom-ng-select.ng-select .ng-select-container .ng-value-container {
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .generic-form__checkbox {
+    display: flex;
+    justify-content: flex-start; // aligns to "start" (right in RTL)
+    padding-top: 0.25rem;
+  }
+
+  textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .dropzone-container {
+    min-height: 140px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  .dropzone-container .dz-message {
+    font-weight: 500;
+  }
+}
+
+.employee-chip {
+  background: #eef2ff;
+  border-radius: 14px;
+  padding: 4px 8px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.chip-remove {
+  margin-inline-start: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #6b7280;
+}
+
+.chip-remove:hover {
+  color: #dc2626;
+}
+
+.more-count {
+  background: #e5e7eb;
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: #374151;
+}
+

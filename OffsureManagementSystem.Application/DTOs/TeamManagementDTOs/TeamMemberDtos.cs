@@ -1,0 +1,89 @@
+using System;
+using System.Collections.Generic;
+
+namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
+{
+    public class CreateTeamMemberDto
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int YearsOfExperience { get; set; }
+        public string? PhoneNumber { get; set; }
+        public int? LeaderId { get; set; }
+        public bool IsAvailable { get; set; } = true;
+        public List<UpsertTeamMemberSkillDto> SkillAssignments { get; set; } = new();
+    }
+
+    public class UpdateTeamMemberDto
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int YearsOfExperience { get; set; }
+        public string? PhoneNumber { get; set; }
+        public int? LeaderId { get; set; }
+        public bool IsAvailable { get; set; } = true;
+        public List<UpsertTeamMemberSkillDto> SkillAssignments { get; set; } = new();
+    }
+
+    public class UpsertTeamMemberSkillDto
+    {
+        public int SkillId { get; set; }
+        public int ProficiencyLevel { get; set; }
+        public int YearsOfExperience { get; set; }
+        public DateTime? AcquiredDate { get; set; }
+        public bool IsEndorsed { get; set; }
+        public int? EndorsementCount { get; set; }
+    }
+
+    public class TeamMemberDto
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int YearsOfExperience { get; set; }
+        public string CV { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public int? LeaderId { get; set; }
+        public string? LeaderName { get; set; }
+        public bool IsAvailable { get; set; }
+        public List<TeamMemberSkillDto> SkillAssignments { get; set; } = new();
+    }
+
+    public class TeamMemberSkillDto
+    {
+        public int Id { get; set; }
+        public int SkillId { get; set; }
+        public string SkillName { get; set; } = string.Empty;
+        public string SkillCategoryName { get; set; } = string.Empty;
+        public int ProficiencyLevel { get; set; }
+        public int YearsOfExperience { get; set; }
+        public DateTime AcquiredDate { get; set; }
+        public bool IsEndorsed { get; set; }
+        public int? EndorsementCount { get; set; }
+    }
+
+    public class TeamStructureDto
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int YearsOfExperience { get; set; }
+        public bool IsAvailable { get; set; }
+        public List<TeamStructureDto> TeamMembers { get; set; } = new();
+    }
+
+    public class CvStorageResultDto
+    {
+        public int TeamMemberId { get; set; }
+        public string CvPath { get; set; } = string.Empty;
+    }
+}

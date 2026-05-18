@@ -1,0 +1,24 @@
+namespace OffshoreManagementSystem.Domain.Entities
+{
+    using OffshoreManagementSystem.Domain.BaseEntity;
+
+    public class Client : BaseEntity
+    {
+        public int UserId { get; set; }
+        public string CompanyName { get; set; }
+        public string ContactPersonName { get; set; }
+        public string ContactPersonEmail { get; set; }
+        public string ContactPersonPhone { get; set; }
+        public string CompanyAddress { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+        public string PostalCode { get; set; }
+        public string Website { get; set; }
+        public string Description { get; set; }
+        public bool IsActive { get; set; } = true;
+
+        // Navigation Properties
+        public virtual User User { get; set; }
+        public virtual ICollection<ServiceRequest> ServiceRequests { get; set; } = new List<ServiceRequest>();
+    }
+}

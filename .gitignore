@@ -1,0 +1,36 @@
+# Build folders
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Node modules
+node_modules/
+
+# Angular build
+dist/
+
+# Environment files
+environment.ts
+environment.prod.ts
+
+# App secrets
+appsettings.Development.json
+appsettings.Local.json
+
+# Publish
+publish/
+
+# OS files
+.DS_Store
+Thumbs.db

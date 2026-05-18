@@ -1,0 +1,12 @@
+.dashboard-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.dashboard-card.clickable {
+  cursor: pointer;
+}
+
+.dashboard-card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}

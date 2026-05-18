@@ -1,0 +1,94 @@
+<!-- Backdrop -->
+<div class="approval-drawer-backdrop" (click)="close()"></div>
+
+<!-- Drawer panel -->
+<div class="approval-drawer">
+
+  <!-- Header -->
+  <div class="drawer-header">
+    <div>
+      <p class="mb-0 text-muted small">{{ entityLabel }}</p>
+      <h6 class="mb-0 fw-semibold">{{ targetName }}</h6>
+    </div>
+    <button class="btn btn-sm btn-light rounded-circle" (click)="close()">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="drawer-body">
+
+    <!-- Step 1: Choose action -->
+    <p class="text-muted small fw-semibold mb-2 text-uppercase tracking-wide">Action</p>
+    <div class="d-flex gap-2 mb-4">
+      <button class="btn flex-fill d-flex align-items-center justify-content-center gap-2"
+        [class.btn-success]="action === 'approve'"
+        [class.btn-outline-success]="action !== 'approve'"
+        (click)="selectAction('approve')">
+        <i class="bi bi-check2-circle"></i> Approve
+      </button>
+      <button class="btn flex-fill d-flex align-items-center justify-content-center gap-2"
+        [class.btn-danger]="action === 'reject'"
+        [class.btn-outline-danger]="action !== 'reject'"
+        (click)="selectAction('reject')">
+        <i class="bi bi-x-circle"></i> Reject
+      </button>
+    </div>
+
+    <!-- Step 2: Choose stage (only for approve) -->
+    <ng-container *ngIf="action === 'approve'">
+      <p class="text-muted small fw-semibold mb-2 text-uppercase">Approval Stage</p>
+      <div class="d-flex gap-2 mb-4">
+        <button *ngFor="let s of stageOptions"
+          class="btn btn-sm"
+          [class.btn-primary]="stage === s.value"
+          [class.btn-outline-secondary]="stage !== s.value"
+          (click)="stage = s.value">
+          <i class="bi me-1" [class]="s.icon"></i>{{ s.label }}
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Step 3: Reason (required for reject, optional for approve) -->
+    <ng-container *ngIf="action !== null">
+      <p class="text-muted small fw-semibold mb-2 text-uppercase">
+        {{ action === 'reject' ? 'Reason (required)' : 'Note (optional)' }}
+      </p>
+      <textarea
+        class="form-control"
+        rows="4"
+        [placeholder]="action === 'reject' ? 'Enter rejection reason...' : 'Add a note (optional)'"
+        [(ngModel)]="reason"
+      ></textarea>
+    </ng-container>
+
+    <!-- Empty state -->
+    <div *ngIf="action === null" class="text-center text-muted mt-5">
+      <i class="bi bi-hand-index-thumb fs-2 d-block mb-2"></i>
+      Select an action above to continue
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="drawer-footer" *ngIf="action !== null">
+    <div class="d-flex gap-2">
+      <button class="btn btn-light flex-fill" (click)="close()" [disabled]="loading">
+        Cancel
+      </button>
+      <button
+        class="btn flex-fill d-flex align-items-center justify-content-center gap-2"
+        [class.btn-success]="action === 'approve'"
+        [class.btn-danger]="action === 'reject'"
+        [disabled]="loading || (action === 'reject' && !reason.trim())"
+        (click)="submit()">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+        <i *ngIf="!loading" class="bi"
+          [class.bi-check2-circle]="action === 'approve'"
+          [class.bi-x-circle]="action === 'reject'"></i>
+        {{ action === 'approve' ? 'Confirm Approval' : 'Confirm Rejection' }}
+      </button>
+    </div>
+  </div>
+
+</div>

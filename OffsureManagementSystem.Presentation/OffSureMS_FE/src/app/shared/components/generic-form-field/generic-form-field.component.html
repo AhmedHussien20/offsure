@@ -1,0 +1,74 @@
+<div class="form-group">
+  <label [for]="field.name">{{ field.label }}</label>
+
+<!-- Password Input -->
+<div *ngIf="field.type === 'input' && field.inputType === 'password'" class="input-group">
+  <input
+    [type]="field.showPassword ? 'text' : 'password'"
+    class="form-control"
+    [id]="field.name"
+    [formControlName]="field.name"
+    [placeholder]="field.placeholder || field.label"
+  />
+
+  <button
+    type="button"
+    class="btn btn-outline-secondary"
+    (click)="togglePassword(field)"
+  >
+    <i class="bi"
+       [ngClass]="field.showPassword ? 'bi-eye-slash' : 'bi-eye'">
+    </i>
+  </button>
+</div>
+
+
+  <!-- Text & Number Inputs -->
+  <input *ngIf="field.type === 'text' || field.type === 'number'" 
+         [type]="field.type" class="form-control" 
+         [id]="field.name" [formControlName]="field.name" 
+         [placeholder]="field.label">
+
+  <!-- Date Input -->
+  <input *ngIf="field.type === 'date'" 
+         type="date" class="form-control" 
+         [id]="field.name" [formControlName]="field.name">
+
+  <!-- Dropdown Select -->
+  <select *ngIf="field.type === 'dropdown'" 
+          class="form-select" 
+          [id]="field.name" [formControlName]="field.name">
+    <option *ngFor="let option of field.options" [value]="option.id">{{ option.name }}</option>
+  </select>
+
+  <!-- Radio Buttons -->
+  <div *ngIf="field.type === 'radio'">
+    <div *ngFor="let option of field.options" class="form-check">
+      <input type="radio" [id]="option.id" [formControlName]="field.name" class="form-check-input" [value]="option.id">
+      <label class="form-check-label" [for]="option.id">{{ option.name }}</label>
+    </div>
+  </div>
+
+  <!-- Checkbox -->
+  <div *ngIf="field.type === 'checkbox'" class="form-check">
+    <input type="checkbox" [id]="field.name" class="form-check-input" [formControlName]="field.name">
+    <label class="form-check-label" [for]="field.name">{{ field.label }}</label>
+  </div>
+
+  <!-- Checklist (Multiple Checkboxes) -->
+  <div *ngIf="field.type === 'checklist'">
+    <div *ngFor="let option of field.options" class="form-check">
+      <input type="checkbox" [id]="option.id" class="form-check-input" 
+             (change)="onChecklistChange($event, option.id)">
+      <label class="form-check-label" [for]="option.id">{{ option.name }}</label>
+    </div>
+  </div>
+
+
+
+
+  <!-- Validation Errors -->
+  <div *ngIf="hasError('required')" class="text-danger">This field is required.</div>
+  <div *ngIf="hasError('minlength')" class="text-danger">Minimum length not met.</div>
+  <div *ngIf="hasError('email')" class="text-danger">Invalid email format.</div>
+</div>

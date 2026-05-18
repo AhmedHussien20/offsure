@@ -1,0 +1,375 @@
+<!-- app-header -->
+<header class="app-header">
+
+    <!-- Start::main-header-container -->
+    <div class="main-header-container container-fluid">
+
+        <!-- Start::header-content-left -->
+        <div class="header-content-left">
+
+            <!-- Start::header-element -->
+            <div class="header-element">
+                <div class="horizontal-logo">
+                    <a routerLink="/dashboard" class="header-logo">
+                        <img src="./assets/images/brand-logos/desktop-logo.png" alt="logo" class="desktop-logo">
+                        <img src="./assets/images/brand-logos/toggle-logo.png" alt="logo" class="toggle-logo">
+                        <img src="./assets/images/brand-logos/desktop-dark.png" alt="logo" class="desktop-dark">
+                        <img src="./assets/images/brand-logos/toggle-dark.png" alt="logo" class="toggle-dark">
+                        <img src="./assets/images/brand-logos/desktop-white.png" alt="logo" class="desktop-white">
+                        <img src="./assets/images/brand-logos/toggle-white.png" alt="logo" class="toggle-white">
+                    </a>
+                </div>
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element">
+                <!-- Start::header-link -->
+                <a aria-label="Hide Sidebar" (click)="togglesidebar()"
+                    class="sidemenu-toggle header-link animated-arrow hor-toggle horizontal-navtoggle"
+                    data-bs-toggle="sidebar" href="javascript:void(0);"><span></span></a>
+                <!-- End::header-link -->
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="main-header-center d-none d-lg-block  header-link">
+                <div class="input-group">
+                    <!-- <div class="input-group-btn search-panel"> -->
+                    <!-- <spk-ng-select 
+                        [options]="Selection"
+                        [selectClass]="'js-example-basic-single search-panel'"
+                        [clearable]="true"
+                        [searchable]="true"
+                        [hideSelected]="true"
+                        [placeholder]="'Choose one'"
+                        [additionalProperties]="{}">
+                        </spk-ng-select> -->
+
+                    <!-- </div> -->
+                    <!-- <input type="text" class="form-control" id="typehead" placeholder="Search for results..."
+                    autocomplete="off" (click)="SearchHeader()" [(ngModel)]="text" 
+                    (keyup)="Search(text)"> -->
+                    <!-- <button class="btn btn-primary" (click)="SearchHeader()"><i class="fe fe-search" aria-hidden="true"></i></button> -->
+                </div>
+
+            </div>
+            <!-- End::header-element -->
+
+        </div>
+        <!-- End::header-content-left -->
+
+        <!-- Start::header-content-right -->
+        <div class="header-content-right">
+
+            <!-- Start::header-element -->
+            <div class="header-element header-theme-mode">
+                <!-- Start::header-link|layout-setting -->
+                <a href="javascript:void(0);" class="header-link layout-setting">
+                    <span class="light-layout" (click)="updateTheme('dark')">
+                        <!-- Start::header-link-icon -->
+                        <i class="fe fe-moon header-link-icon lh-2"></i>
+                        <!-- End::header-link-icon -->
+                    </span>
+                    <span class="dark-layout" (click)="updateTheme('light')">
+                        <!-- Start::header-link-icon -->
+                        <i class="fe fe-sun header-link-icon lh-2"></i>
+                        <!-- End::header-link-icon -->
+                    </span>
+                </a>
+                <!-- End::header-link|layout-setting -->
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element country-selector" ngbDropdown [autoClose]="'outside'">
+                <!-- Start::header-link|dropdown-toggle -->
+                <a href="javascript:void(0);" class="header-link dropdown-toggle country-Flag"
+                    data-bs-auto-close="outside" data-bs-toggle="dropdown" ngbDropdownToggle>
+                    <span>
+                        <app-country-flag [countryCode]="countryFlag" />
+                    </span>
+                </a>
+                <!-- End::header-link|dropdown-toggle -->
+                <ul class="main-header-dropdown dropdown-menu dropdown-menu-end" data-popper-placement="none"
+                    ngbDropdownMenu>
+                    <li>
+                        <a ngbDropdownItem class="dropdown-item d-flex align-items-center" href="javascript:void(0);"
+                            (click)="changeLanguage('en')">
+                            <span class="avatar avatar-xs lh-1 me-2">
+                                <app-country-flag countryCode="gb" />
+                            </span>
+                            English
+                        </a>
+                    </li>
+                    <li>
+                        <a ngbDropdownItem class="dropdown-item d-flex align-items-center" href="javascript:void(0);"
+                            (click)="changeLanguage('ar')">
+                            <span class="avatar avatar-xs lh-1 me-2">
+                                <app-country-flag countryCode="sa" />
+                            </span>
+                            Arabic
+                        </a>
+                    </li>
+                    <!-- <li>
+                        <a ngbDropdownItem class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
+                            <span class="avatar avatar-xs lh-1 me-2">
+                                <app-country-flag countryCode="es" />
+                            </span>
+                            Spanish
+                        </a>
+                    </li>
+                    <li>
+                        <a  ngbDropdownItem class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
+                            <span class="avatar avatar-xs lh-1 me-2">
+                                <img src="./assets/images/flags/1.jpg" alt="img" >
+                            </span>
+                            French
+                        </a>
+                    </li>
+                    <li>
+                        <a ngbDropdownItem class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
+                            <span class="avatar avatar-xs lh-1 me-2">
+                                <img src="./assets/images/flags/2.jpg" alt="img" >
+                            </span>
+                            German
+                        </a>
+                    </li>
+                    <li>
+                        <a ngbDropdownItem class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
+                            <span class="avatar avatar-xs lh-1 me-2">
+                                <img src="./assets/images/flags/3.jpg" alt="img" >
+                            </span>
+                            Italian
+                        </a>
+                    </li>
+                    <li>
+                        <a ngbDropdownItem class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
+                            <span class="avatar avatar-xs lh-1 me-2">
+                                <img src="./assets/images/flags/4.jpg" alt="img" >
+                            </span>
+                            Russian
+                        </a>
+                    </li> -->
+                </ul>
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element header-fullscreen  d-xl-flex d-none">
+                <!-- Start::header-link -->
+                <a href="javascript:void(0);" class="header-link" (click)="toggleFullscreen()">
+                    <i class="fe fe-maximize full-screen-open header-link-icon"
+                        [ngClass]="{ 'd-none': isFullscreen }"></i>
+                    <i class="fe fe-minimize full-screen-close header-link-icon"
+                        [ngClass]="{ 'd-none': !isFullscreen }"></i>
+                </a>
+                <!-- End::header-link -->
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element notifications-dropdown" ngbDropdown [autoClose]="'outside'">
+
+                <!-- 🔔 Bell -->
+                <a href="javascript:void(0);" class="header-link dropdown-toggle" ngbDropdownToggle
+                    id="messageDropdown">
+                    <i class="fe fe-bell header-link-icon"></i>
+
+                    <span *ngIf="notificationCount > 0"
+                        class="badge bg-secondary header-icon-badge pulse pulse-secondary">
+                        {{ notificationCount }}
+                    </span>
+                </a>
+
+                <!-- 🔽 Dropdown -->
+                <div class="main-header-dropdown dropdown-menu dropdown-menu-end" ngbDropdownMenu>
+
+                    <!-- Header -->
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <p class="mb-0 fs-17 fw-semibold">
+                                {{ 'nav.notifications.title' | translate }}
+                            </p>
+                            <span class="badge bg-secondary rounded-pill" *ngIf="notificationCount > 0">
+                                {{ notificationCount }}
+                                {{ 'nav.notifications.unread' | translate }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <ul class="list-unstyled mb-0 overflow-scroll" id="header-notification-scroll"
+                        (click)="handleCardClick($event)">
+
+                       <li class="dropdown-item" *ngFor="let n of notifications">
+  <div class="d-flex align-items-start" (click)="handleNotificationClick(n, $event)">
+    <div class="pe-2">
+      <span class="avatar avatar-md bg-primary-transparent br-5 d-flex align-items-center justify-content-center">
+        <i class="ti ti-bell"></i>
+      </span>
+    </div>
+
+    <div class="flex-grow-1 d-flex align-items-center justify-content-between">
+      <div>
+        <p class="mb-0 text-dark" style="cursor:pointer;">
+          {{ n.message }}
+        </p>
+        <span class="text-muted fs-12">
+          {{ n.createdAt | date:'MMM d, h:mm a' }}
+        </span>
+      </div>
+
+      <a href="javascript:void(0);" class="text-muted" (click)="removeNotification(n.id)">
+        <i class="ti ti-x fs-16"></i>
+      </a>
+    </div>
+  </div>
+</li>
+
+
+                    </ul>
+
+                    <!-- View All -->
+                <!--    <div class="p-3 border-top" *ngIf="notifications.length > 0">
+                        <div class="d-grid">
+                            <a routerLink="/pages/notifications-list" class="btn btn-primary">
+                                {{ 'nav.notifications.viewAll' | translate }}
+                            </a>
+                        </div>
+                    </div>-->
+
+                    <!-- Empty -->
+                    <div class="p-5 text-center" *ngIf="notifications.length === 0">
+                        <span class="avatar avatar-xl bg-secondary-transparent">
+                            <i class="ri-notification-off-line fs-2"></i>
+                        </span>
+                        <h6 class="fw-semibold mt-3">
+                            {{ 'nav.notifications.empty' | translate }}
+                        </h6>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element header-shortcuts-dropdown d-xl-flex d-none" ngbDropdown>
+                <!-- Toggle -->
+                <a href="javascript:void(0);" ngbDropdownToggle class="header-link dropdown-toggle">
+                    <i class="fe fe-grid header-link-icon"></i>
+                </a>
+
+                <!-- Dropdown -->
+                <div class="main-header-dropdown header-shortcuts-dropdown dropdown-menu dropdown-menu-end"
+                    ngbDropdownMenu>
+                    <div class="p-3 border-bottom">
+                        <p class="mb-0 fs-16 fw-semibold">
+                            {{ 'nav.shortcuts.title' | translate }}
+                        </p>
+                    </div>
+
+                    <div class="main-header-shortcuts p-3">
+                        <div class="row g-2">
+
+                            <div class="col-4" *ngFor="let item of headerShortcuts">
+
+                                <a [routerLink]="canAccessShortcut(item) ? item.path : null"
+                                    class="text-decoration-none" [class.disabled-shortcut]="!canAccessShortcut(item)"
+                                    [ngbTooltip]="!canAccessShortcut(item) ? ('GENERAL.NO_PERMISSION' | translate) : null"
+                                    container="body" placement="bottom">
+
+                                    <div class="text-center p-3 related-app shortcut-card"
+                                        [class.shortcut-disabled]="!canAccessShortcut(item)">
+
+                                        <span
+                                            class="avatar avatar-sm rounded-2 bg-primary-transparent d-inline-flex align-items-center justify-content-center">
+                                            <i [class]="item.icon + ' fs-18'"></i>
+                                        </span>
+
+                                        <span class="d-block fs-12 mt-2">
+                                            {{ item.title | translate }}
+                                        </span>
+
+                                    </div>
+
+                                </a>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element" ngbDropdown>
+                <!-- Start::header-link|dropdown-toggle -->
+                <a href="javascript:void(0);" ngbDropdownToggle class="header-link dropdown-toggle"
+                    id="mainHeaderProfile" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                    <div class="d-flex align-items-center">
+                        <div class="header-link-icon">
+                            <img [src]="profileImage" alt="img" width="32" height="32" class="rounded-circle">
+                        </div>
+                        <div class="d-none">
+                            <p class="fw-semibold mb-0">Angelica</p>
+                            <span class="op-7 fw-normal d-block fs-11">Web Designer</span>
+                        </div>
+                    </div>
+                </a>
+                <!-- End::header-link|dropdown-toggle -->
+                <ul class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end"
+                    aria-labelledby="mainHeaderProfile" ngbDropdownMenu>
+                    <Li>
+                        <div class="header-navheading border-bottom">
+                            <h6 class="main-notification-title">{{ user?.fullName }}</h6>
+                            <p class="main-notification-text mb-0">{{ user?.title }}</p>
+                        </div>
+                    </Li>
+                    <li><a ngbDropdownItem class="dropdown-item d-flex border-bottom" routerLink="/pages/profile"><i
+                                class="fe fe-user fs-16 align-middle me-2"></i>{{'HEADER.PROFILE' | translate}}</a></li>
+                    <!-- <li><a ngbDropdownItem class="dropdown-item d-flex border-bottom" routerLink="/pages/settings"><i
+                                class="fe fe-settings fs-16 align-middle me-2"></i>{{'HEADER.SETTINGS' | translate}}</a> 
+                    </li>-->
+                    <li><a ngbDropdownItem class="dropdown-item d-flex" routerLink="/auth/login" (click)="Logout()"><i
+                                class="fe fe-power fs-16 align-middle me-2"></i>{{'HEADER.LOGOUT' | translate}}</a></li>
+                </ul>
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element right-sidebar d-xl-flex d-none">
+                <a href="javascript:void(0);" class="header-link right-sidebar" data-bs-toggle="offcanvas"
+                    data-bs-target="#right-sidebar-canvas" (click)="rightsidebar()">
+                    <i class="fe fe-align-right header-icons header-link-icon"></i>
+                </a>
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element">
+                <!-- Start::header-link|switcher-icon -->
+                <a href="javascript:void(0);" class="header-link switcher-icon" data-bs-toggle="offcanvas"
+                    data-bs-target="#switcher-canvas" (click)="open()">
+                    <i class="fe fe-settings header-link-icon"></i>
+                </a>
+                <!-- End::header-link|switcher-icon -->
+            </div>
+            <!-- End::header-element -->
+
+        </div>
+        <!-- End::header-content-right -->
+
+    </div>
+    <!-- End::main-header-container -->
+
+</header>
+<!-- /app-header -->

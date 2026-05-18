@@ -1,0 +1,69 @@
+<div class="login-page gradient-bg d-flex align-items-center justify-content-center vh-100">
+  <div class="login-card shadow-lg rounded-4 p-4 p-md-5 bg-body">
+
+    <!-- Logo / Brand -->
+    <div class="text-center mb-4">
+      <div class="brand-icon mx-auto mb-3">
+        <i class="fe fe-lock"></i>
+      </div>
+      <h3 class="fw-bold mb-1">
+        Login
+      </h3>
+      <p class="text-muted fs-14 mb-0">
+        Please login to continue
+      </p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="submit($event)">
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Username</label>
+        <input
+          type="text"
+          formControlName="username"
+          class="form-control form-control-lg"
+          [class.is-invalid]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+          placeholder="Enter username"
+          autocomplete="username">
+        <div class="invalid-feedback" *ngIf="loginForm.get('username')?.errors?.['required'] && loginForm.get('username')?.touched">
+          Username is required
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label fw-semibold mb-0">Password</label>
+          <!-- <a routerLink="/auth/forgot-password" class="fs-13 text-muted">
+            {{ 'LOGIN.FORGOT_PASSWORD' | translate }}
+          </a> -->
+        </div>
+        <div class="position-relative">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            class="form-control form-control-lg pe-5"
+            [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            placeholder="Enter password"
+            autocomplete="current-password">
+          <button type="button" class="btn-eye" (click)="toggleVisibility()" aria-label="Toggle password visibility">
+            <i class="fe" [class.fe-eye]="!showPassword" [class.fe-eye-off]="showPassword"></i>
+          </button>
+          <div class="invalid-feedback" *ngIf="loginForm.get('password')?.errors?.['required'] && loginForm.get('password')?.touched">
+            Password is required
+          </div>
+        </div>
+      </div>
+
+      <button
+        class="btn btn-primary btn-lg w-100 mt-3"
+        type="submit"
+        [disabled]="loginForm.invalid || authservice.showLoader">
+        <span *ngIf="!authservice.showLoader">Submit</span>
+        <span *ngIf="authservice.showLoader" class="spinner-border spinner-border-sm me-2"></span>
+        <span *ngIf="authservice.showLoader">Loading...</span>
+      </button>
+
+    </form>
+
+  </div>
+</div>

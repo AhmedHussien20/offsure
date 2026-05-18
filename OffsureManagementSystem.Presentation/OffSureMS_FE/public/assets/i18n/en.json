@@ -1,0 +1,114 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "dashboard": "Dashboard"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "password": "Password must be at least 6 characters"
+  },
+  "nav": {
+    "dashboard": {
+      "header": "Dashboard",
+      "title": "Dashboard"
+    },
+    "applications": {
+      "header": "Applications"
+    },
+    "apps": {
+      "title": "Apps",
+      "orders": {
+        "title": "Orders",
+        "list": "Orders List",
+        "tracking": "Orders Tracking"
+      },
+      "expiry": {
+        "title": "Expiry",
+        "list": "Expiry List",
+        "tracking": "Expiry Tracking"
+      },
+      "customers": {
+        "title": "Customers",
+        "notifications": "Customers Notifications",
+        "customers": "Customers"
+      },
+      "users": {
+        "title": "Users",
+        "users": "Users",
+        "list": "Users List",
+        "permissions": "Users Permission"
+      },
+      "group": {
+        "title": "Group",
+        "permission": "Group Permission"
+      },
+      "configurations": {
+        "title": "Configurations",
+        "onlineOrders": "Online Orders",
+        "expiry": "Expiry",
+        "externalIntegration": "External Integration",
+        "moduleAvailability": "Module Availability",
+        "modules": "Modules",
+        "branches": "Branches",
+        "campaigns": "Campaigns",
+        "ads": "Ads",
+        "notifications": "Notifications"
+      }
+    },
+    "components": {
+      "header": "Components",
+      "submenus": {
+        "title": "Submenus",
+        "level1": "Level 1",
+        "level2": {
+          "title": "Level 2",
+          "level2_0": "Level 2.0",
+          "level2_1": "Level 2.1",
+          "level2_2": {
+            "title": "Level 2.2",
+            "level2_2_1": "Level 2.2.1",
+            "level2_2_2": "Level 2.2.2"
+          }
+        },
+        "level3": "Level 3"
+      }
+    }
+  },
+  "LOGIN": {
+    "TITLE": "Login",
+    "USERNAME": "Username",
+    "USERNAME_PLACEHOLDER": "Enter your username",
+    "PASSWORD": "Password",
+    "PASSWORD_PLACEHOLDER": "Enter your password",
+    "SUBMIT": "Submit"
+  },
+  "form": {
+    "transactionNumber": "Transaction Number",
+    "customerCode": "Customer Code",
+    "branchCode": "Branch Code",
+    "phone": "Phone",
+    "pharmacyName": "Pharmacy Name",
+    "status": "Status",
+    "totalAmount": "Total Amount",
+    "createdOn": "Created On",
+    "createdByUsername": "Created By Username",
+    "transactionCode": "Transaction Code",
+    "transactionDate": "Transaction Date",
+    "itemCount": "Item Count",
+    "creditNoteStatus": "Credit Note Status",
+    "creditNoteDate": "Credit Note Date",
+    "dateOfReview": "Date Of Review",
+    "expiryCollection": "Expiry Collection",
+    "expiryReview": "Expiry Review",
+    "dateOfCollection": "Date Of Collection",
+    "customerSegment": "Customer Segment",
+    "serialNumber": "Serial Number",
+    "createdOnFrom": "Created On (From)",
+    "createdOnTo": "Created On (To)",
+    "phoneNumber": "Phone Number"
+  }
+}

@@ -1,0 +1,101 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
+using OffsureManagementSystem.Application.Interfaces.Services;
+using OffsureManagementSystem.Application.Responses;
+
+namespace OffsureManagementSystem.API.Controllers
+{
+    [Route("api/team-members")]
+    [ApiController]
+    [Authorize(Roles = "Administrator")]
+    public class TeamMembersController : BaseController
+    {
+        private readonly ITeamManagementService _teamManagementService;
+
+        public TeamMembersController(ITeamManagementService teamManagementService)
+        {
+            _teamManagementService = teamManagementService;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<TeamMemberDto>>>> GetAll()
+        {
+            var members = await _teamManagementService.GetAllAsync();
+            return Ok(ApiResponse<IReadOnlyList<TeamMemberDto>>.Ok(members));
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> GetById(int id)
+        {
+            var member = await _teamManagementService.GetByIdAsync(id);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member));
+        }
+
+        [HttpGet("structure")]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<TeamStructureDto>>>> GetStructure()
+        {
+            var structure = await _teamManagementService.GetTeamStructureAsync();
+            return Ok(ApiResponse<IReadOnlyList<TeamStructureDto>>.Ok(structure));
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> Create(CreateTeamMemberDto dto)
+        {
+            var member = await _teamManagementService.CreateAsync(dto);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = member.Id },
+                ApiResponse<TeamMemberDto>.Ok(member, "Team member created successfully."));
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> Update(int id, UpdateTeamMemberDto dto)
+        {
+            var member = await _teamManagementService.UpdateAsync(id, dto);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member updated successfully."));
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
+        {
+            await _teamManagementService.DeleteAsync(id);
+            return Ok(ApiResponse<object>.Ok(null!, "Team member deleted successfully."));
+        }
+
+        [HttpPost("{id:int}/skills")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> AssignSkill(
+            int id,
+            UpsertTeamMemberSkillDto dto)
+        {
+            var member = await _teamManagementService.AssignSkillAsync(id, dto);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member skill saved successfully."));
+        }
+
+        [HttpDelete("{id:int}/skills/{skillId:int}")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> RemoveSkill(int id, int skillId)
+        {
+            var member = await _teamManagementService.RemoveSkillAsync(id, skillId);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member skill removed successfully."));
+        }
+
+        [HttpPost("{id:int}/cv/generate")]
+        public async Task<ActionResult<ApiResponse<CvStorageResultDto>>> GenerateCv(int id)
+        {
+            var result = await _teamManagementService.GenerateCvAsync(id);
+            return Ok(ApiResponse<CvStorageResultDto>.Ok(result, "Team member CV generated successfully."));
+        }
+
+        [HttpPost("{id:int}/cv/upload")]
+        public async Task<ActionResult<ApiResponse<CvStorageResultDto>>> UploadCv(int id, IFormFile file)
+        {
+            if (file.Length == 0)
+                return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR"));
+
+            await using var stream = file.OpenReadStream();
+            var result = await _teamManagementService.StoreCvAsync(id, stream, file.FileName);
+
+            return Ok(ApiResponse<CvStorageResultDto>.Ok(result, "Team member CV stored successfully."));
+        }
+    }
+}
