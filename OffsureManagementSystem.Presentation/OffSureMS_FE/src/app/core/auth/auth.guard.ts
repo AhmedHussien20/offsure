@@ -29,13 +29,6 @@ export class AuthGuard implements CanActivate {
       this.router.navigate(['auth/login'], { queryParams: { returnUrl: redirectUrl } });
       return false;
     }
-
-    const userLevel = this.authService.getRoleLevel();
-    if (userLevel < minRoleLevel) {
-      this.router.navigate(['auth/forbidden']);
-      return false;
-    }
-
     return true;
   }
   

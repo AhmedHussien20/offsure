@@ -19,13 +19,13 @@ export const content: Routes = [
   {
     path: '', children: [
       // Unified entry point: redirects based on user type/role
-      {
-        path: 'home',
-        loadComponent: () =>
-          import('../../../app/components/home/home-redirect.component').then(
-            m => m.HomeRedirectComponent
-          ),
-      },
+      // {
+      //   path: 'home',
+      //   loadComponent: () =>
+      //     import('../../../app/components/home/home-redirect.component').then(
+      //       m => m.HomeRedirectComponent
+      //     ),
+      // },
       // Customer portal default landing (many parts of the app still link to `/dashboard`)
       { path: 'dashboard', redirectTo: 'customer/home', pathMatch: 'full' },
       

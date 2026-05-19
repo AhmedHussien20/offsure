@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -16,17 +16,15 @@ import { AuthService } from 'app/core/services/auth.service';
     TranslateModule
   ],
   templateUrl: './forget-password.component.html',
-    styleUrls: ['./forget-password.component.scss']
-
-
+  styleUrls: ['./forget-password.component.scss']
 })
-export class ForgotPasswordComponent {
+export class ForgotPasswordComponent implements OnInit {
   form!: FormGroup;
   isLoading = false;
 
   constructor(
     private fb: FormBuilder,
-    protected authService: AuthService,
+    private authService: AuthService,
     private toastr: ToastrService,
     private router: Router
   ) {}
@@ -37,27 +35,23 @@ export class ForgotPasswordComponent {
     });
   }
 
-   submit(): void {
-  if (this.form.invalid) return;
+  submit(): void {
+    if (this.form.invalid) return;
 
-  this.isLoading = true;
-  const email = this.form.value.email;
+    this.isLoading = true;
+    const email = this.form.value.email;
 
-  this.authService.forgotPassword(email).subscribe({
-    next: () => {
-      this.isLoading = false;
-      this.toastr.success('FORGOT_PASSWORD.CODE_SENT_SUCCESS');
-
-      localStorage.setItem('resetEmail', email);
-
-      // Password reset flow is separate from first-login OTP.
-      // Keep user on login after sending the code.
-      this.router.navigate(['/auth/login']);
-    },
-    error: (err) => {
-      this.isLoading = false;
-    }
-  });
-}
-
+    this.authService.forgotPassword(email).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.toastr.success('Password reset code sent to your email');
+        localStorage.setItem('resetEmail', email);
+        this.router.navigate(['/auth/login']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.toastr.error(err.message || 'Failed to send reset code');
+      }
+    });
+  }
 }

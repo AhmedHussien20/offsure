@@ -418,7 +418,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.user = this.authService.getCurrentUser();
-    this.roleLevel = this.authService.getRoleLevel();
     this.menuitemsSubscribe$ = this.navServices.getMenuItems().subscribe({
       next: (menuItems) => {
         if (menuItems) {

@@ -7,8 +7,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { AuthService } from 'app/core/services/auth.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { NotificationApiService } from 'app/core/services/notification.service';
-import { SignalRService } from 'app/core/services/signalr.service';
 
 @Component({
   selector: 'app-login',
@@ -28,10 +26,7 @@ import { SignalRService } from 'app/core/services/signalr.service';
 })
 export class LoginComponent implements OnInit, OnDestroy {
 
-  // ─── UI State ─────────────────────────────────────────────────────────────
   public showPassword = false;
-
-  // ─── Forms ────────────────────────────────────────────────────────────────
   public loginForm!: FormGroup;
 
   constructor(
@@ -42,8 +37,6 @@ export class LoginComponent implements OnInit, OnDestroy {
     private renderer: Renderer2,
     private toastr: ToastrService,
     private translate: TranslateService,
-    private notificationService: NotificationApiService,
-    private signalRService: SignalRService
   ) {
     this.translate.use('en');
     document.documentElement.dir = 'ltr';
@@ -53,12 +46,9 @@ export class LoginComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.renderer.addClass(this.document.body, 'error-1');
 
-    // Unified login form:
-    // - normal users enter password
-    // - first login users enter OTP in the password box
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required]],
-      password: ['', [Validators.required]]
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
@@ -70,44 +60,17 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { username, password } = this.loginForm.value;
+    const { email, password } = this.loginForm.value;
 
-    this.authservice.login(username, password).subscribe({
-      next: (response) => {
-        // First-login / forced password change: backend returns otpSessionToken instead of JWT.
-        if (response.data?.forcePasswordChange) {
-          const token = response.data.otpSessionToken;
-          if (!token || !response.data.userId) {
-            //this.toastr.error(this.translate.instant('LOGIN.ERROR_INVALID_CREDENTIALS'));
-            return;
-          }
-
-          localStorage.setItem('otpUserId', String(response.data.userId));
-          localStorage.setItem('otpSessionToken', token);
-          localStorage.setItem('otpUsernameOrEmail', username);
-
-          this.router.navigate(['/auth/change-password-first-login']);
-          return;
-        }
-
-        const userId = response.data?.userId || 0;
-
-        this.signalRService.startConnection(userId);
-
-        /*this.notificationService.getUnread().subscribe(res => {
-          const unread = res.data || [];
-          unread.forEach(n => {
-            this.toastr.info(n.message, this.translate.instant('nav.notifications.notification'));
-          });
-        });*/
-        
-        this.router.navigate(['/customer/home']);
+    this.authservice.login(email, password).subscribe({
+      next: () => {
+        this.router.navigate(['/']);
+      },
+      error: (error) => {
+        this.toastr.error(error.message || 'Login failed');
       }
-      
     });
   }
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────
 
   toggleVisibility(): void {
     this.showPassword = !this.showPassword;

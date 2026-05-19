@@ -16,7 +16,15 @@ export class AuthEffects {
       ofType(AuthActions.login),
       mergeMap(({ userCode, password }) =>
         this.authRepository.login(userCode, password).pipe(
-          map((response) => AuthActions.loginSuccess({ user: response.data, token: response.data.token })),
+          map((response) => AuthActions.loginSuccess({
+            user: {
+              userId: response.data.user.id,
+              fullName: `${response.data.user.firstName} ${response.data.user.lastName}`,
+              email: response.data.user.email,
+              role: response.data.user.role
+            },
+            token: response.data.accessToken
+          })),
           catchError((error) => of(AuthActions.loginFailure({ error: error.message })))
         )
       )
