@@ -23,6 +23,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
             services.AddScoped<ITeamManagementService, TeamManagementService>();
             services.AddScoped<ITeamCvStorageService, TeamCvStorageService>();
+            services.AddScoped<IServiceManagementService, ServiceManagementService>();
+            services.AddScoped<ISkillManagementService, SkillManagementService>();
 
 
             return services;

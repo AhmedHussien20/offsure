@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using OffsureManagementSystem.Application.Common.Errors;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
@@ -7,6 +6,7 @@ using OffsureManagementSystem.Application.Interfaces.Services;
 using OffshoreManagementSystem.Domain.Entities;
 using OffsureManagementSystem.Domain.Entities;
 using System.Text;
+using TaskMangment.Application.Common.Responses;
 
 namespace OffsureManagementSystem.Infrastructure.Services
 {
@@ -35,13 +35,47 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _cvStorageService = cvStorageService;
         }
 
-        public async Task<IReadOnlyList<TeamMemberDto>> GetAllAsync()
+        public async Task<PagedResponse<TeamMemberDto>> GetAllAsync(TeamMemberRequest request)
         {
-            var members = await BuildBaseQuery()
-                .OrderBy(t => t.FullName)
+            var query = BuildBaseQuery();
+
+            if (request.Id.HasValue)
+                query = query.Where(t => t.Id == request.Id.Value);
+
+            if (request.UserId.HasValue)
+                query = query.Where(t => t.UserId == request.UserId.Value);
+
+            if (request.LeaderId.HasValue)
+                query = query.Where(t => t.LeaderId == request.LeaderId.Value);
+
+            if (request.IsAvailable.HasValue)
+                query = query.Where(t => t.IsAvailable == request.IsAvailable.Value);
+
+            if (request.SkillId.HasValue)
+                query = query.Where(t => t.TeamMemberSkills.Any(ts => ts.SkillId == request.SkillId.Value));
+
+            if (!string.IsNullOrWhiteSpace(request.searchKey))
+            {
+                var searchKey = Normalize(request.searchKey);
+                query = query.Where(t =>
+                    t.FullName.ToLower().Contains(searchKey)
+                    || t.Title.ToLower().Contains(searchKey)
+                    || t.PhoneNumber.ToLower().Contains(searchKey)
+                    || t.User.Email.ToLower().Contains(searchKey)
+                    || t.TeamMemberSkills.Any(ts => ts.Skill.Name.ToLower().Contains(searchKey)));
+            }
+
+            var totalCount = await query.CountAsync();
+            var members = await ApplyTeamMemberSorting(query, request)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
                 .ToListAsync();
 
-            return members.Select(MapToDto).ToList();
+            return new PagedResponse<TeamMemberDto>(
+                members.Select(MapToDto).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
         }
 
         public async Task<TeamMemberDto> GetByIdAsync(int id)
@@ -50,7 +84,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (member is null)
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             return MapToDto(member);
         }
@@ -68,14 +102,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .AnyAsync();
 
             if (emailExists)
-                throw new AppException(ErrorCodes.EmailAlreadyExists, 400);
+                throw new AppException("Email already exists.", 400);
 
             var teamMemberRole = await _roleRepo
                 .GetAll(r => r.Name == "TeamMember")
                 .FirstOrDefaultAsync();
 
             if (teamMemberRole is null)
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             var user = new User
             {
@@ -123,7 +157,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (member is null)
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             var normalizedEmail = NormalizeEmail(dto.Email);
             var emailExists = await _userRepo
@@ -131,7 +165,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .AnyAsync();
 
             if (emailExists)
-                throw new AppException(ErrorCodes.EmailAlreadyExists, 400);
+                throw new AppException("Email already exists.", 400);
 
             member.User.FirstName = dto.FirstName.Trim();
             member.User.LastName = dto.LastName.Trim();
@@ -173,14 +207,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var member = await _teamMemberRepo.GetByIDAsync(id);
             if (member is null)
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             var activeSubordinates = await _teamMemberRepo
                 .GetAll(t => t.LeaderId == id)
                 .AnyAsync();
 
             if (activeSubordinates)
-                throw new AppException(ErrorCodes.ValidationError, 400);
+                throw new AppException("Invalid request.", 400);
 
             var skillAssignments = await _teamMemberSkillRepo
                 .GetAll(s => s.TeamMemberId == id)
@@ -254,7 +288,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefaultAsync();
 
             if (assignment is null)
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             _teamMemberSkillRepo.HardDelete(assignment);
             await _teamMemberSkillRepo.SaveChangesAsync();
@@ -268,7 +302,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefaultAsync(t => t.Id == teamMemberId);
 
             if (member is null)
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             var content = BuildCvContent(member);
             var path = await _cvStorageService.SaveGeneratedCvAsync(member.Id, member.FullName, content);
@@ -287,7 +321,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await EnsureTeamMemberExistsAsync(teamMemberId);
 
             if ((content.CanSeek && content.Length == 0) || string.IsNullOrWhiteSpace(fileName))
-                throw new AppException(ErrorCodes.ValidationError, 400);
+                throw new AppException("Invalid request.", 400);
 
             var path = await _cvStorageService.SaveUploadedCvAsync(teamMemberId, fileName, content);
             await UpdateCvPathAsync(teamMemberId, path);
@@ -361,7 +395,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var member = await _teamMemberRepo.GetByIDAsync(teamMemberId);
             if (member is null)
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             member.CV = path;
             member.UpdatedAt = DateTime.UtcNow;
@@ -388,7 +422,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private async Task EnsureTeamMemberExistsAsync(int teamMemberId)
         {
             if (teamMemberId <= 0 || !await _teamMemberRepo.IsExistAsync(teamMemberId))
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
         }
 
         private async Task ValidateLeaderAsync(int? leaderId, int? teamMemberId = null)
@@ -397,10 +431,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 return;
 
             if (leaderId <= 0 || !await _teamMemberRepo.IsExistAsync(leaderId.Value))
-                throw new AppException(ErrorCodes.NotFound, 404);
+                throw new AppException("Resource not found.", 404);
 
             if (teamMemberId.HasValue && leaderId.Value == teamMemberId.Value)
-                throw new AppException(ErrorCodes.ValidationError, 400);
+                throw new AppException("Invalid request.", 400);
         }
 
         private async Task ValidateSkillAssignmentsAsync(IEnumerable<UpsertTeamMemberSkillDto> assignments)
@@ -408,10 +442,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
             foreach (var assignment in assignments)
             {
                 if (assignment.SkillId <= 0 || !await _skillRepo.IsExistAsync(assignment.SkillId))
-                    throw new AppException(ErrorCodes.NotFound, 404);
+                    throw new AppException("Resource not found.", 404);
 
                 if (assignment.ProficiencyLevel is < 1 or > 5 || assignment.YearsOfExperience < 0)
-                    throw new AppException(ErrorCodes.ValidationError, 400);
+                    throw new AppException("Invalid request.", 400);
             }
         }
 
@@ -420,7 +454,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(title)
                 || yearsOfExperience < 0)
             {
-                throw new AppException(ErrorCodes.ValidationError, 400);
+                throw new AppException("Invalid request.", 400);
             }
         }
 
@@ -435,15 +469,50 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 || string.IsNullOrWhiteSpace(email)
                 || !email.Contains('@'))
             {
-                throw new AppException(ErrorCodes.ValidationError, 400);
+                throw new AppException("Invalid request.", 400);
             }
 
             if (password is not null && password.Length < 8)
-                throw new AppException(ErrorCodes.ValidationError, 400);
+                throw new AppException("Invalid request.", 400);
         }
 
         private static string NormalizeEmail(string email)
             => email.Trim().ToLowerInvariant();
+
+        private static string Normalize(string value)
+            => value.Trim().ToLowerInvariant();
+
+        private static IQueryable<TeamMember> ApplyTeamMemberSorting(
+            IQueryable<TeamMember> query,
+            TeamMemberRequest request)
+        {
+            var isDescending = IsDescending(request.SortDirection);
+
+            return request.SortColumn.Trim().ToLowerInvariant() switch
+            {
+                "fullname" => isDescending ? query.OrderByDescending(t => t.FullName) : query.OrderBy(t => t.FullName),
+                "firstname" => isDescending ? query.OrderByDescending(t => t.User.FirstName) : query.OrderBy(t => t.User.FirstName),
+                "lastname" => isDescending ? query.OrderByDescending(t => t.User.LastName) : query.OrderBy(t => t.User.LastName),
+                "email" => isDescending ? query.OrderByDescending(t => t.User.Email) : query.OrderBy(t => t.User.Email),
+                "title" => isDescending ? query.OrderByDescending(t => t.Title) : query.OrderBy(t => t.Title),
+                "yearsofexperience" => isDescending ? query.OrderByDescending(t => t.YearsOfExperience) : query.OrderBy(t => t.YearsOfExperience),
+                "leaderid" => isDescending ? query.OrderByDescending(t => t.LeaderId) : query.OrderBy(t => t.LeaderId),
+                "isavailable" => isDescending ? query.OrderByDescending(t => t.IsAvailable) : query.OrderBy(t => t.IsAvailable),
+                _ => isDescending ? query.OrderByDescending(t => t.Id) : query.OrderBy(t => t.Id)
+            };
+        }
+
+        private static bool IsDescending(string sortDirection)
+            => !string.Equals(sortDirection, "ASC", StringComparison.OrdinalIgnoreCase);
+
+        private static int GetPageIndex(TeamMemberRequest request)
+            => request.PageIndex < 1 ? 1 : request.PageIndex;
+
+        private static int GetPageSize(TeamMemberRequest request)
+            => request.PageSize < 1 ? 20 : request.PageSize;
+
+        private static int GetSkipCount(TeamMemberRequest request)
+            => (GetPageIndex(request) - 1) * GetPageSize(request);
 
         private static string BuildFullName(string firstName, string lastName)
             => $"{firstName.Trim()} {lastName.Trim()}".Trim();

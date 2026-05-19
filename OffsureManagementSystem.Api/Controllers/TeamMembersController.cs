@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using OffsureManagementSystem.Application.Responses;
+using TaskMangment.Application.Common.Responses;
 
 namespace OffsureManagementSystem.API.Controllers
 {
@@ -19,10 +20,11 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<IReadOnlyList<TeamMemberDto>>>> GetAll()
+        public async Task<ActionResult<ApiResponse<PagedResponse<TeamMemberDto>>>> GetAll(
+            [FromQuery] TeamMemberRequest request)
         {
-            var members = await _teamManagementService.GetAllAsync();
-            return Ok(ApiResponse<IReadOnlyList<TeamMemberDto>>.Ok(members));
+            var members = await _teamManagementService.GetAllAsync(request);
+            return Ok(ApiResponse<PagedResponse<TeamMemberDto>>.Ok(members));
         }
 
         [HttpGet("{id:int}")]

@@ -1,5 +1,4 @@
 
-using OffsureManagementSystem.Application.Common.Errors;
 using OffsureManagementSystem.Application.Responses;
 using OffsureManagementSystem.Application.Common.Exceptions;
 
@@ -31,7 +30,7 @@ public class ExceptionHandlingMiddleware
         catch (AppException ex)
         {
             _logger.LogWarning(ex, "Handled application exception");
-            await WriteError(context, ex.ErrorCode, (int)ex.StatusCode);
+            await WriteError(context, ex.Message, ex.StatusCode);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -40,7 +39,7 @@ public class ExceptionHandlingMiddleware
 
             await WriteError(
                 context,
-                ErrorCodes.Unauthorized,
+                "Unauthorized.",
                 StatusCodes.Status401Unauthorized);
         }
         catch (Exception ex)
@@ -48,12 +47,12 @@ public class ExceptionHandlingMiddleware
             _logger.LogError(ex, "Unhandled exception");
             await WriteError(
                 context,
-                ErrorCodes.SaveFailed,
+                "Unexpected server error.",
                 StatusCodes.Status500InternalServerError);
         }
     }
 
-    private async Task WriteError(HttpContext context, string errorCode, int statusCode)
+    private async Task WriteError(HttpContext context, string message, int statusCode)
     {
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";
@@ -62,8 +61,8 @@ public class ExceptionHandlingMiddleware
         {
             Success = false,
             Error = true,
-            ErrorCode = errorCode,
-            Message = errorCode,
+            ErrorCode = null,
+            Message = message,
             Data = null
         };
 

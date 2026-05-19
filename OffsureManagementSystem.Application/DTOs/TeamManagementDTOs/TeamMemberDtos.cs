@@ -1,8 +1,17 @@
 using System;
 using System.Collections.Generic;
+using OffsureManagementSystem.Application.Common.Requests;
 
 namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
 {
+    public class TeamMemberRequest : BaseApiRequest
+    {
+        public int? UserId { get; set; }
+        public int? LeaderId { get; set; }
+        public bool? IsAvailable { get; set; }
+        public int? SkillId { get; set; }
+    }
+
     public class CreateTeamMemberDto
     {
         public string FirstName { get; set; } = string.Empty;

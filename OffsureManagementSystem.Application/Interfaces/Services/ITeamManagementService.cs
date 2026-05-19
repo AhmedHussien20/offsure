@@ -1,10 +1,11 @@
 using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
+using TaskMangment.Application.Common.Responses;
 
 namespace OffsureManagementSystem.Application.Interfaces.Services
 {
     public interface ITeamManagementService
     {
-        Task<IReadOnlyList<TeamMemberDto>> GetAllAsync();
+        Task<PagedResponse<TeamMemberDto>> GetAllAsync(TeamMemberRequest request);
         Task<TeamMemberDto> GetByIdAsync(int id);
         Task<TeamMemberDto> CreateAsync(CreateTeamMemberDto dto);
         Task<TeamMemberDto> UpdateAsync(int id, UpdateTeamMemberDto dto);
