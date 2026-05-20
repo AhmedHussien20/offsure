@@ -6,8 +6,7 @@ namespace OffshoreManagementSystem.Domain.Entities
     {
         public int UserId { get; set; }
         public string CompanyName { get; set; }
-        public string ContactPersonName { get; set; }
-        public string ContactPersonEmail { get; set; }
+       
         public string ContactPersonPhone { get; set; }
         public string CompanyAddress { get; set; }
         public string City { get; set; }

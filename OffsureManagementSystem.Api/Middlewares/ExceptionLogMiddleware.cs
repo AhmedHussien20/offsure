@@ -47,11 +47,7 @@ namespace OffsureManagementSystem.API.Middlewares
 
                 var firstLine = ex.StackTrace?.Split(Environment.NewLine).FirstOrDefault();
 
-                _ = _emailService.SendEmailAsync(
-                    "Unhandled Exception",
-                    $"error:{(int)statusCode} : {ex.Message}<br>At: {firstLine}"
-                );
-
+          
    
 
                 string message = "Internal Server Error";

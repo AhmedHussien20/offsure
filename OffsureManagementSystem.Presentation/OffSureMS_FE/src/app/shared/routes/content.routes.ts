@@ -5,6 +5,9 @@ export const Authen_Routes: Routes = [
     {path:'', loadChildren : () => import('../../../app/components/authentication/authentication.routes').then(r => r.authenticationRoutingModule)},
 
 ]
+export const Home_Routes: Routes = [
+    {path:'', loadChildren : () => import('../../../app/components/landingpage/landing.routes').then(r => r.landingpageRoutingModule)},
+]
 
 export const Message_Routes: Routes = [
     {path:'alert-pages', loadChildren : () => import('../../../app/components/pages/message.routes').then(r => r.messagesRoutingModule)},

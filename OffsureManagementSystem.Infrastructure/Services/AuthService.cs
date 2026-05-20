@@ -21,19 +21,22 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IJWTTokenGenerator _jwtGenerator;
         private readonly IRepository<Role> _roleRepo;
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
 
         public AuthService(
             IRepository<User> userRepo,
             IRepository<Client> clientRepo,
             IJWTTokenGenerator jwtGenerator,
             IRepository<Role> roleRepo,
-            IConfiguration config) 
+            IConfiguration config,
+            IEmailService emailService) 
         {
             _userRepo = userRepo;
             _clientRepo = clientRepo;
             _jwtGenerator = jwtGenerator;
             _config = config;
             _roleRepo = roleRepo;
+            _emailService = emailService;
         }
 
         // ── Register (Client Only) ────────────────────────────────────────────
@@ -69,12 +72,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _userRepo.AddAsync(user);
             await _userRepo.SaveChangesAsync();
 
-            var client = new Client
+        var client = new Client
             {
                 UserId = user.Id,
                 CompanyName = dto.CompanyName.Trim(),
-                ContactPersonName = dto.ContactPersonName,
-                ContactPersonEmail = dto.ContactPersonEmail,
                 ContactPersonPhone = dto.ContactPersonPhone,
                 CompanyAddress = dto.CompanyAddress,
                 City = dto.City,
@@ -88,8 +89,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             await _clientRepo.AddAsync(client);
             await _clientRepo.SaveChangesAsync();
+            var verificationLink = $"http://localhost:4200/verify-email?userId={user.Id}&token={user.EmailVerificationToken}";
 
-            // TODO: await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken);
+            var body = $@"
+                <h2>Welcome {user.FirstName}</h2>
+                <p>Please verify your email:</p>
+                <a href='{verificationLink}'>Verify Email</a>
+                <p>This link expires in 24 hours.</p>
+            ";
+
+            await SendAuthEmailAsync(user.Email,"Verify Your Email",body);
 
             return new RegisterResponseDto
             {
@@ -192,7 +201,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             await _userRepo.SaveChangesAsync();
 
-            // TODO: await _emailService.SendPasswordResetEmailAsync(user.Email, user.PasswordResetToken);
+            var resetLink = $"http://localhost:4200/reset-password?token={user.PasswordResetToken}";
+
+
+            var body = $@"
+                <h2>Password Reset Request</h2>
+                <p>You requested to reset your password.</p>
+                <a href='{resetLink}'>Reset Password</a>
+                <p>This link expires in 30 minutes.</p>
+            ";
+
+            await SendAuthEmailAsync(user.Email,"Reset Your Password",body);
         }
 
         // ── Reset Password ────────────────────────────────────────────────────
@@ -278,5 +297,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     Role = user.Role?.Name ?? user.RoleId.ToString(),
                 }
             };
+        private async Task SendAuthEmailAsync(string to, string subject, string htmlBody)
+        {
+            await _emailService.SendEmailAsync(to, subject, htmlBody);
+        }
     }
 }

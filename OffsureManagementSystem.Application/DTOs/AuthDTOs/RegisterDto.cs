@@ -13,8 +13,6 @@ namespace OffsureManagementSystem.Application.DTOs.AuthDTOs
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;
-        public string? ContactPersonName { get; set; }
-        public string? ContactPersonEmail { get; set; }
         public string? ContactPersonPhone { get; set; }
         public string? CompanyAddress { get; set; }
         public string? City { get; set; }

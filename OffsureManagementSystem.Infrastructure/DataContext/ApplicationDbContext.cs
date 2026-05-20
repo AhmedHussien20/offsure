@@ -324,14 +324,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .IsRequired()
                     .HasMaxLength(255);
 
-                entity.Property(e => e.ContactPersonName)
-                    .IsRequired()
-                    .HasMaxLength(200);
-
-                entity.Property(e => e.ContactPersonEmail)
-                    .IsRequired()
-                    .HasMaxLength(256);
-
                 entity.Property(e => e.ContactPersonPhone)
                     .HasMaxLength(20);
 

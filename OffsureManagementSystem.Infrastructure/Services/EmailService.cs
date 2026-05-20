@@ -19,21 +19,30 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _settings = settings.Value;
         }
 
-        public async Task SendEmailAsync(string subject, string body)
+        public async Task SendEmailAsync(string to, string subject, string body)
         {
-            using var client = new SmtpClient(_settings.Host, _settings.Port)
+            try
             {
-                EnableSsl = _settings.EnableSSL,
-                Credentials = new NetworkCredential(_settings.From, _settings.Password)
-            };
+                using var client = new SmtpClient(_settings.Host, _settings.Port)
+                {
+                    EnableSsl = _settings.EnableSSL,
+                    Credentials = new NetworkCredential(_settings.From, _settings.Password)
+                };
 
-            var mail = new MailMessage(_settings.From, _settings.To, subject, body)
+                var mail = new MailMessage(_settings.From, to, subject, body)
+                {
+                    IsBodyHtml = true
+                };
+
+                await client.SendMailAsync(mail);
+            }
+            catch (Exception ex)
             {
-                IsBodyHtml = true
-            };
-
-            await client.SendMailAsync(mail);
+                // Log the exception (you can use a logging framework here)
+                Console.WriteLine($"Failed to send email: {ex.Message}");
+                throw; // Re-throw the exception after logging
+            }
         }
     }
 
-    }
+}

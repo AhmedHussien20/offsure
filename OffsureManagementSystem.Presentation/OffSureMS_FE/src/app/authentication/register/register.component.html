@@ -1,0 +1,239 @@
+<!-- register.component.html -->
+<div class="auth-container">
+  <div class="auth-card wide">
+
+    <!-- LEFT SECTION -->
+    <div class="auth-brand-section">
+      <div class="brand-content">
+        <div class="brand-logo mb-4">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <h1 class="brand-title">Join Us Today</h1>
+        <p class="brand-subtitle">
+          Create your account and start managing offshore operations
+        </p>
+        <div class="brand-features mt-5">
+          <div class="feature-item">
+            <i class="fe fe-check-circle"></i>
+            <span>Secure Platform</span>
+          </div>
+          <div class="feature-item">
+            <i class="fe fe-check-circle"></i>
+            <span>24/7 Support</span>
+          </div>
+          <div class="feature-item">
+            <i class="fe fe-check-circle"></i>
+            <span>Easy Integration</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SECTION -->
+    <div class="auth-form-section">
+      <div class="form-container wide-form">
+
+        <div class="form-header mb-4">
+          <h2 class="form-title">Create Account</h2>
+          <p class="form-subtitle">Fill all required information below</p>
+        </div>
+
+        <form [formGroup]="registerForm" (ngSubmit)="submit()">
+
+          <!-- SECTION 1: Personal Information -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fe fe-user"></i>
+              Personal Information
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">First Name <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <i class="fe fe-user"></i>
+                  <input type="text" formControlName="firstName" class="form-control" 
+                         [class.is-invalid]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">
+                </div>
+                <div class="invalid-feedback" *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched">
+                  First name is required
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Last Name <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <i class="fe fe-user"></i>
+                  <input type="text" formControlName="lastName" class="form-control"
+                         [class.is-invalid]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
+                </div>
+                <div class="invalid-feedback" *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched">
+                  Last name is required
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <i class="fe fe-mail"></i>
+                  <input type="email" formControlName="email" class="form-control"
+                         [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+                </div>
+                <div class="invalid-feedback" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+                  Valid email is required
+                </div>
+              </div>
+
+              <div class="form-group">
+              <label class="form-label">Contact Phone</label>
+              <div class="input-wrapper">
+                <i class="fe fe-phone"></i>
+                <input type="tel" formControlName="contactPersonPhone" class="form-control" placeholder="+1 234 567 8900">
+              </div>
+            </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Company Information -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fe fe-briefcase"></i>
+              Company Information
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Company Name <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <i class="fe fe-building"></i>
+                  <input type="text" formControlName="companyName" class="form-control"
+                         [class.is-invalid]="registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched">
+                </div>
+                <div class="invalid-feedback">Company name is required</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Website</label>
+                <div class="input-wrapper">
+                  <i class="fe fe-globe"></i>
+                  <input type="url" formControlName="website" class="form-control" placeholder="https://example.com">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group mb-2">
+              <label class="form-label">Company Address</label>
+              <div class="input-wrapper">
+                <i class="fe fe-map-pin"></i>
+                <input type="text" formControlName="companyAddress" class="form-control" placeholder="Street address">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">City</label>
+                <div class="input-wrapper">
+                  <i class="fe fe-map"></i>
+                  <input type="text" formControlName="city" class="form-control">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Country</label>
+                <div class="input-wrapper">
+                  <i class="fe fe-flag"></i>
+                  <input type="text" formControlName="country" class="form-control">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Postal Code</label>
+                <div class="input-wrapper">
+                  <i class="fe fe-mail"></i>
+                  <input type="text" formControlName="postalCode" class="form-control">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Company Description</label>
+                <div class="input-wrapper">
+                  <i class="fe fe-file-text"></i>
+                  <textarea formControlName="description" class="form-control" rows="2" 
+                            placeholder="Brief description of your company"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+         
+          <!-- SECTION 3: Security -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fe fe-lock"></i>
+              Security
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Password <span class="required">*</span></label>
+                <div class="input-wrapper password-wrapper">
+                  <i class="fe fe-lock"></i>
+                  <input [type]="showPassword ? 'text' : 'password'"
+                         formControlName="password"
+                         class="form-control"
+                         [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+                  <button type="button"
+                          class="toggle-password"
+                          (click)="togglePasswordVisibility()">
+                    <i class="fe" [class.fe-eye]="!showPassword" [class.fe-eye-off]="showPassword"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+                  Password must be at least 8 characters
+                </div>
+                <small class="form-text text-muted">Minimum 8 characters</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Confirm Password <span class="required">*</span></label>
+                <div class="input-wrapper password-wrapper">
+                  <i class="fe fe-lock"></i>
+                  <input [type]="showConfirmPassword ? 'text' : 'password'"
+                         formControlName="confirmedPassword"
+                         class="form-control"
+                         [class.is-invalid]="registerForm.hasError('passwordMismatch') && registerForm.get('confirmedPassword')?.touched">
+                  <button type="button"
+                          class="toggle-password"
+                          (click)="toggleConfirmPasswordVisibility()">
+                    <i class="fe" [class.fe-eye]="!showConfirmPassword" [class.fe-eye-off]="showConfirmPassword"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback" *ngIf="registerForm.hasError('passwordMismatch') && registerForm.get('confirmedPassword')?.touched">
+                  Passwords do not match
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBMIT BUTTON -->
+          <button class="btn-auth" type="submit" [disabled]="registerForm.invalid || isLoading">
+            <span *ngIf="!isLoading">Create Account</span>
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+            <span *ngIf="isLoading">Creating...</span>
+          </button>
+
+          <p class="login-link mt-4 text-center">
+            Already have an account? <a routerLink="/auth/login">Sign In</a>
+          </p>
+
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>

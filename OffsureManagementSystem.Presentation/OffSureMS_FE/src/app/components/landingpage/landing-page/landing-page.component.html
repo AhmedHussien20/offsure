@@ -39,10 +39,10 @@
                 <div class="header-element align-items-center">
                     <!-- Start::header-link|switcher-icon -->
                     <div class="btn-list d-lg-none d-block">
-                        <a routerLink="/custom/sign-up" class="btn btn-primary-light">
+                        <a routerLink="/auth/register" class="btn btn-primary-light">
                             New User
                         </a>
-                        <a routerLink="/custom/sign-in" class="btn btn-primary-light">
+                        <a routerLink="/auth/login" class="btn btn-primary-light">
                             Login
                         </a>
                     </div>
@@ -90,7 +90,8 @@
                         <!-- End::slide -->
                         <!-- Start::slide -->
                         <li class="slide">
-                            <a value="features" href="javascript:void(0)" (click)="scroll(features)" class="side-menu__item">
+                            <a value="features" href="javascript:void(0)" (click)="scroll(features)"
+                                class="side-menu__item">
                                 <span class="side-menu__label">Features</span>
                             </a>
                         </li>
@@ -104,7 +105,8 @@
                         <!-- End::slide -->
                         <!-- Start::slide -->
                         <li class="slide">
-                            <a value="highlights" href="javascript:void(0)" class="side-menu__item" (click)="scroll(highlights)">
+                            <a value="highlights" href="javascript:void(0)" class="side-menu__item"
+                                (click)="scroll(highlights)">
                                 <span class="side-menu__label">Highlights</span>
                             </a>
                         </li>
@@ -118,14 +120,16 @@
                         <!-- End::slide -->
                         <!-- Start::slide -->
                         <li class="slide">
-                            <a value="Clients" href="javascript:void(0)" class="side-menu__item" (click)="scroll(Clients)">
+                            <a value="Clients" href="javascript:void(0)" class="side-menu__item"
+                                (click)="scroll(Clients)">
                                 <span class="side-menu__label">Clients</span>
                             </a>
                         </li>
                         <!-- End::slide -->
                         <!-- Start::slide -->
                         <li class="slide">
-                            <a value="contact" href="javascript:void(0)" class="side-menu__item" (click)="scroll(contact)">
+                            <a value="contact" href="javascript:void(0)" class="side-menu__item"
+                                (click)="scroll(contact)">
                                 <span class="side-menu__label">Contact</span>
                             </a>
                         </li>
@@ -138,10 +142,11 @@
                         </svg></div>
                     <div class="d-lg-flex d-none">
                         <div class="btn-list d-lg-flex d-none mt-lg-2 mt-xl-0 mt-0">
-                            <a routerLink="/custom/sign-up" class="btn btn-wave btn-secondary">
+                            <a routerLink="/auth/register" class="btn"
+                                style="background:#fff; color:#000; border:1px solid #ddd;">
                                 New User
                             </a>
-                            <a routerLink="/custom/sign-in" class="btn btn-wave btn-info">
+                            <a routerLink="/auth/login" class="btn btn-wave btn-info">
                                 Login
                             </a>
                         </div>
@@ -172,16 +177,7 @@
                                 well-structured dashboard,
                                 you need to start from scratch with Angular, SCSS, CSS, and TS and with lots of coding,
                                 but by using this Spruha-Admin template.</h6>
-                            <div class="btn-list">
-                                <a href="https://themeforest.net/item/spruha-angular-admin-dashboard-template/30939314?s_rank=9"
-                                    target="_blank" class="btn btn-sm btn-w-sm mb-3 me-2 btn-light"><i
-                                        class="fe fe-play me-2 align-top"></i>Get Started
-                                </a>
-                                <a href="https://themeforest.net/user/spruko/portfolio"
-                                    class="btn btn-sm btn-w-sm btn-outline-light mb-3 me-2 text-white"
-                                    target="_blank"><i class="fe fe-eye me-2 align-top"></i>Discover More
-                                </a>
-                            </div>
+
                         </div>
                         <div class="col-xl-6 col-lg-6 my-auto">
                             <img src="./assets/landing/images/4.png" alt="">
@@ -2132,17 +2128,16 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                         </div>
                                     </ng-template>
                                 </li>
-                                <li [ngbNavItem]="2"><a ngbNavLink class="annualy" data-bs-toggle="tab"
-                                       >Annual</a>
+                                <li [ngbNavItem]="2"><a ngbNavLink class="annualy" data-bs-toggle="tab">Annual</a>
                                     <ng-template ngbNavContent>
                                         <!-- <div class="tab-pane pb-0" id="annualyear"> -->
-                                            <div class="row d-flex align-items-center justify-content-center">
-                                                @for(plan of pricingPlans1;track $index){
-                                                <div class="col-lg-4 col-xl-4 col-md-8 col-sm-12">
-                                                    <spk-landing-pricing [plan]="plan"></spk-landing-pricing>
-                                                </div>
-                                                }
+                                        <div class="row d-flex align-items-center justify-content-center">
+                                            @for(plan of pricingPlans1;track $index){
+                                            <div class="col-lg-4 col-xl-4 col-md-8 col-sm-12">
+                                                <spk-landing-pricing [plan]="plan"></spk-landing-pricing>
                                             </div>
+                                            }
+                                        </div>
                                         <!-- </div> -->
                                     </ng-template>
                                 </li>
@@ -2200,52 +2195,52 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                     <div class="swiper pagination-dynamic text-start">
                         <div class="swiper-wrapper">
                             <swiper-container #swiperContainer1 class="swiper mySwiper" space-between="10"
-                            slides-per-view="3" slides-per-group="1" autoplay-delay="2000" pagination="true" pagination-clickable="true"
-                            autoplay-disable-on-interaction="false">
-                            @for (slide of slidesStore; track $index) {
-                            <swiper-slide>
-                                <div class="swiper-slide">
-                                    <div class="card custom-card testimonial-card">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <span class="avatar avatar-md avatar-rounded me-3">
-                                                    <img src={{slide.img}} alt="">
-                                                </span>
-                                                <div>
-                                                    <p class="mb-0 fw-medium fs-14">{{slide.name}}</p>
-                                                    <p class="mb-0 fs-10 fw-medium text-muted">
-                                                        {{slide.role}}</p>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <span class="text-muted">- Lorem ipsum dolor sit amet
-                                                    consectetur adipisicing elit. Earum autem quaerat
-                                                    distinctio --</span>
-                                            </div>
-                                            <div class="d-flex align-items-center justify-content-between">
-                                                <div class="d-flex align-items-center">
-                                                    <span class="text-muted">Rating : </span>
-                                                    <span class="text-warning d-block ms-1">
-                                                        <i class="ri-star-fill me-1"></i>
-                                                        <i class="ri-star-fill me-1"></i>
-                                                        <i class="ri-star-fill me-1"></i>
-                                                        <i class="ri-star-fill me-1"></i>
-                                                        <i class="ri-star-half-fill me-1"></i>
+                                slides-per-view="3" slides-per-group="1" autoplay-delay="2000" pagination="true"
+                                pagination-clickable="true" autoplay-disable-on-interaction="false">
+                                @for (slide of slidesStore; track $index) {
+                                <swiper-slide>
+                                    <div class="swiper-slide">
+                                        <div class="card custom-card testimonial-card">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <span class="avatar avatar-md avatar-rounded me-3">
+                                                        <img src={{slide.img}} alt="">
                                                     </span>
+                                                    <div>
+                                                        <p class="mb-0 fw-medium fs-14">{{slide.name}}</p>
+                                                        <p class="mb-0 fs-10 fw-medium text-muted">
+                                                            {{slide.role}}</p>
+                                                    </div>
                                                 </div>
-                                                <div class="float-end fs-12 fw-medium text-muted text-end">
-                                                    <span>{{slide.days}} ago</span>
-                                                    <span
-                                                        class="d-block fw-normal fs-12 text-success"><i>{{slide.name}}</i></span>
+                                                <div class="mb-3">
+                                                    <span class="text-muted">- Lorem ipsum dolor sit amet
+                                                        consectetur adipisicing elit. Earum autem quaerat
+                                                        distinctio --</span>
+                                                </div>
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="text-muted">Rating : </span>
+                                                        <span class="text-warning d-block ms-1">
+                                                            <i class="ri-star-fill me-1"></i>
+                                                            <i class="ri-star-fill me-1"></i>
+                                                            <i class="ri-star-fill me-1"></i>
+                                                            <i class="ri-star-fill me-1"></i>
+                                                            <i class="ri-star-half-fill me-1"></i>
+                                                        </span>
+                                                    </div>
+                                                    <div class="float-end fs-12 fw-medium text-muted text-end">
+                                                        <span>{{slide.days}} ago</span>
+                                                        <span
+                                                            class="d-block fw-normal fs-12 text-success"><i>{{slide.name}}</i></span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    </div>
-                                    </swiper-slide>
+                                </swiper-slide>
                                 }
-                                </swiper-container>
-                         
+                            </swiper-container>
+
                         </div>
                     </div>
 
@@ -2486,4 +2481,5 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
     <!-- End:: Section-11 -->
 </div>
 <div class="scrollToTop" (click)="taptotop()" [ngStyle]="{'display': show? 'flex' : 'none' }">
-    <span class="arrow"><i class="ri-arrow-up-s-fill fs-20"></i></span> </div>
+    <span class="arrow"><i class="ri-arrow-up-s-fill fs-20"></i></span>
+</div>
