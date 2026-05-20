@@ -21,11 +21,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
+            services.AddScoped<IEmailNotificationService, EmailNotificationService>();
             services.AddScoped<ITeamManagementService, TeamManagementService>();
             services.AddScoped<ITeamCvStorageService, TeamCvStorageService>();
             services.AddScoped<IServiceManagementService, ServiceManagementService>();
             services.AddScoped<IServiceRequestManagementService, ServiceRequestManagementService>();
             services.AddScoped<IProjectManagementService, ProjectManagementService>();
+            services.AddScoped<IClientManagementService, ClientManagementService>();
+            services.AddScoped<IPortfolioManagementService, PortfolioManagementService>();
             services.AddScoped<ISkillManagementService, SkillManagementService>();
 
 

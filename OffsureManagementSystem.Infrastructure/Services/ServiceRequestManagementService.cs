@@ -8,7 +8,6 @@ using TaskMangment.Application.Common.Responses;
 using DomainService = OffshoreManagementSystem.Domain.Entities.Service;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
 using Client = OffshoreManagementSystem.Domain.Entities.Client;
-using User = OffshoreManagementSystem.Domain.Entities.User;
 
 namespace OffsureManagementSystem.Infrastructure.Services
 {
@@ -17,21 +16,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
         private readonly IRepository<Client> _clientRepo;
         private readonly IRepository<DomainService> _serviceRepo;
-        private readonly IRepository<User> _userRepo;
-        private readonly IEmailService _emailService;
+        private readonly IEmailNotificationService _emailNotificationService;
 
         public ServiceRequestManagementService(
             IRepository<ServiceRequest> serviceRequestRepo,
             IRepository<Client> clientRepo,
             IRepository<DomainService> serviceRepo,
-            IRepository<User> userRepo,
-            IEmailService emailService)
+            IEmailNotificationService emailNotificationService)
         {
             _serviceRequestRepo = serviceRequestRepo;
             _clientRepo = clientRepo;
             _serviceRepo = serviceRepo;
-            _userRepo = userRepo;
-            _emailService = emailService;
+            _emailNotificationService = emailNotificationService;
         }
 
         public async Task<PagedResponse<ServiceRequestDto>> GetAllRequestsAsync(ServiceRequestFilterRequest request)
@@ -101,7 +97,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _serviceRequestRepo.SaveChangesAsync();
 
             var createdRequest = await GetRequestByIdAsync(request.Id);
-            await SendAdminNotificationAsync(createdRequest);
+            await _emailNotificationService.NotifyAdminNewRequestAsync(createdRequest);
 
             return createdRequest;
         }
@@ -124,7 +120,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _serviceRequestRepo.SaveChangesAsync();
 
             var updatedRequest = await GetRequestByIdAsync(id);
-            await SendNotificationAsync(updatedRequest);
+            if (status == ServiceRequestStatus.InProgress)
+                await _emailNotificationService.SendRequestConfirmationAsync(updatedRequest);
+            else
+                await _emailNotificationService.SendStatusUpdateAsync(updatedRequest);
 
             return updatedRequest;
         }
@@ -151,51 +150,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
             }
 
             var cancelledRequest = await GetRequestByIdAsync(id);
-            await SendNotificationAsync(cancelledRequest);
+            await _emailNotificationService.SendStatusUpdateAsync(cancelledRequest);
 
             return cancelledRequest;
         }
 
         public async Task SendNotificationAsync(ServiceRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.ClientEmail))
-                return;
-
-            var subject = $"Service request status updated: {request.Title}";
-            var body = $@"
-                <p>Hello {request.ClientName},</p>
-                <p>Your service request <strong>{request.Title}</strong> is now <strong>{request.Status}</strong>.</p>
-                <p>Service: {request.ServiceName}</p>";
-
-            await _emailService.SendEmailAsync(request.ClientEmail, subject, body);
-        }
-
-        private async Task SendAdminNotificationAsync(ServiceRequestDto request)
-        {
-            var adminEmails = await _userRepo
-                .Query()
-                .Include(u => u.Role)
-                .Where(u =>
-                    u.IsActive
-                    && u.Role.IsActive
-                    && u.Role.Name == "Administrator"
-                    && !string.IsNullOrWhiteSpace(u.Email))
-                .Select(u => u.Email)
-                .Distinct()
-                .ToListAsync();
-
-            var subject = $"New service request: {request.Title}";
-            var body = $@"
-                <p>A new service request was submitted.</p>
-                <p><strong>Client:</strong> {request.ClientName}</p>
-                <p><strong>Service:</strong> {request.ServiceName}</p>
-                <p><strong>Title:</strong> {request.Title}</p>
-                <p><strong>Status:</strong> {request.Status}</p>";
-
-            foreach (var adminEmail in adminEmails)
-            {
-                await _emailService.SendEmailAsync(adminEmail, subject, body);
-            }
+            await _emailNotificationService.SendStatusUpdateAsync(request);
         }
 
         private IQueryable<ServiceRequest> BuildRequestQuery()

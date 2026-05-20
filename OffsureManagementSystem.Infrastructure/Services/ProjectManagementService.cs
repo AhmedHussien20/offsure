@@ -18,17 +18,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
         private readonly IRepository<TeamMember> _teamMemberRepo;
+        private readonly IEmailNotificationService _emailNotificationService;
 
         public ProjectManagementService(
             IRepository<Project> projectRepo,
             IRepository<ProjectAssignment> projectAssignmentRepo,
             IRepository<ServiceRequest> serviceRequestRepo,
-            IRepository<TeamMember> teamMemberRepo)
+            IRepository<TeamMember> teamMemberRepo,
+            IEmailNotificationService emailNotificationService)
         {
             _projectRepo = projectRepo;
             _projectAssignmentRepo = projectAssignmentRepo;
             _serviceRequestRepo = serviceRequestRepo;
             _teamMemberRepo = teamMemberRepo;
+            _emailNotificationService = emailNotificationService;
         }
 
         public async Task<PagedResponse<ProjectDto>> GetAllProjectsAsync(ProjectFilterRequest request)
@@ -193,6 +196,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(project.UpdatedAt));
             await _projectRepo.SaveChangesAsync();
 
+            if (status == ProjectStatus.Completed)
+                await SendProjectCompletionNotificationAsync(projectId);
+
             return await GetProjectByIdAsync(projectId);
         }
 
@@ -202,6 +208,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Query()
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Client)
+                        .ThenInclude(c => c.User)
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Service)
                 .Include(p => p.ProjectAssignments)
@@ -270,6 +277,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             if (projectId <= 0 || !await _projectRepo.IsExistAsync(projectId))
                 throw new AppException("Resource not found.", 404);
+        }
+
+        private async Task SendProjectCompletionNotificationAsync(int projectId)
+        {
+            var project = await BuildProjectQuery()
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project?.ServiceRequest?.Client is null)
+                return;
+
+            await _emailNotificationService.SendProjectCompletionAsync(
+                project.ServiceRequest.Client.User?.Email ?? string.Empty,
+                project.ServiceRequest.Client.CompanyName,
+                project.Name);
         }
 
         private async Task EnsureTeamMemberExistsAsync(int teamMemberId)
