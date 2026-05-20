@@ -1,0 +1,63 @@
+// --- Skill Category ---
+
+export interface SkillCategoryRequest {
+  isActive?: boolean;
+  pageIndex?: number;
+  pageSize?: number;
+}
+
+export interface CreateSkillCategoryDto {
+  name: string;
+  description?: string;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateSkillCategoryDto {
+  name: string;
+  description?: string;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface SkillCategoryDto {
+  id: number;
+  name: string;
+  description: string;
+  displayOrder: number;
+  isActive: boolean;
+  skillsCount: number;
+}
+
+// --- Skill ---
+
+export interface SkillRequest {
+  skillCategoryId?: number;
+  isActive?: boolean;
+  pageIndex?: number;
+  pageSize?: number;
+}
+
+export interface CreateSkillDto {
+  name: string;
+  description?: string;
+  skillCategoryId: number;
+  isActive?: boolean;
+}
+
+export interface UpdateSkillDto {
+  name: string;
+  description?: string;
+  skillCategoryId: number;
+  isActive?: boolean;
+}
+
+export interface SkillDto {
+  id: number;
+  name: string;
+  description: string;
+  skillCategoryId: number;
+  skillCategoryName: string;
+  isActive: boolean;
+  assignedTeamMembersCount: number;
+}
