@@ -12,6 +12,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task DeleteServiceCategoryAsync(int id);
 
         Task<PagedResponse<ServiceDto>> GetServicesAsync(ServiceFilterRequest request);
+        Task<PagedResponse<ServiceDto>> GetPublicServicesAsync(PublicServiceFilterRequest request);
         Task<ServiceDto> GetServiceByIdAsync(int id);
         Task<ServiceDto> CreateServiceAsync(CreateServiceDto dto);
         Task<ServiceDto> UpdateServiceAsync(int id, UpdateServiceDto dto);

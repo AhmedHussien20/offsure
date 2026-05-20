@@ -27,6 +27,15 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<PagedResponse<ServiceDto>>.Ok(services));
         }
 
+        [HttpGet("public")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ServiceDto>>>> GetPublicServices(
+            [FromQuery] PublicServiceFilterRequest request)
+        {
+            var services = await _serviceManagementService.GetPublicServicesAsync(request);
+            return Ok(ApiResponse<PagedResponse<ServiceDto>>.Ok(services));
+        }
+
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ApiResponse<ServiceDto>>> GetById(int id)
         {

@@ -19,6 +19,5 @@ namespace OffshoreManagementSystem.Domain.Entities
         public virtual Client Client { get; set; }
         public virtual Service Service { get; set; }
         public virtual Project Project { get; set; }
-        public virtual ICollection<ServiceRequestTeam> ServiceRequestTeams { get; set; } = new List<ServiceRequestTeam>();
     }
 }

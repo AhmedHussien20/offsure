@@ -177,6 +177,39 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 GetPageSize(request));
         }
 
+        public async Task<PagedResponse<ServiceDto>> GetPublicServicesAsync(PublicServiceFilterRequest request)
+        {
+            var query = BuildServiceQuery()
+                .Where(s => s.IsVisible && s.ServiceCategory.IsActive);
+
+            if (request.Id.HasValue)
+                query = query.Where(s => s.Id == request.Id.Value);
+
+            if (request.ServiceCategoryId.HasValue)
+                query = query.Where(s => s.ServiceCategoryId == request.ServiceCategoryId.Value);
+
+            if (!string.IsNullOrWhiteSpace(request.searchKey))
+            {
+                var searchKey = Normalize(request.searchKey);
+                query = query.Where(s =>
+                    s.Name.ToLower().Contains(searchKey)
+                    || s.Description.ToLower().Contains(searchKey)
+                    || s.ServiceCategory.Name.ToLower().Contains(searchKey));
+            }
+
+            var totalCount = await query.CountAsync();
+            var services = await ApplyPublicServiceSorting(query, request)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            return new PagedResponse<ServiceDto>(
+                services.Select(MapService).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
+        }
+
         public async Task<ServiceDto> GetServiceByIdAsync(int id)
         {
             var service = await BuildServiceQuery()
@@ -360,6 +393,24 @@ namespace OffsureManagementSystem.Infrastructure.Services
             };
         }
 
+        private static IQueryable<DomainService> ApplyPublicServiceSorting(
+            IQueryable<DomainService> query,
+            PublicServiceFilterRequest request)
+        {
+            var isDescending = IsDescending(request.SortDirection);
+
+            return request.SortColumn.Trim().ToLowerInvariant() switch
+            {
+                "name" => isDescending ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
+                "servicecategoryid" => isDescending ? query.OrderByDescending(s => s.ServiceCategoryId) : query.OrderBy(s => s.ServiceCategoryId),
+                "servicecategoryname" => isDescending ? query.OrderByDescending(s => s.ServiceCategory.Name) : query.OrderBy(s => s.ServiceCategory.Name),
+                "displayorder" => isDescending
+                    ? query.OrderByDescending(s => s.ServiceCategory.DisplayOrder).ThenByDescending(s => s.Name)
+                    : query.OrderBy(s => s.ServiceCategory.DisplayOrder).ThenBy(s => s.Name),
+                _ => query.OrderBy(s => s.ServiceCategory.DisplayOrder).ThenBy(s => s.Name)
+            };
+        }
+
         private static bool IsDescending(string sortDirection)
             => !string.Equals(sortDirection, "ASC", StringComparison.OrdinalIgnoreCase);
 
@@ -369,16 +420,25 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static int GetPageIndex(ServiceFilterRequest request)
             => request.PageIndex < 1 ? 1 : request.PageIndex;
 
+        private static int GetPageIndex(PublicServiceFilterRequest request)
+            => request.PageIndex < 1 ? 1 : request.PageIndex;
+
         private static int GetPageSize(ServiceCategoryRequest request)
             => request.PageSize < 1 ? 20 : request.PageSize;
 
         private static int GetPageSize(ServiceFilterRequest request)
             => request.PageSize < 1 ? 20 : request.PageSize;
 
+        private static int GetPageSize(PublicServiceFilterRequest request)
+            => request.PageSize < 1 ? 20 : request.PageSize;
+
         private static int GetSkipCount(ServiceCategoryRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
         private static int GetSkipCount(ServiceFilterRequest request)
+            => (GetPageIndex(request) - 1) * GetPageSize(request);
+
+        private static int GetSkipCount(PublicServiceFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
         private static ServiceCategoryDto MapCategory(ServiceCategory category)

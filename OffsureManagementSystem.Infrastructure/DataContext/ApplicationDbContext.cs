@@ -21,7 +21,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<Client> Clients { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<ServiceRequest> ServiceRequests { get; set; }
-        public DbSet<ServiceRequestTeam> ServiceRequestTeams { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
         public DbSet<PortfolioProject> PortfolioProjects { get; set; }
@@ -182,11 +181,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey(e => e.LeaderId)
                     .OnDelete(DeleteBehavior.Restrict)
                     .IsRequired(false);
-
-                entity.HasMany(e => e.ServiceRequestTeams)
-                    .WithOne(s => s.TeamMember)
-                    .HasForeignKey(s => s.TeamMemberId)
-                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasMany(e => e.ProjectAssignments)
                     .WithOne(p => p.TeamMember)
@@ -429,40 +423,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey(e => e.ServiceId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasMany(e => e.ServiceRequestTeams)
-                    .WithOne(s => s.ServiceRequest)
-                    .HasForeignKey(s => s.ServiceRequestId)
-                    .OnDelete(DeleteBehavior.Cascade);
+               
             });
-
-            // SERVICE REQUEST TEAM ENTITY CONFIGURATION
-            modelBuilder.Entity<ServiceRequestTeam>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.Property(e => e.Role)
-                    .HasMaxLength(100);
-
-                entity.Property(e => e.AssignedDate)
-                    .IsRequired();
-
-                entity.Property(e => e.HourlyRate)
-                    .HasPrecision(18, 2);
-
-                entity.HasOne(e => e.ServiceRequest)
-                    .WithMany(s => s.ServiceRequestTeams)
-                    .HasForeignKey(e => e.ServiceRequestId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(e => e.TeamMember)
-                    .WithMany(t => t.ServiceRequestTeams)
-                    .HasForeignKey(e => e.TeamMemberId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                // Composite index to prevent duplicate assignments
-                entity.HasIndex(e => new { e.ServiceRequestId, e.TeamMemberId })
-                    .IsUnique();
-            });
+           
 
             // PROJECT ENTITY CONFIGURATION
             modelBuilder.Entity<Project>(entity =>

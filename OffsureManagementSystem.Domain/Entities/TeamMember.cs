@@ -18,7 +18,6 @@ namespace OffshoreManagementSystem.Domain.Entities
         public virtual TeamMember Leader { get; set; } // Self-referencing for hierarchy
         public virtual ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>(); // Subordinates
         public virtual ICollection<TeamMemberSkill> TeamMemberSkills { get; set; } = new List<TeamMemberSkill>();
-        public virtual ICollection<ServiceRequestTeam> ServiceRequestTeams { get; set; } = new List<ServiceRequestTeam>();
         public virtual ICollection<ProjectAssignment> ProjectAssignments { get; set; } = new List<ProjectAssignment>();
     }
 }

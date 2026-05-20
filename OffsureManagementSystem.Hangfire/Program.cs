@@ -35,12 +35,12 @@ app.UseHangfireDashboard("/hangfire");
 using (var scope = app.Services.CreateScope())
 {
     var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-    recurringJobManager.AddOrUpdate(
-        "send-daily-report",
-        Job.FromExpression<IEmailService>(x =>
-            x.SendEmailAsync("Daily Report", "Hello from Hangfire Worker!")),
-        Cron.Minutely()
-    );
+    //recurringJobManager.AddOrUpdate(
+    //    "send-daily-report",
+    //    Job.FromExpression<IEmailService>(x =>
+    //        x.SendEmailAsync("Daily Report", "Hello from Hangfire Worker!")),
+    //    Cron.Minutely()
+    //);
 }
 
 app.Run();
