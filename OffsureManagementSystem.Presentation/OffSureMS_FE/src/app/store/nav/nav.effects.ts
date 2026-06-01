@@ -13,6 +13,91 @@ export class NavEffects {
   initializeMenu$: any;
   updateTranslations$: any;
 
+private ADMIN_MENUITEMS: MenuItem[] = [
+  { headTitle: 'Admin Portal' },
+  {
+    title: 'Dashboard',
+    path: '/admin/dashboard',
+    type: 'link',
+    icon: 'ti-home',
+    requiredRole: 'Administrator',
+  },
+  {
+    title: 'Requests',
+    path: '/admin/requests',
+    type: 'link',
+    icon: 'ti-clipboard',
+    requiredRole: 'Administrator',
+  },
+  {
+    title: 'Projects',
+    path: '/admin/projects',
+    type: 'link',
+    icon: 'ti-folder',
+    requiredRole: 'Administrator',
+  },
+  {
+    title: 'Team',
+    path: '/admin/team',
+    type: 'link',
+    icon: 'ti-user',
+    requiredRole: 'Administrator',
+  },
+  {
+    title: 'Services',
+    path: '/admin/services',
+    type: 'link',
+    icon: 'ti-settings',
+    requiredRole: 'Administrator',
+  },
+  {
+    title: 'Portfolio',
+    path: '/admin/portfolio',
+    type: 'link',
+    icon: 'ti-image',
+    requiredRole: 'Administrator',
+  },
+  {
+    title: 'Clients',
+    path: '/admin/clients',
+    type: 'link',
+    icon: 'ti-briefcase',
+    requiredRole: 'Administrator',
+  },
+];
+
+private CLIENT_MENUITEMS: MenuItem[] = [
+  { headTitle: 'Client Portal' },
+  {
+    title: 'Dashboard',
+    path: '/client/dashboard',
+    type: 'link',
+    icon: 'ti-home',
+    requiredRole: 'Client',
+  },
+  {
+    title: 'My Requests',
+    path: '/client/requests',
+    type: 'link',
+    icon: 'ti-clipboard',
+    requiredRole: 'Client',
+  },
+  {
+    title: 'My Projects',
+    path: '/client/projects',
+    type: 'link',
+    icon: 'ti-folder',
+    requiredRole: 'Client',
+  },
+  {
+    title: 'Company Profile',
+    path: '/client/profile',
+    type: 'link',
+    icon: 'ti-user',
+    requiredRole: 'Client',
+  },
+];
+
 private MENUITEMS: MenuItem[] = [
 
   // ================= Dashboard =================
@@ -222,7 +307,7 @@ private MENUITEMS: MenuItem[] = [
       this.actions$.pipe(
         ofType(NavActions.initializeMenu),
         switchMap(() => {
-          const menuCopy = JSON.parse(JSON.stringify(this.MENUITEMS));
+          const menuCopy = JSON.parse(JSON.stringify(this.getMenuItemsForCurrentUser()));
           const filteredMenu = this.filterMenuByAccess(menuCopy);
 
           return forkJoin(
@@ -238,7 +323,7 @@ private MENUITEMS: MenuItem[] = [
       this.actions$.pipe(
         ofType(NavActions.updateMenuTranslations),
         switchMap(() => {
-          const menuCopy = JSON.parse(JSON.stringify(this.MENUITEMS));
+          const menuCopy = JSON.parse(JSON.stringify(this.getMenuItemsForCurrentUser()));
           const filteredMenu = this.filterMenuByAccess(menuCopy);
           return forkJoin(
             filteredMenu.map(item => this.translateMenuItem(item))
@@ -268,17 +353,35 @@ private MENUITEMS: MenuItem[] = [
       );
   }
 
+  private getMenuItemsForCurrentUser(): MenuItem[] {
+    if (this.auth.isClient()) {
+      return this.CLIENT_MENUITEMS;
+    }
+    if (this.auth.isAdministrator()) {
+      return this.ADMIN_MENUITEMS;
+    }
+    return this.MENUITEMS;
+  }
+
   private canShow(item: MenuItem): boolean {
-    const user = this.auth.getUser();
+    const user = this.auth.getUser() ?? this.auth.getCurrentUser();
     if (!user) return false;
 
-    if (item.minRoleLevel !== undefined && user.roleLevel < item.minRoleLevel) {
+    const roleName = (user as any).role ?? (user as any).roleLevelName ?? '';
+    if (item.requiredRole && roleName !== item.requiredRole) {
       return false;
+    }
+
+    if (item.minRoleLevel !== undefined) {
+      const roleLevel = (user as any).roleLevel;
+      if (roleLevel == null || roleLevel < item.minRoleLevel) {
+        return false;
+      }
     }
 
     if (
       item.requiredPermission &&
-      (!user.permissions || !user.permissions.includes(item.requiredPermission))
+      (!(user as any).permissions || !(user as any).permissions.includes(item.requiredPermission))
     ) {
       return false;
     }

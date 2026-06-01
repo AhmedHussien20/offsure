@@ -29,7 +29,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int userId,
             string verificationToken)
         {
-            var verificationLink = $"{_frontendBaseUrl}/verify-email?userId={userId}&token={verificationToken}";
+            var verificationLink = $"{_frontendBaseUrl}/auth/verify-email?userId={userId}&token={verificationToken}";
             var body = $@"
                 <h2>Welcome {firstName}</h2>
                 <p>Please verify your email:</p>
@@ -41,7 +41,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task SendPasswordResetEmailAsync(string to, string resetToken)
         {
-            var resetLink = $"{_frontendBaseUrl}/reset-password?token={resetToken}";
+            var resetLink = $"{_frontendBaseUrl}/auth/reset-password?token={resetToken}";
             var body = $@"
                 <h2>Password Reset Request</h2>
                 <p>You requested to reset your password.</p>

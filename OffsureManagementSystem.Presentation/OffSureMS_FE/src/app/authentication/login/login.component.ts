@@ -1,6 +1,6 @@
 import { Component, ElementRef, Inject, OnDestroy, OnInit, NgZone, Renderer2 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ToastrModule, ToastrService } from 'ngx-toastr';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -33,6 +33,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     @Inject(DOCUMENT) private document: Document,
     public authservice: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private fb: FormBuilder,
     private renderer: Renderer2,
     private toastr: ToastrService,
@@ -64,7 +65,18 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     this.authservice.login(email, password).subscribe({
       next: () => {
-        this.router.navigate(['/']);
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+        if (returnUrl) {
+          this.router.navigateByUrl(returnUrl);
+          return;
+        }
+        if (this.authservice.isClient()) {
+          this.router.navigate(['/client/dashboard']);
+        } else if (this.authservice.isAdministrator()) {
+          this.router.navigate(['/admin/dashboard']);
+        } else {
+          this.router.navigate(['/']);
+        }
       },
       error: (error) => {
         this.toastr.error(error.message || 'Login failed');

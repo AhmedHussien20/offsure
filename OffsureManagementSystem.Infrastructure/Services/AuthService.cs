@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OffshoreManagementSystem.Domain.Entities;
+using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.AuthDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
@@ -48,12 +49,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefault();
 
             if (existingUser is not null)
-                throw new Exception("Email already exists.");
+                throw new AppException("Email already exists.");
 
             var clientRole = await _roleRepo.GetAll(r => r.Name == "Client").FirstOrDefaultAsync();
 
             if (clientRole is null)
-                throw new Exception("Client role not found.");
+                throw new AppException("Client role not found.");
 
             var user = new User
             {
@@ -115,16 +116,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefaultAsync();
 
             if (user is null)
-                throw new Exception("Invalid email or password.");
+                throw new AppException("Invalid email or password.");
 
             if (!VerifyPassword(dto.Password, user.PasswordHash))
-                throw new Exception("Invalid email or password.");
+                throw new AppException("Invalid email or password.");
 
             if (!user.IsActive)
-                throw new Exception("Your account has been deactivated. Please contact support.");
+                throw new AppException("Your account has been deactivated. Please contact support.");
 
             if (!user.IsEmailVerified)
-                throw new Exception("Please verify your email before logging in.");
+                throw new AppException("Please verify your email before logging in.");
 
             var accessToken = await _jwtGenerator.GenerateToken(user);
             var refreshToken = _jwtGenerator.GenerateRefreshToken();
@@ -154,10 +155,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefaultAsync();
 
             if (user is null)
-                throw new Exception("Invalid refresh token.");
+                throw new AppException("Invalid refresh token.");
 
             if (user.RefreshTokenExpiry < DateTime.UtcNow)
-                throw new Exception("Refresh token has expired. Please login again.");
+                throw new AppException("Refresh token has expired. Please login again.");
 
             var newAccessToken = await _jwtGenerator.GenerateToken(user);
             var newRefreshToken = _jwtGenerator.GenerateRefreshToken();
@@ -209,10 +210,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefault();
 
             if (user is null)
-                throw new Exception("Invalid or expired reset token.");
+                throw new AppException("Invalid or expired reset token.");
 
             if (user.PasswordResetTokenExpiry < DateTime.UtcNow)
-                throw new Exception("Reset token has expired. Please request a new one.");
+                throw new AppException("Reset token has expired. Please request a new one.");
 
             user.PasswordHash = HashPassword(dto.NewPassword);
             user.PasswordResetToken = null;
@@ -229,21 +230,34 @@ namespace OffsureManagementSystem.Infrastructure.Services
         }
 
         // ── Verify Email ──────────────────────────────────────────────────────
-        public async Task VerifyEmailAsync(int userId)
+        public async Task VerifyEmailAsync(int userId, string token)
         {
+            if (string.IsNullOrWhiteSpace(token))
+                throw new AppException("Invalid verification link.", 400);
+
             var user = await _userRepo.GetByIDAsync(userId);
 
             if (user is null)
-                throw new Exception("User not found.");
+                throw new AppException("User not found.", 404);
 
             if (user.IsEmailVerified)
-                return; 
+                return;
+
+            if (!string.Equals(user.EmailVerificationToken, token.Trim(), StringComparison.Ordinal))
+                throw new AppException("Invalid or expired verification link.", 400);
+
+            if (user.EmailVerificationExpiry is null || user.EmailVerificationExpiry < DateTime.UtcNow)
+                throw new AppException("Verification link has expired. Please register again or contact support.", 400);
 
             user.IsEmailVerified = true;
+            user.EmailVerificationToken = null;
+            user.EmailVerificationExpiry = null;
             user.UpdatedAt = DateTime.UtcNow;
 
             _userRepo.SaveInclude(user,
                 nameof(user.IsEmailVerified),
+                nameof(user.EmailVerificationToken),
+                nameof(user.EmailVerificationExpiry),
                 nameof(user.UpdatedAt));
 
             await _userRepo.SaveChangesAsync();

@@ -1,0 +1,17 @@
+<app-page-header
+  [title]="'Add Team Member'"
+  [title1]="['Admin', 'Team', 'New']"
+  [activeitem]="'Add Member'">
+</app-page-header>
+
+<div class="card custom-card">
+  <div class="card-body">
+    <app-generic-form
+      [title]="'New Team Member'"
+      [formGroup]="formGroup"
+      [formConfig]="formConfig"
+      [submitLabel]="'Save Member'"
+      (formSubmit)="onSubmit()">
+    </app-generic-form>
+  </div>
+</div>

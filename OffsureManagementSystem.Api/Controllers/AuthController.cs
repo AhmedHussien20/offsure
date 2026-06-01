@@ -44,9 +44,16 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromQuery] int userId)
+        public async Task<IActionResult> VerifyEmail([FromQuery] int userId, [FromQuery] string token)
         {
-            await _authService.VerifyEmailAsync(userId);
+            await _authService.VerifyEmailAsync(userId, token);
+            return Success<string>(null!, "Email verified successfully. You can now log in.");
+        }
+
+        [HttpGet("verify-email")]
+        public async Task<IActionResult> VerifyEmailGet([FromQuery] int userId, [FromQuery] string token)
+        {
+            await _authService.VerifyEmailAsync(userId, token);
             return Success<string>(null!, "Email verified successfully. You can now log in.");
         }
 

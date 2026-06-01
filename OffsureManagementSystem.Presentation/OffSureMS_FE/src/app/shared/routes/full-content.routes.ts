@@ -27,8 +27,17 @@ export const content: Routes = [
       //     ),
       // },
       // Customer portal default landing (many parts of the app still link to `/dashboard`)
-      { path: 'dashboard', redirectTo: 'customer/home', pathMatch: 'full' },
-      
+      { path: 'dashboard', redirectTo: 'client/dashboard', pathMatch: 'full' },
+      {
+        path: 'client',
+        loadChildren: () =>
+          import('../../../app/components/client/client.routes').then(r => r.clientRoutes),
+      },
+      {
+        path: 'admin',
+        loadChildren: () =>
+          import('../../../app/components/admin/admin.routes').then(r => r.adminRoutes),
+      },
       { path: '', loadChildren: () => import('../../../app/components/crypto-currencies/crypto.routes').then(r => r.cryptoRoutingModule) },
       { path: '', loadChildren: () => import('../../../app/components/ecommerce/ecommerce.routes').then(r => r.ecommerceRoutingModule) },
       { path: '', loadChildren: () => import('../../../app/components/apps/blog/blog.routes').then(r => r.blogRoutingModule) },

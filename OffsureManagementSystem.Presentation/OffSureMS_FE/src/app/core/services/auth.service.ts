@@ -4,7 +4,7 @@ import { catchError, finalize, map } from 'rxjs/operators';
 import { AuthRepository } from '../repositories/auth.repository';
 import { AppState } from 'app/store/app.state';
 import { select, Store } from '@ngrx/store';
-import { loginFailure, loginSuccess, logout } from 'app/store/auth/auth.actions';
+import { loginFailure, logout } from 'app/store/auth/auth.actions';
 import { BaseResponse } from 'app/models/base.response.model';
 import { selectAuthLoading } from 'app/store/auth/auth.selectors';
 import { Router } from '@angular/router';
@@ -13,6 +13,8 @@ import * as NavActions from '../../store/nav/nav.actions';
 import { ApiService } from './api.service';
 import { RegisterRequest, RegisterResponse } from '../models/auth/register-request.model';
 import { LoginResponse } from '../models/auth/login.models';
+import { ClientContextService } from './client-context.service';
+import { AuthTokenRefreshService } from './auth-token-refresh.service';
 
 @Injectable({
   providedIn: 'root',
@@ -26,6 +28,8 @@ export class AuthService {
     private store: Store<AppState>,
     private router: Router,
     private apiService: ApiService,
+    private clientContext: ClientContextService,
+    private tokenRefresh: AuthTokenRefreshService,
   ) {
     this.store.pipe(select(selectAuthLoading)).subscribe(loading => {
       this.showLoader = loading;
@@ -39,12 +43,8 @@ export class AuthService {
     return this.authRepository.login(email, password).pipe(
       map(response => {
         if (response.data) {
-          const { accessToken, refreshToken, user } = response.data;
-          localStorage.setItem('authToken', accessToken);
-          localStorage.setItem('refreshToken', refreshToken);
-          localStorage.setItem('userData', JSON.stringify(user));
+          this.tokenRefresh.persistSession(response.data);
           this.store.dispatch(NavActions.initializeMenu());
-          this.store.dispatch(loginSuccess({ token: accessToken }));
           return response;
         } else {
           const err = response.message || 'Login failed';
@@ -76,8 +76,15 @@ export class AuthService {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('customerHeaderNotifications');
 
+    this.clientContext.clear();
+    this.store.dispatch(logout());
     this.store.dispatch(NavActions.clearMenu());
     this.router.navigate(['/auth/login'], { replaceUrl: true });
+  }
+
+  /** Manual refresh (e.g. before a long-running action). Normally handled by the interceptor. */
+  refreshSession(): Observable<string> {
+    return this.tokenRefresh.refreshAccessToken();
   }
 
   forgotPassword(email: string): Observable<BaseResponse<null>> {
@@ -105,8 +112,30 @@ export class AuthService {
     return u ? JSON.parse(u) : null;
   }
 
+  getUserRole(): string | null {
+    const user = this.getCurrentUser();
+    return user?.role ?? null;
+  }
+
+  isClient(): boolean {
+    return this.getUserRole() === 'Client';
+  }
+
+  isAdministrator(): boolean {
+    return this.getUserRole() === 'Administrator';
+  }
+
   hasPermission(permission: string): boolean {
     return this.getUser()?.permissions?.includes(permission) ?? false;
+  }
+
+  verifyEmail(userId: number, token: string): Observable<BaseResponse<null>> {
+    return this.apiService.postWithQuery<BaseResponse<null>>(
+      this.service,
+      'verify-email',
+      {},
+      { userId, token }
+    );
   }
 
   register(dto: RegisterRequest): Observable<BaseResponse<RegisterResponse>> {

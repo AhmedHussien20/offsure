@@ -1,0 +1,32 @@
+<app-page-header
+  [title]="'My Requests'"
+  [title1]="['Client', 'Requests']"
+  [activeitem]="'My Requests'">
+</app-page-header>
+
+<div class="card custom-card">
+  <div class="card-body">
+    <app-generic-table
+      [title]="'My Requests'"
+      [columns]="columns"
+      [data]="data"
+      [page]="page"
+      [entries]="entries"
+      [totalItems]="totalItems"
+      [totalPages]="totalPages"
+      [searchCriteria]="searchCriteria"
+      [labels]="labels"
+      [dropdownOptions]="dropdownOptions"
+      [showFilters]="true"
+      [showPagination]="true"
+      [showEmployeeFilter]="false"
+      [showExportExcel]="false"
+      [showAddButton]="true"
+      [addButtonLabel]="'New Service Request'"
+      [onSearch]="onSearch"
+      (pageChange)="onPageChange($event)"
+      (entriesChange)="onEntriesChange($event)"
+      (addClick)="onAdd()">
+    </app-generic-table>
+  </div>
+</div>

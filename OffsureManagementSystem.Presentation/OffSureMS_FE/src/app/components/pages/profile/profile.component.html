@@ -1,165 +1,208 @@
-<app-page-header [title]="title | translate" [title1]="breadcrumbs" [activeitem]="activeitem | translate">
+<app-page-header
+  [title]="isClientPortal ? title : (title | translate)"
+  [title1]="breadcrumbs"
+  [activeitem]="isClientPortal ? activeitem : (activeitem | translate)">
 </app-page-header>
+
 <div class="row square row-sm">
-    <div class="col-lg-12 col-md-12">
-        <div class="card custom-card">
-            <div class="card-body">
-                <div class="panel profile-cover">
-                    <div class="profile-cover__img d-flex align-items-center justify-content-start gap-3">
-
-                        <div class="rounded-circle overflow-hidden" style="width: 150px; height: 150px;">
-                            <img [src]="profileImage" alt="Profile Image"
-                                class="img-fluid h-100 w-100 object-fit-cover">
-                        </div>
-
-                        <div>
-                            <h2 class="fw-bold mb-0">{{ user?.fullName }}</h2>
-                            <p class="text-muted mb-0">{{ user?.title || '' }}</p>
-                        </div>
-
-                    </div>
-
-
-                    <div class="profile-cover__info">
-                        <img src="assets/images/cover.jpeg" alt="Profile Cover" width="100%" height="300" />
-                    </div>
-
-                    <div class="profile-tab tab-menu-heading">
-                        <nav ngbNav #nav="ngbNav" class="nav main-nav-line p-3 tabs-menu profile-nav-line">
-                            <ng-container ngbNavItem *ngIf="user">
-                                <a href="javascript:;" class="nav-link fw-semibold" ngbNavLink>
-                                    <i class="bi bi-person-lines-fill me-1"></i> {{ 'PROFILE.ABOUT' | translate }}
-                                </a>
-                               <ng-template ngbNavContent>
-    <div class="main-content-body tab-pane p-0 border-top-0 active" id="about">
-        <div class="card border shadow-none rounded-10 overflow-hidden">
-
-            <div class="card-header bg-light border-bottom-0 p-4">
-                <h4 class="fs-18 fw-bold text-uppercase mb-1 text-primary">
-                    {{ 'PROFILE.PERSONAL_PROFILE' | translate }}
-                </h4>
+  <div class="col-lg-12 col-md-12">
+    <div class="card custom-card">
+      <div class="card-body">
+        <div class="panel profile-cover">
+          <div class="profile-cover__img d-flex align-items-center justify-content-start gap-3">
+            <div class="rounded-circle overflow-hidden" style="width: 150px; height: 150px;">
+              <img [src]="profileImage" alt="Profile Image" class="img-fluid h-100 w-100 object-fit-cover" />
             </div>
+            <div>
+              <h2 class="fw-bold mb-0">{{ displayName }}</h2>
+              <p class="text-muted mb-0">{{ displaySubtitle }}</p>
+              @if (isClientPortal && clientProfile) {
+                <p class="text-muted mb-0 small">{{ clientProfile.email }}</p>
+              }
+            </div>
+          </div>
 
-            <div class="card-body p-4">
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h5 class="fs-15 fw-bold text-primary text-uppercase mb-3 border-bottom pb-2">
-                            <i class="bi bi-person-badge me-2"></i> {{ 'PROFILE.BIO_DATA' | translate }}
-                        </h5>
-                        
-                        <div class="bg-light p-4 rounded-3">
+          <div class="profile-cover__info">
+            <img src="assets/images/cover.jpeg" alt="Profile Cover" width="100%" height="300" />
+          </div>
+
+          <div class="profile-tab tab-menu-heading">
+            <nav ngbNav #nav="ngbNav" class="nav main-nav-line p-3 tabs-menu profile-nav-line">
+              @if (isClientPortal ? clientProfile : user) {
+                <ng-container ngbNavItem>
+                  <a href="javascript:;" class="nav-link fw-semibold" ngbNavLink>
+                    <i class="bi bi-person-lines-fill me-1"></i>
+                    {{ isClientPortal ? 'About' : ('PROFILE.ABOUT' | translate) }}
+                  </a>
+                  <ng-template ngbNavContent>
+                    <div class="main-content-body tab-pane p-0 border-top-0 active" id="about">
+                      @if (isClientPortal && clientProfile) {
+                        <div class="card border shadow-none rounded-10 overflow-hidden">
+                          <div class="card-header bg-light border-bottom-0 p-4">
+                            <h4 class="fs-18 fw-bold text-uppercase mb-1 text-primary">Company Profile</h4>
+                          </div>
+                          <div class="card-body p-4">
                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <p class="fs-16 mb-2"><strong>{{ 'PROFILE.FULL_NAME' | translate }}:</strong> {{ user?.fullName }}</p>
-                                    <p class="fs-16 mb-2"><strong>{{ 'PROFILE.ID' | translate }}:</strong> <span class="badge bg-primary fs-14">{{ user?.userId }}</span></p>
-                                    <p class="fs-16 mb-2"><strong>{{ 'PROFILE.TITLE' | translate }}:</strong> {{ user?.title || ('PROFILE.NO_TITLE_PROVIDED' | translate) }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="fs-16 mb-2"><strong>{{ 'PROFILE.QUALIFICATION' | translate }}:</strong> {{ user?.qualification || ('QUALIFICATION_NOT_LISTED' | translate) }}</p>
-                                    <p class="fs-16 mb-0 text-muted"><strong>{{ 'PROFILE.OFFICIAL_EMAIL' | translate }}:</strong> {{ user?.email }}</p>
-                                </div>
+                              <div class="col-md-6">
+                                <p class="fs-16 mb-2"><strong>Company Name:</strong> {{ clientProfile.companyName }}</p>
+                                <p class="fs-16 mb-2"><strong>Contact Phone:</strong> {{ clientProfile.contactPersonPhone || '—' }}</p>
+                                <p class="fs-16 mb-2"><strong>Website:</strong> {{ clientProfile.website || '—' }}</p>
+                              </div>
+                              <div class="col-md-6">
+                                <p class="fs-16 mb-2"><strong>City:</strong> {{ clientProfile.city || '—' }}</p>
+                                <p class="fs-16 mb-2"><strong>Country:</strong> {{ clientProfile.country || '—' }}</p>
+                                <p class="fs-16 mb-2"><strong>Postal Code:</strong> {{ clientProfile.postalCode || '—' }}</p>
+                              </div>
+                              <div class="col-12">
+                                <p class="fs-16 mb-2"><strong>Address:</strong> {{ clientProfile.companyAddress || '—' }}</p>
+                                <p class="fs-16 mb-0"><strong>Description:</strong> {{ clientProfile.description || '—' }}</p>
+                              </div>
+                              <div class="col-12">
+                                <hr />
+                                <p class="fs-16 mb-1"><strong>Total Requests:</strong> {{ clientProfile.requestsCount }}</p>
+                                <p class="fs-16 mb-0"><strong>Projects:</strong> {{ clientProfile.projectsCount }}</p>
+                              </div>
                             </div>
+                          </div>
                         </div>
+                      } @else {
+                        <div class="card border shadow-none rounded-10 overflow-hidden">
+                          <div class="card-header bg-light border-bottom-0 p-4">
+                            <h4 class="fs-18 fw-bold text-uppercase mb-1 text-primary">
+                              {{ 'PROFILE.PERSONAL_PROFILE' | translate }}
+                            </h4>
+                          </div>
+                          <div class="card-body p-4">
+                            <div class="row mb-4">
+                              <div class="col-12">
+                                <h5 class="fs-15 fw-bold text-primary text-uppercase mb-3 border-bottom pb-2">
+                                  <i class="bi bi-person-badge me-2"></i> {{ 'PROFILE.BIO_DATA' | translate }}
+                                </h5>
+                                <div class="bg-light p-4 rounded-3">
+                                  <div class="row g-3">
+                                    <div class="col-md-6">
+                                      <p class="fs-16 mb-2"><strong>{{ 'PROFILE.FULL_NAME' | translate }}:</strong> {{ user?.fullName }}</p>
+                                      <p class="fs-16 mb-2"><strong>{{ 'PROFILE.ID' | translate }}:</strong>
+                                        <span class="badge bg-primary fs-14">{{ user?.userId }}</span>
+                                      </p>
+                                      <p class="fs-16 mb-2"><strong>{{ 'PROFILE.TITLE' | translate }}:</strong>
+                                        {{ user?.title || ('PROFILE.NO_TITLE_PROVIDED' | translate) }}
+                                      </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="fs-16 mb-2"><strong>{{ 'PROFILE.QUALIFICATION' | translate }}:</strong>
+                                        {{ user?.qualification || ('QUALIFICATION_NOT_LISTED' | translate) }}
+                                      </p>
+                                      <p class="fs-16 mb-0 text-muted"><strong>{{ 'PROFILE.OFFICIAL_EMAIL' | translate }}:</strong> {{ user?.email }}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="row mb-4">
+                              <div class="col-12">
+                                <h5 class="fs-15 fw-bold text-primary text-uppercase mb-3 border-bottom pb-2">
+                                  <i class="bi bi-building me-2"></i> {{ 'PROFILE.ORGANIZATION' | translate }}
+                                </h5>
+                                <div class="row ps-2">
+                                  <div class="col-md-4">
+                                    <p class="fs-16 mb-1"><strong>{{ 'PROFILE.DEPARTMENT' | translate }}:</strong></p>
+                                    <p class="text-muted fs-15">{{ user?.departmentId || ('PROFILE.UNASSIGNED' | translate) }}</p>
+                                  </div>
+                                  <div class="col-md-4 border-start border-end">
+                                    <p class="fs-16 mb-1"><strong>{{ 'PROFILE.BRANCH' | translate }}:</strong></p>
+                                    <p class="text-muted fs-15">{{ user?.branchName || ('PROFILE.UNASSIGNED' | translate) }}</p>
+                                  </div>
+                                  <div class="col-md-4">
+                                    <p class="fs-16 mb-1"><strong>{{ 'PROFILE.COMPANY' | translate }}:</strong></p>
+                                    <p class="text-muted fs-15">{{ user?.campanyName }}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <hr class="my-4 opacity-10" />
+                            <div>
+                              <h5 class="fs-15 fw-bold text-primary text-uppercase mb-3">
+                                <i class="bi bi-envelope-at me-2"></i> {{ 'PROFILE.CONTACT_INFORMATION' | translate }}
+                              </h5>
+                              <div class="row g-3">
+                                <div class="col-sm-4">
+                                  <div class="d-flex align-items-center p-3 border rounded-3 h-100 shadow-sm">
+                                    <div class="avatar avatar-md bg-primary-transparent text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                      <i class="bi bi-telephone-fill fs-20"></i>
+                                    </div>
+                                    <div>
+                                      <small class="text-muted d-block">{{ 'PROFILE.MOBILE' | translate }}</small>
+                                      <span class="fw-bold fs-15">{{ user?.mobile || ('PROFILE.N_A' | translate) }}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-sm-4">
+                                  <div class="d-flex align-items-center p-3 border rounded-3 h-100 shadow-sm">
+                                    <div class="avatar avatar-md bg-success-transparent text-success rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                      <i class="bi bi-envelope-fill fs-20"></i>
+                                    </div>
+                                    <div class="text-truncate">
+                                      <small class="text-muted d-block">{{ 'PROFILE.EMAIL_ADDRESS' | translate }}</small>
+                                      <span class="fw-bold fs-15">{{ user?.email }}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-sm-4">
+                                  <div class="d-flex align-items-center p-3 border rounded-3 h-100 shadow-sm">
+                                    <div class="avatar avatar-md bg-info-transparent text-info rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                      <i class="bi bi-geo-alt-fill fs-20"></i>
+                                    </div>
+                                    <div>
+                                      <small class="text-muted d-block">{{ 'PROFILE.LOCATION' | translate }}</small>
+                                      <span class="fw-bold fs-15">{{ user?.address || ('PROFILE.NOT_PROVIDED' | translate) }}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      }
                     </div>
-                </div>
+                  </ng-template>
+                </ng-container>
 
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h5 class="fs-15 fw-bold text-primary text-uppercase mb-3 border-bottom pb-2">
-                            <i class="bi bi-building me-2"></i> {{ 'PROFILE.ORGANIZATION' | translate }}
-                        </h5>
-                        <div class="row ps-2">
-                            <div class="col-md-4">
-                                <p class="fs-16 mb-1"><strong>{{ 'PROFILE.DEPARTMENT' | translate }}:</strong></p>
-                                <p class="text-muted fs-15">{{ user?.departmentId || ('PROFILE.UNASSIGNED' | translate) }}</p>
-                            </div>
-                            <div class="col-md-4 border-start border-end">
-                                <p class="fs-16 mb-1"><strong>{{ 'PROFILE.BRANCH' | translate }}:</strong></p>
-                                <p class="text-muted fs-15">{{ user?.branchName || ('PROFILE.UNASSIGNED' | translate) }}</p>
-                            </div>
-                            <div class="col-md-4">
-                                <p class="fs-16 mb-1"><strong>{{ 'PROFILE.COMPANY' | translate }}:</strong></p>
-                                <p class="text-muted fs-15">{{ user?.campanyName }}</p>
-                            </div>
+                <ng-container ngbNavItem>
+                  <a href="javascript:;" class="nav-link" ngbNavLink>
+                    {{ isClientPortal ? 'Edit Company' : ('PROFILE.EDIT_PROFILE' | translate) }}
+                  </a>
+                  <ng-template ngbNavContent>
+                    @if (isClientPortal && profileForm) {
+                      <div class="card custom-card">
+                        <div class="card-body">
+                          <app-generic-form
+                            [title]="'Edit Company Profile'"
+                            [formGroup]="profileForm"
+                            [formConfig]="profileFormConfig"
+                            [submitLabel]="'Save Changes'"
+                            (formSubmit)="onClientProfileSubmit()">
+                          </app-generic-form>
                         </div>
-                    </div>
-                </div>
-
-                <hr class="my-4 opacity-10">
-
-                <div>
-                    <h5 class="fs-15 fw-bold text-primary text-uppercase mb-3">
-                        <i class="bi bi-envelope-at me-2"></i> {{ 'PROFILE.CONTACT_INFORMATION' | translate }}
-                    </h5>
-                    <div class="row g-3">
-                        <div class="col-sm-4">
-                            <div class="d-flex align-items-center p-3 border rounded-3 h-100 shadow-sm">
-                                <div class="avatar avatar-md bg-primary-transparent text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                    <i class="bi bi-telephone-fill fs-20"></i>
-                                </div>
-                                <div>
-                                    <small class="text-muted d-block">{{ 'PROFILE.MOBILE' | translate }}</small>
-                                    <span class="fw-bold fs-15">{{ user?.mobile || ('PROFILE.N_A' | translate) }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-sm-4">
-                            <div class="d-flex align-items-center p-3 border rounded-3 h-100 shadow-sm">
-                                <div class="avatar avatar-md bg-success-transparent text-success rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                    <i class="bi bi-envelope-fill fs-20"></i>
-                                </div>
-                                <div class="text-truncate">
-                                    <small class="text-muted d-block">{{ 'PROFILE.EMAIL_ADDRESS' | translate }}</small>
-                                    <span class="fw-bold fs-15">{{ user?.email }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-sm-4">
-                            <div class="d-flex align-items-center p-3 border rounded-3 h-100 shadow-sm">
-                                <div class="avatar avatar-md bg-info-transparent text-info rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                    <i class="bi bi-geo-alt-fill fs-20"></i>
-                                </div>
-                                <div>
-                                    <small class="text-muted d-block">{{ 'PROFILE.LOCATION' | translate }}</small>
-                                    <span class="fw-bold fs-15">{{ user?.address || ('PROFILE.NOT_PROVIDED' | translate) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                      </div>
+                    }
+                  </ng-template>
+                </ng-container>
+              }
+            </nav>
+          </div>
         </div>
+      </div>
     </div>
-</ng-template>
-                            </ng-container>
+  </div>
 
-                            <!-- Edit Profile Tab -->
-                            <ng-container ngbNavItem *ngIf="user">
-                                <a href="javascript:;" class="nav-link" ngbNavLink>{{ 'PROFILE.EDIT_PROFILE' | translate
-                                    }}</a>
-                                <ng-template ngbNavContent>
-                                   
-                                </ng-template>
-                            </ng-container>
-
-                        </nav>
-
-                    </div>
-                </div>
-            </div>
+  <div class="row row-sm">
+    <div class="col-lg-12 col-md-12">
+      <div class="card custom-card main-content-body-profile">
+        <div class="tab-content">
+          <div [ngbNavOutlet]="nav"></div>
         </div>
+      </div>
     </div>
-
-    <!-- Row -->
-    <div class="row row-sm">
-        <div class="col-lg-12 col-md-12">
-            <div class="card custom-card main-content-body-profile ">
-                <div class="tab-content">
-                    <div [ngbNavOutlet]="nav"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- End Row -->
+  </div>
+</div>

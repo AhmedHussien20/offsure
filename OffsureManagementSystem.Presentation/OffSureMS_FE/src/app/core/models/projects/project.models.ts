@@ -1,8 +1,8 @@
 export enum ProjectStatus {
-  NotStarted = 'NotStarted',
+  Pending = 'Pending',
   InProgress = 'InProgress',
-  OnHold = 'OnHold',
   Completed = 'Completed',
+  OnHold = 'OnHold',
   Cancelled = 'Cancelled',
 }
 
@@ -59,13 +59,16 @@ export interface ProjectDto {
   name: string;
   description: string;
   serviceRequestId: number;
+  serviceRequestTitle: string;
   clientId: number;
+  clientName: string;
   serviceId: number;
+  serviceName: string;
   status: ProjectStatus;
   startDate: string | null;
   endDate: string | null;
   targetEndDate: string | null;
   budget: number | null;
-  progress: number;
+  progress: number | null;
   teamMembers: ProjectAssignmentDto[];
 }

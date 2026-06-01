@@ -1,0 +1,81 @@
+<app-page-header
+  [title]="project?.name || 'Project Details'"
+  [title1]="['Admin', 'Projects', 'Details']"
+  [activeitem]="'Project Details'">
+</app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading project...</div>
+} @else if (!project) {
+  <div class="alert alert-warning">Project not found.</div>
+} @else {
+  <div class="row">
+    <div class="col-xl-8">
+      <div class="card custom-card">
+        <div class="card-body">
+          <p class="text-muted">{{ project.description || 'No description.' }}</p>
+          <div class="row g-2">
+            <div class="col-md-6"><strong>Client:</strong> {{ project.clientName }}</div>
+            <div class="col-md-6"><strong>Service:</strong> {{ project.serviceName }}</div>
+            <div class="col-md-6">
+              <strong>Status:</strong>
+              <span class="badge ms-1 {{ statusBadgeClass(project.status) }}">
+                {{ statusLabel(project.status) }}
+              </span>
+            </div>
+            <div class="col-md-6"><strong>Progress:</strong> {{ project.progress ?? 0 }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="card custom-card">
+        <div class="card-header"><h5 class="mb-0">Assign Team</h5></div>
+        <div class="card-body">
+          <form [formGroup]="assignForm" (ngSubmit)="assignMember()">
+            <div class="mb-3">
+              <label class="form-label">Team member</label>
+              <select class="form-select" formControlName="teamMemberId">
+                <option [ngValue]="null">Select member</option>
+                @for (m of teamMembers; track m.id) {
+                  <option [ngValue]="m.id">{{ m.fullName }} — {{ m.title }}</option>
+                }
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Role on project</label>
+              <input type="text" class="form-control" formControlName="role" placeholder="e.g. Lead Developer" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Assign</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card custom-card mt-3">
+        <div class="card-header"><h5 class="mb-0">Assigned Team</h5></div>
+        <ul class="list-group list-group-flush">
+          @if ((project.teamMembers?.length ?? 0) === 0) {
+            <li class="list-group-item text-muted">No members assigned.</li>
+          }
+          @for (member of project.teamMembers; track member.id) {
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-semibold">{{ member.teamMemberName }}</div>
+                <small class="text-muted">{{ member.role }}</small>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                (click)="removeMember(member.teamMemberId)">
+                Remove
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <a routerLink="/admin/projects" class="btn btn-light mt-3">Back to projects</a>
+    </div>
+  </div>
+}

@@ -1,0 +1,75 @@
+<app-page-header
+  [title]="'Services'"
+  [title1]="['Admin', 'Services']"
+  [activeitem]="'Services'">
+</app-page-header>
+
+<ul ngbNav #nav="ngbNav" class="nav-tabs mb-3">
+  <li ngbNavItem>
+    <a ngbNavLink>Categories</a>
+    <ng-template ngbNavContent>
+      <div class="card custom-card">
+        <div class="card-body">
+          <app-generic-table
+            [title]="'Service Categories'"
+            [columns]="categoryColumns"
+            [data]="categories"
+            [page]="catPage"
+            [entries]="catEntries"
+            [totalItems]="catTotal"
+            [totalPages]="1"
+            [searchCriteria]="catSearch"
+            [showFilters]="true"
+            [showPagination]="true"
+            [showEmployeeFilter]="false"
+            [showExportExcel]="false"
+            [showAddButton]="false"
+            [onSearch]="onCatSearch">
+          </app-generic-table>
+        </div>
+      </div>
+    </ng-template>
+  </li>
+  <li ngbNavItem>
+    <a ngbNavLink>Services</a>
+    <ng-template ngbNavContent>
+      <div class="card custom-card">
+        <div class="card-body">
+          <p class="text-muted small mb-3">
+            Show or hide services on the public landing page.
+          </p>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Visibility</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of services; track s.id) {
+                  <tr>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.visibleLabel }}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-sm"
+                        [class.btn-outline-success]="!s.isVisible"
+                        [class.btn-outline-warning]="s.isVisible"
+                        (click)="toggleVisibility(s)">
+                        {{ s.isVisible ? 'Hide' : 'Show' }}
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </li>
+</ul>
+<div [ngbNavOutlet]="nav"></div>

@@ -13,7 +13,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<LoginResponseDto> LoginAsync(LoginDto dto);
         Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenDto dto);
         Task ForgotPasswordAsync(ForgotPasswordDto dto);
-        Task VerifyEmailAsync(int userId);
+        Task VerifyEmailAsync(int userId, string token);
         Task ResetPasswordAsync(ResetPasswordDto dto);
 
     }

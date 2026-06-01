@@ -1,0 +1,119 @@
+<app-page-header
+  [title]="'Client Dashboard'"
+  [title1]="['Home', 'Dashboard']"
+  [activeitem]="'Dashboard'">
+</app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading dashboard...</div>
+} @else {
+  <div class="row row-sm">
+    @for (card of statCards; track card.label) {
+      <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
+        <spk-ecommerce
+          [label]="card.label"
+          [value]="card.value"
+          [icon]="card.icon"
+          [description]="card.description"
+          [subValue]="card.subValue">
+        </spk-ecommerce>
+      </div>
+    }
+  </div>
+
+  <div class="row row-sm">
+    <div class="col-xl-6">
+      <div class="card custom-card">
+        <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
+          <div>
+            <label class="main-content-label my-auto pt-2 mb-1">Recent Requests</label>
+            <span class="d-block fs-12 mb-0 mt-1 text-muted">Your last 5 service requests</span>
+          </div>
+          <a routerLink="/client/requests" class="btn btn-sm btn-primary">View all</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 text-nowrap">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Service</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (recentRequests.length === 0) {
+                  <tr>
+                    <td colspan="3" class="text-center text-muted py-4">No requests yet.</td>
+                  </tr>
+                }
+                @for (req of recentRequests; track req.id) {
+                  <tr>
+                    <td>{{ req.title }}</td>
+                    <td>{{ req.serviceName }}</td>
+                    <td>
+                      <span class="badge {{ statusBadgeClass(req.status) }}">
+                        {{ statusLabel(req.status) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6">
+      <div class="card custom-card">
+        <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
+          <div>
+            <label class="main-content-label my-auto pt-2 mb-1">Ongoing Projects</label>
+            <span class="d-block fs-12 mb-0 mt-1 text-muted">Projects currently in progress</span>
+          </div>
+          <a routerLink="/client/projects" class="btn btn-sm btn-primary">View all</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 text-nowrap">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Service</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (ongoingProjects.length === 0) {
+                  <tr>
+                    <td colspan="3" class="text-center text-muted py-4">No active projects.</td>
+                  </tr>
+                }
+                @for (item of ongoingProjects; track item.projectId) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/client/projects', item.projectId]">{{ item.projectName }}</a>
+                    </td>
+                    <td>{{ item.serviceName }}</td>
+                    <td>
+                      <span class="badge bg-primary-transparent">In Progress</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <a routerLink="/client/requests/new" class="btn btn-primary">
+        <i class="fa fa-plus me-1"></i> New Service Request
+      </a>
+    </div>
+  </div>
+}

@@ -1,17 +1,16 @@
 export enum ServiceRequestStatus {
   Pending = 'Pending',
-  InReview = 'InReview',
-  Approved = 'Approved',
-  Rejected = 'Rejected',
-  Cancelled = 'Cancelled',
+  InProgress = 'InProgress',
   Completed = 'Completed',
+  Cancelled = 'Cancelled',
 }
 
+/** Backend stores priority as int 1–5 (default 3 = Medium). */
 export enum ServiceRequestPriority {
-  Low = 'Low',
-  Medium = 'Medium',
-  High = 'High',
-  Urgent = 'Urgent',
+  Low = 1,
+  Medium = 3,
+  High = 4,
+  Urgent = 5,
 }
 
 // --- Service Category ---
@@ -109,7 +108,7 @@ export interface CreateServiceRequestDto {
   description?: string;
   dueDate?: string;
   budget?: number;
-  priority?: ServiceRequestPriority;
+  priority?: number;
 }
 
 export interface UpdateServiceRequestStatusDto {
@@ -130,5 +129,5 @@ export interface ServiceRequestDto {
   requestedDate: string;
   dueDate: string | null;
   budget: number | null;
-  priority: ServiceRequestPriority;
+  priority: number | null;
 }

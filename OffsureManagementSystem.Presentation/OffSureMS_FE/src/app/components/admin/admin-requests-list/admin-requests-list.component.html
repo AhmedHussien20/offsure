@@ -1,0 +1,54 @@
+<app-page-header
+  [title]="'Requests'"
+  [title1]="['Admin', 'Requests']"
+  [activeitem]="'Requests'">
+</app-page-header>
+
+<div class="card custom-card">
+  <div class="card-body">
+    <app-generic-table
+      [title]="'Service Requests'"
+      [columns]="columns"
+      [data]="data"
+      [page]="page"
+      [entries]="entries"
+      [totalItems]="totalItems"
+      [totalPages]="totalPages"
+      [searchCriteria]="searchCriteria"
+      [labels]="labels"
+      [dropdownOptions]="dropdownOptions"
+      [showFilters]="true"
+      [showPagination]="true"
+      [showEmployeeFilter]="false"
+      [showExportExcel]="false"
+      [showAddButton]="false"
+      [expandable]="true"
+      [expandTemplate]="requestActions"
+      [onSearch]="onSearch"
+      (pageChange)="onPageChange($event)"
+      (entriesChange)="onEntriesChange($event)">
+    </app-generic-table>
+  </div>
+</div>
+
+<ng-template #requestActions let-item>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <label class="mb-0 me-1 fw-semibold">Status:</label>
+    <select
+      class="form-select form-select-sm w-auto"
+      [ngModel]="item.status"
+      (ngModelChange)="updateStatus(item, $event)">
+      @for (s of statusOptions; track s) {
+        <option [ngValue]="s">{{ s === 'InProgress' ? 'In Progress' : (s === 'Cancelled' ? 'Cancelled' : s) }}</option>
+      }
+    </select>
+    <button
+      type="button"
+      class="btn btn-sm btn-primary"
+      [disabled]="item.status !== 'InProgress'"
+      (click)="convertToProject(item)">
+      Convert to Project
+    </button>
+    <small class="text-muted">Set status to In Progress, then convert.</small>
+  </div>
+</ng-template>

@@ -22,8 +22,16 @@ export class ProjectsService {
     return this.api.get<BaseResponse<PagedResponse<ProjectDto>>>(this.service, '', request as Record<string, any>);
   }
 
+  getMy(request?: ProjectFilterRequest): Observable<BaseResponse<PagedResponse<ProjectDto>>> {
+    return this.api.get<BaseResponse<PagedResponse<ProjectDto>>>(this.service, 'my', request as Record<string, any>);
+  }
+
   getById(id: number): Observable<BaseResponse<ProjectDto>> {
     return this.api.get<BaseResponse<ProjectDto>>(this.service, `${id}`);
+  }
+
+  getMyById(id: number): Observable<BaseResponse<ProjectDto>> {
+    return this.api.get<BaseResponse<ProjectDto>>(this.service, `my/${id}`);
   }
 
   create(dto: CreateProjectDto): Observable<BaseResponse<ProjectDto>> {

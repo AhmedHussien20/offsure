@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using OffsureManagementSystem.Application.Responses;
+using System.Security.Claims;
 using TaskMangment.Application.Common.Responses;
 
 namespace OffsureManagementSystem.API.Controllers
 {
     [Route("api/projects")]
     [ApiController]
-    [Authorize(Roles = "Administrator")]
     public class ProjectsController : BaseController
     {
         private readonly IProjectManagementService _projectManagementService;
@@ -20,6 +20,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<PagedResponse<ProjectDto>>>> GetAllProjects(
             [FromQuery] ProjectFilterRequest request)
         {
@@ -27,7 +28,27 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<PagedResponse<ProjectDto>>.Ok(projects));
         }
 
+        [HttpGet("my")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ProjectDto>>>> GetMyProjects(
+            [FromQuery] ProjectFilterRequest request)
+        {
+            var projects = await _projectManagementService.GetClientProjectsByUserIdAsync(
+                GetCurrentUserId(),
+                request);
+            return Ok(ApiResponse<PagedResponse<ProjectDto>>.Ok(projects));
+        }
+
+        [HttpGet("my/{id:int}")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> GetMyProjectById(int id)
+        {
+            var project = await _projectManagementService.GetClientProjectByIdAsync(GetCurrentUserId(), id);
+            return Ok(ApiResponse<ProjectDto>.Ok(project));
+        }
+
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> GetProjectById(int id)
         {
             var project = await _projectManagementService.GetProjectByIdAsync(id);
@@ -35,6 +56,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> CreateProject(CreateProjectDto dto)
         {
             var project = await _projectManagementService.CreateProjectAsync(dto);
@@ -45,6 +67,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateProject(int id, UpdateProjectDto dto)
         {
             var project = await _projectManagementService.UpdateProjectAsync(id, dto);
@@ -52,6 +75,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPost("{id:int}/team-members")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> AssignTeamMember(
             int id,
             AssignProjectTeamMemberDto dto)
@@ -61,6 +85,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpDelete("{id:int}/team-members/{teamMemberId:int}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> RemoveTeamMember(int id, int teamMemberId)
         {
             var project = await _projectManagementService.RemoveTeamMemberAsync(id, teamMemberId);
@@ -68,12 +93,22 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPatch("{id:int}/status")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateProjectStatus(
             int id,
             UpdateProjectStatusDto dto)
         {
             var project = await _projectManagementService.UpdateProjectStatusAsync(id, dto.Status);
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Project status updated successfully."));
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+                throw new UnauthorizedAccessException("Invalid user token.");
+
+            return userId;
         }
     }
 }

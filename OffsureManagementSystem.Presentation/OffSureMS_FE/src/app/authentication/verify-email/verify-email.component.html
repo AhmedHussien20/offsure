@@ -1,0 +1,45 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-brand-section">
+      <div class="brand-content text-center">
+        <div class="brand-logo mb-4">
+          <i class="fe fe-mail"></i>
+        </div>
+        <h1 class="brand-title">Email Verification</h1>
+        <p class="brand-subtitle">Confirming your Offsure account</p>
+      </div>
+    </div>
+
+    <div class="login-form-section">
+      <div class="form-container text-center">
+        @if (state === 'loading') {
+          <div class="spinner-border text-primary mb-3" role="status"></div>
+          <h2 class="form-title">Please wait</h2>
+          <p class="form-subtitle text-muted">{{ message }}</p>
+        }
+
+        @if (state === 'success') {
+          <div class="text-success mb-3 fs-1">
+            <i class="fe fe-check-circle"></i>
+          </div>
+          <h2 class="form-title">Email verified</h2>
+          <p class="form-subtitle text-muted mb-4">{{ message }}</p>
+          <button type="button" class="btn btn-primary w-100" (click)="goToLogin()">
+            Go to login
+          </button>
+        }
+
+        @if (state === 'error') {
+          <div class="text-danger mb-3 fs-1">
+            <i class="fe fe-alert-circle"></i>
+          </div>
+          <h2 class="form-title">Verification failed</h2>
+          <p class="form-subtitle text-muted mb-4">{{ message }}</p>
+          <button type="button" class="btn btn-outline-primary w-100" (click)="goToLogin()">
+            Back to login
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</div>

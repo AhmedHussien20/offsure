@@ -30,6 +30,11 @@ export const admin: Routes = [
       import('./reset-password/reset-password.component')
         .then(c => c.ResetPasswordComponent)
     },
+  {
+    path: 'verify-email',
+    loadComponent: () =>
+      import('./verify-email/verify-email.component').then(m => m.VerifyEmailComponent),
+  },
   // Backwards-compatible redirects (old route names)
   { path: 'verify-code', redirectTo: 'login' },
 

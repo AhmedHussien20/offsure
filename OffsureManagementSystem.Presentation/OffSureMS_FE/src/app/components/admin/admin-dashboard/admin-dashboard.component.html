@@ -1,0 +1,25 @@
+<app-page-header
+  [title]="'Admin Dashboard'"
+  [title1]="['Admin', 'Dashboard']"
+  [activeitem]="'Dashboard'">
+</app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading dashboard...</div>
+} @else {
+  <div class="row row-sm">
+    @for (card of statCards; track card.label) {
+      <div class="col-sm-12 col-md-6 col-lg-3">
+        <a [routerLink]="card.link" class="text-decoration-none">
+          <spk-ecommerce
+            [label]="card.label"
+            [value]="card.value"
+            [icon]="card.icon"
+            [description]="card.description"
+            [subValue]="''">
+          </spk-ecommerce>
+        </a>
+      </div>
+    }
+  </div>
+}

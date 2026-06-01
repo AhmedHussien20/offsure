@@ -20,11 +20,14 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
     }),
     catchError((err: any) => {
-      const message = err?.error?.message || 'Error occurred. Please try again.';
-      toastr.error(message, 'Error', {
-        timeOut: 3000,
-        positionClass: 'toast-top-right'
-      });
+      // 401 is handled by AuthInterceptor (refresh + session logout toast).
+      if (err?.status !== 401) {
+        const message = err?.error?.message || 'Error occurred. Please try again.';
+        toastr.error(message, 'Error', {
+          timeOut: 3000,
+          positionClass: 'toast-top-right'
+        });
+      }
       return throwError(() => err);
     })
   );

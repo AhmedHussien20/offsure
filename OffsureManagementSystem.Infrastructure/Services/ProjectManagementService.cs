@@ -5,6 +5,7 @@ using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using OffsureManagementSystem.Domain.Entities.Enum;
 using TaskMangment.Application.Common.Responses;
+using Client = OffshoreManagementSystem.Domain.Entities.Client;
 using Project = OffshoreManagementSystem.Domain.Entities.Project;
 using ProjectAssignment = OffshoreManagementSystem.Domain.Entities.ProjectAssignment;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
@@ -17,6 +18,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<Project> _projectRepo;
         private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
+        private readonly IRepository<Client> _clientRepo;
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly IEmailNotificationService _emailNotificationService;
 
@@ -24,12 +26,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<Project> projectRepo,
             IRepository<ProjectAssignment> projectAssignmentRepo,
             IRepository<ServiceRequest> serviceRequestRepo,
+            IRepository<Client> clientRepo,
             IRepository<TeamMember> teamMemberRepo,
             IEmailNotificationService emailNotificationService)
         {
             _projectRepo = projectRepo;
             _projectAssignmentRepo = projectAssignmentRepo;
             _serviceRequestRepo = serviceRequestRepo;
+            _clientRepo = clientRepo;
             _teamMemberRepo = teamMemberRepo;
             _emailNotificationService = emailNotificationService;
         }
@@ -59,6 +63,30 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (project is null)
                 throw new AppException("Resource not found.", 404);
+
+            return MapProject(project);
+        }
+
+        public async Task<PagedResponse<ProjectDto>> GetClientProjectsByUserIdAsync(
+            int userId,
+            ProjectFilterRequest request)
+        {
+            var clientId = await GetClientIdForUserAsync(userId);
+            request.ClientId = clientId;
+            return await GetAllProjectsAsync(request);
+        }
+
+        public async Task<ProjectDto> GetClientProjectByIdAsync(int userId, int projectId)
+        {
+            var clientId = await GetClientIdForUserAsync(userId);
+            var project = await BuildProjectQuery()
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (project.ServiceRequest?.ClientId != clientId)
+                throw new AppException("You do not have access to this project.", 403);
 
             return MapProject(project);
         }
@@ -348,6 +376,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static int GetSkipCount(ProjectFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
+
+        private async Task<int> GetClientIdForUserAsync(int userId)
+        {
+            var client = await _clientRepo
+                .Query()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (client is null)
+                throw new AppException("Client profile not found for current user.", 404);
+
+            return client.Id;
+        }
 
         private static ProjectDto MapProject(Project project)
         {
