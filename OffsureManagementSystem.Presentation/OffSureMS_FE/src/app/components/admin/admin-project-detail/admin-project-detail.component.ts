@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { ProjectDto } from 'app/core/models/projects/project.models';
+import { ProjectDto, ProjectStatus } from 'app/core/models/projects/project.models';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
-import { projectStatusKey } from 'app/core/utils/enum-status.util';
+import { normalizeProjectStatus, projectStatusKey } from 'app/core/utils/enum-status.util';
 import { PROJECT_STATUS_BADGES } from '../admin.constants';
 
 @Component({
@@ -16,12 +16,28 @@ import { PROJECT_STATUS_BADGES } from '../admin.constants';
   standalone: true,
   imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule],
   templateUrl: './admin-project-detail.component.html',
+  styleUrl: './admin-project-detail.component.scss',
 })
 export class AdminProjectDetailComponent implements OnInit {
   project: ProjectDto | null = null;
   loading = true;
+  savingProgress = false;
+  savingStatus = false;
+  /** Live value while dragging the slider (synced with form + number input). */
+  progressPreview = 0;
   teamMembers: TeamMemberDto[] = [];
   assignForm!: FormGroup;
+  deliveryForm!: FormGroup;
+
+  readonly statusOptions: { value: ProjectStatus; label: string }[] = [
+    { value: ProjectStatus.Pending, label: 'Pending' },
+    { value: ProjectStatus.InProgress, label: 'In Progress' },
+    { value: ProjectStatus.OnHold, label: 'On Hold' },
+    { value: ProjectStatus.Completed, label: 'Completed' },
+    { value: ProjectStatus.Cancelled, label: 'Cancelled' },
+  ];
+
+  private projectId = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -37,8 +53,17 @@ export class AdminProjectDetailComponent implements OnInit {
       role: ['', Validators.required],
     });
 
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!id) {
+    this.deliveryForm = this.fb.group({
+      progress: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+      status: [ProjectStatus.InProgress, Validators.required],
+    });
+
+    this.progressControl.valueChanges.subscribe(value => {
+      this.progressPreview = this.clampProgress(value);
+    });
+
+    this.projectId = Number(this.route.snapshot.paramMap.get('id'));
+    if (!this.projectId) {
       this.loading = false;
       return;
     }
@@ -49,15 +74,21 @@ export class AdminProjectDetailComponent implements OnInit {
         this.teamMembers = res.data?.data ?? [];
       });
 
-    this.projectsService.getById(id).subscribe({
-      next: res => {
-        this.project = res.data ?? null;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      },
-    });
+    this.loadProject();
+  }
+
+  get progressControl(): FormControl<number> {
+    return this.deliveryForm.get('progress') as FormControl<number>;
+  }
+
+  onProgressSliderInput(): void {
+    this.progressPreview = this.clampProgress(this.progressControl.value);
+  }
+
+  get isDeliveryLocked(): boolean {
+    if (!this.project) return true;
+    const status = normalizeProjectStatus(this.project.status);
+    return status === ProjectStatus.Completed || status === ProjectStatus.Cancelled;
   }
 
   statusBadgeClass(status: unknown): string {
@@ -66,6 +97,65 @@ export class AdminProjectDetailComponent implements OnInit {
 
   statusLabel(status: unknown): string {
     return PROJECT_STATUS_BADGES[projectStatusKey(status)]?.text ?? String(status ?? '');
+  }
+
+  saveProgress(): void {
+    if (!this.project || this.deliveryForm.get('progress')?.invalid) {
+      this.deliveryForm.get('progress')?.markAsTouched();
+      return;
+    }
+
+    const progress = Number(this.deliveryForm.get('progress')?.value);
+    this.savingProgress = true;
+    this.projectsService
+      .update(this.project.id, {
+        name: this.project.name,
+        description: this.project.description,
+        targetEndDate: this.project.targetEndDate ?? undefined,
+        budget: this.project.budget ?? undefined,
+        progress,
+      })
+      .subscribe({
+        next: res => {
+          this.project = res.data ?? this.project;
+          this.patchDeliveryForm();
+          this.toastr.success('Progress updated.');
+          this.savingProgress = false;
+        },
+        error: err => {
+          this.toastr.error(err?.error?.message || 'Failed to update progress.');
+          this.savingProgress = false;
+        },
+      });
+  }
+
+  saveStatus(): void {
+    if (!this.project || this.deliveryForm.get('status')?.invalid) {
+      return;
+    }
+
+    const status = this.deliveryForm.get('status')?.value as ProjectStatus;
+    if (normalizeProjectStatus(this.project.status) === normalizeProjectStatus(status)) {
+      this.toastr.info('Status is already set to this value.');
+      return;
+    }
+
+    this.savingStatus = true;
+    this.projectsService.updateStatus(this.project.id, { status }).subscribe({
+      next: res => {
+        this.project = res.data ?? this.project;
+        this.patchDeliveryForm();
+        this.toastr.success('Project status updated.');
+        if (normalizeProjectStatus(this.project?.status) === ProjectStatus.Completed) {
+          this.toastr.info('You can now mark the related service request as Completed.');
+        }
+        this.savingStatus = false;
+      },
+      error: err => {
+        this.toastr.error(err?.error?.message || 'Failed to update status.');
+        this.savingStatus = false;
+      },
+    });
   }
 
   assignMember(): void {
@@ -104,5 +194,35 @@ export class AdminProjectDetailComponent implements OnInit {
         this.toastr.error(err?.error?.message || 'Failed to remove team member.');
       },
     });
+  }
+
+  private loadProject(): void {
+    this.loading = true;
+    this.projectsService.getById(this.projectId).subscribe({
+      next: res => {
+        this.project = res.data ?? null;
+        this.patchDeliveryForm();
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      },
+    });
+  }
+
+  private patchDeliveryForm(): void {
+    if (!this.project) return;
+    const progress = this.project.progress ?? 0;
+    this.deliveryForm.patchValue({
+      progress,
+      status: normalizeProjectStatus(this.project.status),
+    });
+    this.progressPreview = this.clampProgress(progress);
+  }
+
+  private clampProgress(value: unknown): number {
+    const n = Number(value);
+    if (Number.isNaN(n)) return 0;
+    return Math.min(100, Math.max(0, Math.round(n)));
   }
 }

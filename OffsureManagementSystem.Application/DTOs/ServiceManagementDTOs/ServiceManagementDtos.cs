@@ -120,5 +120,7 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public DateTime? DueDate { get; set; }
         public decimal? Budget { get; set; }
         public int? Priority { get; set; }
+        public int? ProjectId { get; set; }
+        public ProjectStatus? ProjectStatus { get; set; }
     }
 }

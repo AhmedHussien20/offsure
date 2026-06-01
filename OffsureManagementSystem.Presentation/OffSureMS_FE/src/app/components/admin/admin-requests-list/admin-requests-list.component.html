@@ -35,7 +35,7 @@
       class="form-select form-select-sm w-auto"
       [ngModel]="item.status"
       (ngModelChange)="updateStatus(item, $event)">
-      @for (s of statusOptions; track s) {
+      @for (s of statusOptionsFor(item); track s) {
         <option [ngValue]="s">{{ s === 'InProgress' ? 'In Progress' : (s === 'Cancelled' ? 'Cancelled' : s) }}</option>
       }
     </select>
@@ -46,6 +46,13 @@
       (click)="convertToProject(item)">
       Convert to Project
     </button>
-    <small class="text-muted">Set status to In Progress, then convert.</small>
+    @if (item.projectId && !canCompleteRequest(item)) {
+      <small class="text-warning w-100">
+        Finish the project (mark it Completed) before completing this request.
+        <a [routerLink]="['/admin/projects', item.projectId]" class="ms-1">Open project</a>
+      </small>
+    } @else {
+      <small class="text-muted">Set status to In Progress, then convert to a project.</small>
+    }
   </div>
 </ng-template>

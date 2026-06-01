@@ -379,8 +379,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (currentStatus == newStatus)
                 return;
 
-            var isValid = currentStatus == ProjectStatus.InProgress
-                && newStatus == ProjectStatus.Completed;
+            if (currentStatus is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                throw new AppException("Cannot change status of a completed or cancelled project.", 400);
+
+            // Active projects may move to any non-terminal workflow state.
+            var isValid = newStatus is ProjectStatus.Pending
+                or ProjectStatus.InProgress
+                or ProjectStatus.OnHold
+                or ProjectStatus.Completed
+                or ProjectStatus.Cancelled;
 
             if (!isValid)
                 throw new AppException("Invalid project status transition.", 400);

@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ProjectStatus } from 'app/core/models/projects/project.models';
 import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
+import { normalizeProjectStatus } from 'app/core/utils/enum-status.util';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
@@ -13,7 +16,7 @@ import { ADMIN_REQUEST_COLUMNS } from '../admin.constants';
 @Component({
   selector: 'app-admin-requests-list',
   standalone: true,
-  imports: [CommonModule, SharedModule, GenericTableComponent, FormsModule],
+  imports: [CommonModule, SharedModule, GenericTableComponent, FormsModule, RouterModule],
   templateUrl: './admin-requests-list.component.html',
 })
 export class AdminRequestsListComponent implements OnInit {
@@ -81,7 +84,27 @@ export class AdminRequestsListComponent implements OnInit {
     this.loadRequests();
   }
 
+  canCompleteRequest(item: ServiceRequestDto): boolean {
+    if (!item.projectId) {
+      return true;
+    }
+    return normalizeProjectStatus(item.projectStatus) === ProjectStatus.Completed;
+  }
+
+  statusOptionsFor(item: ServiceRequestDto): ServiceRequestStatus[] {
+    if (this.canCompleteRequest(item)) {
+      return this.statusOptions;
+    }
+    return this.statusOptions.filter(s => s !== ServiceRequestStatus.Completed);
+  }
+
   updateStatus(item: ServiceRequestDto, status: ServiceRequestStatus): void {
+    if (status === ServiceRequestStatus.Completed && !this.canCompleteRequest(item)) {
+      this.toastr.warning('Complete the linked project before marking this request as Completed.');
+      this.loadRequests();
+      return;
+    }
+
     this.serviceRequestsService.updateStatus(item.id, { status }).subscribe({
       next: () => {
         this.toastr.success('Request status updated.');

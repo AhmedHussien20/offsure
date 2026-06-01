@@ -130,4 +130,6 @@ export interface ServiceRequestDto {
   dueDate: string | null;
   budget: number | null;
   priority: number | null;
+  projectId?: number | null;
+  projectStatus?: string | null;
 }

@@ -104,11 +104,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ServiceRequestDto> UpdateRequestStatusAsync(int id, ServiceRequestStatus status)
         {
-            var request = await _serviceRequestRepo.GetByIDAsync(id);
+            var request = await _serviceRequestRepo
+                .Query()
+                .Include(r => r.Project)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
             if (request is null)
                 throw new AppException("Resource not found.", 404);
 
             EnsureValidStatusTransition(request.Status, status);
+
+            if (status == ServiceRequestStatus.Completed)
+                EnsureRequestProjectIsCompleted(request);
 
             request.Status = status;
             request.UpdatedAt = DateTime.UtcNow;
@@ -167,7 +174,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(r => r.Client)
                     .ThenInclude(c => c.User)
                 .Include(r => r.Service)
-                    .ThenInclude(s => s.ServiceCategory);
+                    .ThenInclude(s => s.ServiceCategory)
+                .Include(r => r.Project);
         }
 
         private static IQueryable<ServiceRequest> ApplyFilters(
@@ -259,6 +267,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
             }
         }
 
+        private static void EnsureRequestProjectIsCompleted(ServiceRequest request)
+        {
+            if (request.Project is null)
+                return;
+
+            if (request.Project.Status != ProjectStatus.Completed)
+            {
+                throw new AppException(
+                    "Complete the linked project before marking this request as Completed.",
+                    400);
+            }
+        }
+
         private static void EnsureValidStatusTransition(
             ServiceRequestStatus currentStatus,
             ServiceRequestStatus newStatus)
@@ -309,7 +330,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 RequestedDate = request.RequestedDate,
                 DueDate = request.DueDate,
                 Budget = request.Budget,
-                Priority = request.Priority
+                Priority = request.Priority,
+                ProjectId = request.Project?.Id,
+                ProjectStatus = request.Project?.Status
             };
         }
     }

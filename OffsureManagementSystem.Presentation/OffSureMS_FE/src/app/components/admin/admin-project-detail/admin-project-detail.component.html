@@ -11,20 +11,108 @@
 } @else {
   <div class="row">
     <div class="col-xl-8">
-      <div class="card custom-card">
+      <div class="card custom-card mb-3">
         <div class="card-body">
           <p class="text-muted">{{ project.description || 'No description.' }}</p>
           <div class="row g-2">
             <div class="col-md-6"><strong>Client:</strong> {{ project.clientName }}</div>
             <div class="col-md-6"><strong>Service:</strong> {{ project.serviceName }}</div>
             <div class="col-md-6">
-              <strong>Status:</strong>
-              <span class="badge ms-1 {{ statusBadgeClass(project.status) }}">
-                {{ statusLabel(project.status) }}
-              </span>
+              <strong>Request:</strong>
+              {{ project.serviceRequestTitle || '—' }}
             </div>
-            <div class="col-md-6"><strong>Progress:</strong> {{ project.progress ?? 0 }}%</div>
+            <div class="col-md-6">
+              <strong>Target end:</strong>
+              {{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div class="card custom-card">
+        <div class="card-header border-bottom-0">
+          <h5 class="mb-0">Delivery</h5>
+          <span class="d-block fs-12 text-muted mt-1">
+            Update progress and status. Complete the project before closing the service request.
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+            <span class="text-muted">Current:</span>
+            <span class="badge {{ statusBadgeClass(project.status) }}">
+              {{ statusLabel(project.status) }}
+            </span>
+            <span class="text-muted ms-2">{{ project.progress ?? 0 }}% complete</span>
+          </div>
+
+          @if (isDeliveryLocked) {
+            <div class="alert alert-light border mb-0">
+              This project is {{ statusLabel(project.status) }}. Progress and status can no longer be changed.
+            </div>
+          } @else {
+            <form [formGroup]="deliveryForm">
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Progress (0–100%)</label>
+                <div
+                  class="delivery-progress-slider"
+                  [style.--progress]="progressPreview + '%'">
+                  <span
+                    class="delivery-progress-slider__bubble"
+                    [style.left]="progressPreview + '%'">
+                    {{ progressPreview }}%
+                  </span>
+                  <input
+                    type="range"
+                    class="delivery-progress-slider__input"
+                    min="0"
+                    max="100"
+                    step="1"
+                    [formControl]="progressControl"
+                    (input)="onProgressSliderInput()" />
+                 
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+                  <label class="form-label mb-0 text-muted small">Exact value</label>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                    style="width: 5rem"
+                    min="0"
+                    max="100"
+                    [formControl]="progressControl" />
+                  <span class="text-muted">%</span>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-primary"
+                    [disabled]="savingProgress"
+                    (click)="saveProgress()">
+                    Save progress
+                  </button>
+                </div>
+              </div>
+
+              <div class="border-top pt-3">
+                <label class="form-label fw-semibold">Status</label>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <select class="form-select form-select-sm w-auto" formControlName="status">
+                    @for (opt of statusOptions; track opt.value) {
+                      <option [ngValue]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    [disabled]="savingStatus"
+                    (click)="saveStatus()">
+                    Update status
+                  </button>
+                </div>
+                <p class="text-muted small mb-0 mt-2">
+                  Setting status to <strong>Completed</strong> sets progress to 100% and notifies the client.
+                </p>
+              </div>
+            </form>
+          }
         </div>
       </div>
     </div>
