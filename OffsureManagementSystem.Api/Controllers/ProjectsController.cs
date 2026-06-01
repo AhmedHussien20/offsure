@@ -47,6 +47,25 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ProjectDto>.Ok(project));
         }
 
+        [HttpGet("team/my")]
+        [Authorize(Roles = "TeamMember")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ProjectDto>>>> GetTeamMemberProjects(
+            [FromQuery] ProjectFilterRequest request)
+        {
+            var projects = await _projectManagementService.GetTeamMemberProjectsByUserIdAsync(
+                GetCurrentUserId(),
+                request);
+            return Ok(ApiResponse<PagedResponse<ProjectDto>>.Ok(projects));
+        }
+
+        [HttpGet("team/my/{id:int}")]
+        [Authorize(Roles = "TeamMember")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> GetTeamMemberProjectById(int id)
+        {
+            var project = await _projectManagementService.GetTeamMemberProjectByIdAsync(GetCurrentUserId(), id);
+            return Ok(ApiResponse<ProjectDto>.Ok(project));
+        }
+
         [HttpGet("{id:int}")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> GetProjectById(int id)

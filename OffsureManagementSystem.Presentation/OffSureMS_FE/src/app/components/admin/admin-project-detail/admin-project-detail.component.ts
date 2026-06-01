@@ -8,6 +8,7 @@ import { TeamMembersService } from 'app/core/services/team-members.service';
 import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
+import { projectStatusKey } from 'app/core/utils/enum-status.util';
 import { PROJECT_STATUS_BADGES } from '../admin.constants';
 
 @Component({
@@ -59,12 +60,12 @@ export class AdminProjectDetailComponent implements OnInit {
     });
   }
 
-  statusBadgeClass(status: string): string {
-    return PROJECT_STATUS_BADGES[status]?.class ?? 'bg-light';
+  statusBadgeClass(status: unknown): string {
+    return PROJECT_STATUS_BADGES[projectStatusKey(status)]?.class ?? 'bg-light';
   }
 
-  statusLabel(status: string): string {
-    return PROJECT_STATUS_BADGES[status]?.text ?? status;
+  statusLabel(status: unknown): string {
+    return PROJECT_STATUS_BADGES[projectStatusKey(status)]?.text ?? String(status ?? '');
   }
 
   assignMember(): void {

@@ -64,3 +64,19 @@ export const ADMIN_SERVICE_COLUMNS: TableColumn[] = [
   { key: 'serviceCategoryName', label: 'Category', type: 'text' },
   { key: 'visibleLabel', label: 'Visible', type: 'text' },
 ];
+
+export const ADMIN_SKILL_CATEGORY_COLUMNS: TableColumn[] = [
+  { key: 'name', label: 'Category', type: 'text' },
+  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'displayOrder', label: 'Order', type: 'text' },
+  { key: 'skillsCount', label: 'Skills', type: 'text' },
+  { key: 'activeLabel', label: 'Active', type: 'text' },
+];
+
+export const ADMIN_SKILL_COLUMNS: TableColumn[] = [
+  { key: 'name', label: 'Skill', type: 'text' },
+  { key: 'skillCategoryName', label: 'Category', type: 'text' },
+  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'assignedCountLabel', label: 'Team Members', type: 'text' },
+  { key: 'activeLabel', label: 'Active', type: 'text' },
+];

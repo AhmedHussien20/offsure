@@ -5,9 +5,7 @@
 </app-page-header>
 
 <div class="card custom-card">
-  <div class="card-body">
     <app-generic-table
-      [title]="'Portfolio Items'"
       [columns]="columns"
       [data]="data"
       [page]="page"
@@ -25,5 +23,4 @@
       (entriesChange)="onEntriesChange($event)">
     </app-generic-table>
     <p class="text-muted small mt-2 mb-0">Add and edit portfolio forms can be added in a follow-up step.</p>
-  </div>
 </div>

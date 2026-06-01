@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using OffsureManagementSystem.Infrastructure;
 using OffsureManagementSystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -21,7 +22,11 @@ namespace OffsureManagementSystem.API
 
 
             // Add services to the container.
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
 
             builder.Services.AddAuthentication(options =>
             {

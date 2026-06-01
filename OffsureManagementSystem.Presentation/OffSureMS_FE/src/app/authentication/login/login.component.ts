@@ -74,6 +74,8 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.router.navigate(['/client/dashboard']);
         } else if (this.authservice.isAdministrator()) {
           this.router.navigate(['/admin/dashboard']);
+        } else if (this.authservice.isTeamMember()) {
+          this.router.navigate(['/team/dashboard']);
         } else {
           this.router.navigate(['/']);
         }

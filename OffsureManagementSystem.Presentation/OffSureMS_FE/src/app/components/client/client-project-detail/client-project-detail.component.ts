@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProjectDto } from 'app/core/models/projects/project.models';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { SharedModule } from 'app/shared/shared.module';
+import { projectStatusKey } from 'app/core/utils/enum-status.util';
 import { PROJECT_STATUS_BADGES } from '../client.constants';
 
 @Component({
@@ -39,11 +40,11 @@ export class ClientProjectDetailComponent implements OnInit {
     });
   }
 
-  statusBadgeClass(status: string): string {
-    return PROJECT_STATUS_BADGES[status]?.class ?? 'bg-light';
+  statusBadgeClass(status: unknown): string {
+    return PROJECT_STATUS_BADGES[projectStatusKey(status)]?.class ?? 'bg-light';
   }
 
-  statusLabel(status: string): string {
-    return PROJECT_STATUS_BADGES[status]?.text ?? status;
+  statusLabel(status: unknown): string {
+    return PROJECT_STATUS_BADGES[projectStatusKey(status)]?.text ?? String(status ?? '');
   }
 }

@@ -6,6 +6,7 @@ import { Store } from '@ngrx/store';
 import * as NavActions from './store/nav/nav.actions';
 import { TranslationService } from './shared/services/translation.service';
 import { SignalRService } from './core/services/signalr.service';
+import { AppScrollService } from './core/services/app-scroll.service';
 import { TranslateService } from '@ngx-translate/core';
 
 @Component({
@@ -21,7 +22,8 @@ export class AppComponent {
     private appState: AppStateService,
     private store: Store,
     private translationService: TranslationService,
-    private signalR: SignalRService
+    private signalR: SignalRService,
+    _appScroll: AppScrollService
   ) { }
 
   ngOnInit(): void {

@@ -43,6 +43,11 @@ export const adminRoutes: Routes = [
           import('./admin-services/admin-services.component').then(m => m.AdminServicesComponent),
       },
       {
+        path: 'skills',
+        loadComponent: () =>
+          import('./admin-skills/admin-skills.component').then(m => m.AdminSkillsComponent),
+      },
+      {
         path: 'portfolio',
         loadComponent: () =>
           import('./admin-portfolios-list/admin-portfolios-list.component').then(m => m.AdminPortfoliosListComponent),

@@ -16,7 +16,8 @@ export interface TeamMemberRequest {
 
 export interface UpsertTeamMemberSkillDto {
   skillId: number;
-  proficiencyLevel?: ProficiencyLevel;
+  /** Backend expects int 1–5 */
+  proficiencyLevel?: number;
   yearsOfExperience?: number;
   acquiredDate?: string;
   isEndorsed?: boolean;
@@ -47,12 +48,22 @@ export interface UpdateTeamMemberDto {
   skillAssignments?: UpsertTeamMemberSkillDto[];
 }
 
+export interface UpdateTeamMemberProfileDto {
+  title: string;
+  yearsOfExperience: number;
+  phoneNumber?: string;
+}
+
+export interface UpdateTeamMemberAvailabilityDto {
+  isAvailable: boolean;
+}
+
 export interface TeamMemberSkillDto {
   id: number;
   skillId: number;
   skillName: string;
   skillCategoryName: string;
-  proficiencyLevel: ProficiencyLevel;
+  proficiencyLevel: number;
   yearsOfExperience: number;
   acquiredDate: string | null;
   isEndorsed: boolean;

@@ -5,6 +5,11 @@ import { SpkEcommerceComponent } from 'app/@spk/reusable-ecommerce/spk-ecommerce
 import { ClientContextService } from 'app/core/services/client-context.service';
 import { ClientDto, ClientServiceRequestSummaryDto } from 'app/core/models/clients/client.models';
 import { SharedModule } from 'app/shared/shared.module';
+import { ProjectStatus } from 'app/core/models/projects/project.models';
+import {
+  normalizeProjectStatus,
+  serviceRequestStatusKey,
+} from 'app/core/utils/enum-status.util';
 import { SERVICE_REQUEST_STATUS_BADGES } from '../client.constants';
 
 @Component({
@@ -59,7 +64,9 @@ export class ClientDashboardComponent implements OnInit {
 
         this.recentRequests = (profile.serviceRequests ?? []).slice(0, 5);
         this.ongoingProjects = (profile.serviceRequests ?? []).filter(
-          r => r.projectId && r.projectStatus === 'InProgress'
+          r =>
+            r.projectId &&
+            normalizeProjectStatus(r.projectStatus) === ProjectStatus.InProgress
         );
         this.loading = false;
       },
@@ -69,17 +76,22 @@ export class ClientDashboardComponent implements OnInit {
     });
   }
 
-  statusBadgeClass(status: string): string {
-    return SERVICE_REQUEST_STATUS_BADGES[status]?.class ?? 'bg-light';
+  statusBadgeClass(status: unknown): string {
+    return SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.class ?? 'bg-light';
   }
 
-  statusLabel(status: string): string {
-    return SERVICE_REQUEST_STATUS_BADGES[status]?.text ?? status;
+  statusLabel(status: unknown): string {
+    return (
+      SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.text ??
+      String(status ?? '')
+    );
   }
 
   private countOngoingProjects(profile: ClientDto): number {
     return (profile.serviceRequests ?? []).filter(
-      r => r.projectId && r.projectStatus === 'InProgress'
+      r =>
+        r.projectId &&
+        normalizeProjectStatus(r.projectStatus) === ProjectStatus.InProgress
     ).length;
   }
 }

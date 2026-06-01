@@ -51,6 +51,13 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     requiredRole: 'Administrator',
   },
   {
+    title: 'Skills',
+    path: '/admin/skills',
+    type: 'link',
+    icon: 'ti-star',
+    requiredRole: 'Administrator',
+  },
+  {
     title: 'Portfolio',
     path: '/admin/portfolio',
     type: 'link',
@@ -63,6 +70,31 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     type: 'link',
     icon: 'ti-briefcase',
     requiredRole: 'Administrator',
+  },
+];
+
+private TEAM_MENUITEMS: MenuItem[] = [
+  { headTitle: 'Team Portal' },
+  {
+    title: 'Dashboard',
+    path: '/team/dashboard',
+    type: 'link',
+    icon: 'ti-home',
+    requiredRole: 'TeamMember',
+  },
+  {
+    title: 'My Projects',
+    path: '/team/projects',
+    type: 'link',
+    icon: 'ti-folder',
+    requiredRole: 'TeamMember',
+  },
+  {
+    title: 'My Profile',
+    path: '/team/profile',
+    type: 'link',
+    icon: 'ti-user',
+    requiredRole: 'TeamMember',
   },
 ];
 
@@ -356,6 +388,9 @@ private MENUITEMS: MenuItem[] = [
   private getMenuItemsForCurrentUser(): MenuItem[] {
     if (this.auth.isClient()) {
       return this.CLIENT_MENUITEMS;
+    }
+    if (this.auth.isTeamMember()) {
+      return this.TEAM_MENUITEMS;
     }
     if (this.auth.isAdministrator()) {
       return this.ADMIN_MENUITEMS;

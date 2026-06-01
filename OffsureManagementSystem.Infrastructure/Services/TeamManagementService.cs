@@ -353,6 +353,103 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return roots.Select(root => MapStructure(root, childrenByLeader, new HashSet<int>())).ToList();
         }
 
+        public async Task<TeamMemberDto> GetTeamMemberProfileAsync(int userId)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            return MapToDto(member);
+        }
+
+        public async Task<TeamMemberDto> UpdateTeamMemberProfileAsync(int userId, UpdateTeamMemberProfileDto dto)
+        {
+            ValidateTeamMemberInput(dto.Title, dto.YearsOfExperience);
+
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            member.Title = dto.Title.Trim();
+            member.YearsOfExperience = dto.YearsOfExperience;
+            member.PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty;
+            member.UpdatedAt = DateTime.UtcNow;
+
+            _teamMemberRepo.SaveInclude(
+                member,
+                nameof(member.Title),
+                nameof(member.YearsOfExperience),
+                nameof(member.PhoneNumber),
+                nameof(member.UpdatedAt));
+            await _teamMemberRepo.SaveChangesAsync();
+
+            return await GetTeamMemberProfileAsync(userId);
+        }
+
+        public async Task<TeamMemberDto> UpdateAvailabilityAsync(int userId, bool isAvailable)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            member.IsAvailable = isAvailable;
+            member.UpdatedAt = DateTime.UtcNow;
+
+            _teamMemberRepo.SaveInclude(
+                member,
+                nameof(member.IsAvailable),
+                nameof(member.UpdatedAt));
+            await _teamMemberRepo.SaveChangesAsync();
+
+            return await GetTeamMemberProfileAsync(userId);
+        }
+
+        public Task<TeamMemberDto> AssignSkillForUserAsync(int userId, UpsertTeamMemberSkillDto dto)
+        {
+            return AssignSkillForMemberAsync(userId, dto);
+        }
+
+        public Task<TeamMemberDto> RemoveSkillForUserAsync(int userId, int skillId)
+        {
+            return RemoveSkillForMemberAsync(userId, skillId);
+        }
+
+        public Task<CvStorageResultDto> GenerateCvForUserAsync(int userId)
+        {
+            return GenerateCvForMemberAsync(userId);
+        }
+
+        public Task<CvStorageResultDto> StoreCvForUserAsync(int userId, Stream content, string fileName)
+        {
+            return StoreCvForMemberAsync(userId, content, fileName);
+        }
+
+        private async Task<TeamMemberDto> AssignSkillForMemberAsync(int userId, UpsertTeamMemberSkillDto dto)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            return await AssignSkillAsync(member.Id, dto);
+        }
+
+        private async Task<TeamMemberDto> RemoveSkillForMemberAsync(int userId, int skillId)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            return await RemoveSkillAsync(member.Id, skillId);
+        }
+
+        private async Task<CvStorageResultDto> GenerateCvForMemberAsync(int userId)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            return await GenerateCvAsync(member.Id);
+        }
+
+        private async Task<CvStorageResultDto> StoreCvForMemberAsync(int userId, Stream content, string fileName)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            return await StoreCvAsync(member.Id, content, fileName);
+        }
+
+        private async Task<TeamMember> GetTeamMemberEntityForUserAsync(int userId)
+        {
+            var member = await BuildBaseQuery()
+                .FirstOrDefaultAsync(t => t.UserId == userId);
+
+            if (member is null)
+                throw new AppException("Team member profile not found for current user.", 404);
+
+            return member;
+        }
+
         private IQueryable<TeamMember> BuildBaseQuery()
         {
             return _teamMemberRepo.Query()

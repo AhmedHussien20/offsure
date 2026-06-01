@@ -91,6 +91,30 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return MapProject(project);
         }
 
+        public async Task<PagedResponse<ProjectDto>> GetTeamMemberProjectsByUserIdAsync(
+            int userId,
+            ProjectFilterRequest request)
+        {
+            var teamMemberId = await GetTeamMemberIdForUserAsync(userId);
+            request.TeamMemberId = teamMemberId;
+            return await GetAllProjectsAsync(request);
+        }
+
+        public async Task<ProjectDto> GetTeamMemberProjectByIdAsync(int userId, int projectId)
+        {
+            var teamMemberId = await GetTeamMemberIdForUserAsync(userId);
+            var project = await BuildProjectQuery()
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (!project.ProjectAssignments.Any(a => a.TeamMemberId == teamMemberId))
+                throw new AppException("You do not have access to this project.", 403);
+
+            return MapProject(project);
+        }
+
         public async Task<ProjectDto> CreateProjectAsync(CreateProjectDto dto)
         {
             ValidateCreateProjectInput(dto);
@@ -388,6 +412,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Client profile not found for current user.", 404);
 
             return client.Id;
+        }
+
+        private async Task<int> GetTeamMemberIdForUserAsync(int userId)
+        {
+            var member = await _teamMemberRepo
+                .Query()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.UserId == userId);
+
+            if (member is null)
+                throw new AppException("Team member profile not found for current user.", 404);
+
+            return member.Id;
         }
 
         private static ProjectDto MapProject(Project project)

@@ -1,0 +1,117 @@
+<app-page-header
+  [title]="'Skills'"
+  [title1]="['Admin', 'Skills']"
+  [activeitem]="'Skills'">
+</app-page-header>
+
+<ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs nav-style-5 mb-3">
+  <li [ngbNavItem]="'categories'">
+    <a ngbNavLink class="nav-link">Skill Categories</a>
+    <ng-template ngbNavContent>
+      @if (showCategoryForm) {
+        <div class="card custom-card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Add Skill Category</h5>
+            <button type="button" class="btn btn-sm btn-light" (click)="cancelCategoryForm()">Cancel</button>
+          </div>
+          <div class="card-body">
+            <app-generic-form
+              [formGroup]="categoryForm"
+              [formConfig]="categoryFormConfig"
+              [showSubmit]="false">
+            </app-generic-form>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="savingCategory"
+              (click)="submitCategory()">
+              Save Category
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="card custom-card">
+        <app-generic-table
+          [title]="'Skill Categories'"
+          [columns]="categoryColumns"
+          [data]="categories"
+          [page]="catPage"
+          [entries]="catEntries"
+          [totalItems]="catTotal"
+          [totalPages]="catTotalPages"
+          [searchCriteria]="catSearch"
+          [showFilters]="true"
+          [showPagination]="true"
+          [showEmployeeFilter]="false"
+          [showExportExcel]="false"
+          [showAddButton]="true"
+          [addButtonLabel]="'Add Category'"
+          [onSearch]="onCatSearch"
+          (pageChange)="onCatPageChange($event)"
+          (entriesChange)="onCatEntriesChange($event)"
+          (addClick)="openCategoryForm()">
+        </app-generic-table>
+      </div>
+    </ng-template>
+  </li>
+
+  <li [ngbNavItem]="'skills'">
+    <a ngbNavLink class="nav-link">Skills</a>
+    <ng-template ngbNavContent>
+      @if (showSkillForm) {
+        <div class="card custom-card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Add Skill</h5>
+            <button type="button" class="btn btn-sm btn-light" (click)="cancelSkillForm()">Cancel</button>
+          </div>
+          <div class="card-body">
+            @if (categoryOptions.length === 0) {
+              <div class="alert alert-warning mb-3">
+                Create at least one skill category before adding skills.
+              </div>
+            }
+            <app-generic-form
+              [formGroup]="skillForm"
+              [formConfig]="skillFormConfig"
+              [showSubmit]="false">
+            </app-generic-form>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="savingSkill || categoryOptions.length === 0"
+              (click)="submitSkill()">
+              Save Skill
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="card custom-card">
+        <app-generic-table
+          [title]="'Skills'"
+          [columns]="skillColumns"
+          [data]="skills"
+          [page]="skillPage"
+          [entries]="skillEntries"
+          [totalItems]="skillTotal"
+          [totalPages]="skillTotalPages"
+          [searchCriteria]="skillSearch"
+          [labels]="skillLabels"
+          [dropdownOptions]="skillDropdownOptions"
+          [showFilters]="true"
+          [showPagination]="true"
+          [showEmployeeFilter]="false"
+          [showExportExcel]="false"
+          [showAddButton]="true"
+          [addButtonLabel]="'Add Skill'"
+          [onSearch]="onSkillSearch"
+          (pageChange)="onSkillPageChange($event)"
+          (entriesChange)="onSkillEntriesChange($event)"
+          (addClick)="openSkillForm()">
+        </app-generic-table>
+      </div>
+    </ng-template>
+  </li>
+</ul>
+<div [ngbNavOutlet]="nav"></div>

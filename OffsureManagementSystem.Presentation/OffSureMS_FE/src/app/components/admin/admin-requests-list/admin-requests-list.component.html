@@ -1,13 +1,11 @@
 <app-page-header
-  [title]="'Requests'"
+  [title]="'Client Requests'"
   [title1]="['Admin', 'Requests']"
   [activeitem]="'Requests'">
 </app-page-header>
 
 <div class="card custom-card">
-  <div class="card-body">
     <app-generic-table
-      [title]="'Service Requests'"
       [columns]="columns"
       [data]="data"
       [page]="page"
@@ -28,7 +26,6 @@
       (pageChange)="onPageChange($event)"
       (entriesChange)="onEntriesChange($event)">
     </app-generic-table>
-  </div>
 </div>
 
 <ng-template #requestActions let-item>

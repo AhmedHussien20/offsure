@@ -9,7 +9,6 @@ namespace OffsureManagementSystem.API.Controllers
 {
     [Route("api/skills")]
     [ApiController]
-    [Authorize(Roles = "Administrator")]
     public class SkillsController : BaseController
     {
         private readonly ISkillManagementService _skillManagementService;
@@ -20,6 +19,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrator,TeamMember")]
         public async Task<ActionResult<ApiResponse<PagedResponse<SkillDto>>>> GetAll(
             [FromQuery] SkillRequest request)
         {
@@ -28,6 +28,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Administrator,TeamMember")]
         public async Task<ActionResult<ApiResponse<SkillDto>>> GetById(int id)
         {
             var skill = await _skillManagementService.GetSkillByIdAsync(id);
@@ -35,6 +36,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<SkillDto>>> Create(CreateSkillDto dto)
         {
             var skill = await _skillManagementService.CreateSkillAsync(dto);
@@ -45,6 +47,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<SkillDto>>> Update(int id, UpdateSkillDto dto)
         {
             var skill = await _skillManagementService.UpdateSkillAsync(id, dto);
@@ -52,6 +55,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
         {
             await _skillManagementService.DeleteSkillAsync(id);

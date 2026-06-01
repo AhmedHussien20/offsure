@@ -14,6 +14,7 @@ import { ApiService } from './api.service';
 import { RegisterRequest, RegisterResponse } from '../models/auth/register-request.model';
 import { LoginResponse } from '../models/auth/login.models';
 import { ClientContextService } from './client-context.service';
+import { TeamContextService } from './team-context.service';
 import { AuthTokenRefreshService } from './auth-token-refresh.service';
 
 @Injectable({
@@ -29,6 +30,7 @@ export class AuthService {
     private router: Router,
     private apiService: ApiService,
     private clientContext: ClientContextService,
+    private teamContext: TeamContextService,
     private tokenRefresh: AuthTokenRefreshService,
   ) {
     this.store.pipe(select(selectAuthLoading)).subscribe(loading => {
@@ -77,6 +79,7 @@ export class AuthService {
     localStorage.removeItem('customerHeaderNotifications');
 
     this.clientContext.clear();
+    this.teamContext.clear();
     this.store.dispatch(logout());
     this.store.dispatch(NavActions.clearMenu());
     this.router.navigate(['/auth/login'], { replaceUrl: true });
@@ -123,6 +126,10 @@ export class AuthService {
 
   isAdministrator(): boolean {
     return this.getUserRole() === 'Administrator';
+  }
+
+  isTeamMember(): boolean {
+    return this.getUserRole() === 'TeamMember';
   }
 
   hasPermission(permission: string): boolean {

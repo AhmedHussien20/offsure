@@ -1,41 +1,49 @@
-<div class="generic-table-container">
+<div class="generic-table-container" [class.is-loading]="loading">
+
+    @if (loading) {
+        <div class="gt-loading-overlay" aria-hidden="true">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
 
     <!-- ================= HEADER ================= -->
     <div *ngIf="title || showAddButton || showExportExcel || showExportPdf"
-        class="d-flex justify-content-between align-items-center mb-3">
-        <h5 *ngIf="title">{{ title | translate }}</h5>
+        class="gt-toolbar d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h5 *ngIf="title" class="gt-title mb-0">{{ title | translate }}</h5>
         <div *ngIf="!title"></div>
-        
-        <div class="d-flex gap-2">
-            <button *ngIf="showAddButton" class="btn btn-secondary btn-sm" (click)="addClick.emit()">
+
+        <div class="gt-toolbar-actions">
+            <button *ngIf="showAddButton" type="button" class="btn btn-primary btn-sm" (click)="addClick.emit()">
                 <i class="fa fa-plus"></i>
                 {{ addButtonLabel | translate }}
             </button>
-            <button *ngIf="showAnotherButton" class="btn btn-outline-secondary btn-sm" (click)="anotherClick.emit()">
+            <button *ngIf="showAnotherButton" type="button" class="btn btn-outline-secondary btn-sm" (click)="anotherClick.emit()">
                 <i class="fa fa-plus"></i>
                 {{ anotherButtonLabel | translate }}
             </button>
 
-            <button *ngIf="showExportExcel" class="btn btn-outline-info btn-sm" (click)="exportExcel()">
+            <button *ngIf="showExportExcel" type="button" class="btn btn-outline-info btn-sm btn-export" (click)="exportExcel()">
                 <i class="fa fa-file-excel"></i>
                 {{ 'TABLE.EXPORT_EXCEL' | translate }}
             </button>
-            <button *ngIf="showExportPdf" class="btn btn-outline-primary btn-sm" (click)="exportPdf()">
+            <button *ngIf="showExportPdf" type="button" class="btn btn-outline-primary btn-sm btn-export" (click)="exportPdf()">
                 <i class="fa fa-file-pdf"></i>
                 {{ 'TABLE.EXPORT_PDF' | translate }}
             </button>
-
         </div>
     </div>
 
     <!-- ================= FILTERS ================= -->
-    <div *ngIf="showFilters">
-        <div class="filter-header" (click)="toggleFilters()">
+    <div *ngIf="showFilters" class="gt-filters-panel" [class.is-open]="filtersOpen">
+        <div class="filter-header" [class.is-open]="filtersOpen" (click)="toggleFilters()" role="button" tabindex="0"
+            (keydown.enter)="toggleFilters()" (keydown.space)="$event.preventDefault(); toggleFilters()">
             <span>{{ 'TABLE.FILTERS' | translate }}</span>
-            <i class="fa" [ngClass]="filtersOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            <i class="fa fa-chevron-down"></i>
         </div>
 
-        <div class="filter-card" *ngIf="filtersOpen">
+        <div class="filter-card" [class.is-open]="filtersOpen">
             <div class="filter-grid">
 
                 <div class="filter-item" *ngFor="let key of objectKeys(searchCriteria?.filterTypes)"
@@ -45,18 +53,17 @@
 
                     <ng-container [ngSwitch]="getInputType(key)">
 
-                        <!-- TEXT -->
                         <input *ngSwitchCase="'text'" class="form-control" [(ngModel)]="searchCriteria[key]"
                             (ngModelChange)="queueApplyFilters()" />
 
-                        <!-- NUMBER -->
                         <input *ngSwitchCase="'number'" type="number" class="form-control"
                             [(ngModel)]="searchCriteria[key]" (ngModelChange)="queueApplyFilters()" />
 
-                        <!-- DROPDOWN -->
                         <ng-select *ngSwitchCase="'dropdown'" [items]="getDropdownOptions(key)" bindValue="id"
                             [(ngModel)]="searchCriteria[key]" [multiple]="isMultiSelect(key)"
                             [closeOnSelect]="!isMultiSelect(key)" [clearable]="true"
+                            appendTo="body"
+                            dropdownPosition="bottom"
                             (ngModelChange)="queueApplyFilters()">
 
                             <ng-template ng-option-tmp let-item="item">
@@ -69,7 +76,6 @@
 
                         </ng-select>
 
-                        <!-- DATE -->
                         <input *ngSwitchCase="'date'" type="date" class="form-control"
                             [(ngModel)]="searchCriteria[key]" (ngModelChange)="queueApplyFilters()" />
 
@@ -79,12 +85,12 @@
             </div>
 
             <div class="filter-actions">
-                <button class="btn btn-primary btn-sm me-2" (click)="applyFilters()">
+                <button type="button" class="btn btn-primary btn-sm" (click)="applyFilters()">
                     <i class="fa fa-search"></i>
                     {{ 'TABLE.SEARCH' | translate }}
                 </button>
 
-                <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
                     <i class="fa fa-times"></i>
                     {{ 'TABLE.CLEAR_FILTERS' | translate }}
                 </button>
@@ -93,23 +99,25 @@
 
     </div>
 
-    <!-- ================= TABLE ================= -->
-    <div class="table-responsive mt-3">
-        <table class="table table-bordered table-hover align-middle">
+    <div #tableAnchor class="gt-table-anchor"></div>
 
-            <!-- ===== HEADER ===== -->
+    <!-- ================= TABLE ================= -->
+    <div class="gt-table-wrap gt-table-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+
             <thead>
                 <tr>
 
                     <th *ngIf="showCheckbox" class="text-center">
-                        <input type="checkbox" (change)="toggleSelectAll($event)" />
+                        <input type="checkbox" class="form-check-input" (change)="toggleSelectAll($event)" />
                     </th>
 
                     <th *ngFor="let col of columns" [ngStyle]="getColumnStyle(col.key)">
                         <div class="d-flex justify-content-between align-items-center">
                             <span (click)="sort(col.key)" class="cursor-pointer">
                                 {{ col.label | translate }}
-                                <i *ngIf="sortColumn === col.key">
+                                <i *ngIf="sortColumn === col.key" class="sort-icon ms-1">
                                     {{ sortDirection === 'ASC' ? '↑' : '↓' }}
                                 </i>
                             </span>
@@ -125,25 +133,20 @@
                 </tr>
             </thead>
 
-            <!-- ===== BODY ===== -->
              <tbody>
-            <!-- Loop على الصفوف -->
-            <ng-container *ngFor="let item of data">
-                <!-- الصف الرئيسي -->
-                <tr 
+            <ng-container *ngFor="let item of data; trackBy: trackByRow">
+                <tr
                     (click)="expandable ? toggleExpandRow(item, $event) : onRowClick(item, $event)"
                     [class.row-clickable]="rowClickable || expandable"
                     [class.expanded-row]="isRowExpanded(item)">
-                    
-                    <!-- Checkbox -->
+
                     <td *ngIf="showCheckbox" class="text-center">
                         <input type="checkbox" class="form-check-input" [checked]="isChecked(item)"
+                            (click)="$event.stopPropagation()"
                             (change)="onCheckboxChange(item, $event)" />
                     </td>
-                    
-                    <!-- Columns -->
+
                     <td *ngFor="let col of columns" [ngSwitch]="col.type">
-                        <!-- نفس المحتوى القديم بدون تغيير -->
                         <ng-container *ngSwitchCase="'assignees'">
                             <div class="assignees-wrapper">
                                 <span *ngFor="let emp of getValue(item, col.key)" class="assignee-circle"
@@ -152,7 +155,7 @@
                                 </span>
                             </div>
                         </ng-container>
-                        
+
                         <ng-container *ngSwitchCase="'badge'">
                             <span class="badge d-inline-flex align-items-center gap-1"
                                 [ngClass]="getBadgeClass(col, item)">
@@ -162,10 +165,10 @@
                                 {{ getBadgeText(col, item) | translate }}
                             </span>
                         </ng-container>
-                        
+
                         <ng-container *ngSwitchCase="'icon-action'">
-                            <button class="btn btn-outline-secondary btn-sm"
-                                (click)="iconAction.emit({ type: col.key, row: item })">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                (click)="$event.stopPropagation(); iconAction.emit({ type: col.key, row: item })">
                                 <i [class]="col.icon"></i>
                                 <span *ngIf="getValue(item, col.key) !== undefined && getValue(item, col.key) !== null"
                                       class="badge bg-info ms-1">
@@ -173,15 +176,15 @@
                                 </span>
                             </button>
                         </ng-container>
-                        
+
                         <ng-container *ngSwitchCase="'date'">
                             {{ getValue(item, col.key) | myDate }}
                         </ng-container>
-                        
+
                         <ng-container *ngSwitchCase="'dateTime'">
                             {{ getValue(item, col.key) | myDate:'d MMMM y':true }}
                         </ng-container>
-                        
+
                         <ng-container *ngSwitchCase="'custom'">
                             <span class="amount-chip">
                                 <span class="amount-value">
@@ -190,7 +193,7 @@
                                 <span class="amount-currency">SAR</span>
                             </span>
                         </ng-container>
-                        
+
                         <ng-container *ngSwitchCase="'money'">
                             <span class="amount-chip">
                                 <span class="amount-value">
@@ -201,44 +204,40 @@
                                 </span>
                             </span>
                         </ng-container>
-                        
+
                         <ng-container *ngSwitchDefault>
                             {{ getValue(item, col.key) }}
                         </ng-container>
                     </td>
-                    
-                    <!-- Actions -->
+
                     <td *ngIf="showEditButton || showDeleteButton || showDetailsButton" class="text-center">
-                        <button *ngIf="showDetailsButton" class="btn btn-outline-info btn-sm me-1"
+                        <button *ngIf="showDetailsButton" type="button" class="btn btn-outline-info btn-sm me-1"
                             [disabled]="disableDetailsFn ? disableDetailsFn(item) : false"
                             [ngbTooltip]="detailsLabel"
-                            (click)="viewDetails(getItemId(item))">
+                            (click)="$event.stopPropagation(); viewDetails(getItemId(item))">
                             <i [class]="detailsIconClass"></i>
                         </button>
-                        <button *ngIf="showEditButton" class="btn btn-outline-primary btn-sm"
+                        <button *ngIf="showEditButton" type="button" class="btn btn-outline-primary btn-sm"
                             [disabled]="disableEditFn ? disableEditFn(item) : false"
                             [ngbTooltip]="editLabel"
-                            (click)="editItem(getItemId(item))">
+                            (click)="$event.stopPropagation(); editItem(getItemId(item))">
                             <i [class]="editIconClass"></i>
                         </button>
-                        <button *ngIf="showDeleteButton" class="btn btn-outline-danger btn-sm ms-1"
+                        <button *ngIf="showDeleteButton" type="button" class="btn btn-outline-danger btn-sm ms-1"
                             [disabled]="disableDeleteFn ? disableDeleteFn(item) : false"
                             [ngbTooltip]="deleteLabel"
-                            (click)="deleteItem(getItemId(item))">
+                            (click)="$event.stopPropagation(); deleteItem(getItemId(item))">
                             <i [class]="deleteIconClass"></i>
                         </button>
                     </td>
                 </tr>
-                
-                <!-- الصف التفصيلي (Expandable Row) -->
+
                 <tr *ngIf="expandable && isRowExpanded(item)" class="expandable-detail-row">
-                    <td [attr.colspan]="columns.length + (showCheckbox?1:0) + (showEditButton||showDeleteButton?1:0)" class="p-0">
-                        <div class="expandable-content p-3">
-                            <!-- استخدام ng-template للقالب المخصص -->
+                    <td [attr.colspan]="getColSpan()" class="p-0">
+                        <div class="expandable-content">
                             <ng-container *ngIf="expandTemplate">
                                 <ng-container *ngTemplateOutlet="expandTemplate; context: { $implicit: item }"></ng-container>
                             </ng-container>
-                            <!-- محتوى افتراضي إذا لم يتم توفير قالب -->
                             <div *ngIf="!expandTemplate" class="text-muted text-center">
                                 No details available for this item.
                             </div>
@@ -246,43 +245,41 @@
                     </td>
                 </tr>
             </ng-container>
-            
-            <!-- NO DATA -->
-            <tr *ngIf="!data || data.length === 0">
-                <td [attr.colspan]="columns.length + (showCheckbox?1:0) + (showEditButton||showDeleteButton?1:0)"
-                    class="text-center text-muted py-3">
+
+            <tr *ngIf="!data || data.length === 0" class="gt-empty-row">
+                <td [attr.colspan]="getColSpan()" class="text-center">
                     {{ 'TABLE.NO_DATA' | translate }}
                 </td>
             </tr>
         </tbody>
         </table>
+        </div>
     </div>
 
     <!-- ================= PAGINATION ================= -->
-    <div *ngIf="showPagination"
-        class="mt-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+    <div *ngIf="showPagination" class="gt-pagination">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="gt-pagination-meta">
+                {{ 'TABLE.TOTAL_RECORDS' | translate }}: {{ totalItems }}
+            </div>
 
-        <div class="text-muted small">
-            {{ 'TABLE.TOTAL_RECORDS' | translate }}: {{ totalItems }}
+            <div class="gt-pagination-controls">
+                <span class="small text-muted">{{ 'TABLE.SHOW' | translate }}</span>
+
+                <select class="form-select form-select-sm w-auto" [(ngModel)]="entries"
+                    (ngModelChange)="onEntriesChangeInternal()">
+                    <option *ngFor="let n of [5,10,20,50]" [value]="n">{{ n }}</option>
+                </select>
+
+                <span class="small text-muted">{{ 'TABLE.ENTRIES' | translate }}</span>
+            </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
-            <span>{{ 'TABLE.SHOW' | translate }}</span>
-
-            <select class="form-select form-select-sm w-auto" [(ngModel)]="entries"
-                (ngModelChange)="onEntriesChangeInternal()">
-                <option *ngFor="let n of [5,10,20,50]" [value]="n">{{ n }}</option>
-            </select>
-
-            <span>{{ 'TABLE.ENTRIES' | translate }}</span>
+        <div class="d-flex justify-content-center justify-content-md-end mt-2 overflow-auto w-100 gt-pagination">
+            <ngb-pagination [collectionSize]="totalItems" [(page)]="page" [pageSize]="entries"
+                (pageChange)="onPageChangeInternal($event)" [maxSize]="5" [boundaryLinks]="true" [rotate]="true">
+            </ngb-pagination>
         </div>
     </div>
-
-    <div *ngIf="showPagination" class="d-flex justify-content-center justify-content-md-end mt-2 overflow-auto w-100">
-        <ngb-pagination [collectionSize]="totalItems" [(page)]="page" [pageSize]="entries"
-            (pageChange)="onPageChangeInternal($event)" [maxSize]="5" [boundaryLinks]="true">
-        </ngb-pagination>
-    </div>
-
 
 </div>

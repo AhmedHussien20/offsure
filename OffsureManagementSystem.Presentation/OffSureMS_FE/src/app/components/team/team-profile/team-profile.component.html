@@ -1,0 +1,152 @@
+<app-page-header
+  [title]="'My Profile'"
+  [title1]="['Team', 'Profile']"
+  [activeitem]="'Profile'">
+</app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading profile...</div>
+} @else if (!profile) {
+  <div class="alert alert-warning">Profile not found.</div>
+} @else {
+  <div class="row row-sm">
+    <div class="col-xl-4">
+      <div class="card custom-card">
+        <div class="card-body text-center">
+          <div class="avatar avatar-xxl bg-primary-transparent rounded-circle mx-auto mb-3">
+            <span class="fs-24 fw-bold text-primary">{{ profile.firstName?.charAt(0) }}{{ profile.lastName?.charAt(0) }}</span>
+          </div>
+          <h5 class="mb-1">{{ profile.fullName }}</h5>
+          <p class="text-muted mb-2">{{ profile.email }}</p>
+          <span class="badge {{ profile.isAvailable ? 'bg-success-transparent' : 'bg-danger-transparent' }}">
+            {{ profile.isAvailable ? '🟢 Available' : '🔴 Busy' }}
+          </span>
+          @if (profile.leaderName) {
+            <p class="text-muted small mt-3 mb-0">Reports to: {{ profile.leaderName }}</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-8">
+      <div class="card custom-card mb-3">
+        <div class="card-header">
+          <h5 class="mb-0">Experience</h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Job Title</label>
+                <input type="text" class="form-control" formControlName="title" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Years of Experience</label>
+                <input type="number" class="form-control" formControlName="yearsOfExperience" min="0" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                <input type="text" class="form-control" formControlName="phoneNumber" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm mt-3" [disabled]="savingProfile">
+              Save Experience
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card custom-card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Skills</h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="skillForm" class="row g-2 align-items-end mb-3" (ngSubmit)="addSkill()">
+            <div class="col-md-5">
+              <label class="form-label">Skill</label>
+              <select class="form-select" formControlName="skillId">
+                <option [ngValue]="null">Select skill</option>
+                @for (s of skillCatalog; track s.id) {
+                  <option [ngValue]="s.id">{{ s.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Proficiency (1–5)</label>
+              <input type="number" class="form-control" formControlName="proficiencyLevel" min="1" max="5" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Years</label>
+              <input type="number" class="form-control" formControlName="yearsOfExperience" min="0" />
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary w-100" [disabled]="savingSkill">Add</button>
+            </div>
+          </form>
+
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th>Skill</th>
+                  <th>Category</th>
+                  <th>Level</th>
+                  <th>Years</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (skills.length === 0) {
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-3">No skills added yet.</td>
+                  </tr>
+                }
+                @for (skill of skills; track skill.id) {
+                  <tr>
+                    <td>{{ skill.skillName }}</td>
+                    <td>{{ skill.skillCategoryName }}</td>
+                    <td>{{ proficiencyLabel(skill.proficiencyLevel) }}</td>
+                    <td>{{ skill.yearsOfExperience }}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="removeSkill(skill.skillId)">
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card custom-card">
+        <div class="card-header">
+          <h5 class="mb-0">CV</h5>
+        </div>
+        <div class="card-body">
+          @if (profile.cv) {
+            <p class="mb-2">
+              <strong>Current file:</strong>
+              <span class="text-muted ms-1">{{ profile.cv }}</span>
+            </p>
+          } @else {
+            <p class="text-muted">No CV on file yet.</p>
+          }
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="cvBusy" (click)="generateCv()">
+              Generate CV
+            </button>
+            <label class="btn btn-sm btn-outline-secondary mb-0" [class.disabled]="cvBusy">
+              Upload CV
+              <input type="file" class="d-none" accept=".pdf,.doc,.docx,.txt" (change)="onCvSelected($event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -39,6 +39,18 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public List<UpsertTeamMemberSkillDto> SkillAssignments { get; set; } = new();
     }
 
+    public class UpdateTeamMemberProfileDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public int YearsOfExperience { get; set; }
+        public string? PhoneNumber { get; set; }
+    }
+
+    public class UpdateTeamMemberAvailabilityDto
+    {
+        public bool IsAvailable { get; set; }
+    }
+
     public class UpsertTeamMemberSkillDto
     {
         public int SkillId { get; set; }

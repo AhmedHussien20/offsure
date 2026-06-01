@@ -1,11 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbPaginationModule, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { TranslateModule } from '@ngx-translate/core';
 import { MyDatePipe } from 'app/components/utilities/pipline/MyDatePipe';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import {
+  projectStatusKey,
+  serviceRequestStatusKey,
+} from 'app/core/utils/enum-status.util';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -125,8 +129,13 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy {
   @Input() showEmployeeFilter: boolean = true;
 
   // ---------- UI State ----------
-  loading: boolean = false;           
-  filtersOpen: boolean = true;
+  /** When true, shows overlay and dims table body (optional — parents can bind this). */
+  @Input() loading: boolean = false;
+  /** Smooth-scroll table into view when changing pages inside the same route. */
+  @Input() smoothPageChange: boolean = true;
+  filtersOpen: boolean = false;
+
+  @ViewChild('tableAnchor') tableAnchor?: ElementRef<HTMLElement>;
 
   sortColumn: string = '';
   sortDirection: 'ASC' | 'DESC' = 'ASC';
@@ -170,16 +179,28 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy {
     return this.labels?.[key] ?? key;
   }
 
+  private badgeLookupKey(col: TableColumn, item: any): string {
+    const value = this.getValue(item, col.key);
+    if (col.key !== 'status' || value === null || value === undefined) {
+      return String(value ?? '');
+    }
+    const requestKey = serviceRequestStatusKey(value);
+    if (col.badgeMap?.[requestKey]) {
+      return requestKey;
+    }
+    return projectStatusKey(value);
+  }
+
   getBadgeText(col: TableColumn, item: any): string {
     if (!col.badgeMap) return '';
-    const value = this.getValue(item, col.key);
-    return col.badgeMap[value]?.text ?? '';
+    const key = this.badgeLookupKey(col, item);
+    return col.badgeMap[key]?.text ?? '';
   }
 
   getBadgeClass(col: TableColumn, item: any): string {
     if (!col.badgeMap) return '';
-    const value = this.getValue(item, col.key);
-    return col.badgeMap[value]?.class ?? '';
+    const key = this.badgeLookupKey(col, item);
+    return col.badgeMap[key]?.class ?? '';
   }
 
   getInitials(name: string): string {
@@ -309,10 +330,34 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy {
   onPageChangeInternal(page: number) {
     this.page = page;
     this.pageChange.emit(page);
+    this.scrollTableIntoView();
   }
 
   onEntriesChangeInternal() {
     this.entriesChange.emit(this.entries);
+    this.scrollTableIntoView();
+  }
+
+  trackByRow(index: number, item: T): unknown {
+    const id = (item as HasId)?.id;
+    return id ?? index;
+  }
+
+  getColSpan(): number {
+    let span = this.columns.length;
+    if (this.showCheckbox) span += 1;
+    if (this.showEditButton || this.showDeleteButton || this.showDetailsButton) span += 1;
+    return span;
+  }
+
+  private scrollTableIntoView(): void {
+    if (!this.smoothPageChange || !this.tableAnchor?.nativeElement) return;
+    requestAnimationFrame(() => {
+      this.tableAnchor?.nativeElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    });
   }
 
   // ---------- Actions ----------

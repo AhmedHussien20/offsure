@@ -1,5 +1,5 @@
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
-import { provideRouter, RouterOutlet } from '@angular/router';
+import { provideRouter, RouterOutlet, withInMemoryScrolling } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
@@ -59,7 +59,13 @@ export const appConfig: ApplicationConfig = {
     providers: [
 
         // ROUTER
-        provideRouter(App_Route),
+        provideRouter(
+            App_Route,
+            withInMemoryScrolling({
+                scrollPositionRestoration: 'enabled',
+                anchorScrolling: 'enabled',
+            })
+        ),
         RouterOutlet,
 
         // ANIMATIONS
