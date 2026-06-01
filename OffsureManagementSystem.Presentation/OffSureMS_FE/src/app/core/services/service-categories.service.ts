@@ -20,6 +20,10 @@ export class ServiceCategoriesService {
     return this.api.get<BaseResponse<PagedResponse<ServiceCategoryDto>>>(this.service, '', request as Record<string, any>);
   }
 
+  getPublic(request?: ServiceCategoryRequest): Observable<BaseResponse<PagedResponse<ServiceCategoryDto>>> {
+    return this.api.get<BaseResponse<PagedResponse<ServiceCategoryDto>>>(this.service, 'public', request as Record<string, any>);
+  }
+
   getById(id: number): Observable<BaseResponse<ServiceCategoryDto>> {
     return this.api.get<BaseResponse<ServiceCategoryDto>>(this.service, `${id}`);
   }

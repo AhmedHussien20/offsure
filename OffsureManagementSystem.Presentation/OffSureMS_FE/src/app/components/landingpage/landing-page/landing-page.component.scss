@@ -1,3 +1,51 @@
 .landing-Features .swiper-slide{
     width:296px !important;
 }
+
+
+
+.hero-cta-btn-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.hero-cta-btn-secondary:hover {
+    background-color: #fff;
+    border-color: #fff;
+    color: var(--primary-color);
+}
+
+.portfolio-highlight-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.portfolio-highlight-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px rgb(33 33 33 / 12%);
+}
+
+.portfolio-highlight-category {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.portfolio-highlight-service {
+    color: var(--primary-color);
+}
+
+.portfolio-highlight-description {
+    min-height: 72px;
+    line-height: 1.6;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.portfolio-highlight-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}

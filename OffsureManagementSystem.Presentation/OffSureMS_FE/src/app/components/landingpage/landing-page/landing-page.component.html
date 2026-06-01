@@ -90,9 +90,9 @@
                         <!-- End::slide -->
                         <!-- Start::slide -->
                         <li class="slide">
-                            <a value="features" href="javascript:void(0)" (click)="scroll(features)"
+                            <a value="service-categories" href="javascript:void(0)" (click)="scroll(serviceCategories)"
                                 class="side-menu__item">
-                                <span class="side-menu__label">Features</span>
+                                <span class="side-menu__label">Service Categories</span>
                             </a>
                         </li>
                         <!-- End::slide -->
@@ -169,14 +169,19 @@
                 <div class="container main-banner-container">
                     <div class="row">
                         <div class="col-xl-6 col-lg-6 animation-zidex position-relative">
-                            <h4 class="fw-medium mt-7">Manage Your Business</h4>
-                            <p class="text-start fw-bold">We Help to Build Your Dream Project with Spruha !</p>
+                            <h4 class="fw-medium mt-7">Offsure Management System</h4>
+                            <p class="text-start fw-bold">Browse services, discover real delivery work, and find the
+                                right solution faster.</p>
                             <h6 class="pb-3">
-                                Spruha - Now you can use this admin template to design stunning dashboards
-                                that will wow your target viewers or users to no end. To create a good and
-                                well-structured dashboard,
-                                you need to start from scratch with Angular, SCSS, CSS, and TS and with lots of coding,
-                                but by using this Spruha-Admin template.</h6>
+                                Offsure Management System is the public experience for exploring service categories,
+                                reviewing published portfolio projects, and moving from browsing to a real conversation
+                                with our team.</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="javascript:void(0)" class="btn btn-white text-primary  hero-cta-btn-primary"
+                                    (click)="scroll(serviceCategories)">Browse Categories</a>
+                                <a href="javascript:void(0)" class="btn btn-outline-light text-white hero-cta-btn-secondary"
+                                    (click)="scroll(highlights)">Our Work</a>
+                            </div>
 
                         </div>
                         <div class="col-xl-6 col-lg-6 my-auto">
@@ -189,17 +194,17 @@
         <!-- End:: Section-1 -->
 
         <!-- Start:: Section-2 -->
-        <section class="section hor-content main_features" id="features" #features>
+        <section class="section hor-content main_features" id="service-categories" #serviceCategories>
             <div class="container">
-                <h4 class="text-center fw-medium landing-card-header">Features</h4>
+                <h4 class="text-center fw-medium landing-card-header">Service Categories</h4>
                 <span class="landing-title"></span>
-                <h2 class="fw-medium text-center">Spruha Angular Main Features</h2>
-                <p class="text-default mb-5 text-center">The Spruha admin template comes with
-                    ready-to-use features that are completely easy-to-use for any user, even for
-                    a beginner.</p>
+                <h2 class="fw-medium text-center">Explore Our Service Categories</h2>
+                <p class="text-default mb-5 text-center">Browse the real service categories available in
+                    Offsure Management System and discover what the platform currently offers to your
+                    clients.</p>
                 <div class="row">
-                    @for(card of featureCards;track $index){
-                    <div class="col-lg-3 col-md-6">
+                    @for(card of serviceCategoryCards;track $index){
+                    <div class="col-lg-3 col-md-6 d-flex">
                         <spk-feature-cards [icon]="card.icon" [title]="card.title" [cardClass]="card.cardClass"
                             [description]="card.description"></spk-feature-cards>
                     </div>
@@ -234,10 +239,10 @@
                                                                             <div
                                                                                 class="test-body text-center text-fixed-white">
                                                                                 <h1 class="fw-semibold mb-0"><span
-                                                                                        class="count">100</span>+</h1>
+                                                                                        class="count">{{serviceCategoriesCount}}</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Angular Components</h5>
+                                                                                        Service Categories</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -254,10 +259,10 @@
                                                                             <div
                                                                                 class="test-body text-center text-fixed-white">
                                                                                 <h1 class="fw-semibold mb-0"><span
-                                                                                        class="count">20</span>+</h1>
+                                                                                        class="count">{{publicServicesCount}}</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Plugins</h5>
+                                                                                        Public Services</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -274,10 +279,10 @@
                                                                             <div
                                                                                 class="test-body text-center text-fixed-white">
                                                                                 <h1 class="fw-semibold mb-0"><span
-                                                                                        class="count">10</span>+</h1>
+                                                                                        class="count">{{publishedProjectsCount}}</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Form Elements</h5>
+                                                                                        Published Projects</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -294,10 +299,10 @@
                                                                             <div
                                                                                 class="test-body text-center text-fixed-white">
                                                                                 <h1 class="fw-semibold mb-0"><span
-                                                                                        class="count">15</span>+</h1>
+                                                                                        class="count">{{deliveryStepsCount}}</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Widgets</h5>
+                                                                                        Delivery Steps</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -323,10 +328,10 @@
         <section class="section bg-landing working-section" id="about" #about>
             <div class="container">
                 <div class="row">
-                    <h4 class="text-center fw-medium landing-card-header">Our Mission</h4>
+                    <h4 class="text-center fw-medium landing-card-header">About Offsure</h4>
                     <span class="landing-title"></span>
                     <div class="text-center">
-                        <h2 class="text-center fw-medium">Our mission is to make work meaningful.
+                        <h2 class="text-center fw-medium">A browsing experience that leads to real delivery.
                         </h2>
                     </div>
                     <div class="reveal">
@@ -616,14 +621,13 @@
                                 </div>
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12">
                                     <div class="working-content content-1">
-                                        <h4 class="mb-3">Design Quality </h4>
-                                        <p class="title-desc text-muted">No ipsum rebum est invidunt eos
-                                            dolore. Sed sea ipsum vero invidunt rebum et erat, tempor
-                                            consetetur sadipscing no ipsum,.</p>
-                                        <p class="title-desc text-muted mb-0">Ut dolor sed aliquyam at lorem
-                                            ipsum labore diam eos. Tempor labore dolor justo nonumy stet,
-                                            sanctus amet sed accusam elitr amet eirmod. No ea gubergren
-                                            dolores elitr labore ipsum..</p>
+                                        <h4 class="mb-3">Browse With Clarity</h4>
+                                        <p class="title-desc text-muted">Visitors can explore real service categories
+                                            and understand what Offsure currently offers without reading template
+                                            filler or outdated marketing text.</p>
+                                        <p class="title-desc text-muted mb-0">The landing page is being shaped around
+                                            live system data so browsing feels connected to the actual services your
+                                            team can deliver today.</p>
                                     </div>
                                 </div>
                             </div>
@@ -632,14 +636,13 @@
                             <div class="row align-items-center justify-content-center">
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12 myorder-2">
                                     <div class="working-content content-2">
-                                        <h4 class="mb-3">Documentation</h4>
-                                        <p class="title-desc text-muted">Dolore voluptua sed kasd labore
-                                            erat sed ipsum rebum sit, sanctus invidunt est sed sanctus.
-                                            Dolor clita invidunt elitr dolore.</p>
-                                        <p class="title-desc text-muted mb-0">Lorem dolores labore stet
-                                            rebum invidunt voluptua at dolores lorem, amet dolor dolore
-                                            dolor ut sadipscing, dolore sanctus accusam diam sanctus kasd
-                                            gubergren, ipsum dolor lorem amet stet, aliquyam takimata.</p>
+                                        <h4 class="mb-3">Show Real Work</h4>
+                                        <p class="title-desc text-muted">Published portfolio projects help visitors
+                                            move from curiosity to confidence by showing the kind of work Offsure has
+                                            already delivered for real clients.</p>
+                                        <p class="title-desc text-muted mb-0">Instead of promising capabilities in
+                                            abstract, the platform can present actual projects connected to the
+                                            services and categories that power them.</p>
                                     </div>
                                 </div>
                                 <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12 myorder-1">
@@ -1857,14 +1860,13 @@ c-0.6137161,4.8149414-1.0946579,9.651413-1.4447937,14.4860229L43.0290565,232.100
                                 </div>
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12">
                                     <div class="working-content content-3">
-                                        <h4 class="mb-3">Customization</h4>
-                                        <p class="title-desc text-muted">Sea takimata sea sit justo
-                                            consetetur et diam erat erat, dolor vero et sit duo dolor,
-                                            dolores ipsum gubergren stet.</p>
-                                        <p class="title-desc text-muted mb-0">Stet sadipscing lorem ipsum
-                                            invidunt takimata ipsum no eos dolor. Sed at dolores et ut dolor
-                                            voluptua sit duo. Ipsum ea kasd nonumy dolor, eos takimata
-                                            eirmod est gubergren eos.</p>
+                                        <h4 class="mb-3">Guide Better Requests</h4>
+                                        <p class="title-desc text-muted">A strong landing page should do more than look
+                                            good. It should guide visitors toward the right service and help them
+                                            understand where they fit before they contact your team.</p>
+                                        <p class="title-desc text-muted mb-0">That creates a smoother path from
+                                            browsing to inquiry and gives Offsure better context when a new request
+                                            starts.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1873,14 +1875,13 @@ c-0.6137161,4.8149414-1.0946579,9.651413-1.4447937,14.4860229L43.0290565,232.100
                             <div class="row align-items-center justify-content-center">
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12 myorder-2">
                                     <div class="working-content content-4">
-                                        <h4 class="mb-3">Life Time Updates</h4>
-                                        <p class="title-desc text-muted">Sea takimata sea sit justo
-                                            consetetur et diam erat erat, dolor vero et sit duo dolor,
-                                            dolores ipsum gubergren stet.</p>
-                                        <p class="title-desc text-muted mb-0">Stet sadipscing lorem ipsum
-                                            invidunt takimata ipsum no eos dolor. Sed at dolores et ut dolor
-                                            voluptua sit duo. Ipsum ea kasd nonumy dolor, eos takimata
-                                            eirmod est gubergren eos.</p>
+                                        <h4 class="mb-3">Grow With The Platform</h4>
+                                        <p class="title-desc text-muted">As new categories, services, and portfolio
+                                            projects are added, the landing page can grow with the platform instead of
+                                            becoming another static marketing screen.</p>
+                                        <p class="title-desc text-muted mb-0">That keeps the browsing experience fresh,
+                                            aligned with your operations, and useful for both first-time visitors and
+                                            returning clients.</p>
                                     </div>
                                 </div>
                                 <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12 myorder-1">
@@ -2067,37 +2068,43 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         <section class="section highlights" id="highlights" #highlights>
             <div class="container text-center">
                 <div class="row">
-                    <h4 class="text-center fw-medium">Highlights</h4>
+                    <h4 class="text-center fw-medium">Our Work</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium">Switch Easily From Vertical to Horizontal Menu</h2>
+                    <h2 class="text-center fw-medium">A Selection of Projects We Delivered for Our Clients</h2>
                 </div>
                 <div class="row justify-content-center">
-                    <div class="col-xl-7">
-                        <p class=" fs-15 mb-5 fw-normal">The Spruha – Bootstrap 5 Admin & Dashboard
-                            Template is available in both vertical and
-                            horizontal menus.
-                            Both menus are managed by single assets. Where
-                            users can easily switch from vertical to
-                            horizontal menus.</p>
+                    <div class="col-xl-8">
+                        <p class="fs-15 mb-5 fw-normal">Explore published portfolio projects from Offsure Management
+                            System and see how our services translate into real delivery for clients.</p>
                     </div>
                 </div>
-                <div class="row text-start px-5">
-                    <div class="col-xl-12">
-                        <div class="row gy-2">
-                            <div class="col-xl-6">
-                                <app-ngb-accordion [accordionId]="'accordionExample'"
-                                    accodionClass="accordion-customicon1 accordion-primary accordions-items-seperate {{accodionClass}}"
-                                    [closeOthers]="true" [accordionItems]="basicAccordions"></app-ngb-accordion>
-                            </div>
-                            <div class="col-xl-6">
-                                <app-ngb-accordion [accordionId]="'accordionExample'"
-                                    accodionClass="accordion-customicon1 accordion-primary accordions-items-seperate {{accodionClass}}"
-                                    [closeOthers]="true" [accordionItems]="basicAccordions1"></app-ngb-accordion>
-
+                @if (portfolioHighlights.length) {
+                <div class="row g-4 text-start">
+                    @for(portfolio of portfolioHighlights;track portfolio.id){
+                    <div class="col-xl-3 col-lg-6 col-md-6">
+                        <div class="card h-100 portfolio-highlight-card border">
+                            <div class="card-body d-flex flex-column">
+                                <span class="portfolio-highlight-category text-primary mb-3">{{portfolio.category}}</span>
+                                <h5 class="fw-semibold mb-2">{{portfolio.title}}</h5>
+                                <p class="portfolio-highlight-service fw-medium mb-2">{{portfolio.serviceName}}</p>
+                                <p class="text-muted mb-3 portfolio-highlight-description">{{portfolio.description}}</p>
+                                <div class="mt-auto d-flex justify-content-between align-items-center portfolio-highlight-meta">
+                                    <span>{{portfolio.clientName}}</span>
+                                    <span>{{portfolio.completedDateLabel}}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    }
                 </div>
+                } @else {
+                <div class="row justify-content-center">
+                    <div class="col-xl-8">
+                        <p class="text-muted mb-0">Published portfolio projects will appear here as soon as they are
+                            available.</p>
+                    </div>
+                </div>
+                }
             </div>
         </section>
         <!-- End:: Section-5 -->
@@ -2158,14 +2165,11 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                 <div class="row">
                     <h4 class="text-center fw-medium landing-card-header">FAQ'S ?</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium">We are here to help you</h2>
+                    <h2 class="text-center fw-medium">Frequently Asked Questions About Offsure</h2>
                     <div class="row justify-content-center">
                         <p class="col-xl-9 wow fadeInUp text-default sub-text mb-5" data-wow-delay="0s">
-                            The Spruha admin template is one of the modern dashboard templates.
-                            It is also a premium admin dashboard with high-end features, where users
-                            can easily customize
-                            or change their projects according to their choice. Please take a quick
-                            look at our template highlights.
+                            These answers are here to help visitors understand how to browse the platform,
+                            review real work, and contact Offsure with the right project details.
                         </p>
                     </div>
                     <div class="row align-items-center">

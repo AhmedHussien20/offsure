@@ -62,6 +62,37 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 GetPageSize(request));
         }
 
+        public async Task<PagedResponse<ServiceCategoryDto>> GetPublicServiceCategoriesAsync(ServiceCategoryRequest request)
+        {
+            IQueryable<ServiceCategory> query = _serviceCategoryRepo
+                .Query()
+                .Include(c => c.Services)
+                .Where(c => c.IsActive);
+
+            if (request.Id.HasValue)
+                query = query.Where(c => c.Id == request.Id.Value);
+
+            if (!string.IsNullOrWhiteSpace(request.searchKey))
+            {
+                var searchKey = Normalize(request.searchKey);
+                query = query.Where(c =>
+                    c.Name.ToLower().Contains(searchKey)
+                    || c.Description.ToLower().Contains(searchKey));
+            }
+
+            var totalCount = await query.CountAsync();
+            var categories = await ApplyCategorySorting(query, request)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            return new PagedResponse<ServiceCategoryDto>(
+                categories.Select(MapCategory).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
+        }
+
         public async Task<ServiceCategoryDto> GetServiceCategoryByIdAsync(int id)
         {
             var category = await _serviceCategoryRepo

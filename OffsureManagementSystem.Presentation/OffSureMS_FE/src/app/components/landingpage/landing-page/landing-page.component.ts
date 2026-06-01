@@ -10,6 +10,28 @@ import { NgbAccordionComponent } from '../../../@spk/reusable-ui-elements/ngb-ac
 import { SpkLandingPricingComponent } from '../../../@spk/reusable-landingpage/spk-landing-pricing/spk-landing-pricing.component';
 import { TapToTopComponent } from '../../../shared/components/tap-to-top/tap-to-top.component';
 import { SharedModule } from '../../../shared/shared.module';
+import { PortfolioDto } from '../../../core/models/portfolios/portfolio.models';
+import { ServiceCategoryDto } from '../../../core/models/services/service.models';
+import { PortfoliosService } from '../../../core/services/portfolios.service';
+import { ServiceCategoriesService } from '../../../core/services/service-categories.service';
+import { ServicesService } from '../../../core/services/services.service';
+
+interface LandingServiceCategoryCard {
+  icon: string;
+  title: string;
+  cardClass: string;
+  description: string;
+}
+
+interface LandingPortfolioHighlight {
+  id: number;
+  category: string;
+  title: string;
+  serviceName: string;
+  description: string;
+  clientName: string;
+  completedDateLabel: string;
+}
 
 @Component({
   selector: 'app-landing-page',
@@ -25,6 +47,26 @@ export class LandingPageComponent {
   @ViewChild('swiperContainer') swiperContainer!: ElementRef;
   @ViewChild('swiperContainer1') swiperContainer1!: ElementRef;
   accodionClass: any;
+  private readonly serviceCategoryIcons = [
+    'fe fe-package',
+    'fe fe-code',
+    'fe fe-layers',
+    'fe fe-book-open',
+    'fe fe-file',
+    'fe fe-aperture',
+    'fe fe-box',
+    'fe fe-file-text',
+  ];
+  private readonly serviceCategoryCardClasses = [
+    'main-features-1',
+    'main-features-2',
+    'main-features-3',
+    'main-features-4',
+    'main-features-5',
+    'main-features-6',
+    'main-features-7',
+    'main-features-8',
+  ];
   ngAfterViewInit() {
     const swiperEl = this.swiperContainer.nativeElement;
 
@@ -114,64 +156,12 @@ export class LandingPageComponent {
       title: 'Ng Bootstrap'
     },
   ]
-  featureCards = [
-    {
-      icon: 'fe fe-package',
-      title: 'Unique Design',
-      cardClass: 'main-features-1',
-      description:
-        'Spruha has a unique design that you cannot compare with any other templates. It has unique Design',
-    },
-    {
-      icon: 'fe fe-code',
-      title: 'Quality & Clean Code',
-      cardClass: 'main-features-2',
-      description:
-        'The Spruha admin code is maintained very cleanly and well-structured with proper comments.',
-    },
-    {
-      icon: 'fe fe-layers',
-      title: 'Multiple Demos',
-      cardClass: 'main-features-3',
-      description:
-        'We included multiple demos, preview video, and screen shots to give a quick overview of our Dashlead admin template.',
-    },
-    {
-      icon: 'fe fe-book-open',
-      title: 'Well Documentation',
-      cardClass: 'main-features-4',
-      description:
-        'The documentation provides clear-cut material and is instructed with such a way that every user can understand.',
-    },
-    {
-      icon: 'fe fe-file',
-      title: 'User Pages',
-      cardClass: 'main-features-5',
-      description:
-        'The most advanced "User Pages" are included in this template, like registration, profile, and log-in pages, etc.',
-    },
-    {
-      icon: 'fe fe-aperture',
-      title: 'Modern UI Widgets',
-      cardClass: 'main-features-6',
-      description:
-        'Modern widgets are included in this template. Please check out the best option that suits for your projects.',
-    },
-    {
-      icon: 'fe fe-box',
-      title: '100+ UI Components',
-      cardClass: 'main-features-7',
-      description:
-        'Tempor accusam magna ipsum ea et. Sanctus aliquyam ea duo sit consetetur Labore stet sed.. Labore stet sed.',
-    },
-    {
-      icon: 'fe fe-file-text',
-      title: 'Validating Forms',
-      cardClass: 'main-features-8',
-      description:
-        'Tempor accusam magna ipsum ea et. Sanctus aliquyam ea duo sit consetetur. Labore stet sed. Labore stet sed.',
-    },
-  ];
+  serviceCategoryCards: LandingServiceCategoryCard[] = [];
+  portfolioHighlights: LandingPortfolioHighlight[] = [];
+  serviceCategoriesCount = 0;
+  publicServicesCount = 0;
+  publishedProjectsCount = 0;
+  readonly deliveryStepsCount = 4;
   basicAccordions = [
     {
       title: ' Switch Easily From Vertical to Horizontal Menu ',
@@ -266,50 +256,50 @@ export class LandingPageComponent {
   ]
   basicAccordions2 = [
     {
-      title: ' <span class="me-3 fs-18 fw-bold">01.</span> Can i get a free trial before purchase ? ',
-      body: `<p> Lorem ipsum dolor sit amet consectetur adipisicing elit. Iure quos debitis aliquam .</p><p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer support section for more information. </p>
-             <a href="javascript:void(0);" class="btn btn-outline-primary fs-13">Click here</a>`,
+      title: ' <span class="me-3 fs-18 fw-bold">01.</span>How do I browse the available services?',
+      body: `<p>Start with the <strong>Service Categories</strong> section to explore the main areas Offsure currently offers. Each category highlights real service groups available in the system.</p><p class="mt-2 mb-3"><span class="fw-bold">Tip:</span> Begin with the category that best matches your business need, then continue to the portfolio section to see related delivery work.</p>
+             <a href="#service-categories" class="btn btn-outline-primary fs-13">Browse Categories</a>`,
       headingId: 'headingcustomicon20Five',
       collapseId: 'collapsecustomicon20Five',
       collapsed: true,
       accodionItemClass: 'accordion-item acc-primary',
     },
     {
-      title: ' <span class="me-3 fs-18 fw-bold">02.</span>What type of files i will get after purchase ?',
-      body: `<p> Lorem ipsum dolor sit amet consectetur adipisicing elit. Iure quos debitis aliquam .</p><p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer support section for more information. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-danger fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Two',
-      collapseId: 'collapsecustomicon1Two',
+      title: ' <span class="me-3 fs-18 fw-bold">02.</span>Can I contact Offsure directly from this system?',
+      body: `<p>Yes. The landing page is designed to help visitors move from browsing into a real conversation with Offsure. Once you understand the service area you need, use the contact section to reach the team.</p><p class="mt-2 mb-3"><span class="fw-bold">Note:</span> The more clearly you describe your goal, timeline, and preferred service category, the easier it is for the team to respond effectively.</p>
+      <a href="#contact" class="btn btn-outline-danger fs-13">Contact Offsure</a>`,
+      headingId: 'headingcustomiconFaqTwo',
+      collapseId: 'collapsecustomiconFaqTwo',
       collapsed: true,
       accodionItemClass: 'accordion-item acc-danger',
       accodionClass: 'accordion accordion-customicon1 accordion-danger accordions-items-seperate'
     },
     {
-      title: '<span class="me-3 fs-18 fw-bold">03.</span>What is a single Application',
-      body: `<p> Lorem ipsum dolor sit amet consectetur adipisicing elit. Iure quos debitis aliquam .</p><p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer support section for more information. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-success fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Three',
-      collapseId: 'collapsecustomicon1Three',
+      title: '<span class="me-3 fs-18 fw-bold">03.</span>Are the portfolio projects shown here real client work?',
+      body: `<p>Yes. The <strong>Our Work</strong> section is intended to present published portfolio projects that come from the system, so visitors can review real delivery examples instead of placeholder content.</p><p class="mt-2 mb-3"><span class="fw-bold">Note:</span> Only published projects are shown publicly, which helps keep the section focused on approved client-facing work.</p>
+      <a href="#highlights" class="btn btn-outline-success fs-13">View Our Work</a>`,
+      headingId: 'headingcustomiconFaqThree',
+      collapseId: 'collapsecustomiconFaqThree',
       collapsed: true,
       accodionItemClass: 'accordion-item acc-success',
       accodionClass: 'accordion accordion-customicon1 accordion-success accordions-items-seperate'
     },
     {
-      title: '<span class="me-3 fs-18 fw-bold">04.</span>How to get future updates ?',
-      body: `<p> Lorem ipsum dolor sit amet consectetur adipisicing elit. Iure quos debitis aliquam .</p><p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer support section for more information. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-secondary fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Three',
-      collapseId: 'collapsecustomicon1Three',
+      title: '<span class="me-3 fs-18 fw-bold">04.</span>What information should I prepare before contacting the team?',
+      body: `<p>The best starting point is your business goal, the type of service you are looking for, any deadline or target launch date, and a short description of your current challenge.</p><p class="mt-2 mb-3"><span class="fw-bold">Tip:</span> If you already know the related service category or have seen a portfolio project similar to your need, mention it when you contact Offsure.</p>
+      <a href="#about" class="btn btn-outline-secondary fs-13">How It Works</a>`,
+      headingId: 'headingcustomiconFaqFour',
+      collapseId: 'collapsecustomiconFaqFour',
       collapsed: true,
       accodionItemClass: 'accordion-item acc-secondary',
       accodionClass: 'accordion accordion-customicon1 accordion-secondary accordions-items-seperate'
     },
     {
-      title: '<span class="me-3 fs-18 fw-bold">04.</span>Do you provide support ?',
-      body: `<p> Lorem ipsum dolor sit amet consectetur adipisicing elit. Iure quos debitis aliquam .</p><p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer support section for more information. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-info fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Three',
-      collapseId: 'collapsecustomicon1Three',
+      title: '<span class="me-3 fs-18 fw-bold">05.</span>Can I request a service even if it is not listed exactly as shown?',
+      body: `<p>Yes. The public categories help you understand Offsure’s main delivery areas, but your requirement does not need to match a card title perfectly to start a conversation.</p><p class="mt-2 mb-3"><span class="fw-bold">Note:</span> If your need is custom, use the closest category as a starting point and explain the project details in your message.</p>
+      <a href="#contact" class="btn btn-outline-info fs-13">Start a Conversation</a>`,
+      headingId: 'headingcustomiconFaqFive',
+      collapseId: 'collapsecustomiconFaqFive',
       collapsed: true,
       accodionItemClass: 'accordion-item acc-info',
       accodionClass: 'accordion accordion-customicon1 accordion-info accordions-items-seperate'
@@ -437,7 +427,10 @@ export class LandingPageComponent {
     private el: ElementRef,
     private elementRef: ElementRef,
     private viewScroller: ViewportScroller,
-    public renderer: Renderer2
+    public renderer: Renderer2,
+    private serviceCategoriesService: ServiceCategoriesService,
+    private servicesService: ServicesService,
+    private portfoliosService: PortfoliosService
   ) {
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;
@@ -491,6 +484,9 @@ export class LandingPageComponent {
   ngOnInit(): void {
     // this.menuResizeFn()
     this.renderer.addClass(this.document.body, 'landing-body');
+    this.loadServiceCategories();
+    this.loadPublicServices();
+    this.loadPortfolioHighlights();
     // switcher.localStorageBackUp();
 
     const ltr = this.elementRef.nativeElement.querySelectorAll('#switcher-ltr');
@@ -505,6 +501,120 @@ export class LandingPageComponent {
     // });
 
   }
+  private loadServiceCategories(): void {
+    this.serviceCategoriesService.getPublic({ pageIndex: 1, pageSize: 100, isActive: true }).subscribe({
+      next: (response) => {
+        const categories = [...(response.data?.data ?? [])].sort((first, second) => {
+          if (first.displayOrder !== second.displayOrder) {
+            return first.displayOrder - second.displayOrder;
+          }
+
+          return first.name.localeCompare(second.name);
+        });
+
+        this.serviceCategoriesCount = response.data?.totalCount ?? categories.length;
+        this.serviceCategoryCards = categories.map((category, index) =>
+          this.mapServiceCategoryToCard(category, index)
+        );
+      },
+      error: (error) => {
+        console.error('Failed to load public service categories for landing page.', error);
+        this.serviceCategoriesCount = 0;
+        this.serviceCategoryCards = [];
+      }
+    });
+  }
+
+  private loadPublicServices(): void {
+    this.servicesService.getPublic({ pageIndex: 1, pageSize: 1 }).subscribe({
+      next: (response) => {
+        this.publicServicesCount = response.data?.totalCount ?? 0;
+      },
+      error: (error) => {
+        console.error('Failed to load public services for landing page.', error);
+        this.publicServicesCount = 0;
+      }
+    });
+  }
+
+  private loadPortfolioHighlights(): void {
+    this.portfoliosService.getAll({ pageIndex: 1, pageSize: 4 }).subscribe({
+      next: (response) => {
+        const portfolios = response.data?.data ?? [];
+        this.publishedProjectsCount = response.data?.totalCount ?? portfolios.length;
+        this.portfolioHighlights = portfolios.map((portfolio) => this.mapPortfolioHighlight(portfolio));
+      },
+      error: (error) => {
+        console.error('Failed to load portfolio highlights for landing page.', error);
+        this.publishedProjectsCount = 0;
+        this.portfolioHighlights = [];
+      }
+    });
+  }
+
+  private mapServiceCategoryToCard(category: ServiceCategoryDto, index: number): LandingServiceCategoryCard {
+    return {
+      icon: this.serviceCategoryIcons[index % this.serviceCategoryIcons.length],
+      title: category.name,
+      cardClass: this.serviceCategoryCardClasses[index % this.serviceCategoryCardClasses.length],
+      description: this.buildServiceCategoryDescription(category),
+    };
+  }
+
+  private buildServiceCategoryDescription(category: ServiceCategoryDto): string {
+    const description = category.description?.trim();
+
+    if (description) {
+      return this.truncateText(description, 150);
+    }
+
+    const serviceLabel = category.servicesCount === 1 ? 'service' : 'services';
+    return `${category.servicesCount} active ${serviceLabel} currently available in this category.`;
+  }
+
+  private mapPortfolioHighlight(portfolio: PortfolioDto): LandingPortfolioHighlight {
+    return {
+      id: portfolio.id,
+      category: portfolio.serviceCategoryName?.trim() || 'Featured Project',
+      title: portfolio.title,
+      serviceName: portfolio.serviceName?.trim() || 'Custom Service Delivery',
+      description: this.buildPortfolioDescription(portfolio),
+      clientName: portfolio.clientName?.trim() || 'Confidential Client',
+      completedDateLabel: this.formatPortfolioCompletedDate(portfolio.completedDate),
+    };
+  }
+
+  private buildPortfolioDescription(portfolio: PortfolioDto): string {
+    const description = portfolio.description?.trim();
+
+    if (description) {
+      return this.truncateText(description, 120);
+    }
+
+    return `Delivered for ${portfolio.clientName} as part of our ${portfolio.serviceName?.trim() || 'service'} offering.`;
+  }
+
+  private formatPortfolioCompletedDate(completedDate: string | null): string {
+    if (!completedDate) {
+      return 'Recently delivered';
+    }
+
+    const date = new Date(completedDate);
+    if (Number.isNaN(date.getTime())) {
+      return 'Recently delivered';
+    }
+
+    return date.getFullYear().toString();
+  }
+
+  private truncateText(value: string, maxLength: number): string {
+    if (value.length <= maxLength) {
+      return value;
+    }
+
+    return `${value.slice(0, maxLength - 3).trimEnd()}...`;
+  }
+
   ngOnDestroy(): void {
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;

@@ -6,6 +6,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
     public interface IServiceManagementService
     {
         Task<PagedResponse<ServiceCategoryDto>> GetServiceCategoriesAsync(ServiceCategoryRequest request);
+        Task<PagedResponse<ServiceCategoryDto>> GetPublicServiceCategoriesAsync(ServiceCategoryRequest request);
         Task<ServiceCategoryDto> GetServiceCategoryByIdAsync(int id);
         Task<ServiceCategoryDto> CreateServiceCategoryAsync(CreateServiceCategoryDto dto);
         Task<ServiceCategoryDto> UpdateServiceCategoryAsync(int id, UpdateServiceCategoryDto dto);

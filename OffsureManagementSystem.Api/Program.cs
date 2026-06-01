@@ -66,7 +66,7 @@ namespace OffsureManagementSystem.API
             {
                 c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
                 {
-                    Title = "NPE API",
+                    Title = "OffshoreManagementSystem API",
                     Version = "v1"
                 });
 
