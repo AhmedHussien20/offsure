@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProjectStatus } from 'app/core/models/projects/project.models';
 import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
-import { normalizeProjectStatus } from 'app/core/utils/enum-status.util';
+import { normalizeProjectStatus, normalizeServiceRequestStatus } from 'app/core/utils/enum-status.util';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
@@ -84,8 +84,21 @@ export class AdminRequestsListComponent implements OnInit {
     this.loadRequests();
   }
 
+  hasLinkedProject(item: ServiceRequestDto): boolean {
+    const id = item.projectId;
+    return id != null && id > 0;
+  }
+
+  canShowConvertToProject(item: ServiceRequestDto): boolean {
+    return !this.hasLinkedProject(item);
+  }
+
+  isStatusChangeDisabled(item: ServiceRequestDto): boolean {
+    return normalizeServiceRequestStatus(item.status) === ServiceRequestStatus.Completed;
+  }
+
   canCompleteRequest(item: ServiceRequestDto): boolean {
-    if (!item.projectId) {
+    if (!this.hasLinkedProject(item)) {
       return true;
     }
     return normalizeProjectStatus(item.projectStatus) === ProjectStatus.Completed;
@@ -99,6 +112,10 @@ export class AdminRequestsListComponent implements OnInit {
   }
 
   updateStatus(item: ServiceRequestDto, status: ServiceRequestStatus): void {
+    if (this.isStatusChangeDisabled(item)) {
+      return;
+    }
+
     if (status === ServiceRequestStatus.Completed && !this.canCompleteRequest(item)) {
       this.toastr.warning('Complete the linked project before marking this request as Completed.');
       this.loadRequests();
@@ -117,6 +134,11 @@ export class AdminRequestsListComponent implements OnInit {
   }
 
   convertToProject(item: ServiceRequestDto): void {
+    if (this.hasLinkedProject(item)) {
+      this.toastr.info('This request already has a linked project.');
+      return;
+    }
+
     if (item.status !== ServiceRequestStatus.InProgress) {
       this.toastr.warning('Set request status to In Progress before creating a project.');
       return;

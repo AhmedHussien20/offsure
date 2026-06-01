@@ -2,6 +2,7 @@ export interface PortfolioFilterRequest {
   serviceId?: number;
   completedFrom?: string;
   completedTo?: string;
+  includeUnpublished?: boolean;
   pageIndex?: number;
   pageSize?: number;
 }
@@ -13,7 +14,7 @@ export interface AddPortfolioImageDto {
 }
 
 export interface AddPortfolioDto {
-  serviceId?: number;
+  serviceId: number;
   title: string;
   description?: string;
   clientName?: string;

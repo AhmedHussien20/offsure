@@ -46,6 +46,8 @@
           [showExportExcel]="false"
           [showAddButton]="true"
           [addButtonLabel]="'Add Category'"
+          [expandable]="true"
+          [expandTemplate]="categoryActions"
           [onSearch]="onCatSearch"
           (pageChange)="onCatPageChange($event)"
           (entriesChange)="onCatEntriesChange($event)"
@@ -103,6 +105,8 @@
           [showExportExcel]="false"
           [showAddButton]="true"
           [addButtonLabel]="'Add Skill'"
+          [expandable]="true"
+          [expandTemplate]="skillActions"
           [onSearch]="onSkillSearch"
           (pageChange)="onSkillPageChange($event)"
           (entriesChange)="onSkillEntriesChange($event)"
@@ -113,3 +117,31 @@
   </li>
 </ul>
 <div [ngbNavOutlet]="nav"></div>
+
+<ng-template #categoryActions let-item>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <span class="text-muted small">Inactive categories are hidden from team skill lists.</span>
+    <button
+      type="button"
+      class="btn btn-sm"
+      [class.btn-outline-success]="!item.isActive"
+      [class.btn-outline-secondary]="item.isActive"
+      (click)="toggleCategoryActive(item)">
+      {{ item.isActive ? 'Deactivate' : 'Activate' }}
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #skillActions let-item>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <span class="text-muted small">Inactive skills cannot be assigned to team members.</span>
+    <button
+      type="button"
+      class="btn btn-sm"
+      [class.btn-outline-success]="!item.isActive"
+      [class.btn-outline-secondary]="item.isActive"
+      (click)="toggleSkillActive(item)">
+      {{ item.isActive ? 'Deactivate' : 'Activate' }}
+    </button>
+  </div>
+</ng-template>

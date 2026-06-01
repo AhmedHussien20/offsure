@@ -8,6 +8,29 @@
   <li [ngbNavItem]="'categories'">
     <a ngbNavLink class="nav-link">Service Categories</a>
     <ng-template ngbNavContent>
+      @if (showCategoryForm) {
+        <div class="card custom-card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Add Service Category</h5>
+            <button type="button" class="btn btn-sm btn-light" (click)="cancelCategoryForm()">Cancel</button>
+          </div>
+          <div class="card-body">
+            <app-generic-form
+              [formGroup]="categoryForm"
+              [formConfig]="categoryFormConfig"
+              [showSubmit]="false">
+            </app-generic-form>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="savingCategory"
+              (click)="submitCategory()">
+              Save Category
+            </button>
+          </div>
+        </div>
+      }
+
       <div class="card custom-card">
         <app-generic-table
           [columns]="categoryColumns"
@@ -21,10 +44,14 @@
           [showPagination]="true"
           [showEmployeeFilter]="false"
           [showExportExcel]="false"
-          [showAddButton]="false"
+          [showAddButton]="true"
+          [addButtonLabel]="'Add Category'"
+          [expandable]="true"
+          [expandTemplate]="categoryActions"
           [onSearch]="onCatSearch"
           (pageChange)="onCatPageChange($event)"
-          (entriesChange)="onCatEntriesChange($event)">
+          (entriesChange)="onCatEntriesChange($event)"
+          (addClick)="openCategoryForm()">
         </app-generic-table>
       </div>
     </ng-template>
@@ -32,6 +59,34 @@
   <li [ngbNavItem]="'services'">
     <a ngbNavLink class="nav-link">Services</a>
     <ng-template ngbNavContent>
+      @if (showServiceForm) {
+        <div class="card custom-card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Add Service</h5>
+            <button type="button" class="btn btn-sm btn-light" (click)="cancelServiceForm()">Cancel</button>
+          </div>
+          <div class="card-body">
+            @if (categoryOptions.length === 0) {
+              <div class="alert alert-warning mb-3">
+                Create at least one service category before adding services.
+              </div>
+            }
+            <app-generic-form
+              [formGroup]="serviceForm"
+              [formConfig]="serviceFormConfig"
+              [showSubmit]="false">
+            </app-generic-form>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="savingService || categoryOptions.length === 0"
+              (click)="submitService()">
+              Save Service
+            </button>
+          </div>
+        </div>
+      }
+
       <div class="card custom-card">
         <app-generic-table
           [columns]="serviceColumns"
@@ -45,18 +100,34 @@
           [showPagination]="true"
           [showEmployeeFilter]="false"
           [showExportExcel]="false"
-          [showAddButton]="false"
+          [showAddButton]="true"
+          [addButtonLabel]="'Add Service'"
           [expandable]="true"
           [expandTemplate]="serviceActions"
           [onSearch]="onSvcSearch"
           (pageChange)="onSvcPageChange($event)"
-          (entriesChange)="onSvcEntriesChange($event)">
+          (entriesChange)="onSvcEntriesChange($event)"
+          (addClick)="openServiceForm()">
         </app-generic-table>
       </div>
     </ng-template>
   </li>
 </ul>
 <div [ngbNavOutlet]="nav"></div>
+
+<ng-template #categoryActions let-item>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <span class="text-muted small">Inactive categories are hidden from the public landing page.</span>
+    <button
+      type="button"
+      class="btn btn-sm"
+      [class.btn-outline-success]="!item.isActive"
+      [class.btn-outline-secondary]="item.isActive"
+      (click)="toggleCategoryActive(item)">
+      {{ item.isActive ? 'Deactivate' : 'Activate' }}
+    </button>
+  </div>
+</ng-template>
 
 <ng-template #serviceActions let-item>
   <div class="d-flex flex-wrap align-items-center gap-2">

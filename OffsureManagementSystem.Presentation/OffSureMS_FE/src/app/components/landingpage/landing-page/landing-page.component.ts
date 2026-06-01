@@ -1,22 +1,34 @@
 import { pagination1 } from './../../../shared/prismData/pagination';
 import { CommonModule, DOCUMENT, ViewportScroller } from '@angular/common';
-import { CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, HostListener, Inject, Renderer2, ViewChild } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, HostListener, Inject, Renderer2, ViewChild, inject } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CarouselModule, OwlOptions, SlidesOutputData } from 'ngx-owl-carousel-o';
 import { SpkFeatureCardsComponent } from '../../../@spk/reusable-landingpage/spk-feature-cards/spk-feature-cards.component';
 import { NgbAccordionComponent } from '../../../@spk/reusable-ui-elements/ngb-accordion/ngb-accordion.component';
-import { SpkLandingPricingComponent } from '../../../@spk/reusable-landingpage/spk-landing-pricing/spk-landing-pricing.component';
 import { TapToTopComponent } from '../../../shared/components/tap-to-top/tap-to-top.component';
 import { SharedModule } from '../../../shared/shared.module';
 import { PortfolioDto } from '../../../core/models/portfolios/portfolio.models';
-import { ServiceCategoryDto } from '../../../core/models/services/service.models';
+import { ServiceCategoryDto, ServiceDto } from '../../../core/models/services/service.models';
+import { ContactService } from '../../../core/services/contact.service';
+import { AppStateService } from '../../../shared/services/app-state.service';
 import { PortfoliosService } from '../../../core/services/portfolios.service';
 import { ServiceCategoriesService } from '../../../core/services/service-categories.service';
 import { ServicesService } from '../../../core/services/services.service';
+import { ToastrService } from 'ngx-toastr';
 
 interface LandingServiceCategoryCard {
+  id: number;
+  icon: string;
+  title: string;
+  cardClass: string;
+  description: string;
+  servicesCount: number;
+}
+
+interface LandingServiceCard {
+  id: number;
   icon: string;
   title: string;
   cardClass: string;
@@ -25,27 +37,26 @@ interface LandingServiceCategoryCard {
 
 interface LandingPortfolioHighlight {
   id: number;
-  category: string;
+  icon: string;
   title: string;
-  serviceName: string;
+  cardClass: string;
   description: string;
-  clientName: string;
-  completedDateLabel: string;
 }
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
   imports: [FormsModule, ReactiveFormsModule,SharedModule,
-     CommonModule, NgbModule, CarouselModule, RouterModule, SpkFeatureCardsComponent,SpkLandingPricingComponent,
+     CommonModule, NgbModule, CarouselModule, RouterModule, SpkFeatureCardsComponent,
      NgbAccordionComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
 })
 export class LandingPageComponent {
-  @ViewChild('swiperContainer') swiperContainer!: ElementRef;
   @ViewChild('swiperContainer1') swiperContainer1!: ElementRef;
+  @ViewChild('swiperContainerPortfolio') swiperContainerPortfolio?: ElementRef;
+  @ViewChild('portfolioPagination') portfolioPagination?: ElementRef<HTMLElement>;
   accodionClass: any;
   private readonly serviceCategoryIcons = [
     'fe fe-package',
@@ -68,37 +79,6 @@ export class LandingPageComponent {
     'main-features-8',
   ];
   ngAfterViewInit() {
-    const swiperEl = this.swiperContainer.nativeElement;
-
-    Object.assign(swiperEl, {
-      slidesPerView: 5,
-      spaceBetween: 10,
-      loop: true,
-      breakpoints: {
-        0: {
-          slidesPerView: 1,
-          spaceBetween: 10,
-        },
-        420: {
-          slidesPerView: 2,
-          spaceBetween: 10,
-        },
-        640: {
-          slidesPerView: 3,
-          spaceBetween: 10,
-        },
-        768: {
-          slidesPerView: 4,
-          spaceBetween: 10,
-        },
-        1024: {
-          slidesPerView: 5,
-          spaceBetween: 30,
-        },
-
-      },
-    }
-    );
     const swiperE2 = this.swiperContainer1.nativeElement;
 
     Object.assign(swiperE2, {
@@ -130,34 +110,20 @@ export class LandingPageComponent {
     }
     );
   }
-  imageData = [
-    {
-      src: './assets/images/media/landing/web/1.png',
-      title: 'Angular'
-    },
-    {
-      src: './assets/images/media/landing/web/7.png',
-      title: 'Ng Bootstrap'
-    },
-   {
-      src: './assets/images/media/landing/web/6.png',
-      title: 'NPM'
-    },
-   {
-      src: './assets/images/media/landing/web/4.png',
-      title: 'Sass'
-    },
-    {
-      src: './assets/images/media/landing/web/6.png',
-      title: 'NPM'
-    },
-    {
-      src: './assets/images/media/landing/web/7.png',
-      title: 'Ng Bootstrap'
-    },
-  ]
   serviceCategoryCards: LandingServiceCategoryCard[] = [];
+  selectedCategoryId: number | null = null;
+  selectedCategoryTitle = '';
+  categoryServiceCards: LandingServiceCard[] = [];
+  loadingCategoryServices = false;
   portfolioHighlights: LandingPortfolioHighlight[] = [];
+  contactSubmitting = false;
+  private readonly fb = inject(FormBuilder);
+  readonly contactForm = this.fb.group({
+    name: ['', [Validators.required, Validators.maxLength(100)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(256)]],
+    subject: ['', Validators.maxLength(200)],
+    message: ['', [Validators.required, Validators.maxLength(2000)]],
+  });
   serviceCategoriesCount = 0;
   publicServicesCount = 0;
   publishedProjectsCount = 0;
@@ -305,123 +271,6 @@ export class LandingPageComponent {
       accodionClass: 'accordion accordion-customicon1 accordion-info accordions-items-seperate'
     },
   ]
-  // active = 1; // For ngbNav active tab
-
-  pricingPlans = [
-    
-        {
-          type: 'Basic',
-          price: 39,
-          frequency: 'month',
-          headerClass:"card-header py-3",
-          cardFooterClass:"card-footer py-3",
-          features: [
-            { name: '2 Free ',text:'Domain Name', available: 'mdi-checkbox-marked-circle-outline' },
-            { name: '3',text:' One-Click Apps', available: true },
-            { name:"1",text: ' Databases',liClass:'text-muted', available: false },
-            { name:'Unlimited',text: ' Cloud Storage',liClass:'text-muted', available: false },
-            { name:'Money',text: ' Back Guarantee',liClass:'text-muted', available: false },
-            { name:'24/7',text: ' support',liClass:'text-muted', available: false }
-          ],
-          buttonClass: 'btn-outline-secondary',
-          textClass: 'text-secondary'
-        },
-        {
-          type: 'Advanced',
-          price: 199,
-          frequency: 'month',
-          tag: 'Limited Deal',
-          tagClass:'tag bg-primary text-white float-end rounded-2',
-          headerClass:"card-header py-3",
-          cardFooterClass:"card-footer py-3",
-          ulClass:'my-5',
-          features: [
-            { name: '5 Free ',text:'Domain Name', available: 'mdi-checkbox-marked-circle-outline' },
-            { name: '5',text:' One-Click Apps', available: true },
-            { name:"3",text: ' Databases', available: true },
-            { name:'Unlimited',text: ' Cloud Storage', available: true },
-            { name:'Money',text: ' Back Guarantee', available: true },
-            { name:'24/7',text: ' support', available: true }
-          ],
-          buttonClass: 'btn-primary-gradient text-white',
-          textClass: 'text-primary'
-        },
-        {
-          type: 'Regular',
-          price: 69,
-          frequency: 'month',
-          headerClass:"card-header py-3",
-          cardFooterClass:"card-footer py-3",
-          features: [
-            { name: '1 Free ',text:'Domain Name', available: 'mdi-checkbox-marked-circle-outline' },
-            { name: '4',text:' One-Click Apps', available: true },
-            { name:"2",text: ' Databases', available: true },
-            { name:'Unlimited',text: ' Cloud Storage',liClass:'text-muted', available: false },
-            { name:'Money',text: ' Back Guarantee',liClass:'text-muted', available: false },
-            { name:'24/7',text: ' support',liClass:'text-muted', available: false }
-          ],
-          buttonClass: 'btn-outline-danger',
-          textClass: 'text-danger'
-        }
-
-  ];
-  pricingPlans1= [
-    {
-      type: 'Basic',
-      price: 399,
-      frequency: 'year',
-      headerClass:"card-header py-3",
-      cardFooterClass:"card-footer py-3",
-      features: [
-        { name: '2 Free ',text:'Domain Name', available: 'mdi-checkbox-marked-circle-outline' },
-        { name: '3',text:' One-Click Apps', available: true },
-        { name:"1",text: ' Databases',liClass:'text-muted', available: false },
-        { name:'Unlimited',text: ' Cloud Storage',liClass:'text-muted', available: false },
-        { name:'Money',text: ' Back Guarantee',liClass:'text-muted', available: false },
-        { name:'24/7',text: ' support',liClass:'text-muted', available: false }
-      ],
-      buttonClass: 'btn-outline-secondary',
-      textClass: 'text-secondary'
-    },
-    {
-      type: 'Advanced',
-      price: 1299,
-      frequency: 'year',
-      tagClass:'badge bg-white text-primary float-end fw-normal',
-      tag: 'Limited Deal',
-      headerClass:'p-3  bd-b-white-2',
-      cardFooterClass:"p-3 d-grid",
-      cardClass:' border bg-primary border-primary  advanced reveal revealrotate active',
-      ulClass:'my-5',
-      features: [
-        { name: '5 Free ',text:'Domain Name', available: 'mdi-checkbox-marked-circle-outline' },
-        { name: '5',text:' One-Click Apps', available: true },
-        { name:"3",text: ' Databases', available: true },
-        { name:'Unlimited',text: ' Cloud Storage', available: true },
-        { name:'Money',text: ' Back Guarantee', available: true },
-        { name:'24/7',text: ' support', available: true }
-      ],
-      buttonClass: 'btn-white text-primary',
-    },
-    {
-      type: 'Regular',
-      price: 899,
-      frequency: 'year',
-      headerClass:"card-header py-3",
-      cardFooterClass:"card-footer py-3",
-      features: [
-        { name: '1 Free ',text:'Domain Name', available: 'mdi-checkbox-marked-circle-outline' },
-        { name: '4',text:' One-Click Apps', available: true },
-        { name:"2",text: ' Databases', available: true },
-        { name:'Unlimited',text: ' Cloud Storage',liClass:'text-muted', available: false },
-        { name:'Money',text: ' Back Guarantee',liClass:'text-muted', available: false },
-        { name:'24/7',text: ' support',liClass:'text-muted', available: false }
-      ],
-      buttonClass: 'btn-outline-danger',
-      textClass: 'text-danger'
-    }
-  ]
-
   constructor(
     @Inject(DOCUMENT) private document: Document,
     private el: ElementRef,
@@ -430,7 +279,10 @@ export class LandingPageComponent {
     public renderer: Renderer2,
     private serviceCategoriesService: ServiceCategoriesService,
     private servicesService: ServicesService,
-    private portfoliosService: PortfoliosService
+    private portfoliosService: PortfoliosService,
+    private contactService: ContactService,
+    private toastr: ToastrService,
+    private appStateService: AppStateService
   ) {
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;
@@ -504,13 +356,9 @@ export class LandingPageComponent {
   private loadServiceCategories(): void {
     this.serviceCategoriesService.getPublic({ pageIndex: 1, pageSize: 100, isActive: true }).subscribe({
       next: (response) => {
-        const categories = [...(response.data?.data ?? [])].sort((first, second) => {
-          if (first.displayOrder !== second.displayOrder) {
-            return first.displayOrder - second.displayOrder;
-          }
-
-          return first.name.localeCompare(second.name);
-        });
+        const categories = [...(response.data?.data ?? [])].sort((first, second) =>
+          first.name.localeCompare(second.name)
+        );
 
         this.serviceCategoriesCount = response.data?.totalCount ?? categories.length;
         this.serviceCategoryCards = categories.map((category, index) =>
@@ -538,11 +386,14 @@ export class LandingPageComponent {
   }
 
   private loadPortfolioHighlights(): void {
-    this.portfoliosService.getAll({ pageIndex: 1, pageSize: 4 }).subscribe({
+    this.portfoliosService.getAll({ pageIndex: 1, pageSize: 24 }).subscribe({
       next: (response) => {
         const portfolios = response.data?.data ?? [];
         this.publishedProjectsCount = response.data?.totalCount ?? portfolios.length;
-        this.portfolioHighlights = portfolios.map((portfolio) => this.mapPortfolioHighlight(portfolio));
+        this.portfolioHighlights = portfolios.map((portfolio, index) =>
+          this.mapPortfolioHighlight(portfolio, index)
+        );
+        this.initPortfolioSwiper();
       },
       error: (error) => {
         console.error('Failed to load portfolio highlights for landing page.', error);
@@ -552,12 +403,161 @@ export class LandingPageComponent {
     });
   }
 
+  private initPortfolioSwiper(): void {
+    setTimeout(() => {
+      const swiperEl = this.swiperContainerPortfolio?.nativeElement as HTMLElement & {
+        initialize?: () => void;
+      };
+      if (!swiperEl || this.portfolioHighlights.length === 0) {
+        return;
+      }
+
+      const slideCount = this.portfolioHighlights.length;
+      const paginationEl = this.portfolioPagination?.nativeElement;
+      Object.assign(swiperEl, {
+        slidesPerView: 4,
+        slidesPerGroup: 1,
+        spaceBetween: 24,
+        loop: slideCount > 4,
+        watchOverflow: true,
+        pagination: paginationEl
+          ? {
+              el: paginationEl,
+              clickable: true,
+              type: 'bullets',
+            }
+          : false,
+        autoplay:
+          slideCount > 4
+            ? {
+                delay: 4500,
+                disableOnInteraction: false,
+              }
+            : false,
+        breakpoints: {
+          0: {
+            slidesPerView: 1,
+            slidesPerGroup: 1,
+            spaceBetween: 16,
+          },
+          768: {
+            slidesPerView: 2,
+            slidesPerGroup: 1,
+            spaceBetween: 20,
+          },
+          992: {
+            slidesPerView: 3,
+            slidesPerGroup: 1,
+            spaceBetween: 24,
+          },
+          1200: {
+            slidesPerView: 4,
+            slidesPerGroup: 1,
+            spaceBetween: 24,
+          },
+        },
+      });
+
+      swiperEl.initialize?.();
+    }, 100);
+  }
+
+  selectCategory(card: LandingServiceCategoryCard): void {
+    if (this.selectedCategoryId === card.id) {
+      this.clearCategorySelection();
+      return;
+    }
+
+    this.selectedCategoryId = card.id;
+    this.selectedCategoryTitle = card.title;
+    this.loadingCategoryServices = true;
+    this.categoryServiceCards = [];
+
+    this.servicesService
+      .getPublic({ serviceCategoryId: card.id, pageIndex: 1, pageSize: 100 })
+      .subscribe({
+        next: response => {
+          const services = response.data?.data ?? [];
+          this.categoryServiceCards = services.map((service, index) =>
+            this.mapServiceToCard(service, index)
+          );
+          this.loadingCategoryServices = false;
+          setTimeout(() => {
+            const panel = document.getElementById('category-services-panel');
+            panel?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          });
+        },
+        error: error => {
+          console.error('Failed to load services for category.', error);
+          this.categoryServiceCards = [];
+          this.loadingCategoryServices = false;
+        },
+      });
+  }
+
+  clearCategorySelection(): void {
+    this.selectedCategoryId = null;
+    this.selectedCategoryTitle = '';
+    this.categoryServiceCards = [];
+    this.loadingCategoryServices = false;
+  }
+
+  goToContactFromCategory(): void {
+    if (this.selectedCategoryTitle) {
+      this.contactForm.patchValue({
+        subject: `Inquiry about ${this.selectedCategoryTitle}`,
+      });
+    }
+
+    const contact = document.getElementById('contact');
+    if (contact) {
+      contact.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  submitContact(): void {
+    if (this.contactForm.invalid) {
+      this.contactForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.contactForm.getRawValue();
+    this.contactSubmitting = true;
+
+    this.contactService
+      .sendMessage({
+        name: value.name!.trim(),
+        email: value.email!.trim(),
+        subject: value.subject?.trim() || null,
+        message: value.message!.trim(),
+        serviceCategory: this.selectedCategoryTitle || null,
+      })
+      .subscribe({
+        next: () => {
+          this.contactSubmitting = false;
+          this.toastr.success('Thank you. Your message was sent to our team.');
+          this.contactForm.reset({
+            name: '',
+            email: '',
+            subject: '',
+            message: '',
+          });
+        },
+        error: () => {
+          this.contactSubmitting = false;
+          this.toastr.error('We could not send your message. Please try again later.');
+        },
+      });
+  }
+
   private mapServiceCategoryToCard(category: ServiceCategoryDto, index: number): LandingServiceCategoryCard {
     return {
+      id: category.id,
       icon: this.serviceCategoryIcons[index % this.serviceCategoryIcons.length],
       title: category.name,
       cardClass: this.serviceCategoryCardClasses[index % this.serviceCategoryCardClasses.length],
       description: this.buildServiceCategoryDescription(category),
+      servicesCount: category.servicesCount,
     };
   }
 
@@ -572,15 +572,37 @@ export class LandingPageComponent {
     return `${category.servicesCount} active ${serviceLabel} currently available in this category.`;
   }
 
-  private mapPortfolioHighlight(portfolio: PortfolioDto): LandingPortfolioHighlight {
+  private mapServiceToCard(service: ServiceDto, index: number): LandingServiceCard {
+    const description = service.description?.trim();
+
+    return {
+      id: service.id,
+      icon: this.serviceCategoryIcons[index % this.serviceCategoryIcons.length],
+      title: service.name,
+      cardClass: this.serviceCategoryCardClasses[index % this.serviceCategoryCardClasses.length],
+      description: description
+        ? this.truncateText(description, 150)
+        : 'Contact us to learn more about this service offering.',
+    };
+  }
+
+  private mapPortfolioHighlight(portfolio: PortfolioDto, index: number): LandingPortfolioHighlight {
+    const summary = this.buildPortfolioDescription(portfolio);
+    const meta = [
+      portfolio.serviceCategoryName?.trim(),
+      portfolio.serviceName?.trim(),
+      portfolio.clientName?.trim(),
+      this.formatPortfolioCompletedDate(portfolio.completedDate),
+    ].filter((part): part is string => !!part);
+
+    const description = meta.length ? `${summary} · ${meta.join(' · ')}` : summary;
+
     return {
       id: portfolio.id,
-      category: portfolio.serviceCategoryName?.trim() || 'Featured Project',
+      icon: this.serviceCategoryIcons[index % this.serviceCategoryIcons.length],
       title: portfolio.title,
-      serviceName: portfolio.serviceName?.trim() || 'Custom Service Delivery',
-      description: this.buildPortfolioDescription(portfolio),
-      clientName: portfolio.clientName?.trim() || 'Confidential Client',
-      completedDateLabel: this.formatPortfolioCompletedDate(portfolio.completedDate),
+      cardClass: this.serviceCategoryCardClasses[index % this.serviceCategoryCardClasses.length],
+      description: this.truncateText(description, 150),
     };
   }
 
@@ -588,10 +610,10 @@ export class LandingPageComponent {
     const description = portfolio.description?.trim();
 
     if (description) {
-      return this.truncateText(description, 120);
+      return description;
     }
 
-    return `Delivered for ${portfolio.clientName} as part of our ${portfolio.serviceName?.trim() || 'service'} offering.`;
+    return `Delivered for ${portfolio.clientName?.trim() || 'our client'} as part of our ${portfolio.serviceName?.trim() || 'service'} offering.`;
   }
 
   private formatPortfolioCompletedDate(completedDate: string | null): string {
@@ -620,7 +642,10 @@ export class LandingPageComponent {
       this.elementRef.nativeElement.ownerDocument.documentElement;
     this.renderer.removeClass(this.document.body, 'landing-body');
     this.renderer.setAttribute(htmlElement, 'data-nav-layout', 'vertical');
-
+    this.renderer.setAttribute(htmlElement, 'data-menu-styles', 'dark');
+    this.renderer.setAttribute(htmlElement, 'data-vertical-style', 'overlay');
+    this.renderer.removeAttribute(htmlElement, 'data-nav-style');
+    this.appStateService.updateState();
   }
   scroll(el: HTMLElement) {
     el.scrollIntoView({ behavior: 'smooth' });
@@ -665,7 +690,6 @@ export class LandingPageComponent {
       }
     });
   }
-  active = 2;
   customOptions: OwlOptions = {
     loop: true,
     mouseDrag: true,

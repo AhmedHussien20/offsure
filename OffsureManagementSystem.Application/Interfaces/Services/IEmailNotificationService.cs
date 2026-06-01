@@ -1,3 +1,4 @@
+using OffsureManagementSystem.Application.DTOs.ContactDTOs;
 using OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs;
 using OffsureManagementSystem.Domain.Entities.Enum;
 
@@ -11,5 +12,6 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task SendStatusUpdateAsync(ServiceRequestDto request);
         Task SendProjectCompletionAsync(string clientEmail, string clientName, string projectName);
         Task NotifyAdminNewRequestAsync(ServiceRequestDto request);
+        Task NotifyAdminsOfContactMessageAsync(ContactMessageDto message);
     }
 }

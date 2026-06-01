@@ -8,7 +8,6 @@ namespace OffshoreManagementSystem.Domain.Entities
         public string Name { get; set; }
         public string Description { get; set; }
         public int ServiceCategoryId { get; set; }
-        public string IconUrl { get; set; }
         public bool IsVisible { get; set; } = true;
 
         // Navigation Properties

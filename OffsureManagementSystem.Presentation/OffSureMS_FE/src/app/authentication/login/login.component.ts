@@ -6,6 +6,7 @@ import { ToastrModule, ToastrService } from 'ngx-toastr';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { AuthService } from 'app/core/services/auth.service';
+import { AppStateService } from 'app/shared/services/app-state.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
@@ -38,6 +39,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     private renderer: Renderer2,
     private toastr: ToastrService,
     private translate: TranslateService,
+    private appStateService: AppStateService,
   ) {
     this.translate.use('en');
     document.documentElement.dir = 'ltr';
@@ -65,6 +67,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     this.authservice.login(email, password).subscribe({
       next: () => {
+        this.appStateService.updateState();
+
         const returnUrl = this.route.snapshot.queryParams['returnUrl'];
         if (returnUrl) {
           this.router.navigateByUrl(returnUrl);

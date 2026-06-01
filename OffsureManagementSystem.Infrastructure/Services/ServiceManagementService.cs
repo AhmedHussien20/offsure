@@ -115,8 +115,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 Name = dto.Name.Trim(),
                 Description = dto.Description?.Trim() ?? string.Empty,
-                IconUrl = dto.IconUrl?.Trim() ?? string.Empty,
-                DisplayOrder = dto.DisplayOrder,
                 IsActive = dto.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
@@ -138,8 +136,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             category.Name = dto.Name.Trim();
             category.Description = dto.Description?.Trim() ?? string.Empty;
-            category.IconUrl = dto.IconUrl?.Trim() ?? string.Empty;
-            category.DisplayOrder = dto.DisplayOrder;
             category.IsActive = dto.IsActive;
             category.UpdatedAt = DateTime.UtcNow;
 
@@ -147,8 +143,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 category,
                 nameof(category.Name),
                 nameof(category.Description),
-                nameof(category.IconUrl),
-                nameof(category.DisplayOrder),
                 nameof(category.IsActive),
                 nameof(category.UpdatedAt));
 
@@ -263,7 +257,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Name = dto.Name.Trim(),
                 Description = dto.Description?.Trim() ?? string.Empty,
                 ServiceCategoryId = dto.ServiceCategoryId,
-                IconUrl = dto.IconUrl?.Trim() ?? string.Empty,
                 IsVisible = dto.IsVisible,
                 CreatedAt = DateTime.UtcNow
             };
@@ -287,7 +280,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             service.Name = dto.Name.Trim();
             service.Description = dto.Description?.Trim() ?? string.Empty;
             service.ServiceCategoryId = dto.ServiceCategoryId;
-            service.IconUrl = dto.IconUrl?.Trim() ?? string.Empty;
             service.IsVisible = dto.IsVisible;
             service.UpdatedAt = DateTime.UtcNow;
 
@@ -296,7 +288,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(service.Name),
                 nameof(service.Description),
                 nameof(service.ServiceCategoryId),
-                nameof(service.IconUrl),
                 nameof(service.IsVisible),
                 nameof(service.UpdatedAt));
 
@@ -401,7 +392,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return request.SortColumn.Trim().ToLowerInvariant() switch
             {
                 "name" => isDescending ? query.OrderByDescending(c => c.Name) : query.OrderBy(c => c.Name),
-                "displayorder" => isDescending ? query.OrderByDescending(c => c.DisplayOrder) : query.OrderBy(c => c.DisplayOrder),
                 "isactive" => isDescending ? query.OrderByDescending(c => c.IsActive) : query.OrderBy(c => c.IsActive),
                 "servicescount" => isDescending ? query.OrderByDescending(c => c.Services.Count) : query.OrderBy(c => c.Services.Count),
                 _ => isDescending ? query.OrderByDescending(c => c.Id) : query.OrderBy(c => c.Id)
@@ -434,11 +424,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 "name" => isDescending ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
                 "servicecategoryid" => isDescending ? query.OrderByDescending(s => s.ServiceCategoryId) : query.OrderBy(s => s.ServiceCategoryId),
-                "servicecategoryname" => isDescending ? query.OrderByDescending(s => s.ServiceCategory.Name) : query.OrderBy(s => s.ServiceCategory.Name),
-                "displayorder" => isDescending
-                    ? query.OrderByDescending(s => s.ServiceCategory.DisplayOrder).ThenByDescending(s => s.Name)
-                    : query.OrderBy(s => s.ServiceCategory.DisplayOrder).ThenBy(s => s.Name),
-                _ => query.OrderBy(s => s.ServiceCategory.DisplayOrder).ThenBy(s => s.Name)
+                "servicecategoryname" => isDescending
+                    ? query.OrderByDescending(s => s.ServiceCategory.Name).ThenByDescending(s => s.Name)
+                    : query.OrderBy(s => s.ServiceCategory.Name).ThenBy(s => s.Name),
+                _ => query.OrderBy(s => s.ServiceCategory.Name).ThenBy(s => s.Name)
             };
         }
 
@@ -479,8 +468,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Id = category.Id,
                 Name = category.Name,
                 Description = category.Description,
-                IconUrl = category.IconUrl,
-                DisplayOrder = category.DisplayOrder,
                 IsActive = category.IsActive,
                 ServicesCount = category.Services.Count
             };
@@ -495,7 +482,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Description = service.Description,
                 ServiceCategoryId = service.ServiceCategoryId,
                 ServiceCategoryName = service.ServiceCategory?.Name ?? string.Empty,
-                IconUrl = service.IconUrl,
                 IsVisible = service.IsVisible
             };
         }

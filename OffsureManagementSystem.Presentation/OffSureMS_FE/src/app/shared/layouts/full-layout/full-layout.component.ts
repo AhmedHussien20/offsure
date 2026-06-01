@@ -6,6 +6,7 @@ import { Subscription, filter } from 'rxjs';
 import { MenuItem } from '../../models/menu-item.model'; 
 import { AuthService } from 'app/core/services/auth.service';
 import { SignalRService } from 'app/core/services/signalr.service';
+import { AppStateService } from '../../services/app-state.service';
 
 @Component({
   selector: 'app-full-layout',
@@ -27,7 +28,8 @@ export class FullLayoutComponent implements OnInit, OnDestroy {
     public switcherService: SwitcherService,
     private renderer: Renderer2,
     private authService: AuthService,
-    private signalR: SignalRService
+    private signalR: SignalRService,
+    private appStateService: AppStateService
   ) {
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;
@@ -46,6 +48,9 @@ export class FullLayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Landing page sets global light/horizontal menu attrs; re-apply portal theme on first entry.
+    this.appStateService.updateState();
+
     this.menuitemsSubscribe$ = this.navServices.getMenuItems().subscribe({
       next: (menuItems) => {
         if (menuItems) {

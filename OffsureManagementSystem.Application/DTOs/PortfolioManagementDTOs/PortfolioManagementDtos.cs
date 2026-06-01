@@ -7,6 +7,8 @@ namespace OffsureManagementSystem.Application.DTOs.PortfolioManagementDTOs
         public int? ServiceId { get; set; }
         public DateTime? CompletedFrom { get; set; }
         public DateTime? CompletedTo { get; set; }
+        /// <summary>When true, returns draft and published items (admin). Public callers should leave false.</summary>
+        public bool IncludeUnpublished { get; set; }
     }
 
     public class AddPortfolioDto

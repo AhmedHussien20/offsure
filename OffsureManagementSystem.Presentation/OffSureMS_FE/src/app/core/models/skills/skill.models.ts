@@ -9,14 +9,12 @@ export interface SkillCategoryRequest {
 export interface CreateSkillCategoryDto {
   name: string;
   description?: string;
-  displayOrder?: number;
   isActive?: boolean;
 }
 
 export interface UpdateSkillCategoryDto {
   name: string;
   description?: string;
-  displayOrder?: number;
   isActive?: boolean;
 }
 
@@ -24,7 +22,6 @@ export interface SkillCategoryDto {
   id: number;
   name: string;
   description: string;
-  displayOrder: number;
   isActive: boolean;
   skillsCount: number;
 }

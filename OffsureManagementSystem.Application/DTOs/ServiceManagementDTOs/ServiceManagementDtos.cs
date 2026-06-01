@@ -30,8 +30,6 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
     {
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string? IconUrl { get; set; }
-        public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
@@ -39,8 +37,6 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
     {
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string? IconUrl { get; set; }
-        public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
@@ -49,8 +45,6 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string IconUrl { get; set; } = string.Empty;
-        public int DisplayOrder { get; set; }
         public bool IsActive { get; set; }
         public int ServicesCount { get; set; }
     }
@@ -60,7 +54,6 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int ServiceCategoryId { get; set; }
-        public string? IconUrl { get; set; }
         public bool IsVisible { get; set; } = true;
     }
 
@@ -69,7 +62,6 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int ServiceCategoryId { get; set; }
-        public string? IconUrl { get; set; }
         public bool IsVisible { get; set; } = true;
     }
 
@@ -80,7 +72,6 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public string Description { get; set; } = string.Empty;
         public int ServiceCategoryId { get; set; }
         public string ServiceCategoryName { get; set; } = string.Empty;
-        public string IconUrl { get; set; } = string.Empty;
         public bool IsVisible { get; set; }
     }
 

@@ -203,14 +203,79 @@
                     Offsure Management System and discover what the platform currently offers to your
                     clients.</p>
                 <div class="row">
-                    @for(card of serviceCategoryCards;track $index){
+                    @for (card of serviceCategoryCards; track card.id) {
                     <div class="col-lg-3 col-md-6 d-flex">
-                        <spk-feature-cards [icon]="card.icon" [title]="card.title" [cardClass]="card.cardClass"
-                            [description]="card.description"></spk-feature-cards>
+                        <div
+                            class="landing-category-card-wrap w-100"
+                            [class.landing-category-card-wrap--selected]="selectedCategoryId === card.id"
+                            role="button"
+                            tabindex="0"
+                            [attr.aria-expanded]="selectedCategoryId === card.id"
+                            [attr.aria-label]="'View services in ' + card.title"
+                            (click)="selectCategory(card)"
+                            (keydown.enter)="selectCategory(card)"
+                            (keydown.space)="$event.preventDefault(); selectCategory(card)">
+                            <spk-feature-cards
+                                [icon]="card.icon"
+                                [title]="card.title"
+                                [cardClass]="card.cardClass"
+                                [description]="card.description">
+                            </spk-feature-cards>
+                            <span class="landing-category-card-hint small text-primary">
+                                {{ selectedCategoryId === card.id ? 'Hide services' : 'View services' }}
+                            </span>
+                        </div>
                     </div>
                     }
-
                 </div>
+
+                @if (selectedCategoryId !== null) {
+                <div id="category-services-panel" class="landing-category-services-panel mt-5 pt-2">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                        <div class="flex-grow-1"></div>
+                        <button type="button" class="btn btn-sm btn-light" (click)="clearCategorySelection()">
+                            Close
+                        </button>
+                    </div>
+                    <h4 class="text-center fw-medium landing-card-header">Services</h4>
+                    <span class="landing-title"></span>
+                    <h2 class="fw-medium text-center">Services in {{ selectedCategoryTitle }}</h2>
+                    <p class="text-default mb-5 text-center">
+                        Explore the services available in this category, then contact us or log in to submit a request.
+                    </p>
+
+                    @if (loadingCategoryServices) {
+                    <p class="text-muted text-center mb-0">Loading services...</p>
+                    } @else if (categoryServiceCards.length === 0) {
+                    <p class="text-muted text-center mb-0">
+                        No public services are listed in this category yet. You can still
+                        <a href="javascript:void(0)" (click)="goToContactFromCategory()">contact us</a>
+                        about your needs.
+                    </p>
+                    } @else {
+                    <div class="row">
+                        @for (card of categoryServiceCards; track card.id) {
+                        <div class="col-lg-3 col-md-6 d-flex">
+                            <spk-feature-cards
+                                [icon]="card.icon"
+                                [title]="card.title"
+                                [cardClass]="card.cardClass"
+                                [description]="card.description">
+                            </spk-feature-cards>
+                        </div>
+                        }
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-5">
+                        <button type="button" class="btn btn-primary" (click)="goToContactFromCategory()">
+                            Contact us about this category
+                        </button>
+                        <a routerLink="/auth/login" class="btn btn-outline-primary">
+                            Login to submit a request
+                        </a>
+                    </div>
+                    }
+                </div>
+                }
             </div>
         </section>
         <!-- End:: Section-2 -->
@@ -2034,36 +2099,6 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         </section>
         <!-- End:: Section-3 -->
 
-        <!-- Start:: Section-4 -->
-        <section class="section landing-Features">
-            <div class="container text-center">
-                <h2 class="text-center fw-medium text-fixed-white">Features</h2>
-                <h4 class="fw-medium mb-2 text-fixed-white ">Features Used in Spruha Admin Template</h4>
-                <div class="text-start">
-                    <div class="justify-content-center">
-                        <div class="feature-logos mt-5">
-                            <swiper-container #swiperContainer
-                                class="swiper mySwiper9 swiper-initialized swiper-horizontal swiper-pointer-events"
-                                space-between="30" slides-per-view="5" slides-per-group="1" loop="true"
-                                autoplay-delay="1000" autoplay-disable-on-interaction="false">
-                                @for(image of imageData;track $index){
-
-                                <swiper-slide>
-                                    <div class="swiper-slide">
-                                        <img [src]="image.src" alt="image">
-                                        <h5 class="text-center mt-2 text-fixed-white">{{image.title}}</h5>
-                                    </div>
-                                </swiper-slide>
-                                }
-                            </swiper-container>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- End:: Section-4 -->
-
         <!-- Start:: Section-5 -->
         <section class="section highlights" id="highlights" #highlights>
             <div class="container text-center">
@@ -2079,23 +2114,22 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                     </div>
                 </div>
                 @if (portfolioHighlights.length) {
-                <div class="row g-4 text-start">
-                    @for(portfolio of portfolioHighlights;track portfolio.id){
-                    <div class="col-xl-3 col-lg-6 col-md-6">
-                        <div class="card h-100 portfolio-highlight-card border">
-                            <div class="card-body d-flex flex-column">
-                                <span class="portfolio-highlight-category text-primary mb-3">{{portfolio.category}}</span>
-                                <h5 class="fw-semibold mb-2">{{portfolio.title}}</h5>
-                                <p class="portfolio-highlight-service fw-medium mb-2">{{portfolio.serviceName}}</p>
-                                <p class="text-muted mb-3 portfolio-highlight-description">{{portfolio.description}}</p>
-                                <div class="mt-auto d-flex justify-content-between align-items-center portfolio-highlight-meta">
-                                    <span>{{portfolio.clientName}}</span>
-                                    <span>{{portfolio.completedDateLabel}}</span>
-                                </div>
+                <div class="landing-portfolio-swiper">
+                    <swiper-container #swiperContainerPortfolio init="false" class="portfolio-swiper">
+                        @for (portfolio of portfolioHighlights; track portfolio.id) {
+                        <swiper-slide>
+                            <div class="landing-portfolio-slide h-100">
+                                <spk-feature-cards
+                                    [icon]="portfolio.icon"
+                                    [title]="portfolio.title"
+                                    [cardClass]="portfolio.cardClass"
+                                    [description]="portfolio.description">
+                                </spk-feature-cards>
                             </div>
-                        </div>
-                    </div>
-                    }
+                        </swiper-slide>
+                        }
+                    </swiper-container>
+                    <div #portfolioPagination class="portfolio-swiper-pagination swiper-pagination"></div>
                 </div>
                 } @else {
                 <div class="row justify-content-center">
@@ -2108,56 +2142,6 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
             </div>
         </section>
         <!-- End:: Section-5 -->
-
-        <!-- Start:: Section-6 -->
-        <section class="section section-bg" id="pricing">
-            <div class="container text-center">
-                <div class="row">
-                    <h4 class="text-center fw-medium landing-card-header">Choose a plan </h4>
-                    <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium">Find the <span class="text-primary">Perfect
-                            Plan</span> for your Business.</h2>
-                    <div class="pricing-tabs text-center">
-                        <div class="pri-tabs-heading text-center mt-3">
-                            <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav nav-price">
-                                <li [ngbNavItem]="1" class="me-0"><a ngbNavLink data-bs-toggle="tab"
-                                        class="monthly me-0">Monthly</a>
-                                    <ng-template ngbNavContent>
-                                        <div class="tab-pane" id="month">
-                                            <div class="row d-flex align-items-center justify-content-center">
-                                                @for(plan of pricingPlans;track $index){
-                                                <div class="col-lg-4 col-xl-4 col-md-8 col-sm-12">
-                                                    <spk-landing-pricing [plan]="plan"></spk-landing-pricing>
-                                                </div>
-                                                }
-
-                                            </div>
-                                        </div>
-                                    </ng-template>
-                                </li>
-                                <li [ngbNavItem]="2"><a ngbNavLink class="annualy" data-bs-toggle="tab">Annual</a>
-                                    <ng-template ngbNavContent>
-                                        <!-- <div class="tab-pane pb-0" id="annualyear"> -->
-                                        <div class="row d-flex align-items-center justify-content-center">
-                                            @for(plan of pricingPlans1;track $index){
-                                            <div class="col-lg-4 col-xl-4 col-md-8 col-sm-12">
-                                                <spk-landing-pricing [plan]="plan"></spk-landing-pricing>
-                                            </div>
-                                            }
-                                        </div>
-                                        <!-- </div> -->
-                                    </ng-template>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="tab-content text-start" [ngbNavOutlet]="nav">
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- End:: Section-6 -->
 
         <!-- Start:: Section-7 -->
         <section class="section highlights" id="faq" #faq>
@@ -2346,38 +2330,57 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                 </div>
                                 <div class="col-xl-12">
                                     <div class="">
-                                        <form class="reveal">
+                                        <form class="reveal" [formGroup]="contactForm" (ngSubmit)="submitContact()"
+                                            novalidate>
                                             <div class="row">
                                                 <div class="col-xl-6">
                                                     <div class="form-group ">
                                                         <label for="cusName" class="form-label">Name
                                                             <span class="text-danger">*</span></label>
                                                         <input type="text" class="form-control" id="cusName"
-                                                            placeholder="Enter your name">
+                                                            formControlName="name" placeholder="Enter your name"
+                                                            [class.is-invalid]="contactForm.controls.name.touched && contactForm.controls.name.invalid">
+                                                        @if (contactForm.controls.name.touched && contactForm.controls.name.hasError('required')) {
+                                                        <div class="invalid-feedback d-block">Name is required.</div>
+                                                        }
                                                     </div>
                                                 </div>
                                                 <div class="col-xl-6">
                                                     <div class="form-group">
                                                         <label for="cusEmail" class="form-label">Email
                                                             <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" id="cusEmail"
-                                                            placeholder="Enter your email">
+                                                        <input type="email" class="form-control" id="cusEmail"
+                                                            formControlName="email" placeholder="Enter your email"
+                                                            [class.is-invalid]="contactForm.controls.email.touched && contactForm.controls.email.invalid">
+                                                        @if (contactForm.controls.email.touched && contactForm.controls.email.hasError('required')) {
+                                                        <div class="invalid-feedback d-block">Email is required.</div>
+                                                        }
+                                                        @if (contactForm.controls.email.touched && contactForm.controls.email.hasError('email')) {
+                                                        <div class="invalid-feedback d-block">Enter a valid email address.</div>
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="form-group">
                                                 <label for="cusSubject" class="form-label">Subject</label>
                                                 <input type="text" class="form-control" id="cusSubject"
-                                                    placeholder="Enter your subject">
+                                                    formControlName="subject" placeholder="Enter your subject">
                                             </div>
                                             <div class="form-group">
                                                 <label for="cusMessage" class="form-label">Message <span
                                                         class="text-danger">*</span></label>
                                                 <textarea rows="5" class="form-control" id="cusMessage"
-                                                    placeholder="Type your message here..."></textarea>
+                                                    formControlName="message" placeholder="Type your message here..."
+                                                    [class.is-invalid]="contactForm.controls.message.touched && contactForm.controls.message.invalid"></textarea>
+                                                @if (contactForm.controls.message.touched && contactForm.controls.message.hasError('required')) {
+                                                <div class="invalid-feedback d-block">Message is required.</div>
+                                                }
                                             </div>
                                             <div class="form-group">
-                                                <button class="btn btn-primary">Send Message</button>
+                                                <button type="submit" class="btn btn-primary"
+                                                    [disabled]="contactSubmitting">
+                                                    {{ contactSubmitting ? 'Sending...' : 'Send Message' }}
+                                                </button>
                                             </div>
                                         </form>
                                     </div>

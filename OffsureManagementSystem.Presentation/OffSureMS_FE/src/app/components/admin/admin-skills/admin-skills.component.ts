@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
@@ -27,6 +27,9 @@ import { ADMIN_SKILL_CATEGORY_COLUMNS, ADMIN_SKILL_COLUMNS } from '../admin.cons
   templateUrl: './admin-skills.component.html',
 })
 export class AdminSkillsComponent implements OnInit {
+  @ViewChild('categoryActions', { static: true }) categoryActions!: TemplateRef<unknown>;
+  @ViewChild('skillActions', { static: true }) skillActions!: TemplateRef<unknown>;
+
   activeTab: 'categories' | 'skills' = 'categories';
 
   categoryColumns = ADMIN_SKILL_CATEGORY_COLUMNS;
@@ -126,7 +129,7 @@ export class AdminSkillsComponent implements OnInit {
 
   openCategoryForm(): void {
     this.showCategoryForm = true;
-    this.categoryForm.reset({ displayOrder: 0, isActive: true });
+    this.categoryForm.reset({ isActive: true });
   }
 
   openSkillForm(): void {
@@ -156,7 +159,6 @@ export class AdminSkillsComponent implements OnInit {
       .create({
         name: String(raw.name).trim(),
         description: raw.description ? String(raw.description).trim() : undefined,
-        displayOrder: Number(raw.displayOrder) || 0,
         isActive: !!raw.isActive,
       })
       .subscribe({
@@ -170,6 +172,45 @@ export class AdminSkillsComponent implements OnInit {
         error: err => {
           this.toastr.error(err?.error?.message || 'Failed to create category.');
           this.savingCategory = false;
+        },
+      });
+  }
+
+  toggleCategoryActive(category: SkillCategoryDto): void {
+    this.skillCategoriesService
+      .update(category.id, {
+        name: category.name,
+        description: category.description,
+        isActive: !category.isActive,
+      })
+      .subscribe({
+        next: () => {
+          this.toastr.success(category.isActive ? 'Category deactivated.' : 'Category activated.');
+          this.loadCategoryOptions();
+          this.loadCategories();
+        },
+        error: err => {
+          this.toastr.error(err?.error?.message || 'Failed to update category.');
+        },
+      });
+  }
+
+  toggleSkillActive(skill: SkillDto): void {
+    this.skillsService
+      .update(skill.id, {
+        name: skill.name,
+        description: skill.description,
+        skillCategoryId: skill.skillCategoryId,
+        isActive: !skill.isActive,
+      })
+      .subscribe({
+        next: () => {
+          this.toastr.success(skill.isActive ? 'Skill deactivated.' : 'Skill activated.');
+          this.loadSkills();
+          this.loadCategories();
+        },
+        error: err => {
+          this.toastr.error(err?.error?.message || 'Failed to update skill.');
         },
       });
   }
@@ -208,7 +249,6 @@ export class AdminSkillsComponent implements OnInit {
     this.categoryForm = this.fb.group({
       name: ['', Validators.required],
       description: [''],
-      displayOrder: [0, [Validators.min(0)]],
       isActive: [true],
     });
 
@@ -222,7 +262,6 @@ export class AdminSkillsComponent implements OnInit {
     this.categoryFormConfig = [
       { type: 'input', inputType: 'text', name: 'name', label: 'Category Name', validations: { required: true } },
       { type: 'textarea', name: 'description', label: 'Description' },
-      { type: 'input', inputType: 'number', name: 'displayOrder', label: 'Display Order' },
       { type: 'checkbox', name: 'isActive', label: 'Active' },
     ];
 

@@ -58,10 +58,6 @@ export class AdminProjectDetailComponent implements OnInit {
       status: [ProjectStatus.InProgress, Validators.required],
     });
 
-    this.progressControl.valueChanges.subscribe(value => {
-      this.progressPreview = this.clampProgress(value);
-    });
-
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
     if (!this.projectId) {
       this.loading = false;
@@ -81,8 +77,24 @@ export class AdminProjectDetailComponent implements OnInit {
     return this.deliveryForm.get('progress') as FormControl<number>;
   }
 
-  onProgressSliderInput(): void {
-    this.progressPreview = this.clampProgress(this.progressControl.value);
+  onProgressSliderInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).valueAsNumber;
+    this.setProgressLive(value);
+  }
+
+  onExactValueInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.value === '') {
+      return;
+    }
+    this.setProgressLive(input.value);
+  }
+
+  onExactValueBlur(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.value === '') {
+      this.setProgressLive(0);
+    }
   }
 
   get isDeliveryLocked(): boolean {
@@ -105,7 +117,7 @@ export class AdminProjectDetailComponent implements OnInit {
       return;
     }
 
-    const progress = Number(this.deliveryForm.get('progress')?.value);
+    const progress = this.progressPreview;
     this.savingProgress = true;
     this.projectsService
       .update(this.project.id, {
@@ -159,6 +171,10 @@ export class AdminProjectDetailComponent implements OnInit {
   }
 
   assignMember(): void {
+    if (this.isDeliveryLocked) {
+      return;
+    }
+
     if (!this.project || this.assignForm.invalid) {
       this.assignForm.markAllAsTouched();
       return;
@@ -183,7 +199,9 @@ export class AdminProjectDetailComponent implements OnInit {
   }
 
   removeMember(teamMemberId: number): void {
-    if (!this.project) return;
+    if (!this.project || this.isDeliveryLocked) {
+      return;
+    }
 
     this.projectsService.removeTeamMember(this.project.id, teamMemberId).subscribe({
       next: res => {
@@ -218,6 +236,14 @@ export class AdminProjectDetailComponent implements OnInit {
       status: normalizeProjectStatus(this.project.status),
     });
     this.progressPreview = this.clampProgress(progress);
+  }
+
+  private setProgressLive(value: unknown): void {
+    const clamped = this.clampProgress(value);
+    this.progressPreview = clamped;
+    if (this.progressControl.value !== clamped) {
+      this.progressControl.setValue(clamped, { emitEvent: false });
+    }
   }
 
   private clampProgress(value: unknown): number {

@@ -33,8 +33,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<PortfolioDto>> GetAllPortfoliosAsync(PortfolioFilterRequest request)
         {
-            var query = BuildPortfolioQuery()
-                .Where(p => p.IsPublished);
+            var query = BuildPortfolioQuery();
+
+            if (!request.IncludeUnpublished)
+                query = query.Where(p => p.IsPublished);
 
             query = ApplyFilters(query, request);
 

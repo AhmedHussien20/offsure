@@ -80,7 +80,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 Name = dto.Name.Trim(),
                 Description = dto.Description?.Trim() ?? string.Empty,
-                DisplayOrder = dto.DisplayOrder,
                 IsActive = dto.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
@@ -102,7 +101,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             category.Name = dto.Name.Trim();
             category.Description = dto.Description?.Trim() ?? string.Empty;
-            category.DisplayOrder = dto.DisplayOrder;
             category.IsActive = dto.IsActive;
             category.UpdatedAt = DateTime.UtcNow;
 
@@ -110,7 +108,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 category,
                 nameof(category.Name),
                 nameof(category.Description),
-                nameof(category.DisplayOrder),
                 nameof(category.IsActive),
                 nameof(category.UpdatedAt));
 
@@ -310,7 +307,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return request.SortColumn.Trim().ToLowerInvariant() switch
             {
                 "name" => isDescending ? query.OrderByDescending(c => c.Name) : query.OrderBy(c => c.Name),
-                "displayorder" => isDescending ? query.OrderByDescending(c => c.DisplayOrder) : query.OrderBy(c => c.DisplayOrder),
                 "isactive" => isDescending ? query.OrderByDescending(c => c.IsActive) : query.OrderBy(c => c.IsActive),
                 "skillscount" => isDescending ? query.OrderByDescending(c => c.Skills.Count) : query.OrderBy(c => c.Skills.Count),
                 _ => isDescending ? query.OrderByDescending(c => c.Id) : query.OrderBy(c => c.Id)
@@ -362,7 +358,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Id = category.Id,
                 Name = category.Name,
                 Description = category.Description,
-                DisplayOrder = category.DisplayOrder,
                 IsActive = category.IsActive,
                 SkillsCount = category.Skills.Count
             };

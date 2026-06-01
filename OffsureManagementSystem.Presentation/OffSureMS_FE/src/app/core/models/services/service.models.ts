@@ -24,16 +24,12 @@ export interface ServiceCategoryRequest {
 export interface CreateServiceCategoryDto {
   name: string;
   description?: string;
-  iconUrl?: string;
-  displayOrder?: number;
   isActive?: boolean;
 }
 
 export interface UpdateServiceCategoryDto {
   name: string;
   description?: string;
-  iconUrl?: string;
-  displayOrder?: number;
   isActive?: boolean;
 }
 
@@ -41,8 +37,6 @@ export interface ServiceCategoryDto {
   id: number;
   name: string;
   description: string;
-  iconUrl: string;
-  displayOrder: number;
   isActive: boolean;
   servicesCount: number;
 }
@@ -66,7 +60,6 @@ export interface CreateServiceDto {
   name: string;
   description?: string;
   serviceCategoryId: number;
-  iconUrl?: string;
   isVisible?: boolean;
 }
 
@@ -74,7 +67,6 @@ export interface UpdateServiceDto {
   name: string;
   description?: string;
   serviceCategoryId: number;
-  iconUrl?: string;
   isVisible?: boolean;
 }
 
@@ -88,7 +80,6 @@ export interface ServiceDto {
   description: string;
   serviceCategoryId: number;
   serviceCategoryName: string;
-  iconUrl: string;
   isVisible: boolean;
 }
 

@@ -50,6 +50,7 @@ export const ADMIN_PORTFOLIO_COLUMNS: TableColumn[] = [
   { key: 'title', label: 'Title', type: 'text' },
   { key: 'serviceName', label: 'Service', type: 'text' },
   { key: 'clientName', label: 'Client', type: 'text' },
+  { key: 'completedDateLabel', label: 'Completed', type: 'text' },
   { key: 'publishedLabel', label: 'Published', type: 'text' },
 ];
 
@@ -68,7 +69,6 @@ export const ADMIN_SERVICE_COLUMNS: TableColumn[] = [
 export const ADMIN_SKILL_CATEGORY_COLUMNS: TableColumn[] = [
   { key: 'name', label: 'Category', type: 'text' },
   { key: 'description', label: 'Description', type: 'text' },
-  { key: 'displayOrder', label: 'Order', type: 'text' },
   { key: 'skillsCount', label: 'Skills', type: 'text' },
   { key: 'activeLabel', label: 'Active', type: 'text' },
 ];

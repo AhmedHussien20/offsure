@@ -200,9 +200,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.Property(e => e.Description)
                     .HasMaxLength(500);
 
-                entity.Property(e => e.DisplayOrder)
-                    .HasDefaultValue(0);
-
                 entity.Property(e => e.IsActive)
                     .HasDefaultValue(true);
 
@@ -226,12 +223,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.Property(e => e.Description)
                     .HasMaxLength(500);
-
-                entity.Property(e => e.IconUrl)
-                    .HasMaxLength(500);
-
-                entity.Property(e => e.DisplayOrder)
-                    .HasDefaultValue(0);
 
                 entity.Property(e => e.IsActive)
                     .HasDefaultValue(true);
@@ -364,9 +355,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.Property(e => e.Description)
                     .HasMaxLength(1000);
-
-                entity.Property(e => e.IconUrl)
-                    .HasMaxLength(500);
 
                 entity.Property(e => e.IsVisible)
                     .HasDefaultValue(true);
