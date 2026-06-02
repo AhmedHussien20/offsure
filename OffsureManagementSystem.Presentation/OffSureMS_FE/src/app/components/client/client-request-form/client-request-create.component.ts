@@ -1,26 +1,51 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
 import {
   CreateServiceRequestDto,
+  ServiceDto,
   ServiceRequestPriority,
 } from 'app/core/models/services/service.models';
-import { ServiceDto } from 'app/core/models/services/service.models';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { ServicesService } from 'app/core/services/services.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
-import { SharedModule } from 'app/shared/shared.module';
 
 @Component({
-  selector: 'app-client-request-form',
+  selector: 'app-client-request-create',
   standalone: true,
-  imports: [CommonModule, SharedModule, ReactiveFormsModule, GenericFormComponent],
-  templateUrl: './client-request-form.component.html',
+  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent],
+  template: `
+    <div class="modal-header">
+      <h5 class="modal-title">New Service Request</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+      @if (formConfig.length) {
+        <app-generic-form
+          [formGroup]="formGroup"
+          [formConfig]="formConfig"
+          [showSubmit]="false">
+        </app-generic-form>
+      } @else {
+        <div class="text-muted py-4">Loading form...</div>
+      }
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Cancel</button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="submitting || !formConfig.length"
+        (click)="onSubmit()">
+        {{ submitting ? 'Submitting...' : 'Submit Request' }}
+      </button>
+    </div>
+  `,
 })
-export class ClientRequestFormComponent implements OnInit {
+export class ClientRequestCreateComponent implements OnInit {
   formGroup!: FormGroup;
   formConfig: FormFieldConfig[] = [];
   services: ServiceDto[] = [];
@@ -30,8 +55,8 @@ export class ClientRequestFormComponent implements OnInit {
     private fb: FormBuilder,
     private servicesService: ServicesService,
     private serviceRequestsService: ServiceRequestsService,
-    private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    public activeModal: NgbActiveModal
   ) {}
 
   ngOnInit(): void {
@@ -78,7 +103,8 @@ export class ClientRequestFormComponent implements OnInit {
     this.serviceRequestsService.create(dto).subscribe({
       next: () => {
         this.toastr.success('Service request submitted successfully.');
-        this.router.navigate(['/client/requests']);
+        this.submitting = false;
+        this.activeModal.close(true);
       },
       error: err => {
         this.submitting = false;

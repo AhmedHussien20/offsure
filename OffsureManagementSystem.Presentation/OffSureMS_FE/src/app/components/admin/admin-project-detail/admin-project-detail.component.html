@@ -128,7 +128,7 @@
                 <select class="form-select" formControlName="teamMemberId">
                   <option [ngValue]="null">Select member</option>
                   @for (m of teamMembers; track m.id) {
-                    <option [ngValue]="m.id">{{ m.fullName }} — {{ m.title }}</option>
+                    <option [ngValue]="m.id">{{ memberName(m) }} — {{ m.title }}</option>
                   }
                 </select>
               </div>

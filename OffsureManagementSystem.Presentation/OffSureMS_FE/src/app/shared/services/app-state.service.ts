@@ -32,7 +32,7 @@ export class AppStateService {
     widthStyles: 'fullwidth',       // fullwidth, boxed
     menuPosition: 'fixed',          // fixed, scrollable
     headerPosition: 'fixed',        // fixed, scrollable
-    menuColor: 'dark',                  // light, dark, color, gradient, transparent
+    menuColor: 'color',                  // light, dark, color, gradient, transparent
     headerColor: 'light',                // light, dark, color, gradient, transparent
     themePrimary: '',               // '58, 88, 146', '92, 144, 163', '161, 90, 223', '78, 172, 76', '223, 90, 90'
     themeBackground: '',
@@ -108,10 +108,8 @@ export class AppStateService {
     html?.setAttribute('dir', direction);
   }
   private applythemeSpecificChanges(theme: string) {
-    let html = document.querySelector('html');
-    html?.setAttribute('data-theme-mode', theme);  //setting theme style
-    html?.setAttribute('data-header-styles', theme); //setting header style
-    html?.setAttribute('data-menu-styles', theme); //setting menu style
+    const html = document.querySelector('html');
+    html?.setAttribute('data-theme-mode', theme);//setting menu style
   }
   private applyNavigationStylesSpecificChanges(navigationStyles: string) {
 

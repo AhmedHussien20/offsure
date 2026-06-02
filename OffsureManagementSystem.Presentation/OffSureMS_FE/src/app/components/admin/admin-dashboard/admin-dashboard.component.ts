@@ -8,7 +8,7 @@ import {
   ServiceRequestDto,
   ServiceRequestStatus,
 } from 'app/core/models/services/service.models';
-import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
+import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
 import { ClientsService } from 'app/core/services/clients.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
@@ -150,8 +150,12 @@ export class AdminDashboardComponent implements OnInit {
     return 'text-warning';
   }
 
+  memberName(member: TeamMemberDto): string {
+    return teamMemberDisplayName(member);
+  }
+
   memberInitials(member: TeamMemberDto): string {
-    const parts = (member.fullName || `${member.firstName} ${member.lastName}`).trim().split(/\s+/);
+    const parts = teamMemberDisplayName(member).trim().split(/\s+/);
     if (parts.length === 0) {
       return '?';
     }

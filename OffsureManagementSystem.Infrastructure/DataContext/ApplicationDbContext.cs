@@ -151,10 +151,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.FullName)
-                    .IsRequired()
-                    .HasMaxLength(200);
-
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(100);

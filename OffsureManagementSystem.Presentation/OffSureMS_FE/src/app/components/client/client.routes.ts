@@ -20,16 +20,6 @@ export const clientRoutes: Routes = [
           import('./client-requests-list/client-requests-list.component').then(m => m.ClientRequestsListComponent),
       },
       {
-        path: 'requests/new',
-        data: {
-          breadcrumb: 'New Request',
-          title: 'New Request',
-          breadcrumbParents: [{ key: 'My Requests', route: ['client', 'requests'] }],
-        },
-        loadComponent: () =>
-          import('./client-request-form/client-request-form.component').then(m => m.ClientRequestFormComponent),
-      },
-      {
         path: 'projects',
         data: { breadcrumb: 'My Projects', title: 'My Projects' },
         loadComponent: () =>

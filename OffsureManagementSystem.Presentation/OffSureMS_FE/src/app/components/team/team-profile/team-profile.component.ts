@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SkillDto } from 'app/core/models/skills/skill.models';
-import { TeamMemberDto, TeamMemberSkillDto } from 'app/core/models/team-members/team-member.models';
+import { TeamMemberDto, TeamMemberSkillDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
 import { SkillsService } from 'app/core/services/skills.service';
 import { TeamContextService } from 'app/core/services/team-context.service';
 import { TeamPortalService } from 'app/core/services/team-portal.service';
@@ -57,6 +57,10 @@ export class TeamProfileComponent implements OnInit {
     });
 
     this.loadProfile();
+  }
+
+  get displayName(): string {
+    return teamMemberDisplayName(this.profile);
   }
 
   get skills(): TeamMemberSkillDto[] {

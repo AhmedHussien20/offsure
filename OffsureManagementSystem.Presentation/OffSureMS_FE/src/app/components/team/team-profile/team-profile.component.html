@@ -19,7 +19,7 @@
             {{ profile.firstName?.charAt(0) }}{{ profile.lastName?.charAt(0) }}
           </span>
           <div>
-            <h4 class="mb-1">{{ profile.fullName }}</h4>
+            <h4 class="mb-1">{{ displayName }}</h4>
             <p class="mb-1 text-muted">{{ profile.email }}</p>
             <span class="badge {{ profile.isAvailable ? 'bg-success-transparent' : 'bg-danger-transparent' }}">
               {{ profile.isAvailable ? 'Available' : 'Busy' }}

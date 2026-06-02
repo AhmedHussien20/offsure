@@ -12,6 +12,7 @@ import { SharedModule } from '../../../shared/shared.module';
 import { PortfolioDto } from '../../../core/models/portfolios/portfolio.models';
 import { ServiceCategoryDto, ServiceDto } from '../../../core/models/services/service.models';
 import { ContactService } from '../../../core/services/contact.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { AppStateService } from '../../../shared/services/app-state.service';
 import { PortfoliosService } from '../../../core/services/portfolios.service';
 import { ServiceCategoriesService } from '../../../core/services/service-categories.service';
@@ -282,7 +283,8 @@ export class LandingPageComponent {
     private portfoliosService: PortfoliosService,
     private contactService: ContactService,
     private toastr: ToastrService,
-    private appStateService: AppStateService
+    private appStateService: AppStateService,
+    private authService: AuthService
   ) {
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;
@@ -306,6 +308,27 @@ export class LandingPageComponent {
 
 
   }
+  get isLoggedIn(): boolean {
+    return this.authService.isAuthenticated();
+  }
+
+  get dashboardRoute(): string {
+    if (this.authService.isClient()) {
+      return '/client/dashboard';
+    }
+    if (this.authService.isAdministrator()) {
+      return '/admin/dashboard';
+    }
+    if (this.authService.isTeamMember()) {
+      return '/team/dashboard';
+    }
+    return '/';
+  }
+
+  get logoLink(): string {
+    return this.isLoggedIn ? this.dashboardRoute : '/';
+  }
+
   isCollapsed: any = true;
   isCollapsed1: boolean = true;
   isCollapsed2: boolean = true;

@@ -76,6 +76,7 @@ export interface TeamMemberDto {
   firstName: string;
   lastName: string;
   email: string;
+  /** Derived display name from firstName + lastName (API convenience). */
   fullName: string;
   title: string;
   yearsOfExperience: number;
@@ -99,4 +100,14 @@ export interface TeamStructureDto {
 export interface CvStorageResultDto {
   teamMemberId: number;
   cvPath: string;
+}
+
+export function teamMemberDisplayName(
+  member: Pick<TeamMemberDto, 'firstName' | 'lastName' | 'fullName'> | null | undefined
+): string {
+  if (!member) {
+    return '';
+  }
+  const combined = `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim();
+  return combined || member.fullName?.trim() || '';
 }

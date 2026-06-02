@@ -5,7 +5,7 @@ export const CLIENT_HEADER_SHORTCUTS: HeaderShortcut[] = [
   {
     title: 'nav.shortcuts.client.newRequest',
     icon: 'ti-plus',
-    path: '/client/requests/new',
+    path: '/client/requests?new=1',
     alwaysEnabled: true,
   },
   {

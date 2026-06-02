@@ -564,11 +564,6 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<int?>("DeletedBy")
                         .HasColumnType("int");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<bool>("IsAvailable")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")

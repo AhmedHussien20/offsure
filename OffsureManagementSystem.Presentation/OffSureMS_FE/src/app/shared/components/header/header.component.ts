@@ -311,8 +311,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   updateTheme(theme: string) {
     this.appStateService.updateState({ theme, menuColor: theme });
     if (theme == 'light') {
-      this.appStateService.updateState({ theme, themeBackground: '', headerColor: 'light', menuColor: 'dark' });
-      let html = document.querySelector('html');
+      this.appStateService.updateState({ theme, themeBackground: '', headerColor: 'light', menuColor: 'color' });      let html = document.querySelector('html');
       html?.style.removeProperty('--body-bg-rgb');
       html?.style.removeProperty('--body-bg-rgb2');
       html?.style.removeProperty('--light-rgb');
@@ -321,7 +320,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       html?.style.removeProperty('--sidemenu-active-bgcolor');
     }
     if (theme == 'dark') {
-      this.appStateService.updateState({ theme, themeBackground: '', headerColor: 'dark', menuColor: 'dark' });
+      this.appStateService.updateState({ theme, themeBackground: '', headerColor: 'dark', menuColor: 'color' });
       let html = document.querySelector('html');
       html?.style.removeProperty('--body-bg-rgb');
       html?.style.removeProperty('--body-bg-rgb2');

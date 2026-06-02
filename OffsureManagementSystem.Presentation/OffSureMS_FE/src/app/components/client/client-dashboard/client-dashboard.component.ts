@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { SpkEcommerceComponent } from 'app/@spk/reusable-ecommerce/spk-ecommerce/spk-ecommerce.component';
 import { ClientContextService } from 'app/core/services/client-context.service';
 import { ClientDto, ClientServiceRequestSummaryDto } from 'app/core/models/clients/client.models';
@@ -11,6 +12,7 @@ import {
   serviceRequestStatusKey,
 } from 'app/core/utils/enum-status.util';
 import { SERVICE_REQUEST_STATUS_BADGES } from '../client.constants';
+import { ClientRequestCreateComponent } from '../client-request-form/client-request-create.component';
 
 @Component({
   selector: 'app-client-dashboard',
@@ -27,7 +29,10 @@ export class ClientDashboardComponent implements OnInit {
 
   statCards: { label: string; value: string; icon: string; description: string; subValue: string }[] = [];
 
-  constructor(private clientContext: ClientContextService) {}
+  constructor(
+    private clientContext: ClientContextService,
+    private modalService: NgbModal
+  ) {}
 
   ngOnInit(): void {
     this.clientContext.loadProfile().subscribe({
@@ -85,6 +90,13 @@ export class ClientDashboardComponent implements OnInit {
       SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.text ??
       String(status ?? '')
     );
+  }
+
+  openNewRequestModal(): void {
+    this.modalService.open(ClientRequestCreateComponent, {
+      centered: true,
+      size: 'lg',
+    });
   }
 
   private countOngoingProjects(profile: ClientDto): number {

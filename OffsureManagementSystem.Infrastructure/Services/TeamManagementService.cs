@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
@@ -58,7 +59,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 var searchKey = Normalize(request.searchKey);
                 query = query.Where(t =>
-                    t.FullName.ToLower().Contains(searchKey)
+                    t.User.FirstName.ToLower().Contains(searchKey)
+                    || t.User.LastName.ToLower().Contains(searchKey)
                     || t.Title.ToLower().Contains(searchKey)
                     || t.PhoneNumber.ToLower().Contains(searchKey)
                     || t.User.Email.ToLower().Contains(searchKey)
@@ -126,7 +128,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var member = new TeamMember
             {
                 User = user,
-                FullName = BuildFullName(dto.FirstName, dto.LastName),
                 Title = dto.Title.Trim(),
                 YearsOfExperience = dto.YearsOfExperience,
                 CV = string.Empty,
@@ -172,7 +173,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             member.User.Email = normalizedEmail;
             member.User.UpdatedAt = DateTime.UtcNow;
 
-            member.FullName = BuildFullName(dto.FirstName, dto.LastName);
             member.Title = dto.Title.Trim();
             member.YearsOfExperience = dto.YearsOfExperience;
             member.PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty;
@@ -182,7 +182,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             _teamMemberRepo.SaveInclude(
                 member,
-                nameof(member.FullName),
                 nameof(member.Title),
                 nameof(member.YearsOfExperience),
                 nameof(member.PhoneNumber),
@@ -305,7 +304,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Resource not found.", 404);
 
             var content = BuildCvContent(member);
-            var path = await _cvStorageService.SaveGeneratedCvAsync(member.Id, member.FullName, content);
+            var path = await _cvStorageService.SaveGeneratedCvAsync(
+                member.Id,
+                UserDisplayName.FromTeamMember(member),
+                content);
 
             await UpdateCvPathAsync(member.Id, path);
 
@@ -337,7 +339,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var members = await _teamMemberRepo
                 .GetAll()
-                .OrderBy(t => t.FullName)
+                .Include(t => t.User)
+                .OrderBy(t => t.User.FirstName)
+                .ThenBy(t => t.User.LastName)
                 .ToListAsync();
 
             var childrenByLeader = members
@@ -347,7 +351,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var roots = members
                 .Where(t => t.LeaderId is null || members.All(m => m.Id != t.LeaderId.Value))
-                .OrderBy(t => t.FullName)
+                .OrderBy(t => t.User.FirstName)
+                .ThenBy(t => t.User.LastName)
                 .ToList();
 
             return roots.Select(root => MapStructure(root, childrenByLeader, new HashSet<int>())).ToList();
@@ -455,6 +460,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return _teamMemberRepo.Query()
                 .Include(t => t.User)
                 .Include(t => t.Leader)
+                    .ThenInclude(l => l.User)
                 .Include(t => t.TeamMemberSkills)
                     .ThenInclude(ts => ts.Skill)
                         .ThenInclude(s => s.SkillCategory);
@@ -587,7 +593,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             return request.SortColumn.Trim().ToLowerInvariant() switch
             {
-                "fullname" => isDescending ? query.OrderByDescending(t => t.FullName) : query.OrderBy(t => t.FullName),
+                "fullname" => isDescending
+                    ? query.OrderByDescending(t => t.User.LastName).ThenByDescending(t => t.User.FirstName)
+                    : query.OrderBy(t => t.User.LastName).ThenBy(t => t.User.FirstName),
                 "firstname" => isDescending ? query.OrderByDescending(t => t.User.FirstName) : query.OrderBy(t => t.User.FirstName),
                 "lastname" => isDescending ? query.OrderByDescending(t => t.User.LastName) : query.OrderBy(t => t.User.LastName),
                 "email" => isDescending ? query.OrderByDescending(t => t.User.Email) : query.OrderBy(t => t.User.Email),
@@ -612,7 +620,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
         private static string BuildFullName(string firstName, string lastName)
-            => $"{firstName.Trim()} {lastName.Trim()}".Trim();
+            => UserDisplayName.Build(firstName, lastName);
 
         private static string HashPassword(string password)
             => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
@@ -626,13 +634,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 FirstName = member.User?.FirstName ?? string.Empty,
                 LastName = member.User?.LastName ?? string.Empty,
                 Email = member.User?.Email ?? string.Empty,
-                FullName = member.FullName,
+                FullName = UserDisplayName.FromTeamMember(member),
                 Title = member.Title,
                 YearsOfExperience = member.YearsOfExperience,
                 CV = member.CV,
                 PhoneNumber = member.PhoneNumber,
                 LeaderId = member.LeaderId,
-                LeaderName = member.Leader?.FullName,
+                LeaderName = UserDisplayName.FromTeamMember(member.Leader),
                 IsAvailable = member.IsAvailable,
                 SkillAssignments = member.TeamMemberSkills
                     .OrderBy(s => s.Skill.Name)
@@ -667,7 +675,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 return new TeamStructureDto
                 {
                     Id = member.Id,
-                    FullName = member.FullName,
+                    FullName = UserDisplayName.FromTeamMember(member),
                     Title = member.Title,
                     YearsOfExperience = member.YearsOfExperience,
                     IsAvailable = member.IsAvailable
@@ -679,12 +687,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return new TeamStructureDto
             {
                 Id = member.Id,
-                FullName = member.FullName,
+                FullName = UserDisplayName.FromTeamMember(member),
                 Title = member.Title,
                 YearsOfExperience = member.YearsOfExperience,
                 IsAvailable = member.IsAvailable,
                 TeamMembers = (children ?? new List<TeamMember>())
-                    .OrderBy(t => t.FullName)
+                    .OrderBy(t => t.User?.FirstName)
+                    .ThenBy(t => t.User?.LastName)
                     .Select(child => MapStructure(child, childrenByLeader, new HashSet<int>(visited)))
                     .ToList()
             };
@@ -693,12 +702,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static string BuildCvContent(TeamMember member)
         {
             var builder = new StringBuilder();
-            builder.AppendLine(member.FullName);
+            builder.AppendLine(UserDisplayName.FromTeamMember(member));
             builder.AppendLine(member.Title);
             builder.AppendLine();
             builder.AppendLine($"Years of Experience: {member.YearsOfExperience}");
             builder.AppendLine($"Phone: {member.PhoneNumber}");
-            builder.AppendLine($"Leader: {member.Leader?.FullName ?? "N/A"}");
+            builder.AppendLine($"Leader: {(string.IsNullOrWhiteSpace(UserDisplayName.FromTeamMember(member.Leader)) ? "N/A" : UserDisplayName.FromTeamMember(member.Leader))}");
             builder.AppendLine($"Availability: {(member.IsAvailable ? "Available" : "Unavailable")}");
             builder.AppendLine();
             builder.AppendLine("Skills Summary");

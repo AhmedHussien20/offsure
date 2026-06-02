@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
+import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
@@ -84,6 +84,7 @@ export class AdminTeamListComponent implements OnInit {
           const paged = res.data;
           this.data = (paged?.data ?? []).map(m => ({
             ...m,
+            fullName: teamMemberDisplayName(m),
             availabilityLabel: m.isAvailable ? 'Available' : 'Unavailable',
           }));
           this.totalItems = paged?.totalCount ?? 0;

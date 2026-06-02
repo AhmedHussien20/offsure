@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ClientContextService } from 'app/core/services/client-context.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { ServiceRequestDto } from 'app/core/models/services/service.models';
@@ -8,6 +9,7 @@ import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { CLIENT_REQUEST_COLUMNS } from '../client.constants';
+import { ClientRequestCreateComponent } from '../client-request-form/client-request-create.component';
 
 @Component({
   selector: 'app-client-requests-list',
@@ -52,6 +54,8 @@ export class ClientRequestsListComponent implements OnInit {
   constructor(
     private clientContext: ClientContextService,
     private serviceRequestsService: ServiceRequestsService,
+    private modalService: NgbModal,
+    private route: ActivatedRoute,
     private router: Router
   ) {}
 
@@ -62,6 +66,16 @@ export class ClientRequestsListComponent implements OnInit {
         this.loadRequests();
       }
     });
+
+    if (this.route.snapshot.queryParamMap.get('new') === '1') {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { new: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+      this.openCreateModal();
+    }
   }
 
   onSearch = (): void => {
@@ -85,7 +99,19 @@ export class ClientRequestsListComponent implements OnInit {
   }
 
   onAdd(): void {
-    this.router.navigate(['/client/requests/new']);
+    this.openCreateModal();
+  }
+
+  private openCreateModal(): void {
+    const modalRef = this.modalService.open(ClientRequestCreateComponent, {
+      centered: true,
+      size: 'lg',
+    });
+    modalRef.closed.subscribe((created: boolean) => {
+      if (created) {
+        this.loadRequests();
+      }
+    });
   }
 
   private loadRequests(): void {

@@ -5,7 +5,6 @@ namespace OffshoreManagementSystem.Domain.Entities
     public class TeamMember : BaseEntity
     {
         public int UserId { get; set; }
-        public string FullName { get; set; }
         public string Title { get; set; }
         public int YearsOfExperience { get; set; }
         public string CV { get; set; } // File path or blob

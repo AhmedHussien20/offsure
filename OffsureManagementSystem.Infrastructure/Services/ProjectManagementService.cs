@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
@@ -264,7 +265,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Service)
                 .Include(p => p.ProjectAssignments)
-                    .ThenInclude(a => a.TeamMember);
+                    .ThenInclude(a => a.TeamMember)
+                        .ThenInclude(t => t.User);
         }
 
         private static IQueryable<Project> ApplyFilters(
@@ -298,7 +300,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     || (p.ServiceRequest != null && p.ServiceRequest.Title.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Client.CompanyName.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Service.Name.ToLower().Contains(searchKey))
-                    || p.ProjectAssignments.Any(a => a.TeamMember.FullName.ToLower().Contains(searchKey)));
+                    || p.ProjectAssignments.Any(a =>
+                        a.TeamMember.User.FirstName.ToLower().Contains(searchKey)
+                        || a.TeamMember.User.LastName.ToLower().Contains(searchKey)));
             }
 
             return query;
@@ -454,7 +458,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Budget = project.Budget,
                 Progress = project.Progress,
                 TeamMembers = project.ProjectAssignments
-                    .OrderBy(a => a.TeamMember.FullName)
+                    .OrderBy(a => a.TeamMember.User.FirstName)
+                    .ThenBy(a => a.TeamMember.User.LastName)
                     .Select(MapAssignment)
                     .ToList()
             };
@@ -466,7 +471,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 Id = assignment.Id,
                 TeamMemberId = assignment.TeamMemberId,
-                TeamMemberName = assignment.TeamMember?.FullName ?? string.Empty,
+                TeamMemberName = UserDisplayName.FromTeamMember(assignment.TeamMember),
                 TeamMemberTitle = assignment.TeamMember?.Title ?? string.Empty,
                 Role = assignment.Role,
                 AssignedDate = assignment.AssignedDate,

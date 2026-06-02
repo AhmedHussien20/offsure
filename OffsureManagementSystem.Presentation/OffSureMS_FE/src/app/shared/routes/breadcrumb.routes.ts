@@ -15,7 +15,7 @@ export const BREADCRUMB_ROUTES: Record<string, string> = {
   Profile: '/client/profile',
   'My Requests': '/client/requests',
   'My Projects': '/client/projects',
-  'New Request': '/client/requests/new',
+  'New Request': '/client/requests',
   'CUSTOMER.HOME': '/customer/home',
   'ADMIN.DASHBOARD': '/admin/dashboard',
   'MENU.BATCHES': '/customer/batch/list',

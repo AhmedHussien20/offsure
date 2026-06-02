@@ -6,7 +6,7 @@ import { ProjectDto, ProjectStatus } from 'app/core/models/projects/project.mode
 import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
-import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
+import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 import { normalizeProjectStatus, projectStatusKey } from 'app/core/utils/enum-status.util';
@@ -255,5 +255,9 @@ export class AdminProjectDetailComponent implements OnInit {
     const n = Number(value);
     if (Number.isNaN(n)) return 0;
     return Math.min(100, Math.max(0, Math.round(n)));
+  }
+
+  memberName(member: TeamMemberDto): string {
+    return teamMemberDisplayName(member);
   }
 }
