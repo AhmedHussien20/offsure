@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProjectDto, ProjectStatus } from 'app/core/models/projects/project.models';
+import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
@@ -44,7 +45,8 @@ export class AdminProjectDetailComponent implements OnInit {
     private projectsService: ProjectsService,
     private teamMembersService: TeamMembersService,
     private fb: FormBuilder,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private breadcrumbService: BreadcrumbService
   ) {}
 
   ngOnInit(): void {
@@ -219,6 +221,9 @@ export class AdminProjectDetailComponent implements OnInit {
     this.projectsService.getById(this.projectId).subscribe({
       next: res => {
         this.project = res.data ?? null;
+        if (this.project?.name) {
+          this.breadcrumbService.setDynamicLabel(this.project.name);
+        }
         this.patchDeliveryForm();
         this.loading = false;
       },

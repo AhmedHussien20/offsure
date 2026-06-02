@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProjectDto } from 'app/core/models/projects/project.models';
+import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamContextService } from 'app/core/services/team-context.service';
 import { projectStatusKey } from 'app/core/utils/enum-status.util';
@@ -22,7 +23,8 @@ export class TeamProjectDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private projectsService: ProjectsService,
-    private teamContext: TeamContextService
+    private teamContext: TeamContextService,
+    private breadcrumbService: BreadcrumbService
   ) {}
 
   ngOnInit(): void {
@@ -37,6 +39,9 @@ export class TeamProjectDetailComponent implements OnInit {
       this.projectsService.getTeamMyById(id).subscribe({
         next: res => {
           this.project = res.data ?? null;
+          if (this.project?.name) {
+            this.breadcrumbService.setDynamicLabel(this.project.name);
+          }
           if (this.project && teamMemberId) {
             const assignment = this.project.teamMembers?.find(m => m.teamMemberId === teamMemberId);
             this.myRole = assignment?.role ?? '—';

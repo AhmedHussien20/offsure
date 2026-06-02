@@ -30,16 +30,19 @@ export const content: Routes = [
       { path: 'dashboard', redirectTo: 'client/dashboard', pathMatch: 'full' },
       {
         path: 'client',
+        data: { breadcrumb: 'Client', title: 'Client' },
         loadChildren: () =>
           import('../../../app/components/client/client.routes').then(r => r.clientRoutes),
       },
       {
         path: 'admin',
+        data: { breadcrumb: 'Admin', title: 'Admin' },
         loadChildren: () =>
           import('../../../app/components/admin/admin.routes').then(r => r.adminRoutes),
       },
       {
         path: 'team',
+        data: { breadcrumb: 'Team', title: 'Team' },
         loadChildren: () =>
           import('../../../app/components/team/team.routes').then(r => r.teamRoutes),
       },

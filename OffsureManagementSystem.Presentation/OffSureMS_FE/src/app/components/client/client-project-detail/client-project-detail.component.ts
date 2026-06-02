@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProjectDto } from 'app/core/models/projects/project.models';
+import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { projectStatusKey } from 'app/core/utils/enum-status.util';
@@ -19,7 +20,8 @@ export class ClientProjectDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private projectsService: ProjectsService
+    private projectsService: ProjectsService,
+    private breadcrumbService: BreadcrumbService
   ) {}
 
   ngOnInit(): void {
@@ -32,6 +34,9 @@ export class ClientProjectDetailComponent implements OnInit {
     this.projectsService.getMyById(id).subscribe({
       next: res => {
         this.project = res.data ?? null;
+        if (this.project?.name) {
+          this.breadcrumbService.setDynamicLabel(this.project.name);
+        }
         this.loading = false;
       },
       error: () => {

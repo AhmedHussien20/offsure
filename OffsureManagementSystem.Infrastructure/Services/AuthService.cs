@@ -82,8 +82,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 City = dto.City,
                 Country = dto.Country,
                 PostalCode = dto.PostalCode,
-                Website = dto.Website,
-                Description = dto.Description,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
             };

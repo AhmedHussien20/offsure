@@ -18,8 +18,6 @@ namespace OffsureManagementSystem.Application.DTOs.AuthDTOs
         public string? City { get; set; }
         public string? Country { get; set; }
         public string? PostalCode { get; set; }
-        public string? Website { get; set; }
-        public string? Description { get; set; }
     }
     public class RegisterResponseDto
     {

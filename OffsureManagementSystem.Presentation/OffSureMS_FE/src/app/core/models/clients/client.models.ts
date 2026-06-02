@@ -16,8 +16,6 @@ export interface UpdateClientProfileDto {
   city?: string;
   country?: string;
   postalCode?: string;
-  website?: string;
-  description?: string;
 }
 
 export interface ClientServiceRequestSummaryDto {
@@ -46,8 +44,6 @@ export interface ClientDto {
   city: string;
   country: string;
   postalCode: string;
-  website: string;
-  description: string;
   isActive: boolean;
   requestsCount: number;
   projectsCount: number;

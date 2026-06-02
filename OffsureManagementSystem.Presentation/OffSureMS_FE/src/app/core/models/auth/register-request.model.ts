@@ -10,8 +10,6 @@ export interface RegisterRequest {
   city?: string;
   country?: string;
   postalCode?: string;
-  website?: string;
-  description?: string;
 }
 export interface RegisterResponse {
   id: number;

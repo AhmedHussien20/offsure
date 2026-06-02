@@ -116,8 +116,6 @@ export class ProfileComponent implements OnInit {
       city: raw.city?.trim(),
       country: raw.country?.trim(),
       postalCode: raw.postalCode?.trim(),
-      website: raw.website?.trim(),
-      description: raw.description?.trim(),
     };
 
     this.savingProfile = true;
@@ -156,8 +154,6 @@ export class ProfileComponent implements OnInit {
       city: [profile.city],
       country: [profile.country],
       postalCode: [profile.postalCode],
-      website: [profile.website],
-      description: [profile.description],
     });
 
     this.profileFormConfig = [
@@ -167,8 +163,6 @@ export class ProfileComponent implements OnInit {
       { type: 'input', inputType: 'text', name: 'city', label: 'City' },
       { type: 'input', inputType: 'text', name: 'country', label: 'Country' },
       { type: 'input', inputType: 'text', name: 'postalCode', label: 'Postal Code' },
-      { type: 'input', inputType: 'url', name: 'website', label: 'Website' },
-      { type: 'textarea', name: 'description', label: 'Description' },
     ];
   }
 }

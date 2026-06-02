@@ -35,8 +35,6 @@ export class ClientProfileComponent implements OnInit {
       city: [''],
       country: [''],
       postalCode: [''],
-      website: [''],
-      description: [''],
     });
 
     this.loadProfile();
@@ -73,8 +71,6 @@ export class ClientProfileComponent implements OnInit {
       city: raw.city?.trim() || undefined,
       country: raw.country?.trim() || undefined,
       postalCode: raw.postalCode?.trim() || undefined,
-      website: raw.website?.trim() || undefined,
-      description: raw.description?.trim() || undefined,
     };
 
     this.saving = true;
@@ -118,8 +114,6 @@ export class ClientProfileComponent implements OnInit {
       city: profile.city ?? '',
       country: profile.country ?? '',
       postalCode: profile.postalCode ?? '',
-      website: profile.website ?? '',
-      description: profile.description ?? '',
     });
   }
 }

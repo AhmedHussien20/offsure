@@ -19,8 +19,6 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public string? City { get; set; }
         public string? Country { get; set; }
         public string? PostalCode { get; set; }
-        public string? Website { get; set; }
-        public string? Description { get; set; }
     }
 
     public class ClientDto
@@ -38,8 +36,6 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public string City { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
         public string PostalCode { get; set; } = string.Empty;
-        public string Website { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public int RequestsCount { get; set; }
         public int ProjectsCount { get; set; }

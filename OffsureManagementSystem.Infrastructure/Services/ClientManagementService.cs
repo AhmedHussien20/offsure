@@ -83,8 +83,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             client.City = dto.City?.Trim() ?? string.Empty;
             client.Country = dto.Country?.Trim() ?? string.Empty;
             client.PostalCode = dto.PostalCode?.Trim() ?? string.Empty;
-            client.Website = dto.Website?.Trim() ?? string.Empty;
-            client.Description = dto.Description?.Trim() ?? string.Empty;
             client.UpdatedAt = DateTime.UtcNow;
 
             _clientRepo.SaveInclude(
@@ -95,8 +93,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(client.City),
                 nameof(client.Country),
                 nameof(client.PostalCode),
-                nameof(client.Website),
-                nameof(client.Description),
                 nameof(client.UpdatedAt));
             await _clientRepo.SaveChangesAsync();
 
@@ -183,7 +179,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     || (c.CompanyAddress ?? string.Empty).ToLower().Contains(searchKey)
                     || (c.City ?? string.Empty).ToLower().Contains(searchKey)
                     || (c.Country ?? string.Empty).ToLower().Contains(searchKey)
-                    || (c.Website ?? string.Empty).ToLower().Contains(searchKey)
                     || c.User.FirstName.ToLower().Contains(searchKey)
                     || c.User.LastName.ToLower().Contains(searchKey)
                     || c.User.Email.ToLower().Contains(searchKey));
@@ -255,8 +250,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 City = client.City ?? string.Empty,
                 Country = client.Country ?? string.Empty,
                 PostalCode = client.PostalCode ?? string.Empty,
-                Website = client.Website ?? string.Empty,
-                Description = client.Description ?? string.Empty,
                 IsActive = client.IsActive,
                 RequestsCount = requests.Count,
                 ProjectsCount = requests.Count(r => r.ProjectId.HasValue),

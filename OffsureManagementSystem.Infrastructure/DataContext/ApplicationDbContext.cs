@@ -324,12 +324,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.Property(e => e.PostalCode)
                     .HasMaxLength(20);
 
-                entity.Property(e => e.Website)
-                    .HasMaxLength(255);
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(1000);
-
                 entity.Property(e => e.IsActive)
                     .HasDefaultValue(true);
 
