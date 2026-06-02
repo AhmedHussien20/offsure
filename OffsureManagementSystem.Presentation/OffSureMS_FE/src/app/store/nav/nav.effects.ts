@@ -89,13 +89,13 @@ private TEAM_MENUITEMS: MenuItem[] = [
     icon: 'ti-folder',
     requiredRole: 'TeamMember',
   },
-  {
-    title: 'My Profile',
-    path: '/team/profile',
-    type: 'link',
-    icon: 'ti-user',
-    requiredRole: 'TeamMember',
-  },
+  // {
+  //   title: 'My Profile',
+  //   path: '/team/profile',
+  //   type: 'link',
+  //   icon: 'ti-user',
+  //   requiredRole: 'TeamMember',
+  // },
 ];
 
 private CLIENT_MENUITEMS: MenuItem[] = [
@@ -121,13 +121,13 @@ private CLIENT_MENUITEMS: MenuItem[] = [
     icon: 'ti-folder',
     requiredRole: 'Client',
   },
-  {
-    title: 'Company Profile',
-    path: '/client/profile',
-    type: 'link',
-    icon: 'ti-user',
-    requiredRole: 'Client',
-  },
+  // {
+  //   title: 'Company Profile',
+  //   path: '/client/profile',
+  //   type: 'link',
+  //   icon: 'ti-user',
+  //   requiredRole: 'Client',
+  // },
 ];
 
 private MENUITEMS: MenuItem[] = [

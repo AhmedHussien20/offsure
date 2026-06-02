@@ -15,6 +15,7 @@ import { PROFICIENCY_LABELS } from '../team.constants';
   standalone: true,
   imports: [CommonModule, SharedModule, ReactiveFormsModule],
   templateUrl: './team-profile.component.html',
+  styleUrl: './team-profile.component.scss',
 })
 export class TeamProfileComponent implements OnInit {
   profile: TeamMemberDto | null = null;

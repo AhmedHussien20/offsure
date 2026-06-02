@@ -12,6 +12,9 @@ import { TranslationService } from 'app/shared/services/translation.service';
 import { SignalRService } from 'app/core/services/signalr.service';
 import { NotificationApiService } from 'app/core/services/notification.service';
 import { Router } from '@angular/router';
+import { ADMIN_HEADER_SHORTCUTS } from 'app/components/admin/admin-shortcuts.config';
+import { CLIENT_HEADER_SHORTCUTS } from 'app/components/client/client-shortcuts.config';
+import { TEAM_HEADER_SHORTCUTS } from 'app/components/team/team-shortcuts.config';
 
 interface Item {
   user: any;
@@ -22,13 +25,8 @@ interface Item {
   title: string;
   // Add other properties as needed
 }
-export interface HeaderShortcut {
-  title: string;        // translation key
-  icon: string;         // icon class
-  path: string;
-  alwaysEnabled?: boolean;
-
-}
+export type { HeaderShortcut } from '../../models/header-shortcut.model';
+import type { HeaderShortcut } from '../../models/header-shortcut.model';
 interface HeaderNotification {
   id: string;
   message: string;
@@ -54,6 +52,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   notificationCount = 0;
 
+  get profileRoute(): string {
+    if (this.authService.isClient()) {
+      return '/client/profile';
+    }
+    if (this.authService.isTeamMember()) {
+      return '/team/profile';
+    }
+    return '/admin/dashboard';
+  }
+
   get profileImage(): string {
     if (this.user?.profileImage) {
       return this.user.profileImage;
@@ -62,15 +70,67 @@ export class HeaderComponent implements OnInit, OnDestroy {
     return this.defaultAvatar;
   }
 
+  get profileInitials(): string {
+    const firstName = String(this.user?.firstName ?? '').trim();
+    const lastName = String(this.user?.lastName ?? '').trim();
+
+    if (firstName || lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.replace(/\s+/g, '').toUpperCase() || 'U';
+    }
+
+    const fullName = String(this.user?.fullName ?? this.user?.name ?? '').trim();
+    if (fullName) {
+      const parts = fullName.split(/\s+/).filter(Boolean);
+      if (parts.length === 1) {
+        return parts[0].slice(0, 1).toUpperCase();
+      }
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    const companyName = String(this.user?.companyName ?? this.user?.campanyName ?? '').trim();
+    if (companyName) {
+      const parts = companyName.split(/\s+/).filter(Boolean);
+      if (parts.length === 1) {
+        return parts[0].slice(0, 1).toUpperCase();
+      }
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    const email = String(this.user?.email ?? '').trim();
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+
+    return 'U';
+  }
+
   roleLevel = 0;
 
   canAccessShortcut(item: HeaderShortcut): boolean {
+    if (this.authService.isAdministrator()) {
+      return true;
+    }
 
-    if (this.roleLevel >= 50) return true;
+    if (this.roleLevel >= 50) {
+      return true;
+    }
 
     return item.alwaysEnabled === true;
   }
 
+  get activeShortcuts(): HeaderShortcut[] {
+    if (this.authService.isAdministrator()) {
+      return ADMIN_HEADER_SHORTCUTS;
+    }
+    if (this.authService.isClient()) {
+      return CLIENT_HEADER_SHORTCUTS;
+    }
+    if (this.authService.isTeamMember()) {
+      return TEAM_HEADER_SHORTCUTS;
+    }
+
+    return this.headerShortcuts;
+  }
 
   headerShortcuts: HeaderShortcut[] = [
     {

@@ -7,7 +7,7 @@
 @if (loading) {
   <div class="text-center py-5 text-muted">Loading dashboard...</div>
 } @else {
-  <div class="row row-sm">
+  <div class="row row-sm mb-4">
     @for (card of statCards; track card.label) {
       <div class="col-sm-12 col-md-6 col-lg-3">
         <a [routerLink]="card.link" class="text-decoration-none">
@@ -21,5 +21,142 @@
         </a>
       </div>
     }
+  </div>
+
+  <div class="row row-sm">
+    <div class="col-xl-6">
+      <div class="card custom-card admin-dashboard-panel h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="card-title mb-0 d-flex align-items-center gap-2">
+            <span class="avatar avatar-sm rounded-2 bg-primary-transparent">
+              <i class="ti-clipboard fs-16 text-primary"></i>
+            </span>
+            Pending requests
+          </div>
+          <a routerLink="/admin/requests" class="fs-12 fw-semibold text-primary">View all</a>
+        </div>
+        <div class="card-body p-0">
+          @if (pendingRequests.length === 0) {
+            <p class="text-muted mb-0 p-4">No pending or in-progress requests.</p>
+          } @else {
+            <ul class="list-group list-group-flush admin-dashboard-list">
+              @for (request of pendingRequests; track request.id) {
+                <li class="list-group-item">
+                  <a [routerLink]="['/admin/requests']" class="admin-dashboard-list-link">
+                    <div class="flex-grow-1 min-w-0">
+                      <p class="mb-0 fw-semibold text-truncate">{{ request.clientName }}</p>
+                      <p class="mb-0 fs-12 text-muted text-truncate">
+                        {{ request.serviceName || request.title }}
+                      </p>
+                    </div>
+                    <span class="badge rounded-pill {{ requestStatusBadge(request.status).class }}">
+                      {{ requestStatusBadge(request.status).text }}
+                    </span>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6">
+      <div class="card custom-card admin-dashboard-panel h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="card-title mb-0 d-flex align-items-center gap-2">
+            <span class="avatar avatar-sm rounded-2 bg-primary-transparent">
+              <i class="ti-briefcase fs-16 text-primary"></i>
+            </span>
+            Active projects
+          </div>
+          <a routerLink="/admin/projects" class="fs-12 fw-semibold text-primary">View all</a>
+        </div>
+        <div class="card-body p-0">
+          @if (activeProjects.length === 0) {
+            <p class="text-muted mb-0 p-4">No projects in progress.</p>
+          } @else {
+            <ul class="list-group list-group-flush admin-dashboard-list">
+              @for (project of activeProjects; track project.id) {
+                <li class="list-group-item">
+                  <a [routerLink]="['/admin/projects', project.id]" class="admin-dashboard-list-link d-block">
+                    <div class="d-flex align-items-start gap-3">
+                      <span
+                        class="avatar avatar-sm rounded-circle fw-semibold {{ memberAvatarClass($index) }}">
+                        {{ (project.clientName || project.name).slice(0, 2).toUpperCase() }}
+                      </span>
+                      <div class="flex-grow-1 min-w-0">
+                        <div class="d-flex align-items-start justify-content-between gap-2">
+                          <div class="min-w-0">
+                            <p class="mb-0 fw-semibold text-truncate">{{ project.name }}</p>
+                            <p class="mb-2 fs-12 text-muted text-truncate">{{ project.clientName }}</p>
+                          </div>
+                          <span
+                            class="fw-semibold fs-13 flex-shrink-0 {{ progressTextClass(projectProgress(project)) }}">
+                            {{ projectProgress(project) }}%
+                          </span>
+                        </div>
+                        <div class="progress progress-xs">
+                          <div
+                            class="progress-bar {{ progressBarClass(projectProgress(project)) }}"
+                            role="progressbar"
+                            [style.width.%]="projectProgress(project)"
+                            [attr.aria-valuenow]="projectProgress(project)"
+                            aria-valuemin="0"
+                            aria-valuemax="100">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-12 mt-3">
+      <div class="card custom-card admin-dashboard-panel">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="card-title mb-0 d-flex align-items-center gap-2">
+            <span class="avatar avatar-sm rounded-2 bg-primary-transparent">
+              <i class="ti-user fs-16 text-primary"></i>
+            </span>
+            Team availability
+          </div>
+          <a routerLink="/admin/team" class="fs-12 fw-semibold text-primary">Manage</a>
+        </div>
+        <div class="card-body p-0">
+          @if (teamMembers.length === 0) {
+            <p class="text-muted mb-0 p-4">No team members found.</p>
+          } @else {
+            <ul class="list-group list-group-flush admin-dashboard-list">
+              @for (member of teamMembers; track member.id) {
+                <li class="list-group-item">
+                  <a [routerLink]="['/admin/team']" class="admin-dashboard-list-link">
+                    <div class="d-flex align-items-center gap-3 min-w-0">
+                      <span
+                        class="avatar avatar-sm rounded-circle fw-semibold {{ memberAvatarClass($index) }}">
+                        {{ memberInitials(member) }}
+                      </span>
+                      <div class="min-w-0 flex-grow-1">
+                        <p class="mb-0 fw-semibold text-truncate">{{ member.fullName }}</p>
+                        <p class="mb-0 fs-12 text-muted text-truncate">{{ member.title }}</p>
+                      </div>
+                    </div>
+                    <span
+                      class="admin-dashboard-status-dot {{ availabilityClass(member.isAvailable) }}"
+                      [attr.title]="member.isAvailable ? 'Available' : 'Unavailable'">
+                    </span>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
   </div>
 }

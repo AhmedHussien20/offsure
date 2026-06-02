@@ -5,9 +5,7 @@
 </app-page-header>
 
 <div class="card custom-card">
-  <div class="card-body">
     <app-generic-table
-      [title]="'My Requests'"
       [columns]="columns"
       [data]="data"
       [page]="page"
@@ -28,5 +26,4 @@
       (entriesChange)="onEntriesChange($event)"
       (addClick)="onAdd()">
     </app-generic-table>
-  </div>
 </div>

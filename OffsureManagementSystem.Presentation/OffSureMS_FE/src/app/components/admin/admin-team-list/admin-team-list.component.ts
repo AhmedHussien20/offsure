@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ADMIN_TEAM_COLUMNS } from '../admin.constants';
+import { AdminTeamCreateComponent } from './admin-team-create.component';
 
 @Component({
   selector: 'app-admin-team-list',
@@ -32,7 +33,7 @@ export class AdminTeamListComponent implements OnInit {
 
   constructor(
     private teamMembersService: TeamMembersService,
-    private router: Router
+    private modalService: NgbModal
   ) {}
 
   ngOnInit(): void {
@@ -60,7 +61,15 @@ export class AdminTeamListComponent implements OnInit {
   }
 
   onAdd(): void {
-    this.router.navigate(['/admin/team/new']);
+    const modalRef = this.modalService.open(AdminTeamCreateComponent, {
+      centered: true,
+      size: 'lg',
+    });
+    modalRef.closed.subscribe((created: boolean) => {
+      if (created) {
+        this.loadTeam();
+      }
+    });
   }
 
   private loadTeam(): void {

@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { FormFieldConfig } from 'app/core/models/form-field-config';
+import { FormsModule } from '@angular/forms';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PortfolioDto, UpdatePortfolioDto } from 'app/core/models/portfolios/portfolio.models';
 import { ServiceDto } from 'app/core/models/services/service.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { PortfoliosService } from 'app/core/services/portfolios.service';
 import { ServicesService } from 'app/core/services/services.service';
-import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 import { ADMIN_PORTFOLIO_COLUMNS } from '../admin.constants';
+import { AdminPortfolioCreateComponent } from './admin-portfolio-create.component';
 
 type PortfolioRow = PortfolioDto & {
   publishedLabel?: string;
@@ -24,10 +24,8 @@ type PortfolioRow = PortfolioDto & {
   imports: [
     CommonModule,
     SharedModule,
-    ReactiveFormsModule,
     FormsModule,
     GenericTableComponent,
-    GenericFormComponent,
   ],
   templateUrl: './admin-portfolios-list.component.html',
 })
@@ -37,11 +35,6 @@ export class AdminPortfoliosListComponent implements OnInit {
   columns = ADMIN_PORTFOLIO_COLUMNS;
   data: PortfolioRow[] = [];
   serviceOptions: { id: number; name: string }[] = [];
-
-  showForm = false;
-  saving = false;
-  portfolioForm!: FormGroup;
-  formConfig: FormFieldConfig[] = [];
 
   uploadAltText: Record<number, string> = {};
   uploadFiles: Record<number, File | null> = {};
@@ -62,12 +55,11 @@ export class AdminPortfoliosListComponent implements OnInit {
   constructor(
     private portfoliosService: PortfoliosService,
     private servicesService: ServicesService,
-    private fb: FormBuilder,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private modalService: NgbModal
   ) {}
 
   ngOnInit(): void {
-    this.buildForm();
     this.loadServices();
     this.loadPortfolios();
   }
@@ -94,56 +86,16 @@ export class AdminPortfoliosListComponent implements OnInit {
 
   openForm(): void {
     this.loadServices();
-    this.updateServiceSelect();
-    this.showForm = true;
-    this.portfolioForm.reset({
-      isPublished: true,
-      completedDate: this.todayIsoDate(),
+    const modalRef = this.modalService.open(AdminPortfolioCreateComponent, {
+      centered: true,
+      size: 'lg',
     });
-  }
-
-  cancelForm(): void {
-    this.showForm = false;
-  }
-
-  submitPortfolio(): void {
-    if (this.portfolioForm.invalid) {
-      this.portfolioForm.markAllAsTouched();
-      return;
-    }
-
-    const raw = this.portfolioForm.getRawValue();
-    const completedDate = this.toApiDate(raw.completedDate);
-    if (!completedDate) {
-      this.toastr.warning('Completed date is required.');
-      return;
-    }
-
-    this.saving = true;
-    this.portfoliosService
-      .create({
-        serviceId: Number(raw.serviceId),
-        title: String(raw.title).trim(),
-        description: raw.description ? String(raw.description).trim() : undefined,
-        clientName: String(raw.clientName).trim(),
-        thumbnailUrl: raw.thumbnailUrl ? String(raw.thumbnailUrl).trim() : undefined,
-        completedDate,
-        projectValue: raw.projectValue != null && raw.projectValue !== '' ? Number(raw.projectValue) : undefined,
-        isPublished: !!raw.isPublished,
-        images: [],
-      })
-      .subscribe({
-        next: () => {
-          this.toastr.success('Portfolio project created. Expand the row to upload gallery images.');
-          this.showForm = false;
-          this.loadPortfolios();
-          this.saving = false;
-        },
-        error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to create portfolio.');
-          this.saving = false;
-        },
-      });
+    modalRef.componentInstance.serviceOptions = this.serviceOptions;
+    modalRef.closed.subscribe((created: boolean) => {
+      if (created) {
+        this.loadPortfolios();
+      }
+    });
   }
 
   togglePublished(item: PortfolioRow): void {
@@ -218,47 +170,10 @@ export class AdminPortfoliosListComponent implements OnInit {
     return item.images?.length ?? 0;
   }
 
-  private buildForm(): void {
-    this.portfolioForm = this.fb.group({
-      serviceId: [null, Validators.required],
-      title: ['', Validators.required],
-      description: [''],
-      clientName: ['', Validators.required],
-      thumbnailUrl: [''],
-      completedDate: [this.todayIsoDate(), Validators.required],
-      projectValue: [null, [Validators.min(0)]],
-      isPublished: [true],
-    });
-
-    this.formConfig = [
-      {
-        type: 'select',
-        name: 'serviceId',
-        label: 'Service',
-        selectType: 'simple',
-        options: [],
-        validations: { required: true },
-      },
-      { type: 'input', inputType: 'text', name: 'title', label: 'Project Title', validations: { required: true } },
-      { type: 'textarea', name: 'description', label: 'Description' },
-      { type: 'input', inputType: 'text', name: 'clientName', label: 'Client Name', validations: { required: true } },
-      { type: 'input', inputType: 'text', name: 'thumbnailUrl', label: 'Thumbnail URL (optional)' },
-      { type: 'date', name: 'completedDate', label: 'Completed Date', validations: { required: true } },
-      { type: 'input', inputType: 'number', name: 'projectValue', label: 'Project Value (optional)' },
-      { type: 'checkbox', name: 'isPublished', label: 'Published on landing page' },
-    ];
-  }
-
-  private updateServiceSelect(): void {
-    const options = this.serviceOptions.map(s => ({ label: s.name, value: s.id }));
-    this.formConfig = this.formConfig.map(f => (f.name === 'serviceId' ? { ...f, options } : f));
-  }
-
   private loadServices(): void {
     this.servicesService.getAll({ pageIndex: 1, pageSize: 500 } as any).subscribe(res => {
       const list = (res.data?.data ?? []) as ServiceDto[];
       this.serviceOptions = list.map(s => ({ id: s.id, name: s.name }));
-      this.updateServiceSelect();
     });
   }
 
@@ -295,24 +210,7 @@ export class AdminPortfoliosListComponent implements OnInit {
   }
 
   private todayIsoDate(): string {
-    return new Date().toISOString().slice(0, 10);
+    return new Date().toISOString();
   }
 
-  private toApiDate(value: unknown): string | null {
-    if (!value) {
-      return null;
-    }
-    if (value instanceof Date) {
-      return value.toISOString();
-    }
-    const text = String(value).trim();
-    if (!text) {
-      return null;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-      return `${text}T00:00:00.000Z`;
-    }
-    const parsed = new Date(text);
-    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
-  }
 }

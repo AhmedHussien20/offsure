@@ -35,8 +35,7 @@ export const clientRoutes: Routes = [
       {
         path: 'profile',
         loadComponent: () =>
-          import('../pages/profile/profile.component').then(m => m.ProfileComponent),
-        data: { clientPortal: true },
+          import('./client-profile/client-profile.component').then(m => m.ClientProfileComponent),
       },
     ],
   },

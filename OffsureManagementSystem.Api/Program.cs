@@ -1,9 +1,10 @@
-using System.Text.Json.Serialization;
-using OffsureManagementSystem.Infrastructure;
-using OffsureManagementSystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using OffshoreManagementSystem.Infrastructure.DataContext;
+using OffsureManagementSystem.Infrastructure;
+using OffsureManagementSystem.Infrastructure.Services;
+using Scalar.AspNetCore;
+using System.Text.Json.Serialization;
 
 namespace OffsureManagementSystem.API
 {
@@ -108,7 +109,12 @@ namespace OffsureManagementSystem.API
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+
+                app.MapScalarApiReference(options =>
+                {
+                    options.Title = "OffshoreManagementSystem API";
+                    options.OpenApiRoutePattern = "/swagger/{documentName}/swagger.json";
+                });
             }
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 

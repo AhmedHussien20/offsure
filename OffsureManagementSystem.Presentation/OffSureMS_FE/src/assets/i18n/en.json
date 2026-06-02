@@ -110,7 +110,25 @@
       "header": "Applications"
     },
     "shortcuts": {
-      "title": "Quick Shortcuts"
+      "title": "Quick Shortcuts",
+      "admin": {
+        "addTeamMember": "Add team member",
+        "reviewRequests": "Review requests",
+        "addService": "Add service",
+        "addPortfolio": "Add to portfolio"
+      },
+      "client": {
+        "dashboard": "Dashboard",
+        "newRequest": "New request",
+        "requests": "My requests",
+        "projects": "My projects",
+        "profile": "My profile"
+      },
+      "team": {
+        "dashboard": "Dashboard",
+        "projects": "My projects",
+        "profile": "My profile"
+      }
     },
     "apps": {
       "name": "NPE",
