@@ -1,17 +1,28 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { TeamMemberDto, TeamMemberSkillDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
 import { TeamContextService } from 'app/core/services/team-context.service';
 import { TeamPortalService } from 'app/core/services/team-portal.service';
+import { ChangePasswordCardComponent } from 'app/shared/components/change-password-card/change-password-card.component';
 import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
+import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-team-profile',
   standalone: true,
-  imports: [CommonModule, SharedModule, ReactiveFormsModule, TeamMemberSkillsEditorComponent],
+  imports: [
+    CommonModule,
+    SharedModule,
+    NgbNavModule,
+    ReactiveFormsModule,
+    RouterModule,
+    TeamMemberSkillsEditorComponent,
+    ChangePasswordCardComponent,
+  ],
   templateUrl: './team-profile.component.html',
   styleUrl: './team-profile.component.scss',
 })

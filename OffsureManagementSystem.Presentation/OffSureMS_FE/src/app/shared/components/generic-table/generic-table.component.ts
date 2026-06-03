@@ -92,6 +92,8 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   @Input() totalPages: number = 0;
 
   @Input() showFilters: boolean = true;
+  /** Global text search (searchKey) shown above column filters. */
+  @Input() showSearch: boolean = true;
   @Input() showPagination: boolean = true;
   @Input() showCheckbox: boolean = false;
   @Input() showEditButton: boolean = false;
@@ -175,7 +177,21 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
     return obj ? Object.keys(obj) : [];
   }
 
+  /** Column filters from filterTypes (excludes global searchKey). */
+  getColumnFilterKeys(): string[] {
+    return this.objectKeys(this.searchCriteria?.filterTypes).filter(
+      key => key !== 'searchKey' && !(key === 'employeeIds' && !this.showEmployeeFilter)
+    );
+  }
+
+  get searchOnlyFilters(): boolean {
+    return this.showSearch && this.getColumnFilterKeys().length === 0;
+  }
+
   getLabel(key: string): string {
+    if (key === 'searchKey') {
+      return this.labels?.['searchKey'] ?? 'TABLE.SEARCH';
+    }
     return this.labels?.[key] ?? key;
   }
 
@@ -269,19 +285,27 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
     (item as any).selected = value;
   }
   clearFilters() {
-    const ignore = ['sortColumn', 'sortDirection', 'pageIndex', 'pageSize'];
+    if (!this.searchCriteria) {
+      return;
+    }
 
-    const filterTypes = (this.searchCriteria?.filterTypes || {}) as Record<string, string>;
+    if (this.showSearch) {
+      this.searchCriteria.searchKey = '';
+    }
+
+    const filterTypes = (this.searchCriteria.filterTypes || {}) as Record<string, string>;
 
     Object.keys(filterTypes).forEach(key => {
-      if (ignore.includes(key)) return;
+      if (key === 'searchKey') {
+        return;
+      }
 
       const type = filterTypes[key];
 
       if (type === 'text' || type === 'number') {
         (this.searchCriteria as any)[key] = '';
       } else if (type === 'dropdown' || type === 'radio') {
-        (this.searchCriteria as any)[key] = this.isMultiSelect(key) ? [] : 0;
+        (this.searchCriteria as any)[key] = this.isMultiSelect(key) ? [] : null;
       } else if (type === 'date') {
         (this.searchCriteria as any)[key] = null;
       }

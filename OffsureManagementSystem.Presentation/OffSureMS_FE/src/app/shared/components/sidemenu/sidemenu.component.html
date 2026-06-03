@@ -1,5 +1,5 @@
 <aside
-  class="app-sidebar sticky"
+  class="app-sidebar sticky sidebar-with-account"
   id="sidebar"
   [ngClass]="{ 'sticky-pin': scrolled }"
 >
@@ -12,8 +12,8 @@
 
   <!-- End::main-sidebar-header -->
   <!-- <ngx-simplebar> -->
-  <ngx-simplebar class="main-sidebar" id="sidebar-scroll">
-    <nav class="main-menu-container nav nav-pills flex-column sub-open">
+  <ngx-simplebar class="main-sidebar sidebar-layout" id="sidebar-scroll">
+    <nav class="main-menu-container nav nav-pills flex-column sub-open sidebar-layout__nav">
       <div class="slide-left" id="slide-left" (click)="leftArrowFn()">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -280,7 +280,61 @@
         </svg>
       </div>
     </nav>
-
-    <!-- </div> -->
   </ngx-simplebar>
+
+  <div class="sidebar-account-dock">
+    @if (accountMenuOpen) {
+      <ul class="main-menu sidebar-account-flyout">
+        <li class="slide">
+          <a
+            class="side-menu__item"
+            [routerLink]="profileRoute"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            (click)="closeAccountMenu()">
+            <span class="shape1"></span>
+            <span class="shape2"></span>
+            <i class="side-menu__icon fe fe-user"></i>
+            <span class="side-menu__label">{{ 'HEADER.PROFILE' | translate }}</span>
+          </a>
+        </li>
+        <li class="slide">
+          <a href="javascript:void(0);" class="side-menu__item" (click)="openSettings($event)">
+            <span class="shape1"></span>
+            <span class="shape2"></span>
+            <i class="side-menu__icon fe fe-settings"></i>
+            <span class="side-menu__label">{{ 'HEADER.SETTINGS' | translate }}</span>
+          </a>
+        </li>
+        <li class="slide">
+          <a href="javascript:void(0);" class="side-menu__item sidebar-account-logout" (click)="logout($event)">
+            <span class="shape1"></span>
+            <span class="shape2"></span>
+            <i class="side-menu__icon fe fe-power"></i>
+            <span class="side-menu__label">{{ 'HEADER.LOGOUT' | translate }}</span>
+          </a>
+        </li>
+      </ul>
+    }
+
+    <ul class="main-menu sidebar-account-trigger-wrap">
+      <li class="slide">
+        <a
+          href="javascript:void(0);"
+          class="side-menu__item sidebar-account-trigger"
+          [class.active]="accountTriggerActive"
+          (click)="toggleAccountMenu($event)"
+          [attr.aria-expanded]="accountMenuOpen">
+          <span class="shape1"></span>
+          <span class="shape2"></span>
+          <span class="sidebar-account-trigger__avatar">{{ profileInitials }}</span>
+          <span class="side-menu__label text-truncate">{{ profileDisplayName }}</span>
+          <i
+            class="fe side-menu__angle sidebar-account-chevron"
+            [class.fe-chevron-up]="accountMenuOpen"
+            [class.fe-chevron-down]="!accountMenuOpen"></i>
+        </a>
+      </li>
+    </ul>
+  </div>
 </aside>

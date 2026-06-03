@@ -236,11 +236,12 @@
 
                             <div class="col-4" *ngFor="let item of activeShortcuts">
 
-                                <a [routerLink]="canAccessShortcut(item) ? item.path : null"
-                                    [queryParams]="canAccessShortcut(item) ? item.queryParams : null"
-                                    class="text-decoration-none" [class.disabled-shortcut]="!canAccessShortcut(item)"
+                                <a href="javascript:void(0);"
+                                    class="text-decoration-none shortcut-card-link"
+                                    [class.disabled-shortcut]="!canAccessShortcut(item)"
                                     [ngbTooltip]="!canAccessShortcut(item) ? ('GENERAL.NO_PERMISSION' | translate) : null"
-                                    container="body" placement="bottom">
+                                    container="body" placement="bottom"
+                                    (click)="onShortcutClick($event, item)">
 
                                     <div class="text-center p-3 related-app shortcut-card"
                                         [class.shortcut-disabled]="!canAccessShortcut(item)">
@@ -288,17 +289,6 @@
                 <!-- End::header-link|dropdown-toggle -->
                 <ul class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end"
                     aria-labelledby="mainHeaderProfile" ngbDropdownMenu>
-                    <Li>
-                        <div class="header-navheading border-bottom">
-                            <h6 class="main-notification-title">{{ user?.fullName }}</h6>
-                            <p class="main-notification-text mb-0">{{ user?.title }}</p>
-                        </div>
-                    </Li>
-                    <li><a ngbDropdownItem class="dropdown-item d-flex border-bottom" [routerLink]="profileRoute"><i
-                                class="fe fe-user fs-16 align-middle me-2"></i>{{'HEADER.PROFILE' | translate}}</a></li>
-                    <!-- <li><a ngbDropdownItem class="dropdown-item d-flex border-bottom" routerLink="/pages/settings"><i
-                                class="fe fe-settings fs-16 align-middle me-2"></i>{{'HEADER.SETTINGS' | translate}}</a> 
-                    </li>-->
                     <li><a ngbDropdownItem class="dropdown-item d-flex" routerLink="/auth/login" (click)="Logout()"><i
                                 class="fe fe-power fs-16 align-middle me-2"></i>{{'HEADER.LOGOUT' | translate}}</a></li>
                 </ul>
@@ -312,17 +302,6 @@
                     <i class="fe fe-align-right header-icons header-link-icon"></i>
                 </a>
             </div> -->
-            <!-- End::header-element -->
-
-            <!-- Start::header-element -->
-            <div class="header-element">
-                <!-- Start::header-link|switcher-icon -->
-                <a href="javascript:void(0);" class="header-link switcher-icon" data-bs-toggle="offcanvas"
-                    data-bs-target="#switcher-canvas" (click)="open()">
-                    <i class="fe fe-settings header-link-icon"></i>
-                </a>
-                <!-- End::header-link|switcher-icon -->
-            </div>
             <!-- End::header-element -->
 
         </div>

@@ -75,6 +75,12 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./admin-clients-list/admin-clients-list.component').then(m => m.AdminClientsListComponent),
       },
+      {
+        path: 'profile',
+        data: { breadcrumb: 'Profile', title: 'My Profile' },
+        loadComponent: () =>
+          import('./admin-profile/admin-profile.component').then(m => m.AdminProfileComponent),
+      },
     ],
   },
 ];

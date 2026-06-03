@@ -12,6 +12,9 @@ import { Subscription, fromEvent } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 import { MenuItem } from '../../models/menu-item.model';
+import { AuthService } from 'app/core/services/auth.service';
+import { NgbOffcanvas } from '@ng-bootstrap/ng-bootstrap';
+import { SwitcherComponent } from '../switcher/switcher.component';
 @Component({
   selector: 'app-sidemenu',
   standalone: false,
@@ -25,13 +28,89 @@ export class SidemenuComponent implements OnInit, OnDestroy {
   public menuitemsSubscribe$!: Subscription;
 
   public menuItems: MenuItem[] = [];
+  accountMenuOpen = false;
 
   constructor(
     private navServices: NavService,
     public router: Router,
-    public renderer: Renderer2
+    public renderer: Renderer2,
+    private authService: AuthService,
+    private offcanvasService: NgbOffcanvas
   ) {
     this.menuItems = [];
+  }
+
+  get profileRoute(): string {
+    if (this.authService.isClient()) {
+      return '/client/profile';
+    }
+    if (this.authService.isTeamMember()) {
+      return '/team/profile';
+    }
+    return '/admin/profile';
+  }
+
+  get profileInitials(): string {
+    const user = this.authService.getCurrentUser();
+    const firstName = String(user?.firstName ?? '').trim();
+    const lastName = String(user?.lastName ?? '').trim();
+    if (firstName || lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.replace(/\s+/g, '').toUpperCase() || 'U';
+    }
+    const email = String(user?.email ?? '').trim();
+    return email ? email.charAt(0).toUpperCase() : 'U';
+  }
+
+  get profileDisplayName(): string {
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      return 'Account';
+    }
+    const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+    return name || user.email || 'Account';
+  }
+
+  get isProfileActive(): boolean {
+    const url = this.router.url.split('?')[0];
+    return url === this.profileRoute || url.startsWith(this.profileRoute + '/');
+  }
+
+  get accountTriggerActive(): boolean {
+    return this.accountMenuOpen || this.isProfileActive;
+  }
+
+  toggleAccountMenu(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.accountMenuOpen = !this.accountMenuOpen;
+  }
+
+  closeAccountMenu(): void {
+    this.accountMenuOpen = false;
+  }
+
+  openSettings(event?: Event): void {
+    event?.preventDefault();
+    this.closeAccountMenu();
+    this.offcanvasService.open(SwitcherComponent, {
+      position: 'end',
+      scroll: true,
+      panelClass: 'switcher-canvas-width',
+    });
+  }
+
+  logout(event?: Event): void {
+    event?.preventDefault();
+    this.closeAccountMenu();
+    this.authService.logout();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.sidebar-account-dock')) {
+      this.accountMenuOpen = false;
+    }
   }
 
   clearNavDropdown() {
@@ -82,6 +161,7 @@ export class SidemenuComponent implements OnInit, OnDestroy {
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.setNavActive(null, event.urlAfterRedirects || event.url);
+        this.closeAccountMenu();
       }
     });
 

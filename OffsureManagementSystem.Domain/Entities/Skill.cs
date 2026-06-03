@@ -12,6 +12,7 @@ namespace OffshoreManagementSystem.Domain.Entities
 
         // Navigation Properties
         public virtual ICollection<TeamMemberSkill> TeamMemberSkills { get; set; } = new List<TeamMemberSkill>();
+        public virtual ICollection<ProjectSkill> ProjectSkills { get; set; } = new List<ProjectSkill>();
         public virtual SkillCategory SkillCategory { get; set; }
 
     }

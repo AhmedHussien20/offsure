@@ -1,0 +1,57 @@
+<app-page-header></app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading profile...</div>
+} @else if (!profile) {
+  <div class="alert alert-warning">Profile not found.</div>
+} @else {
+  <div class="card custom-card profile-shell mb-3">
+    <div class="profile-cover">
+      <img src="assets/images/offshore_white.png" alt="Profile cover" class="profile-cover-image" />
+    </div>
+    <div class="profile-topbar p-3 p-md-4">
+      <div class="d-flex align-items-center gap-3">
+        <span class="profile-avatar avatar avatar-xxl rounded-circle bg-primary-transparent text-primary fw-bold">
+          {{ initials }}
+        </span>
+        <div>
+          <h4 class="mb-1">{{ displayName }}</h4>
+          <p class="mb-1 text-muted">{{ profile.email }}</p>
+          <span class="badge bg-primary-transparent">{{ profile.role }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card custom-card">
+    <div class="card-header">
+      <h5 class="mb-0">{{ 'ACCOUNT.GENERAL_INFO' | translate }}</h5>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">{{ 'ACCOUNT.FIRST_NAME' | translate }}</label>
+            <input type="text" class="form-control" formControlName="firstName" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">{{ 'ACCOUNT.LAST_NAME' | translate }}</label>
+            <input type="text" class="form-control" formControlName="lastName" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">{{ 'ACCOUNT.EMAIL' | translate }}</label>
+            <input type="email" class="form-control" [value]="profile.email" readonly disabled />
+            <small class="text-muted">{{ 'ACCOUNT.EMAIL_READONLY' | translate }}</small>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+          <button type="submit" class="btn btn-primary px-4" [disabled]="saving">
+            {{ saving ? ('ACCOUNT.SAVING' | translate) : ('ACCOUNT.SAVE_CHANGES' | translate) }}
+          </button>
+        </div>
+      </form>
+
+      <app-change-password-card [embedded]="true"></app-change-password-card>
+    </div>
+  </div>
+}

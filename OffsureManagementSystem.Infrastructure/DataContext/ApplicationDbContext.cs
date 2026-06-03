@@ -24,6 +24,7 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<ServiceRequest> ServiceRequests { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
+        public DbSet<ProjectSkill> ProjectSkills { get; set; }
         public DbSet<PortfolioProject> PortfolioProjects { get; set; }
         public DbSet<PortfolioProjectImage> PortfolioProjectImages { get; set; }
 
@@ -453,6 +454,33 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .WithOne(p => p.Project)
                     .HasForeignKey(p => p.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.ProjectSkills)
+                    .WithOne(ps => ps.Project)
+                    .HasForeignKey(ps => ps.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // PROJECT SKILL ENTITY CONFIGURATION
+            modelBuilder.Entity<ProjectSkill>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.IsSelected)
+                    .HasDefaultValue(true);
+
+                entity.HasOne(e => e.Project)
+                    .WithMany(p => p.ProjectSkills)
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Skill)
+                    .WithMany(s => s.ProjectSkills)
+                    .HasForeignKey(e => e.SkillId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.ProjectId, e.SkillId })
+                    .IsUnique();
             });
 
             // PROJECT ASSIGNMENT ENTITY CONFIGURATION
@@ -465,6 +493,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.Property(e => e.AssignedDate)
                     .IsRequired();
+
+                entity.Property(e => e.IsActive)
+                    .HasDefaultValue(true);
 
                 entity.Property(e => e.HourlyRate)
                     .HasPrecision(18, 2);
@@ -479,9 +510,14 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey(e => e.TeamMemberId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Composite index to prevent duplicate assignments
-                entity.HasIndex(e => new { e.ProjectId, e.TeamMemberId })
-                    .IsUnique();
+                entity.HasOne(e => e.Skill)
+                    .WithMany()
+                    .HasForeignKey(e => e.SkillId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.ProjectId, e.TeamMemberId, e.SkillId, e.IsActive });
+
+                entity.HasQueryFilter(a => a.IsActive && !a.IsDeleted);
             });
 
             // PORTFOLIO PROJECT ENTITY CONFIGURATION

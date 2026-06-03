@@ -19,6 +19,56 @@
     }
   </div>
 
+  <div class="row row-sm mb-4">
+    <div class="col-xl-4">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (requestsStatusChart) {
+            <spk-apex-charts [chartOptions]="requestsStatusChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No request data yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (projectsStatusChart) {
+            <spk-apex-charts [chartOptions]="projectsStatusChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No project data yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (teamAvailabilityChart) {
+            <spk-apex-charts [chartOptions]="teamAvailabilityChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No team data yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-sm mb-4">
+    <div class="col-12">
+      <div class="card custom-card dashboard-chart-card">
+        <div class="card-body">
+          @if (requestsTrendChart) {
+            <spk-apex-charts [chartOptions]="requestsTrendChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No request trend data yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="row row-sm">
     <div class="col-xl-6">
       <div class="card custom-card admin-dashboard-panel h-100">
@@ -27,7 +77,7 @@
             <span class="avatar avatar-sm rounded-2 bg-primary-transparent">
               <i class="ti-clipboard fs-16 text-primary"></i>
             </span>
-            Pending requests
+            Pending 5 last requests
           </div>
           <a routerLink="/admin/requests" class="fs-12 fw-semibold text-primary">View all</a>
         </div>

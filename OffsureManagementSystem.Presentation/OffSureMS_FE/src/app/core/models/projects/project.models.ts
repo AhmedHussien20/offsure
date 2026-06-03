@@ -65,6 +65,7 @@ export interface ProjectAssignmentDto {
   teamMemberName: string;
   teamMemberTitle: string;
   role: string;
+  skillId?: number | null;
   assignedDate: string;
   hourlyRate: number | null;
   allocatedHours: number | null;

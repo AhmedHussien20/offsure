@@ -44,6 +44,16 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ClientDto>.Ok(client));
         }
 
+        [HttpGet("{id:int}/recent-requests")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<ClientServiceRequestSummaryDto>>>> GetClientRecentRequests(
+            int id,
+            [FromQuery] int limit = 5)
+        {
+            var requests = await _clientManagementService.GetClientRecentServiceRequestsByClientIdAsync(id, limit);
+            return Ok(ApiResponse<IReadOnlyList<ClientServiceRequestSummaryDto>>.Ok(requests));
+        }
+
         [HttpGet("profile")]
         [Authorize(Roles = "Client")]
         public async Task<ActionResult<ApiResponse<ClientDto>>> GetClientProfile()

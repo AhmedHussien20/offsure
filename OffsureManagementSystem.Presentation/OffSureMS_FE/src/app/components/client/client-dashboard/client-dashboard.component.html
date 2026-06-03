@@ -17,91 +17,125 @@
     }
   </div>
 
-  <div class="row row-sm">
-    <div class="col-xl-6">
-      <div class="card custom-card">
-        <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
-          <div>
-            <label class="main-content-label my-auto pt-2 mb-1">Recent Requests</label>
-            <span class="d-block fs-12 mb-0 mt-1 text-muted">Your last 5 service requests</span>
-          </div>
-          <a routerLink="/client/requests" class="btn btn-sm btn-primary">View all</a>
-        </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0 text-nowrap">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Service</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (recentRequests.length === 0) {
-                  <tr>
-                    <td colspan="3" class="text-center text-muted py-4">No requests yet.</td>
-                  </tr>
-                }
-                @for (req of recentRequests; track req.id) {
-                  <tr>
-                    <td>{{ req.title }}</td>
-                    <td>{{ req.serviceName }}</td>
-                    <td>
-                      <span class="badge {{ statusBadgeClass(req.status) }}">
-                        {{ statusLabel(req.status) }}
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+  <div class="row row-sm mb-4">
+    <div class="col-xl-4">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (requestsStatusChart) {
+            <spk-apex-charts [chartOptions]="requestsStatusChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No requests to chart yet.</p>
+          }
         </div>
       </div>
     </div>
+    <div class="col-xl-4">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (projectsStatusChart) {
+            <spk-apex-charts [chartOptions]="projectsStatusChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No projects to chart yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (requestsTrendChart) {
+            <spk-apex-charts [chartOptions]="requestsTrendChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No trend data yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-sm client-dashboard-tables">
+    <div class="col-xl-6">
+      <section class="client-dashboard-block h-100">
+        <div class="client-dashboard-block__header">
+          <div>
+            <h6 class="client-dashboard-block__title">Recent Requests</h6>
+            <p class="client-dashboard-block__subtitle">Your last 5 service requests</p>
+          </div>
+          <a routerLink="/client/requests" class="btn btn-sm btn-primary">View all</a>
+        </div>
+        <div class="table-responsive client-dashboard-block__table">
+          <table class="table table-hover mb-0 text-nowrap">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Service</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (recentRequests.length === 0) {
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">No requests yet.</td>
+                </tr>
+              }
+              @for (req of recentRequests; track req.id) {
+                <tr>
+                  <td>{{ req.title }}</td>
+                  <td>{{ req.serviceName }}</td>
+                  <td>
+                    <span class="badge rounded-pill {{ statusBadgeClass(req.status) }}">
+                      {{ statusLabel(req.status) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
 
     <div class="col-xl-6">
-      <div class="card custom-card">
-        <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
+      <section class="client-dashboard-block h-100">
+        <div class="client-dashboard-block__header">
           <div>
-            <label class="main-content-label my-auto pt-2 mb-1">Ongoing Projects</label>
-            <span class="d-block fs-12 mb-0 mt-1 text-muted">Projects currently in progress</span>
+            <h6 class="client-dashboard-block__title">Ongoing Projects</h6>
+            <p class="client-dashboard-block__subtitle">Projects currently in progress</p>
           </div>
           <a routerLink="/client/projects" class="btn btn-sm btn-primary">View all</a>
         </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0 text-nowrap">
-              <thead>
+        <div class="table-responsive client-dashboard-block__table">
+          <table class="table table-hover mb-0 text-nowrap">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Service</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (ongoingProjects.length === 0) {
                 <tr>
-                  <th>Project</th>
-                  <th>Service</th>
-                  <th>Status</th>
+                  <td colspan="3" class="text-center text-muted py-4">No active projects.</td>
                 </tr>
-              </thead>
-              <tbody>
-                @if (ongoingProjects.length === 0) {
-                  <tr>
-                    <td colspan="3" class="text-center text-muted py-4">No active projects.</td>
-                  </tr>
-                }
-                @for (item of ongoingProjects; track item.id) {
-                  <tr>
-                    <td>
-                      <a [routerLink]="['/client/projects', item.id]">{{ item.name }}</a>
-                    </td>
-                    <td>{{ item.serviceName }}</td>
-                    <td>
-                      <span class="badge bg-primary-transparent">In Progress</span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+              }
+              @for (item of ongoingProjects; track item.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/client/projects', item.id]" class="client-dashboard-block__link">
+                      {{ item.name }}
+                    </a>
+                  </td>
+                  <td>{{ item.serviceName }}</td>
+                  <td>
+                    <span class="badge rounded-pill bg-primary-transparent">In Progress</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 }

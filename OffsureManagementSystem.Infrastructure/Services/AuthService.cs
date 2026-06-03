@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OffshoreManagementSystem.Domain.Entities;
 using OffsureManagementSystem.Application.Common.Exceptions;
@@ -227,6 +227,79 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _userRepo.SaveChangesAsync();
         }
 
+        // ── Account profile (authenticated) ───────────────────────────────────
+        public async Task<AccountProfileDto> GetAccountProfileAsync(int userId)
+        {
+            var user = await _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user is null)
+                throw new AppException("User not found.", 404);
+
+            return MapAccountProfile(user);
+        }
+
+        public async Task<AccountProfileDto> UpdateAccountProfileAsync(int userId, UpdateAccountProfileDto dto)
+        {
+            ValidateAccountProfileInput(dto);
+
+            var user = await _userRepo.GetByIDAsync(userId);
+            if (user is null)
+                throw new AppException("User not found.", 404);
+
+            if (!user.IsActive)
+                throw new AppException("Your account is inactive.", 400);
+
+            user.FirstName = dto.FirstName.Trim();
+            user.LastName = dto.LastName.Trim();
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.FirstName),
+                nameof(user.LastName),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+
+            return await GetAccountProfileAsync(userId);
+        }
+
+        public async Task ChangePasswordAsync(int userId, ChangePasswordDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.CurrentPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
+                throw new AppException("Current and new password are required.", 400);
+
+            if (dto.NewPassword.Length < 8)
+                throw new AppException("New password must be at least 8 characters.", 400);
+
+            var user = await _userRepo.GetByIDAsync(userId);
+            if (user is null)
+                throw new AppException("User not found.", 404);
+
+            if (!VerifyPassword(dto.CurrentPassword, user.PasswordHash))
+                throw new AppException("Current password is incorrect.", 400);
+
+            if (VerifyPassword(dto.NewPassword, user.PasswordHash))
+                throw new AppException("New password must be different from your current password.", 400);
+
+            user.PasswordHash = HashPassword(dto.NewPassword);
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.PasswordHash),
+                nameof(user.RefreshToken),
+                nameof(user.RefreshTokenExpiry),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+        }
+
         // ── Verify Email ──────────────────────────────────────────────────────
         public async Task VerifyEmailAsync(int userId, string token)
         {
@@ -279,6 +352,22 @@ namespace OffsureManagementSystem.Infrastructure.Services
                           .Replace("/", "_")
                           .Replace("=", "");
         }
+
+        private static void ValidateAccountProfileInput(UpdateAccountProfileDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.FirstName) || string.IsNullOrWhiteSpace(dto.LastName))
+                throw new AppException("First name and last name are required.", 400);
+        }
+
+        private static AccountProfileDto MapAccountProfile(User user)
+            => new AccountProfileDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName ?? string.Empty,
+                LastName = user.LastName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Role = user.Role?.Name ?? string.Empty,
+            };
 
         private LoginResponseDto BuildLoginResponse(string accessToken, string refreshToken, User user)
             => new LoginResponseDto

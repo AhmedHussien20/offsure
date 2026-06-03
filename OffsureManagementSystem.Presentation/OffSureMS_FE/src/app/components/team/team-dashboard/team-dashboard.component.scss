@@ -1,0 +1,231 @@
+:host {
+  --tdb-radius: 0.625rem;
+  --tdb-border: rgba(0, 0, 0, 0.08);
+  --tdb-bg: var(--custom-white, #fff);
+  --tdb-head-bg: #f8f9fc;
+  --tdb-text: var(--default-text-color, #1d212f);
+  --tdb-muted: #6c757d;
+  --tdb-row-hover: rgba(var(--primary-rgb, 92, 103, 247), 0.04);
+  --tdb-available: #198754;
+  --tdb-busy: #dc3545;
+}
+
+:host-context([data-theme-mode='dark']) {
+  --tdb-border: rgba(255, 255, 255, 0.12);
+  --tdb-bg: rgb(var(--body-bg-rgb));
+  --tdb-head-bg: rgba(255, 255, 255, 0.04);
+  --tdb-text: rgba(255, 255, 255, 0.92);
+  --tdb-muted: rgba(255, 255, 255, 0.55);
+  --tdb-row-hover: rgba(255, 255, 255, 0.04);
+  --tdb-available: #75b798;
+  --tdb-busy: #ea868f;
+}
+
+.dashboard-chart-card {
+  margin-bottom: 1.5rem;
+
+  .card-body {
+    padding: 1rem 1.15rem 0.5rem;
+  }
+}
+
+.team-availability-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--tdb-bg);
+  border: 1px solid var(--tdb-border);
+  border-radius: var(--tdb-radius);
+  box-shadow: 0 10px 30px 0 rgba(var(--primary-rgb, 92, 103, 247), 0.05);
+
+  &--available {
+    border-left: 4px solid var(--tdb-available);
+  }
+
+  &--busy {
+    border-left: 4px solid var(--tdb-busy);
+  }
+
+  &__content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+  }
+
+  &--available &__icon {
+    color: var(--tdb-available);
+    background: rgba(25, 135, 84, 0.12);
+  }
+
+  &--busy &__icon {
+    color: var(--tdb-busy);
+    background: rgba(220, 53, 69, 0.12);
+  }
+
+  &__title {
+    margin: 0 0 0.15rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--tdb-text);
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--tdb-muted);
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  &--available &__status {
+    color: var(--tdb-available);
+    background: rgba(25, 135, 84, 0.1);
+  }
+
+  &--busy &__status {
+    color: var(--tdb-busy);
+    background: rgba(220, 53, 69, 0.1);
+  }
+
+  &__label {
+    line-height: 1.2;
+  }
+
+  &__btn {
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+}
+
+.team-availability-badge__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+}
+
+.team-dashboard-tables {
+  margin-bottom: 0.5rem;
+}
+
+.team-dashboard-block {
+  display: flex;
+  flex-direction: column;
+  background: var(--tdb-bg);
+  border: 1px solid var(--tdb-border);
+  border-radius: var(--tdb-radius);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 30px 0 rgba(var(--primary-rgb, 92, 103, 247), 0.05);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--tdb-border);
+    background: var(--tdb-bg);
+  }
+
+  &__title {
+    margin: 0 0 0.2rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--tdb-text);
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--tdb-muted);
+  }
+
+  &__table {
+    flex: 1 1 auto;
+
+    .table {
+      margin-bottom: 0;
+      color: var(--tdb-text);
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    thead th {
+      background: var(--tdb-head-bg) !important;
+      color: var(--tdb-muted) !important;
+      border-bottom: 1px solid var(--tdb-border) !important;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.7rem 1.25rem;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 0.75rem 1.25rem;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--tdb-border);
+      font-size: 0.875rem;
+    }
+
+    tbody tr {
+      background: var(--tdb-bg);
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background: var(--tdb-row-hover);
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+  }
+
+  &__link {
+    color: var(--primary-color, #5c67f7);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

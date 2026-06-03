@@ -13,6 +13,7 @@ export const BREADCRUMB_ROUTES: Record<string, string> = {
   Portfolio: '/admin/portfolio',
   Clients: '/admin/clients',
   Profile: '/client/profile',
+  'My Profile': '/admin/profile',
   'My Requests': '/client/requests',
   'My Projects': '/client/projects',
   'New Request': '/client/requests',

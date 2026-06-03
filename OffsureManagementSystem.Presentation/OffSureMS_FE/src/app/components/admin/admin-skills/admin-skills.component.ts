@@ -9,6 +9,11 @@ import { SkillsService } from 'app/core/services/skills.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
+import {
+  ACTIVE_FILTER_OPTIONS,
+  LIST_FILTER_LABELS,
+} from 'app/core/constants/list-filter.constants';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_SKILL_CATEGORY_COLUMNS, ADMIN_SKILL_COLUMNS } from '../admin.constants';
 import { AdminSkillCategoryCreateComponent } from './admin-skill-category-create.component';
 import { AdminSkillCreateComponent } from './admin-skill-create.component';
@@ -40,7 +45,11 @@ export class AdminSkillsComponent implements OnInit {
   catEntries = 10;
   catTotal = 0;
   catTotalPages = 1;
-  catSearch = new SearchCriteria({ pageIndex: 1, pageSize: 10 });
+  catSearch = new SearchCriteria({
+    pageIndex: 1,
+    pageSize: 10,
+    filterTypes: { isActive: 'dropdown' },
+  });
 
   skillPage = 1;
   skillEntries = 10;
@@ -49,16 +58,18 @@ export class AdminSkillsComponent implements OnInit {
   skillSearch = new SearchCriteria({
     pageIndex: 1,
     pageSize: 10,
-    filterTypes: { skillCategoryId: 'dropdown' },
+    filterTypes: {
+      skillCategoryId: 'dropdown',
+      isActive: 'dropdown',
+    },
   });
 
-  skillLabels: Record<string, string> = {
-    skillCategoryId: 'Category',
-    searchKey: 'Search',
-  };
-
-  skillDropdownOptions: { skillCategoryId: { id: number; name: string }[] } = {
+  catLabels = { ...LIST_FILTER_LABELS };
+  skillLabels: Record<string, string> = { ...LIST_FILTER_LABELS };
+  catDropdownOptions = { isActive: ACTIVE_FILTER_OPTIONS };
+  skillDropdownOptions: Record<string, { id: number | boolean; name: string }[]> = {
     skillCategoryId: [],
+    isActive: ACTIVE_FILTER_OPTIONS,
   };
 
   constructor(
@@ -187,6 +198,7 @@ export class AdminSkillsComponent implements OnInit {
       this.categoryOptions = list.map(c => ({ id: c.id, name: c.name }));
       this.skillDropdownOptions = {
         skillCategoryId: this.categoryOptions,
+        isActive: ACTIVE_FILTER_OPTIONS,
       };
     });
   }
@@ -210,14 +222,8 @@ export class AdminSkillsComponent implements OnInit {
   }
 
   private loadSkills(): void {
-    const categoryId = this.skillSearch['skillCategoryId'];
     this.skillsService
-      .getAll({
-        pageIndex: this.skillSearch.pageIndex,
-        pageSize: this.skillSearch.pageSize,
-        searchKey: this.skillSearch.searchKey,
-        skillCategoryId: categoryId ? Number(categoryId) : undefined,
-      } as any)
+      .getAll(buildPagedListQuery(this.skillSearch) as any)
       .subscribe(res => {
         const paged = res.data;
         this.skills = (paged?.data ?? []).map(s => ({

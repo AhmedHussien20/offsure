@@ -7,6 +7,7 @@ import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_PROJECT_COLUMNS } from '../admin.constants';
 import { AdminProjectCreateComponent } from './admin-project-create.component';
 
@@ -92,14 +93,7 @@ export class AdminProjectsListComponent implements OnInit {
 
   private loadProjects(): void {
     this.projectsService
-      .getAll({
-        pageIndex: this.searchCriteria.pageIndex,
-        pageSize: this.searchCriteria.pageSize,
-        sortColumn: this.searchCriteria.sortColumn,
-        sortDirection: this.searchCriteria.sortDirection,
-        status: this.searchCriteria['status'],
-        searchKey: this.searchCriteria.searchKey,
-      } as any)
+      .getAll(buildPagedListQuery(this.searchCriteria) as any)
       .subscribe({
         next: res => {
           const paged = res.data;

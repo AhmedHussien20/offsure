@@ -6,6 +6,11 @@ import { ProjectsService } from 'app/core/services/projects.service';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
+import {
+  LIST_FILTER_LABELS,
+  PROJECT_STATUS_FILTER_OPTIONS,
+} from 'app/core/constants/list-filter.constants';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { CLIENT_PROJECT_COLUMNS } from '../client.constants';
 
 @Component({
@@ -27,24 +32,12 @@ export class ClientProjectsListComponent implements OnInit {
     pageSize: 10,
     sortColumn: 'Id',
     sortDirection: 'DESC',
-    filterTypes: {
-      status: 'dropdown',
-    },
+    filterTypes: { status: 'dropdown' },
   });
 
-  labels: Record<string, string> = {
-    status: 'Status',
-    searchKey: 'Search',
-  };
-
+  labels: Record<string, string> = { ...LIST_FILTER_LABELS };
   dropdownOptions = {
-    status: [
-      { id: 'Pending', name: 'Pending' },
-      { id: 'InProgress', name: 'In Progress' },
-      { id: 'Completed', name: 'Completed' },
-      { id: 'OnHold', name: 'On Hold' },
-      { id: 'Cancelled', name: 'Cancelled' },
-    ],
+    status: PROJECT_STATUS_FILTER_OPTIONS,
   };
 
   constructor(
@@ -82,14 +75,7 @@ export class ClientProjectsListComponent implements OnInit {
 
   private loadProjects(): void {
     this.projectsService
-      .getMy({
-        pageIndex: this.searchCriteria.pageIndex,
-        pageSize: this.searchCriteria.pageSize,
-        sortColumn: this.searchCriteria.sortColumn,
-        sortDirection: this.searchCriteria.sortDirection,
-        status: this.searchCriteria['status'],
-        searchKey: this.searchCriteria.searchKey,
-      } as any)
+      .getMy(buildPagedListQuery(this.searchCriteria) as any)
       .subscribe({
         next: res => {
           const paged = res.data;

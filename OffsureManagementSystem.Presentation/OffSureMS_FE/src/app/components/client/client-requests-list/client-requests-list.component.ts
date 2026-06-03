@@ -8,6 +8,7 @@ import { ServiceRequestDto } from 'app/core/models/services/service.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { CLIENT_REQUEST_COLUMNS } from '../client.constants';
 import { ClientRequestCreateComponent } from '../client-request-form/client-request-create.component';
 
@@ -32,9 +33,7 @@ export class ClientRequestsListComponent implements OnInit {
     pageSize: 10,
     sortColumn: 'Id',
     sortDirection: 'DESC',
-    filterTypes: {
-      status: 'dropdown',
-    },
+    filterTypes: { status: 'dropdown' },
   });
 
   labels: Record<string, string> = {
@@ -119,14 +118,7 @@ export class ClientRequestsListComponent implements OnInit {
 
     this.loading = true;
     this.serviceRequestsService
-      .getClientRequests(this.clientId, {
-        pageIndex: this.searchCriteria.pageIndex,
-        pageSize: this.searchCriteria.pageSize,
-        sortColumn: this.searchCriteria.sortColumn,
-        sortDirection: this.searchCriteria.sortDirection,
-        status: this.searchCriteria['status'],
-        searchKey: this.searchCriteria.searchKey,
-      } as any)
+      .getClientRequests(this.clientId, buildPagedListQuery(this.searchCriteria) as any)
       .subscribe({
         next: res => {
           const paged = res.data;

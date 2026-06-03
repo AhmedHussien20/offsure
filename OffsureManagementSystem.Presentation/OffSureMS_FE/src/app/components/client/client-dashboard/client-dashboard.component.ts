@@ -2,14 +2,20 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { SpkApexChartsComponent } from 'app/@spk/reusable-charts/spk-apex-charts/spk-apex-charts.component';
 import { SpkEcommerceComponent } from 'app/@spk/reusable-ecommerce/spk-ecommerce/spk-ecommerce.component';
 import { ClientContextService } from 'app/core/services/client-context.service';
 import { ClientsService } from 'app/core/services/clients.service';
 import { ClientDto, ClientServiceRequestSummaryDto } from 'app/core/models/clients/client.models';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { ProjectDto, ProjectStatus } from 'app/core/models/projects/project.models';
+import { DashboardStatisticsService } from 'app/core/services/dashboard-statistics.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { serviceRequestStatusKey } from 'app/core/utils/enum-status.util';
+import {
+  buildBarChartOptions,
+  buildDonutChartOptions,
+} from 'app/core/utils/dashboard-chart.util';
 import { forkJoin } from 'rxjs';
 import { SERVICE_REQUEST_STATUS_BADGES } from '../client.constants';
 import { ClientRequestCreateComponent } from '../client-request-form/client-request-create.component';
@@ -17,7 +23,7 @@ import { ClientRequestCreateComponent } from '../client-request-form/client-requ
 @Component({
   selector: 'app-client-dashboard',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, SpkEcommerceComponent],
+  imports: [CommonModule, SharedModule, RouterModule, SpkEcommerceComponent, SpkApexChartsComponent],
   templateUrl: './client-dashboard.component.html',
   styleUrl: './client-dashboard.component.scss',
 })
@@ -29,10 +35,15 @@ export class ClientDashboardComponent implements OnInit {
 
   statCards: { label: string; value: string; icon: string; description: string; subValue: string }[] = [];
 
+  requestsStatusChart: Record<string, unknown> | null = null;
+  projectsStatusChart: Record<string, unknown> | null = null;
+  requestsTrendChart: Record<string, unknown> | null = null;
+
   constructor(
     private clientContext: ClientContextService,
     private clientsService: ClientsService,
     private projectsService: ProjectsService,
+    private dashboardStatisticsService: DashboardStatisticsService,
     private modalService: NgbModal
   ) {}
 
@@ -45,30 +56,6 @@ export class ClientDashboardComponent implements OnInit {
           return;
         }
 
-        this.statCards = [
-          {
-            label: 'Total Requests',
-            value: String(profile.requestsCount),
-            icon: 'ti-clipboard',
-            description: 'All service requests',
-            subValue: '',
-          },
-          {
-            label: 'Active Projects',
-            value: '0',
-            icon: 'ti-folder',
-            description: 'Projects in progress',
-            subValue: '',
-          },
-          {
-            label: 'Company',
-            value: profile.companyName || '—',
-            icon: 'ti-briefcase',
-            description: profile.email,
-            subValue: '',
-          },
-        ];
-
         forkJoin({
           recent: this.clientsService.getProfileRecentRequests(5),
           ongoing: this.projectsService.getMy({
@@ -76,15 +63,70 @@ export class ClientDashboardComponent implements OnInit {
             pageSize: 10,
             status: ProjectStatus.InProgress,
           }),
+          stats: this.dashboardStatisticsService.getClient(),
         }).subscribe({
-          next: ({ recent, ongoing }) => {
+          next: ({ recent, ongoing, stats }) => {
             this.recentRequests = recent.data ?? [];
             const ongoingPaged = ongoing.data;
             this.ongoingProjects = ongoingPaged?.data ?? [];
-            const activeCard = this.statCards.find(c => c.label === 'Active Projects');
-            if (activeCard) {
-              activeCard.value = String(ongoingPaged?.totalCount ?? this.ongoingProjects.length);
+
+            const data = stats.data;
+            if (data) {
+              this.statCards = [
+                {
+                  label: 'Total Requests',
+                  value: String(data.totalRequests),
+                  icon: 'ti-clipboard',
+                  description: 'All service requests',
+                  subValue: '',
+                },
+                {
+                  label: 'Active Projects',
+                  value: String(data.activeProjects),
+                  icon: 'ti-folder',
+                  description: 'In progress',
+                  subValue: '',
+                },
+                {
+                  label: 'Completed',
+                  value: String(data.completedProjects),
+                  icon: 'ti-circle-check',
+                  description: 'Finished projects',
+                  subValue: '',
+                },
+              ];
+              this.requestsStatusChart = buildDonutChartOptions('My requests', data.requestsByStatus);
+              this.projectsStatusChart = buildBarChartOptions('My projects', data.projectsByStatus);
+              this.requestsTrendChart = buildBarChartOptions(
+                'Requests over time (6 months)',
+                data.requestsByMonth
+              );
+            } else {
+              this.statCards = [
+                {
+                  label: 'Total Requests',
+                  value: String(profile.requestsCount),
+                  icon: 'ti-clipboard',
+                  description: 'All service requests',
+                  subValue: '',
+                },
+                {
+                  label: 'Active Projects',
+                  value: String(ongoingPaged?.totalCount ?? this.ongoingProjects.length),
+                  icon: 'ti-folder',
+                  description: 'Projects in progress',
+                  subValue: '',
+                },
+                {
+                  label: 'Company',
+                  value: profile.companyName || '—',
+                  icon: 'ti-briefcase',
+                  description: profile.email,
+                  subValue: '',
+                },
+              ];
             }
+
             this.loading = false;
           },
           error: () => {
@@ -115,5 +157,4 @@ export class ClientDashboardComponent implements OnInit {
       size: 'lg',
     });
   }
-
 }

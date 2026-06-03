@@ -66,5 +66,13 @@ namespace OffsureManagementSystem.Application.Common
 
             return int.TryParse(match.Groups[1].Value, out var id) ? id : null;
         }
+
+        public static string StripSkillPrefixFromRole(string? role)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+                return string.Empty;
+
+            return RoleSkillPrefix.Replace(role, string.Empty).Trim();
+        }
     }
 }

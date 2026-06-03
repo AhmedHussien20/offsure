@@ -100,22 +100,25 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ClientDto> GetClientByIdAsync(int id)
         {
-            var client = await BuildClientQuery()
+            var client = await BuildClientProfileQuery()
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (client is null)
                 throw new AppException("Resource not found.", 404);
 
-            return MapClient(client);
+            return await MapClientProfileAsync(client);
         }
 
         public async Task<ClientDto> GetClientProfileAsync(int userId)
         {
             var client = await BuildClientProfileQuery()
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.UserId == userId && !c.IsDeleted);
 
             if (client is null)
                 throw new AppException("Client profile not found for current user.", 404);
+
+            if (!client.IsActive)
+                throw new AppException("Client profile is inactive.", 403);
 
             return await MapClientProfileAsync(client);
         }
@@ -124,19 +127,30 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int userId,
             int limit = 5)
         {
-            if (limit < 1)
-                limit = 5;
-            if (limit > 50)
-                limit = 50;
-
             var clientId = await _clientRepo
                 .Query()
-                .Where(c => c.UserId == userId)
+                .Where(c => c.UserId == userId && c.IsActive && !c.IsDeleted)
                 .Select(c => c.Id)
                 .FirstOrDefaultAsync();
 
             if (clientId == 0)
                 throw new AppException("Client profile not found for current user.", 404);
+
+            return await GetClientRecentServiceRequestsByClientIdAsync(clientId, limit);
+        }
+
+        public async Task<IReadOnlyList<ClientServiceRequestSummaryDto>> GetClientRecentServiceRequestsByClientIdAsync(
+            int clientId,
+            int limit = 5)
+        {
+            limit = NormalizeRecentRequestsLimit(limit);
+
+            var clientExists = await _clientRepo
+                .Query()
+                .AnyAsync(c => c.Id == clientId);
+
+            if (!clientExists)
+                throw new AppException("Resource not found.", 404);
 
             var requests = await _serviceRequestRepo
                 .Query()
@@ -341,6 +355,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static int GetSkipCount(ClientFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
+
+        private static int NormalizeRecentRequestsLimit(int limit)
+        {
+            if (limit < 1)
+                return 5;
+            if (limit > 50)
+                return 50;
+            return limit;
+        }
 
         private static ClientDto MapClient(Client client)
         {

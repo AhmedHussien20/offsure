@@ -1,0 +1,19 @@
+.profile-shell {
+  overflow: hidden;
+}
+
+.profile-cover {
+  height: 200px;
+  background: linear-gradient(120deg, rgb(var(--primary-rgb) / 28%) 0%, rgb(var(--primary-rgb) / 12%) 45%, rgb(var(--primary-rgb) / 5%) 100%);
+}
+
+.profile-topbar {
+  margin-top: -34px;
+}
+
+.profile-avatar.avatar-xxl {
+  width: 5.5rem;
+  height: 5.5rem;
+  border: 4px solid #fff;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 12%);
+}

@@ -23,5 +23,6 @@ namespace OffshoreManagementSystem.Domain.Entities
         // Navigation Properties
         public virtual ServiceRequest ServiceRequest { get; set; }
         public virtual ICollection<ProjectAssignment> ProjectAssignments { get; set; } = new List<ProjectAssignment>();
+        public virtual ICollection<ProjectSkill> ProjectSkills { get; set; } = new List<ProjectSkill>();
     }
 }

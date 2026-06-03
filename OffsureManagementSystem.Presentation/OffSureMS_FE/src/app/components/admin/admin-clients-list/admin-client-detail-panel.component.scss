@@ -1,0 +1,124 @@
+.client-detail-panel {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.client-detail-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.client-detail-panel__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.client-detail-panel__meta {
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+}
+
+.client-detail-panel__loading {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.client-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 1rem;
+}
+
+@media (max-width: 992px) {
+  .client-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.client-info-card,
+.client-sidebar-card {
+  background: #fff;
+  border: 1px solid rgba(var(--primary-rgb, 98, 89, 202), 0.12);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.client-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem 1.25rem;
+}
+
+@media (max-width: 576px) {
+  .client-info-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.client-info-item label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.15rem;
+}
+
+.client-info-item span {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.client-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.client-sidebar-card h6 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.65rem;
+}
+
+.client-stat-list,
+.client-request-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.client-stat-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.client-stat-list li:last-child {
+  border-bottom: none;
+}
+
+.client-stat-label {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.client-request-list li {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.client-request-list li:last-child {
+  border-bottom: none;
+}
+
+.client-request-list strong {
+  font-size: 0.85rem;
+}

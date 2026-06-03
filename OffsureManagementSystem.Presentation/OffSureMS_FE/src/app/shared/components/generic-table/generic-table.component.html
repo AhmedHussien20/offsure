@@ -44,10 +44,19 @@
         </div>
 
         <div class="filter-card" [class.is-open]="filtersOpen">
-            <div class="filter-grid">
+            <div class="filter-grid" [class.filter-grid--search-only]="searchOnlyFilters">
 
-                <div class="filter-item" *ngFor="let key of objectKeys(searchCriteria?.filterTypes)"
-                    [hidden]="key === 'employeeIds' && !showEmployeeFilter">
+                <div class="filter-item filter-item--search" *ngIf="showSearch">
+                    <label>{{ getLabel('searchKey') | translate }}</label>
+                    <input
+                        type="search"
+                        class="form-control"
+                        [(ngModel)]="searchCriteria.searchKey"
+                        (ngModelChange)="queueApplyFilters()"
+                        [placeholder]="'TABLE.SEARCH' | translate" />
+                </div>
+
+                <div class="filter-item" *ngFor="let key of getColumnFilterKeys()">
 
                     <label>{{ getLabel(key) | translate }}</label>
 

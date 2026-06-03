@@ -47,12 +47,20 @@ export class ClientsService {
       .get<BaseResponse<ClientServiceRequestSummaryDto[]>>(this.service, 'profile/recent-requests', {
         limit,
       })
-      .pipe(
-        map(res => ({
-          ...res,
-          data: (res.data ?? []).map(r => this.mapServiceRequestSummary(r)),
-        }))
-      );
+      .pipe(map(res => this.mapRecentRequestsResponse(res)));
+  }
+
+  getRecentRequestsByClientId(
+    clientId: number,
+    limit = 5
+  ): Observable<BaseResponse<ClientServiceRequestSummaryDto[]>> {
+    return this.api
+      .get<BaseResponse<ClientServiceRequestSummaryDto[]>>(
+        this.service,
+        `${clientId}/recent-requests`,
+        { limit }
+      )
+      .pipe(map(res => this.mapRecentRequestsResponse(res)));
   }
 
   updateProfile(dto: UpdateClientProfileDto): Observable<BaseResponse<ClientDto>> {
@@ -84,6 +92,15 @@ export class ClientsService {
     return {
       ...client,
       serviceRequests: (client.serviceRequests ?? []).map(r => this.mapServiceRequestSummary(r)),
+    };
+  }
+
+  private mapRecentRequestsResponse(
+    res: BaseResponse<ClientServiceRequestSummaryDto[]>
+  ): BaseResponse<ClientServiceRequestSummaryDto[]> {
+    return {
+      ...res,
+      data: (res.data ?? []).map(r => this.mapServiceRequestSummary(r)),
     };
   }
 

@@ -12,7 +12,12 @@ import { AuthUser } from '../models/auth/auth-user';
 import * as NavActions from '../../store/nav/nav.actions';
 import { ApiService } from './api.service';
 import { RegisterRequest, RegisterResponse } from '../models/auth/register-request.model';
-import { LoginResponse } from '../models/auth/login.models';
+import { LoginResponse, UserInfo } from '../models/auth/login.models';
+import {
+  AccountProfileDto,
+  ChangePasswordDto,
+  UpdateAccountProfileDto,
+} from '../models/auth/account.models';
 import { ClientContextService } from './client-context.service';
 import { TeamContextService } from './team-context.service';
 import { AuthTokenRefreshService } from './auth-token-refresh.service';
@@ -143,6 +148,45 @@ export class AuthService {
       {},
       { userId, token }
     );
+  }
+
+  getAccountProfile(): Observable<BaseResponse<AccountProfileDto>> {
+    return this.apiService.get<BaseResponse<AccountProfileDto>>('account', 'profile');
+  }
+
+  updateAccountProfile(dto: UpdateAccountProfileDto): Observable<BaseResponse<AccountProfileDto>> {
+    return this.apiService.put<BaseResponse<AccountProfileDto>>('account', 'profile', dto).pipe(
+      map(res => {
+        if (res.data) {
+          this.mergeStoredUser(res.data);
+        }
+        return res;
+      })
+    );
+  }
+
+  changePassword(dto: ChangePasswordDto): Observable<BaseResponse<null>> {
+    return this.apiService.post<BaseResponse<null>>('account', 'change-password', dto);
+  }
+
+  mergeStoredUser(profile: AccountProfileDto): void {
+    const raw = localStorage.getItem('userData');
+    if (!raw) {
+      return;
+    }
+    try {
+      const user = JSON.parse(raw) as UserInfo;
+      const updated: UserInfo = {
+        ...user,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+        role: profile.role || user.role,
+      };
+      localStorage.setItem('userData', JSON.stringify(updated));
+    } catch {
+      /* ignore malformed cache */
+    }
   }
 
   register(dto: RegisterRequest): Observable<BaseResponse<RegisterResponse>> {

@@ -9,15 +9,26 @@
       [totalItems]="totalItems"
       [totalPages]="totalPages"
       [searchCriteria]="searchCriteria"
+      [labels]="labels"
+      [dropdownOptions]="dropdownOptions"
       [showFilters]="true"
       [showPagination]="true"
       [showEmployeeFilter]="false"
       [showExportExcel]="false"
       [showAddButton]="true"
       [addButtonLabel]="'Add Member'"
+      [expandable]="true"
+      [expandTemplate]="teamDetail"
       [onSearch]="onSearch"
       (pageChange)="onPageChange($event)"
       (entriesChange)="onEntriesChange($event)"
       (addClick)="onAdd()">
     </app-generic-table>
 </div>
+
+<ng-template #teamDetail let-item>
+  <app-admin-team-member-panel
+    [memberId]="item.id"
+    (saved)="onMemberSaved()"
+    (deleted)="onMemberDeleted()" />
+</ng-template>

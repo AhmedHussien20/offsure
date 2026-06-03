@@ -9,6 +9,8 @@ using TaskMangment.Application.Common.Responses;
 using Client = OffshoreManagementSystem.Domain.Entities.Client;
 using Project = OffshoreManagementSystem.Domain.Entities.Project;
 using ProjectAssignment = OffshoreManagementSystem.Domain.Entities.ProjectAssignment;
+using ProjectSkill = OffshoreManagementSystem.Domain.Entities.ProjectSkill;
+using Skill = OffshoreManagementSystem.Domain.Entities.Skill;
 using DomainService = OffshoreManagementSystem.Domain.Entities.Service;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
 using TeamMember = OffshoreManagementSystem.Domain.Entities.TeamMember;
@@ -19,6 +21,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
     {
         private readonly IRepository<Project> _projectRepo;
         private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
+        private readonly IRepository<ProjectSkill> _projectSkillRepo;
+        private readonly IRepository<Skill> _skillRepo;
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
         private readonly IRepository<Client> _clientRepo;
         private readonly IRepository<DomainService> _serviceRepo;
@@ -28,6 +32,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
         public ProjectManagementService(
             IRepository<Project> projectRepo,
             IRepository<ProjectAssignment> projectAssignmentRepo,
+            IRepository<ProjectSkill> projectSkillRepo,
+            IRepository<Skill> skillRepo,
             IRepository<ServiceRequest> serviceRequestRepo,
             IRepository<Client> clientRepo,
             IRepository<DomainService> serviceRepo,
@@ -36,6 +42,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             _projectRepo = projectRepo;
             _projectAssignmentRepo = projectAssignmentRepo;
+            _projectSkillRepo = projectSkillRepo;
+            _skillRepo = skillRepo;
             _serviceRequestRepo = serviceRequestRepo;
             _clientRepo = clientRepo;
             _serviceRepo = serviceRepo;
@@ -45,8 +53,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<ProjectDto>> GetAllProjectsAsync(ProjectFilterRequest request)
         {
-            var query = BuildProjectQuery();
-            query = ApplyFilters(query, request);
+            var query = BuildProjectQuery().AsNoTracking();
+            query = await ApplyFiltersAsync(query, request);
 
             var totalCount = await query.CountAsync();
             var projects = await ApplySorting(query, request)
@@ -63,13 +71,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ProjectDto> GetProjectByIdAsync(int id)
         {
-            var project = await BuildProjectQuery()
+            var project = await _projectRepo
+                .Query()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project is null)
                 throw new AppException("Resource not found.", 404);
 
-            return MapProject(project);
+            await EnsureLegacySkillsMigratedAsync(project);
+
+            return await GetProjectDtoByIdAsync(id);
         }
 
         public async Task<PagedResponse<ProjectDto>> GetClientProjectsByUserIdAsync(
@@ -85,6 +96,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var clientId = await GetClientIdForUserAsync(userId);
             var project = await BuildProjectQuery()
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
             if (project is null)
@@ -93,7 +105,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (project.ServiceRequest?.ClientId != clientId)
                 throw new AppException("You do not have access to this project.", 403);
 
-            return MapProject(project);
+            return await GetProjectDtoByIdAsync(projectId);
         }
 
         public async Task<PagedResponse<ProjectDto>> GetTeamMemberProjectsByUserIdAsync(
@@ -108,16 +120,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
         public async Task<ProjectDto> GetTeamMemberProjectByIdAsync(int userId, int projectId)
         {
             var teamMemberId = await GetTeamMemberIdForUserAsync(userId);
-            var project = await BuildProjectQuery()
-                .FirstOrDefaultAsync(p => p.Id == projectId);
 
-            if (project is null)
-                throw new AppException("Resource not found.", 404);
-
-            if (!project.ProjectAssignments.Any(a => a.TeamMemberId == teamMemberId))
+            if (!await HasActiveAssignmentAsync(projectId, teamMemberId))
                 throw new AppException("You do not have access to this project.", 403);
 
-            return MapProject(project);
+            return await GetProjectDtoByIdAsync(projectId);
         }
 
         public async Task<ProjectDto> CreateProjectAsync(CreateProjectDto dto)
@@ -156,6 +163,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             await _projectRepo.AddAsync(project);
             await _projectRepo.SaveChangesAsync();
+
+            if (dto.RequiredSkillIds is { Count: > 0 })
+            {
+                await SyncProjectSkillsAsync(project.Id, dto.RequiredSkillIds);
+            }
 
             return await GetProjectByIdAsync(project.Id);
         }
@@ -227,13 +239,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
             project.Name = dto.Name.Trim();
             if (dto.RequiredSkillIds is not null)
             {
-                var clean = ProjectDescriptionSkills.StripSkillsMarker(project.Description);
-                project.Description = ProjectDescriptionSkills.EmbedRequiredSkillIds(clean, dto.RequiredSkillIds);
+                await SyncProjectSkillsAsync(id, dto.RequiredSkillIds);
+                project.Description = ProjectDescriptionSkills.StripSkillsMarker(project.Description);
             }
             else if (dto.Description is not null)
             {
-                var skillIds = ProjectDescriptionSkills.ParseRequiredSkillIds(project.Description);
-                project.Description = ProjectDescriptionSkills.EmbedRequiredSkillIds(dto.Description, skillIds);
+                project.Description = ProjectDescriptionSkills.StripSkillsMarker(dto.Description);
             }
 
             project.TargetEndDate = dto.TargetEndDate;
@@ -271,34 +282,34 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await EnsureTeamMemberExistsAsync(dto.TeamMemberId);
 
             var role = dto.Role.Trim();
-            if (dto.SkillId is > 0)
-            {
-                role = ProjectDescriptionSkills.FormatSkillRole(dto.SkillId.Value, role);
-                var projectAssignments = await _projectAssignmentRepo
-                    .GetAll(a => a.ProjectId == projectId)
-                    .ToListAsync();
+            int? skillId = dto.SkillId is > 0 ? dto.SkillId : null;
+            if (skillId.HasValue)
+                await EnsureProjectSkillIsSelectedAsync(projectId, skillId.Value);
 
-                if (projectAssignments.Any(a =>
-                        a.TeamMemberId == dto.TeamMemberId &&
-                        ProjectDescriptionSkills.SkillIdFromRole(a.Role) == dto.SkillId))
-                    throw new AppException("This team member is already assigned for this skill.", 400);
-            }
-            else
+            var existing = await FindAssignmentAsync(projectId, dto.TeamMemberId, skillId);
+            if (existing is not null)
             {
-                var existingAssignment = await _projectAssignmentRepo
-                    .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == dto.TeamMemberId)
-                    .FirstOrDefaultAsync();
+                if (existing.IsActive)
+                {
+                    var message = skillId.HasValue
+                        ? "This team member is already assigned for this skill."
+                        : "Team member is already assigned to this project.";
+                    throw new AppException(message, 400);
+                }
 
-                if (existingAssignment is not null)
-                    throw new AppException("Team member is already assigned to this project.", 400);
+                ReactivateAssignment(existing, role, skillId, dto.HourlyRate, dto.AllocatedHours);
+                await _projectAssignmentRepo.SaveChangesAsync();
+                return await GetProjectDtoByIdAsync(projectId);
             }
 
             var assignment = new ProjectAssignment
             {
                 ProjectId = projectId,
                 TeamMemberId = dto.TeamMemberId,
+                SkillId = skillId,
                 Role = role,
                 AssignedDate = DateTime.UtcNow,
+                IsActive = true,
                 HourlyRate = dto.HourlyRate,
                 AllocatedHours = dto.AllocatedHours,
                 CreatedAt = DateTime.UtcNow
@@ -307,24 +318,26 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _projectAssignmentRepo.AddAsync(assignment);
             await _projectAssignmentRepo.SaveChangesAsync();
 
-            return await GetProjectByIdAsync(projectId);
+            return await GetProjectDtoByIdAsync(projectId);
         }
 
         public async Task<ProjectDto> RemoveTeamMemberAsync(int projectId, int teamMemberId)
         {
             await EnsureProjectExistsAsync(projectId);
 
-            var assignment = await _projectAssignmentRepo
+            var assignments = await _projectAssignmentRepo
                 .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == teamMemberId)
-                .FirstOrDefaultAsync();
+                .ToListAsync();
 
-            if (assignment is null)
+            if (assignments.Count == 0)
                 throw new AppException("Resource not found.", 404);
 
-            _projectAssignmentRepo.HardDelete(assignment);
+            foreach (var assignment in assignments)
+                DeactivateAssignment(assignment);
+
             await _projectAssignmentRepo.SaveChangesAsync();
 
-            return await GetProjectByIdAsync(projectId);
+            return await GetProjectDtoByIdAsync(projectId);
         }
 
         public async Task<ProjectDto> RemoveAssignmentAsync(int projectId, int assignmentId)
@@ -338,10 +351,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (assignment is null)
                 throw new AppException("Resource not found.", 404);
 
-            _projectAssignmentRepo.HardDelete(assignment);
+            DeactivateAssignment(assignment);
             await _projectAssignmentRepo.SaveChangesAsync();
 
-            return await GetProjectByIdAsync(projectId);
+            return await GetProjectDtoByIdAsync(projectId);
         }
 
         public async Task<ProjectDto> UpdateProjectStatusAsync(int projectId, ProjectStatus status)
@@ -380,12 +393,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         .ThenInclude(c => c.User)
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Service)
-                .Include(p => p.ProjectAssignments)
+                .Include(p => p.ProjectSkills)
+                .Include(p => p.ProjectAssignments.Where(a => a.IsActive))
                     .ThenInclude(a => a.TeamMember)
                         .ThenInclude(t => t.User);
         }
 
-        private static IQueryable<Project> ApplyFilters(
+        private async Task<IQueryable<Project>> ApplyFiltersAsync(
             IQueryable<Project> query,
             ProjectFilterRequest request)
         {
@@ -405,7 +419,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 query = query.Where(p => p.ServiceRequest != null && p.ServiceRequest.ServiceId == request.ServiceId.Value);
 
             if (request.TeamMemberId.HasValue)
-                query = query.Where(p => p.ProjectAssignments.Any(a => a.TeamMemberId == request.TeamMemberId.Value));
+            {
+                var assignedProjectIds = await GetActiveAssignedProjectIdsAsync(request.TeamMemberId.Value);
+                query = query.Where(p => assignedProjectIds.Contains(p.Id));
+            }
 
             if (!string.IsNullOrWhiteSpace(request.searchKey))
             {
@@ -417,11 +434,28 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     || (p.ServiceRequest != null && p.ServiceRequest.Client.CompanyName.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Service.Name.ToLower().Contains(searchKey))
                     || p.ProjectAssignments.Any(a =>
-                        a.TeamMember.User.FirstName.ToLower().Contains(searchKey)
-                        || a.TeamMember.User.LastName.ToLower().Contains(searchKey)));
+                        a.IsActive
+                        && (a.TeamMember.User.FirstName.ToLower().Contains(searchKey)
+                            || a.TeamMember.User.LastName.ToLower().Contains(searchKey))));
             }
 
             return query;
+        }
+
+        private async Task<List<int>> GetActiveAssignedProjectIdsAsync(int teamMemberId)
+        {
+            return await _projectAssignmentRepo
+                .GetAll(a => a.TeamMemberId == teamMemberId && a.IsActive)
+                .Select(a => a.ProjectId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        private async Task<bool> HasActiveAssignmentAsync(int projectId, int teamMemberId)
+        {
+            return await _projectAssignmentRepo
+                .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == teamMemberId && a.IsActive)
+                .AnyAsync();
         }
 
         private static IQueryable<Project> ApplySorting(
@@ -467,7 +501,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private async Task EnsureTeamMemberExistsAsync(int teamMemberId)
         {
-            if (teamMemberId <= 0 || !await _teamMemberRepo.IsExistAsync(teamMemberId))
+            if (teamMemberId <= 0)
+                throw new AppException("Resource not found.", 404);
+
+            var isAssignable = await _teamMemberRepo
+                .Query()
+                .AnyAsync(t =>
+                    t.Id == teamMemberId
+                    && !t.IsDeleted
+                    && t.User.IsActive
+                    && !t.User.IsDeleted);
+
+            if (!isAssignable)
                 throw new AppException("Resource not found.", 404);
         }
 
@@ -542,7 +587,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var client = await _clientRepo
                 .Query()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.IsActive && !c.IsDeleted);
 
             if (client is null)
                 throw new AppException("Client profile not found for current user.", 404);
@@ -555,7 +600,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var member = await _teamMemberRepo
                 .Query()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.UserId == userId);
+                .FirstOrDefaultAsync(t =>
+                    t.UserId == userId
+                    && !t.IsDeleted
+                    && t.User.IsActive
+                    && !t.User.IsDeleted);
 
             if (member is null)
                 throw new AppException("Team member profile not found for current user.", 404);
@@ -565,12 +614,24 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static ProjectDto MapProject(Project project)
         {
+            var requiredFromTable = project.ProjectSkills?
+                .Where(ps => ps.IsSelected)
+                .Select(ps => ps.SkillId)
+                .Distinct()
+                .OrderBy(skillId => skillId)
+                .ToList() ?? new List<int>();
+
+            var legacyIds = ProjectDescriptionSkills.ParseRequiredSkillIds(project.Description);
+            var requiredSkillIds = requiredFromTable.Count > 0
+                ? requiredFromTable
+                : legacyIds;
+
             return new ProjectDto
             {
                 Id = project.Id,
                 Name = project.Name,
                 Description = ProjectDescriptionSkills.StripSkillsMarker(project.Description),
-                RequiredSkillIds = ProjectDescriptionSkills.ParseRequiredSkillIds(project.Description),
+                RequiredSkillIds = requiredSkillIds,
                 ServiceRequestId = project.ServiceRequestId,
                 ServiceRequestTitle = project.ServiceRequest?.Title ?? string.Empty,
                 ClientId = project.ServiceRequest?.ClientId,
@@ -587,6 +648,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ExpectedHours = project.ExpectedHours,
                 Progress = project.Progress,
                 TeamMembers = project.ProjectAssignments
+                    .Where(a => a.IsActive)
                     .OrderBy(a => a.TeamMember.User.FirstName)
                     .ThenBy(a => a.TeamMember.User.LastName)
                     .Select(MapAssignment)
@@ -594,19 +656,186 @@ namespace OffsureManagementSystem.Infrastructure.Services
             };
         }
 
+        private async Task<ProjectDto> GetProjectDtoByIdAsync(int id)
+        {
+            var project = await BuildProjectQuery()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            return MapProject(project);
+        }
+
+        private async Task EnsureLegacySkillsMigratedAsync(Project project)
+        {
+            var hasRows = await _projectSkillRepo
+                .GetAll(ps => ps.ProjectId == project.Id)
+                .AnyAsync();
+
+            if (hasRows)
+                return;
+
+            var legacyIds = ProjectDescriptionSkills.ParseRequiredSkillIds(project.Description);
+            if (legacyIds.Count == 0)
+                return;
+
+            await SyncProjectSkillsAsync(project.Id, legacyIds);
+
+            var clean = ProjectDescriptionSkills.StripSkillsMarker(project.Description);
+            if (!string.Equals(project.Description, clean, StringComparison.Ordinal))
+            {
+                project.Description = clean;
+                project.UpdatedAt = DateTime.UtcNow;
+                _projectRepo.SaveInclude(
+                    project,
+                    nameof(project.Description),
+                    nameof(project.UpdatedAt));
+                await _projectRepo.SaveChangesAsync();
+            }
+        }
+
+        private async Task SyncProjectSkillsAsync(int projectId, IEnumerable<int> requiredSkillIds)
+        {
+            var selectedIds = requiredSkillIds?
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            var existing = await _projectSkillRepo
+                .GetAll(ps => ps.ProjectId == projectId)
+                .ToListAsync();
+
+            foreach (var row in existing)
+            {
+                var shouldSelect = selectedIds.Contains(row.SkillId);
+                if (row.IsSelected == shouldSelect)
+                    continue;
+
+                row.IsSelected = shouldSelect;
+                row.UpdatedAt = DateTime.UtcNow;
+                _projectSkillRepo.SaveInclude(
+                    row,
+                    nameof(row.IsSelected),
+                    nameof(row.UpdatedAt));
+            }
+
+            foreach (var skillId in selectedIds)
+            {
+                await EnsureSkillActiveAsync(skillId);
+
+                var row = existing.FirstOrDefault(ps => ps.SkillId == skillId);
+                if (row is null)
+                {
+                    await _projectSkillRepo.AddAsync(new ProjectSkill
+                    {
+                        ProjectId = projectId,
+                        SkillId = skillId,
+                        IsSelected = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _projectSkillRepo.SaveChangesAsync();
+        }
+
+        private async Task EnsureSkillActiveAsync(int skillId)
+        {
+            var skill = await _skillRepo.GetByIDAsync(skillId);
+            if (skill is null)
+                throw new AppException("Skill not found.", 404);
+
+            if (skill.IsActive)
+                return;
+
+            skill.IsActive = true;
+            skill.UpdatedAt = DateTime.UtcNow;
+            _skillRepo.SaveInclude(
+                skill,
+                nameof(skill.IsActive),
+                nameof(skill.UpdatedAt));
+            await _skillRepo.SaveChangesAsync();
+        }
+
+        private async Task EnsureProjectSkillIsSelectedAsync(int projectId, int skillId)
+        {
+            var row = await _projectSkillRepo
+                .GetAll(ps => ps.ProjectId == projectId && ps.SkillId == skillId)
+                .FirstOrDefaultAsync();
+
+            if (row is null || !row.IsSelected)
+                throw new AppException("Assign team members only to skills selected for this project.", 400);
+        }
+
         private static ProjectAssignmentDto MapAssignment(ProjectAssignment assignment)
         {
+            var skillId = assignment.SkillId ?? ProjectDescriptionSkills.SkillIdFromRole(assignment.Role);
             return new ProjectAssignmentDto
             {
                 Id = assignment.Id,
                 TeamMemberId = assignment.TeamMemberId,
                 TeamMemberName = UserDisplayName.FromTeamMember(assignment.TeamMember),
                 TeamMemberTitle = assignment.TeamMember?.Title ?? string.Empty,
-                Role = assignment.Role,
+                Role = ProjectDescriptionSkills.StripSkillPrefixFromRole(assignment.Role),
+                SkillId = skillId,
                 AssignedDate = assignment.AssignedDate,
                 HourlyRate = assignment.HourlyRate,
                 AllocatedHours = assignment.AllocatedHours
             };
+        }
+
+        private async Task<ProjectAssignment?> FindAssignmentAsync(
+            int projectId,
+            int teamMemberId,
+            int? skillId)
+        {
+            var assignments = await _projectAssignmentRepo
+                .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == teamMemberId)
+                .IgnoreQueryFilters()
+                .Where(a => !a.IsDeleted)
+                .ToListAsync();
+
+            if (skillId is > 0)
+            {
+                return assignments.FirstOrDefault(a =>
+                    a.SkillId == skillId
+                    || (a.SkillId == null && ProjectDescriptionSkills.SkillIdFromRole(a.Role) == skillId));
+            }
+
+            return assignments.FirstOrDefault(a =>
+                       a.SkillId == null && ProjectDescriptionSkills.SkillIdFromRole(a.Role) is null)
+                   ?? assignments.FirstOrDefault(a => a.SkillId == null);
+        }
+
+        private static void ReactivateAssignment(
+            ProjectAssignment assignment,
+            string role,
+            int? skillId,
+            decimal? hourlyRate,
+            int? allocatedHours)
+        {
+            assignment.IsActive = true;
+            assignment.UnassignedDate = null;
+            assignment.AssignedDate = DateTime.UtcNow;
+            assignment.SkillId = skillId;
+            assignment.Role = role;
+            assignment.HourlyRate = hourlyRate;
+            assignment.AllocatedHours = allocatedHours;
+            assignment.UpdatedAt = DateTime.UtcNow;
+        }
+
+        private void DeactivateAssignment(ProjectAssignment assignment)
+        {
+            assignment.IsActive = false;
+            assignment.UnassignedDate = DateTime.UtcNow;
+            assignment.UpdatedAt = DateTime.UtcNow;
+            _projectAssignmentRepo.SaveInclude(
+                assignment,
+                nameof(assignment.IsActive),
+                nameof(assignment.UnassignedDate),
+                nameof(assignment.UpdatedAt));
         }
     }
 }

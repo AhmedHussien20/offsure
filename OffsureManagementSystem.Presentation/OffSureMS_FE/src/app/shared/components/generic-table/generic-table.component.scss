@@ -157,14 +157,26 @@
 .filter-grid {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 0.85rem;
+
+  &.filter-grid--search-only {
+    .filter-item--search {
+      flex: 1 1 100%;
+      width: 100%;
+      max-width: 100%;
+    }
+  }
 }
 
 .filter-item {
   position: relative;
   z-index: 2;
+  flex: 0 0 220px;
+  width: 220px;
+  max-width: 100%;
 
   &:focus-within {
     z-index: 50;

@@ -42,11 +42,13 @@ export interface CreateTeamMemberDto {
 export interface UpdateTeamMemberDto {
   firstName: string;
   lastName: string;
+  email: string;
   title?: string;
   yearsOfExperience?: number;
   phoneNumber?: string;
   leaderId?: number;
   isAvailable?: boolean;
+  hourlySalary?: number;
   skillAssignments?: UpsertTeamMemberSkillDto[];
 }
 

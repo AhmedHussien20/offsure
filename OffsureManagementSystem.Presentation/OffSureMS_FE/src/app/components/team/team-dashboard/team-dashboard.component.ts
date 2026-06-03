@@ -6,17 +6,26 @@ import { TeamMemberDto } from 'app/core/models/team-members/team-member.models';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamContextService } from 'app/core/services/team-context.service';
 import { TeamPortalService } from 'app/core/services/team-portal.service';
+import { DashboardStatisticsService } from 'app/core/services/dashboard-statistics.service';
 import { projectStatusKey } from 'app/core/utils/enum-status.util';
+import { displayRole } from 'app/core/utils/project-skill.util';
+import {
+  buildBarChartOptions,
+  buildDonutChartOptions,
+} from 'app/core/utils/dashboard-chart.util';
+import { SpkApexChartsComponent } from 'app/@spk/reusable-charts/spk-apex-charts/spk-apex-charts.component';
 import { SpkEcommerceComponent } from 'app/@spk/reusable-ecommerce/spk-ecommerce/spk-ecommerce.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
+import { forkJoin } from 'rxjs';
 import { PROJECT_STATUS_BADGES } from '../../client/client.constants';
 
 @Component({
   selector: 'app-team-dashboard',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, SpkEcommerceComponent],
+  imports: [CommonModule, SharedModule, RouterModule, SpkEcommerceComponent, SpkApexChartsComponent],
   templateUrl: './team-dashboard.component.html',
+  styleUrl: './team-dashboard.component.scss',
 })
 export class TeamDashboardComponent implements OnInit {
   profile: TeamMemberDto | null = null;
@@ -26,10 +35,14 @@ export class TeamDashboardComponent implements OnInit {
 
   statCards: { label: string; value: string; icon: string; description: string; subValue: string }[] = [];
 
+  projectsStatusChart: Record<string, unknown> | null = null;
+  hoursByProjectChart: Record<string, unknown> | null = null;
+
   constructor(
     private teamContext: TeamContextService,
     private teamPortal: TeamPortalService,
     private projectsService: ProjectsService,
+    private dashboardStatisticsService: DashboardStatisticsService,
     private toastr: ToastrService
   ) {}
 
@@ -42,8 +55,70 @@ export class TeamDashboardComponent implements OnInit {
           return;
         }
 
-        this.buildStatCards(profile);
-        this.loadCurrentProjects(profile.id);
+        forkJoin({
+          stats: this.dashboardStatisticsService.getTeam(),
+          projects: this.projectsService.getTeamMy({
+            pageIndex: 1,
+            pageSize: 10,
+            status: ProjectStatus.InProgress,
+          }),
+        }).subscribe({
+          next: ({ stats, projects }) => {
+            const data = stats.data;
+            if (data) {
+              this.statCards = [
+                {
+                  label: 'Assigned Projects',
+                  value: String(data.totalAssignedProjects),
+                  icon: 'ti-briefcase',
+                  description: 'All time on your profile',
+                  subValue: '',
+                },
+                {
+                  label: 'In Progress',
+                  value: String(data.inProgressProjects),
+                  icon: 'ti-loader',
+                  description: 'Active work',
+                  subValue: '',
+                },
+                {
+                  label: 'Skills',
+                  value: String(data.skillsCount),
+                  icon: 'ti-star',
+                  description: 'Listed on your profile',
+                  subValue: '',
+                },
+              ];
+              this.projectsStatusChart = buildDonutChartOptions('My projects', data.projectsByStatus);
+              this.hoursByProjectChart = buildBarChartOptions(
+                'Allocated hours by project',
+                data.hoursByProject,
+                true
+              );
+            } else {
+              this.buildStatCards(profile);
+            }
+
+            const rows = (projects.data?.data ?? []).filter(p =>
+              p.teamMembers?.some(m => m.teamMemberId === profile.id)
+            );
+            this.currentProjects = rows.map(p => {
+              const assignment = p.teamMembers!.find(m => m.teamMemberId === profile.id)!;
+              return {
+                id: p.id,
+                name: p.name,
+                clientName: p.clientName,
+                status: projectStatusKey(p.status),
+                myRole: assignment.role ?? '—',
+              };
+            });
+
+            this.loading = false;
+          },
+          error: () => {
+            this.loading = false;
+          },
+        });
       },
       error: () => {
         this.loading = false;
@@ -55,10 +130,6 @@ export class TeamDashboardComponent implements OnInit {
     return this.profile?.isAvailable ? 'Available' : 'Busy';
   }
 
-  get availabilityClass(): string {
-    return this.profile?.isAvailable ? 'text-success' : 'text-danger';
-  }
-
   toggleAvailability(): void {
     if (!this.profile || this.togglingAvailability) return;
 
@@ -68,7 +139,6 @@ export class TeamDashboardComponent implements OnInit {
       next: res => {
         this.profile = res.data ?? this.profile;
         this.teamContext.loadProfile(true).subscribe();
-        this.buildStatCards(this.profile!);
         this.toastr.success(next ? 'You are now marked as available.' : 'You are now marked as busy.');
         this.togglingAvailability = false;
       },
@@ -111,33 +181,5 @@ export class TeamDashboardComponent implements OnInit {
         subValue: '',
       },
     ];
-  }
-
-  private loadCurrentProjects(teamMemberId: number): void {
-    this.projectsService
-      .getTeamMy({
-        pageIndex: 1,
-        pageSize: 10,
-        status: ProjectStatus.InProgress,
-      } as any)
-      .subscribe({
-        next: res => {
-          const rows = res.data?.data ?? [];
-          this.currentProjects = rows.map(p => {
-            const assignment = p.teamMembers?.find(m => m.teamMemberId === teamMemberId);
-            return {
-              id: p.id,
-              name: p.name,
-              clientName: p.clientName,
-              status: projectStatusKey(p.status),
-              myRole: assignment?.role ?? '—',
-            };
-          });
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
-      });
   }
 }

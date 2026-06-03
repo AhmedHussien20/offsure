@@ -338,6 +338,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -348,6 +353,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("SkillId")
+                        .HasColumnType("int");
 
                     b.Property<int>("TeamMemberId")
                         .HasColumnType("int");
@@ -363,12 +371,63 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SkillId");
+
                     b.HasIndex("TeamMemberId");
 
-                    b.HasIndex("ProjectId", "TeamMemberId")
-                        .IsUnique();
+                    b.HasIndex("ProjectId", "TeamMemberId", "SkillId", "IsActive");
 
                     b.ToTable("ProjectAssignments");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectSkill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSelected")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SkillId");
+
+                    b.HasIndex("ProjectId", "SkillId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectSkills");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Service", b =>
@@ -1023,6 +1082,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Skill", "Skill")
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.TeamMember", "TeamMember")
                         .WithMany("ProjectAssignments")
                         .HasForeignKey("TeamMemberId")
@@ -1031,7 +1095,28 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     b.Navigation("Project");
 
+                    b.Navigation("Skill");
+
                     b.Navigation("TeamMember");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectSkill", b =>
+                {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectSkills")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Skill", "Skill")
+                        .WithMany("ProjectSkills")
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Skill");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Service", b =>
@@ -1136,6 +1221,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Project", b =>
                 {
                     b.Navigation("ProjectAssignments");
+
+                    b.Navigation("ProjectSkills");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Service", b =>
@@ -1153,6 +1240,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Skill", b =>
                 {
+                    b.Navigation("ProjectSkills");
+
                     b.Navigation("TeamMemberSkills");
                 });
 

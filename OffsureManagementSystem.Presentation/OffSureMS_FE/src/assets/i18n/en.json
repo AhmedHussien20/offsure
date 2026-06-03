@@ -4,6 +4,21 @@
     "SETTINGS": "Settings",
     "LOGOUT": "Logout"
   },
+  "ACCOUNT": {
+    "GENERAL_INFO": "General information",
+    "FIRST_NAME": "First name",
+    "LAST_NAME": "Last name",
+    "EMAIL": "Email",
+    "EMAIL_READONLY": "Email cannot be changed here. Contact support if you need to update it.",
+    "SAVE_CHANGES": "Save changes",
+    "SAVING": "Saving...",
+    "CHANGE_PASSWORD": "Change password",
+    "CURRENT_PASSWORD": "Current password",
+    "NEW_PASSWORD": "New password",
+    "CONFIRM_PASSWORD": "Confirm new password",
+    "UPDATE_PASSWORD": "Update password",
+    "PASSWORD_MIN_LENGTH": "Password must be at least 8 characters."
+  },
  
   "DASHBOARD": {
     "WELCOME": "Welcome to the Dashboard",
@@ -113,8 +128,10 @@
       "title": "Quick Shortcuts",
       "admin": {
         "addTeamMember": "Add team member",
+        "teamList": "Team list",
         "reviewRequests": "Review requests",
         "addService": "Add service",
+        "servicesList": "Services",
         "addPortfolio": "Add to portfolio"
       },
       "client": {

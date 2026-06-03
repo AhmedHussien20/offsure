@@ -40,8 +40,12 @@ export function skillIdFromRole(role: string | null | undefined): number | null 
   return m ? Number(m[1]) : null;
 }
 
-export function formatSkillRole(skillId: number, label: string): string {
-  return `[skill:${skillId}] ${label.trim()}`;
+/** Resolves skill track from assignment column or legacy role prefix. */
+export function assignmentSkillId(assignment: ProjectAssignmentDto): number | null {
+  if (assignment.skillId != null && assignment.skillId > 0) {
+    return assignment.skillId;
+  }
+  return skillIdFromRole(assignment.role);
 }
 
 export function displayRole(role: string): string {
@@ -59,7 +63,7 @@ export function assignmentsForSkill(
   assignments: ProjectAssignmentDto[] | undefined,
   skillId: number
 ): ProjectAssignmentDto[] {
-  return (assignments ?? []).filter(a => skillIdFromRole(a.role) === skillId);
+  return (assignments ?? []).filter(a => assignmentSkillId(a) === skillId);
 }
 
 /** Case-insensitive match against any of the given strings. */

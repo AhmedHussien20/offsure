@@ -6,13 +6,19 @@ import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
+import {
+  AVAILABILITY_FILTER_OPTIONS,
+  LIST_FILTER_LABELS,
+} from 'app/core/constants/list-filter.constants';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_TEAM_COLUMNS } from '../admin.constants';
 import { AdminTeamCreateComponent } from './admin-team-create.component';
+import { AdminTeamMemberPanelComponent } from './admin-team-member-panel.component';
 
 @Component({
   selector: 'app-admin-team-list',
   standalone: true,
-  imports: [CommonModule, SharedModule, GenericTableComponent],
+  imports: [CommonModule, SharedModule, GenericTableComponent, AdminTeamMemberPanelComponent],
   templateUrl: './admin-team-list.component.html',
 })
 export class AdminTeamListComponent implements OnInit {
@@ -28,8 +34,11 @@ export class AdminTeamListComponent implements OnInit {
     pageSize: 10,
     sortColumn: 'Id',
     sortDirection: 'ASC',
-    filterTypes: {},
+    filterTypes: { isAvailable: 'dropdown' },
   });
+
+  labels: Record<string, string> = { ...LIST_FILTER_LABELS };
+  dropdownOptions = { isAvailable: AVAILABILITY_FILTER_OPTIONS };
 
   constructor(
     private teamMembersService: TeamMembersService,
@@ -60,6 +69,14 @@ export class AdminTeamListComponent implements OnInit {
     this.loadTeam();
   }
 
+  onMemberSaved(): void {
+    this.loadTeam();
+  }
+
+  onMemberDeleted(): void {
+    this.loadTeam();
+  }
+
   onAdd(): void {
     const modalRef = this.modalService.open(AdminTeamCreateComponent, {
       centered: true,
@@ -74,11 +91,7 @@ export class AdminTeamListComponent implements OnInit {
 
   private loadTeam(): void {
     this.teamMembersService
-      .getAll({
-        pageIndex: this.searchCriteria.pageIndex,
-        pageSize: this.searchCriteria.pageSize,
-        searchKey: this.searchCriteria.searchKey,
-      } as any)
+      .getAll(buildPagedListQuery(this.searchCriteria) as any)
       .subscribe({
         next: res => {
           const paged = res.data;

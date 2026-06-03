@@ -12,6 +12,7 @@ import { TranslationService } from 'app/shared/services/translation.service';
 import { SignalRService } from 'app/core/services/signalr.service';
 import { NotificationApiService } from 'app/core/services/notification.service';
 import { Router } from '@angular/router';
+import { HeaderShortcutService } from '../../services/header-shortcut.service';
 import { ADMIN_HEADER_SHORTCUTS } from 'app/components/admin/admin-shortcuts.config';
 import { CLIENT_HEADER_SHORTCUTS } from 'app/components/client/client-shortcuts.config';
 import { TEAM_HEADER_SHORTCUTS } from 'app/components/team/team-shortcuts.config';
@@ -59,7 +60,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (this.authService.isTeamMember()) {
       return '/team/profile';
     }
-    return '/admin/dashboard';
+    return '/admin/profile';
   }
 
   get profileImage(): string {
@@ -105,6 +106,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   roleLevel = 0;
+
+  onShortcutClick(event: Event, item: HeaderShortcut): void {
+    event.preventDefault();
+    if (!this.canAccessShortcut(item)) {
+      return;
+    }
+    this.headerShortcutService.execute(item);
+  }
 
   canAccessShortcut(item: HeaderShortcut): boolean {
     if (this.authService.isAdministrator()) {
@@ -223,7 +232,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private translate: TranslationService,
     private signalR: SignalRService,
     private notificationService: NotificationApiService,
-    private router: Router
+    private router: Router,
+    private headerShortcutService: HeaderShortcutService
   ) {
     this.layoutSubscription = layoutService.changeEmitted.subscribe(
       direction => {

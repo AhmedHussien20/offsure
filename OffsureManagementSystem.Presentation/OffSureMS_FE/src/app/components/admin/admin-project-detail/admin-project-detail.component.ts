@@ -231,9 +231,9 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
       next: res => {
         this.project = res.data ?? this.project;
         this.buildSkillSlots();
-        this.toastr.success('Assignment removed.');
+        this.toastr.success('Team member unassigned.');
       },
-      error: err => this.toastr.error(err?.error?.message || 'Failed to remove assignment.'),
+      error: err => this.toastr.error(err?.error?.message || 'Failed to unassign team member.'),
     });
   }
 

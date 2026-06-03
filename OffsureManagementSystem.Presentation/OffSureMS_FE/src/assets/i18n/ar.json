@@ -4,6 +4,21 @@
     "SETTINGS": "الاعدادات",
     "LOGOUT": "تسجيل الخروج"
   },
+  "ACCOUNT": {
+    "GENERAL_INFO": "المعلومات العامة",
+    "FIRST_NAME": "الاسم الأول",
+    "LAST_NAME": "اسم العائلة",
+    "EMAIL": "البريد الإلكتروني",
+    "EMAIL_READONLY": "لا يمكن تغيير البريد الإلكتروني من هنا. تواصل مع الدعم إذا احتجت لتحديثه.",
+    "SAVE_CHANGES": "حفظ التغييرات",
+    "SAVING": "جاري الحفظ...",
+    "CHANGE_PASSWORD": "تغيير كلمة المرور",
+    "CURRENT_PASSWORD": "كلمة المرور الحالية",
+    "NEW_PASSWORD": "كلمة المرور الجديدة",
+    "CONFIRM_PASSWORD": "تأكيد كلمة المرور الجديدة",
+    "UPDATE_PASSWORD": "تحديث كلمة المرور",
+    "PASSWORD_MIN_LENGTH": "يجب أن تكون كلمة المرور 8 أحرف على الأقل."
+  },
   "DASHBOARD": {
     "WELCOME": "مرحبًا بك في لوحة التحكم",
     "HOME": "الرئيسية",
@@ -90,7 +105,25 @@
       "header": "التطبيقات"
     },
     "shortcuts": {
-      "title": "اختصارات سريعة"
+      "title": "اختصارات سريعة",
+      "admin": {
+        "addTeamMember": "إضافة عضو فريق",
+        "teamList": "قائمة الفريق",
+        "reviewRequests": "مراجعة الطلبات",
+        "addService": "إضافة خدمة",
+        "servicesList": "الخدمات",
+        "addPortfolio": "إضافة للمعرض"
+      },
+      "client": {
+        "newRequest": "طلب جديد",
+        "requests": "طلباتي",
+        "projects": "مشاريعي"
+      },
+      "team": {
+        "dashboard": "لوحة التحكم",
+        "projects": "مشاريعي",
+        "profile": "ملفي"
+      }
     },
     "apps": {
       "name": "إدارة المهام",

@@ -1,8 +1,44 @@
-::ng-deep{
-    .tooltip .tooltip-arrow{
-        display: none !important;
-    }
+$sidebar-menu-text: #f1f5f9;
+$sidebar-menu-text-muted: rgba(255, 255, 255, 0.82);
+$sidebar-menu-icon: #ffffff;
+
+::ng-deep {
+  .tooltip .tooltip-arrow {
+    display: none !important;
+  }
 }
+
+// Stronger label contrast on colored sidebar (theme defaults to 40% white)
+:host ::ng-deep .app-sidebar .main-menu {
+  .slide__category {
+    color: $sidebar-menu-text-muted !important;
+    opacity: 1 !important;
+  }
+
+  .side-menu__item:not(.active) {
+    color: $sidebar-menu-text !important;
+
+    .side-menu__label,
+    .side-menu__icon,
+    .side-menu__angle {
+      color: $sidebar-menu-text !important;
+      opacity: 1 !important;
+    }
+  }
+
+  .slide-menu.child1 .side-menu__item:not(.active),
+  .slide-menu.child2 .side-menu__item:not(.active),
+  .slide-menu.child3 .side-menu__item:not(.active) {
+    color: $sidebar-menu-text-muted !important;
+  }
+}
+
+.sidebar-with-account {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .text-logo {
   display: flex;
   align-items: center;
@@ -30,4 +66,143 @@
 
 .sidebar-collapsed .logo-short {
   display: inline;
+}
+
+:host ::ng-deep .sidebar-layout.simplebar-scrollable-y,
+:host ::ng-deep .sidebar-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+}
+
+:host ::ng-deep .sidebar-layout .simplebar-content-wrapper,
+:host ::ng-deep .sidebar-layout .simplebar-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.sidebar-layout__nav {
+  flex: 1 1 auto;
+}
+
+.sidebar-account-dock {
+  position: relative;
+  flex-shrink: 0;
+  padding: 0.35rem 0.5rem 0.65rem;
+  z-index: 5;
+}
+
+.sidebar-account-flyout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 0.2rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: transparent;
+  box-shadow: none;
+  animation: sidebar-account-rise 0.18s ease-out;
+}
+
+@keyframes sidebar-account-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar-account-trigger-wrap,
+.sidebar-account-flyout {
+  list-style: none;
+  padding: 0;
+}
+
+:host ::ng-deep .sidebar-account-dock .slide {
+  list-style: none;
+}
+
+:host ::ng-deep .sidebar-account-dock .side-menu__item::before,
+:host ::ng-deep .sidebar-account-dock .side-menu__item::after {
+  display: none !important;
+  content: none !important;
+}
+
+:host ::ng-deep .sidebar-account-dock .shape1,
+:host ::ng-deep .sidebar-account-dock .shape2 {
+  display: none !important;
+}
+
+.sidebar-account-trigger-wrap {
+  margin: 0;
+}
+
+.sidebar-account-trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-account-trigger__avatar {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-inline-end: 0.65rem;
+  background: rgb(255 255 255 / 20%);
+  color: #fff;
+}
+
+:host ::ng-deep .sidebar-account-dock {
+  .side-menu__item {
+    width: 100%;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none;
+    text-decoration: none;
+    color: $sidebar-menu-text !important;
+  }
+
+  .side-menu__item:not(.active) .side-menu__icon,
+  .side-menu__item:not(.active) .side-menu__label,
+  .sidebar-account-trigger .side-menu__label {
+    color: $sidebar-menu-text !important;
+    opacity: 1 !important;
+    font-weight: 500;
+  }
+
+  .sidebar-account-chevron {
+    color: $sidebar-menu-icon !important;
+    opacity: 1 !important;
+  }
+}
+
+.sidebar-account-chevron {
+  margin-inline-start: auto;
+  font-size: 0.95rem;
+}
+
+:host ::ng-deep .sidebar-account-dock .sidebar-account-logout:hover {
+  .side-menu__icon,
+  .side-menu__label {
+    color: #fecaca;
+  }
 }

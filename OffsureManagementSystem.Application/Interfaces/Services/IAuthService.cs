@@ -1,4 +1,4 @@
-﻿using OffsureManagementSystem.Application.DTOs.AuthDTOs;
+using OffsureManagementSystem.Application.DTOs.AuthDTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +15,8 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task ForgotPasswordAsync(ForgotPasswordDto dto);
         Task VerifyEmailAsync(int userId, string token);
         Task ResetPasswordAsync(ResetPasswordDto dto);
-
+        Task<AccountProfileDto> GetAccountProfileAsync(int userId);
+        Task<AccountProfileDto> UpdateAccountProfileAsync(int userId, UpdateAccountProfileDto dto);
+        Task ChangePasswordAsync(int userId, ChangePasswordDto dto);
     }
 }

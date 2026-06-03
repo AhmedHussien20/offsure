@@ -111,7 +111,9 @@ export class ProjectsService {
   private mapProject(dto: ProjectDto): ProjectDto {
     const rawDesc = dto.description ?? '';
     const requiredSkillIds =
-      dto.requiredSkillIds?.length ? dto.requiredSkillIds : parseRequiredSkillIds(rawDesc);
+      dto.requiredSkillIds?.length
+        ? dto.requiredSkillIds
+        : parseRequiredSkillIds(rawDesc);
     const budgetType =
       dto.budgetType === 'Hourly' || (dto.budgetType as unknown) === 1 ? 'Hourly' : 'Total';
     return {

@@ -110,8 +110,9 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     ).subscribe(results => {
       this.skillCatalogById.clear();
       results.forEach(res => {
-        if (res.data) {
-          this.skillCatalogById.set(res.data.id, res.data);
+        const skill = res.data;
+        if (skill && skill.isActive !== false) {
+          this.skillCatalogById.set(skill.id, skill);
         }
       });
       this.rebuildView();

@@ -7,6 +7,7 @@ import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamContextService } from 'app/core/services/team-context.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { TEAM_PROJECT_COLUMNS } from '../team.constants';
 
 @Component({
@@ -86,25 +87,20 @@ export class TeamProjectsListComponent implements OnInit {
     if (!this.teamMemberId) return;
 
     this.projectsService
-      .getTeamMy({
-        pageIndex: this.searchCriteria.pageIndex,
-        pageSize: this.searchCriteria.pageSize,
-        sortColumn: this.searchCriteria.sortColumn,
-        sortDirection: this.searchCriteria.sortDirection,
-        status: this.searchCriteria['status'],
-        searchKey: this.searchCriteria.searchKey,
-      } as any)
+      .getTeamMy(buildPagedListQuery(this.searchCriteria) as any)
       .subscribe({
         next: res => {
           const paged = res.data;
-          this.data = (paged?.data ?? []).map(p => {
-            const assignment = p.teamMembers?.find(m => m.teamMemberId === this.teamMemberId);
-            return {
-              ...p,
-              myRole: assignment?.role ?? '—',
-              progressLabel: p.progress != null ? `${p.progress}%` : '—',
-            };
-          });
+          this.data = (paged?.data ?? [])
+            .filter(p => p.teamMembers?.some(m => m.teamMemberId === this.teamMemberId))
+            .map(p => {
+              const assignment = p.teamMembers!.find(m => m.teamMemberId === this.teamMemberId)!;
+              return {
+                ...p,
+                myRole: assignment.role ?? '—',
+                progressLabel: p.progress != null ? `${p.progress}%` : '—',
+              };
+            });
           this.totalItems = paged?.totalCount ?? 0;
           this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.entries));
         },

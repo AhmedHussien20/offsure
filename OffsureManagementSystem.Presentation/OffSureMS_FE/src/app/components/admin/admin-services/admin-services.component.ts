@@ -9,6 +9,12 @@ import { ServicesService } from 'app/core/services/services.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
+import {
+  ACTIVE_FILTER_OPTIONS,
+  LIST_FILTER_LABELS,
+  VISIBILITY_FILTER_OPTIONS,
+} from 'app/core/constants/list-filter.constants';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_CATEGORY_COLUMNS, ADMIN_SERVICE_COLUMNS } from '../admin.constants';
 import { AdminServiceCategoryCreateComponent } from './admin-service-category-create.component';
 import { AdminServiceCreateComponent } from './admin-service-create.component';
@@ -40,13 +46,32 @@ export class AdminServicesComponent implements OnInit {
   catEntries = 10;
   catTotal = 0;
   catTotalPages = 1;
-  catSearch = new SearchCriteria({ pageIndex: 1, pageSize: 10 });
+  catSearch = new SearchCriteria({
+    pageIndex: 1,
+    pageSize: 10,
+    filterTypes: { isActive: 'dropdown' },
+  });
 
   svcPage = 1;
   svcEntries = 10;
   svcTotal = 0;
   svcTotalPages = 1;
-  svcSearch = new SearchCriteria({ pageIndex: 1, pageSize: 10 });
+  svcSearch = new SearchCriteria({
+    pageIndex: 1,
+    pageSize: 10,
+    filterTypes: {
+      serviceCategoryId: 'dropdown',
+      isVisible: 'dropdown',
+    },
+  });
+
+  catLabels = { ...LIST_FILTER_LABELS };
+  svcLabels = { ...LIST_FILTER_LABELS };
+  catDropdownOptions = { isActive: ACTIVE_FILTER_OPTIONS };
+  svcDropdownOptions: Record<string, { id: number | boolean; name: string }[]> = {
+    serviceCategoryId: [],
+    isVisible: VISIBILITY_FILTER_OPTIONS,
+  };
 
   constructor(
     private categoriesService: ServiceCategoriesService,
@@ -164,16 +189,16 @@ export class AdminServicesComponent implements OnInit {
     this.categoriesService.getAll({ pageIndex: 1, pageSize: 500 } as any).subscribe(res => {
       const list = res.data?.data ?? [];
       this.categoryOptions = list.map(c => ({ id: c.id, name: c.name }));
+      this.svcDropdownOptions = {
+        serviceCategoryId: this.categoryOptions,
+        isVisible: VISIBILITY_FILTER_OPTIONS,
+      };
     });
   }
 
   private loadCategories(): void {
     this.categoriesService
-      .getAll({
-        pageIndex: this.catSearch.pageIndex,
-        pageSize: this.catSearch.pageSize,
-        searchKey: this.catSearch.searchKey,
-      } as any)
+      .getAll(buildPagedListQuery(this.catSearch) as any)
       .subscribe(res => {
         const paged = res.data;
         this.categories = (paged?.data ?? []).map(c => ({
@@ -187,11 +212,7 @@ export class AdminServicesComponent implements OnInit {
 
   private loadServices(): void {
     this.servicesService
-      .getAll({
-        pageIndex: this.svcSearch.pageIndex,
-        pageSize: this.svcSearch.pageSize,
-        searchKey: this.svcSearch.searchKey,
-      } as any)
+      .getAll(buildPagedListQuery(this.svcSearch) as any)
       .subscribe(res => {
         const paged = res.data;
         this.services = (paged?.data ?? []).map(s => ({

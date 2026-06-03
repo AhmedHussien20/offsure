@@ -14,6 +14,7 @@ import { ServiceRequestsService } from 'app/core/services/service-requests.servi
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_REQUEST_COLUMNS, SERVICE_REQUEST_STATUS_BADGES } from '../admin.constants';
 import { AdminConvertProjectComponent } from './admin-convert-project.component';
 
@@ -217,14 +218,7 @@ export class AdminRequestsListComponent implements OnInit {
 
   private loadRequests(): void {
     this.serviceRequestsService
-      .getAll({
-        pageIndex: this.searchCriteria.pageIndex,
-        pageSize: this.searchCriteria.pageSize,
-        sortColumn: this.searchCriteria.sortColumn,
-        sortDirection: this.searchCriteria.sortDirection,
-        status: this.searchCriteria['status'],
-        searchKey: this.searchCriteria.searchKey,
-      } as any)
+      .getAll(buildPagedListQuery(this.searchCriteria) as any)
       .subscribe({
         next: res => {
           const paged = res.data;

@@ -461,6 +461,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private IQueryable<TeamMember> BuildBaseQuery()
         {
             return _teamMemberRepo.Query()
+                .Where(t => !t.IsDeleted && t.User.IsActive && !t.User.IsDeleted)
                 .Include(t => t.User)
                 .Include(t => t.Leader)
                     .ThenInclude(l => l.User)
@@ -547,7 +548,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             foreach (var assignment in assignments)
             {
-                if (assignment.SkillId <= 0 || !await _skillRepo.IsExistAsync(assignment.SkillId))
+                if (assignment.SkillId <= 0
+                    || !await _skillRepo.GetAll(s => s.Id == assignment.SkillId && s.IsActive).AnyAsync())
                     throw new AppException("Resource not found.", 404);
 
                 if (assignment.ProficiencyLevel is < 1 or > 5 || assignment.YearsOfExperience < 0)

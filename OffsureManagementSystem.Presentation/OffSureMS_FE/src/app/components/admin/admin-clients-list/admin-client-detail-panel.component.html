@@ -1,0 +1,110 @@
+<div class="client-detail-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="client-detail-panel__loading text-muted">Loading client details…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (client) {
+    <div class="client-detail-panel__header">
+      <div>
+        <h5 class="client-detail-panel__title mb-0">{{ client.companyName }}</h5>
+        <p class="client-detail-panel__meta mb-0">{{ client.email }}</p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="client.isActive"
+          [class.bg-danger-transparent]="!client.isActive">
+          {{ client.isActive ? 'Active' : 'Inactive' }}
+        </span>
+        @if (client.isActive) {
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger no-expand"
+            [disabled]="deleting"
+            (click)="deleteClient()">
+            {{ deleting ? 'Deleting…' : 'Delete client' }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="client-detail-grid">
+      <div class="client-info-card">
+        <div class="client-info-row">
+          <div class="client-info-item">
+            <label>Contact name</label>
+            <span>{{ display(contactName) }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>Email</label>
+            <span>{{ display(client.email) }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>Phone</label>
+            <span>{{ display(client.contactPersonPhone) }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>Account status</label>
+            <span>{{ client.isUserActive ? 'User active' : 'User inactive' }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>Email verified</label>
+            <span>{{ client.isEmailVerified ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>Address</label>
+            <span>{{ display(client.companyAddress) }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>City</label>
+            <span>{{ display(client.city) }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>Country</label>
+            <span>{{ display(client.country) }}</span>
+          </div>
+          <div class="client-info-item">
+            <label>Postal code</label>
+            <span>{{ display(client.postalCode) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="client-sidebar">
+        <div class="client-sidebar-card">
+          <h6>Summary</h6>
+          <ul class="client-stat-list">
+            <li>
+              <span class="client-stat-label">Service requests</span>
+              <strong>{{ client.requestsCount }}</strong>
+            </li>
+            <li>
+              <span class="client-stat-label">Projects</span>
+              <strong>{{ client.projectsCount }}</strong>
+            </li>
+          </ul>
+        </div>
+
+        <div class="client-sidebar-card">
+          <h6>Recent requests (last 5)</h6>
+          @if (loadingRequests) {
+            <p class="text-muted small mb-0">Loading requests…</p>
+          } @else if (requestsError) {
+            <p class="text-danger small mb-0">{{ requestsError }}</p>
+          } @else if (recentRequests.length === 0) {
+            <p class="text-muted small mb-0">No service requests yet.</p>
+          } @else {
+            <ul class="client-request-list">
+              @for (req of recentRequests; track req.id) {
+                <li>
+                  <strong>{{ req.title }}</strong>
+                  <span class="d-block text-muted small">{{ req.serviceName }} · {{ req.status }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

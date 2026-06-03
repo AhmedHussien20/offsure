@@ -1,0 +1,40 @@
+<div class="team-member-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="team-member-panel__loading text-muted">Loading member details…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (member) {
+    <div class="team-member-panel__header">
+      <div>
+        <h5 class="team-member-panel__title mb-0">{{ member.firstName }} {{ member.lastName }}</h5>
+        <p class="team-member-panel__meta mb-0">{{ member.email }}</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger no-expand"
+          [disabled]="deleting || saving"
+          (click)="deleteMember()">
+          {{ deleting ? 'Deleting…' : 'Delete member' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary no-expand"
+          [disabled]="saving || deleting"
+          (click)="save()">
+          {{ saving ? 'Saving…' : 'Save changes' }}
+        </button>
+      </div>
+    </div>
+
+    <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+
+    <hr class="my-3" />
+    <h6 class="mb-1">Skills</h6>
+    <p class="text-muted small mb-2">Update skills and proficiency for this member.</p>
+    <app-team-member-skills-editor
+      mode="draft"
+      [initialSkills]="initialSkills"
+      (assignmentsChange)="onSkillsChange($event)" />
+  }
+</div>

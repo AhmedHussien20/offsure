@@ -10,6 +10,8 @@ import { ServicesService } from 'app/core/services/services.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
+import { LIST_FILTER_LABELS } from 'app/core/constants/list-filter.constants';
+import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_PORTFOLIO_COLUMNS } from '../admin.constants';
 import { AdminPortfolioCreateComponent } from './admin-portfolio-create.component';
 
@@ -50,7 +52,13 @@ export class AdminPortfoliosListComponent implements OnInit {
     pageSize: 10,
     sortColumn: 'Id',
     sortDirection: 'DESC',
+    filterTypes: { serviceId: 'dropdown' },
   });
+
+  labels = { ...LIST_FILTER_LABELS };
+  dropdownOptions: Record<string, { id: number; name: string }[]> = {
+    serviceId: [],
+  };
 
   constructor(
     private portfoliosService: PortfoliosService,
@@ -174,17 +182,17 @@ export class AdminPortfoliosListComponent implements OnInit {
     this.servicesService.getAll({ pageIndex: 1, pageSize: 500 } as any).subscribe(res => {
       const list = (res.data?.data ?? []) as ServiceDto[];
       this.serviceOptions = list.map(s => ({ id: s.id, name: s.name }));
+      this.dropdownOptions = { serviceId: this.serviceOptions };
     });
   }
 
   private loadPortfolios(): void {
     this.portfoliosService
-      .getAll({
-        pageIndex: this.searchCriteria.pageIndex,
-        pageSize: this.searchCriteria.pageSize,
-        searchKey: this.searchCriteria.searchKey,
-        includeUnpublished: true,
-      } as any)
+      .getAll(
+        buildPagedListQuery(this.searchCriteria, {
+          extra: { includeUnpublished: true },
+        }) as any
+      )
       .subscribe(res => {
         const paged = res.data;
         this.data = (paged?.data ?? []).map(p => this.mapRow(p));
