@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProjectDto } from 'app/core/models/projects/project.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ADMIN_PROJECT_COLUMNS } from '../admin.constants';
+import { AdminProjectCreateComponent } from './admin-project-create.component';
 
 @Component({
   selector: 'app-admin-projects-list',
@@ -43,7 +45,8 @@ export class AdminProjectsListComponent implements OnInit {
 
   constructor(
     private projectsService: ProjectsService,
-    private router: Router
+    private router: Router,
+    private modalService: NgbModal
   ) {}
 
   ngOnInit(): void {
@@ -72,6 +75,19 @@ export class AdminProjectsListComponent implements OnInit {
 
   onRowClick(row: ProjectDto): void {
     this.router.navigate(['/admin/projects', row.id]);
+  }
+
+  openCreateProject(): void {
+    const modalRef = this.modalService.open(AdminProjectCreateComponent, {
+      centered: true,
+      size: 'lg',
+      backdrop: 'static',
+    });
+    modalRef.closed.subscribe(created => {
+      if (created) {
+        this.loadProjects();
+      }
+    });
   }
 
   private loadProjects(): void {

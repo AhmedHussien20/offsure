@@ -14,6 +14,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<ProjectDto> UpdateProjectAsync(int id, UpdateProjectDto dto);
         Task<ProjectDto> AssignTeamMemberAsync(int projectId, AssignProjectTeamMemberDto dto);
         Task<ProjectDto> RemoveTeamMemberAsync(int projectId, int teamMemberId);
+        Task<ProjectDto> RemoveAssignmentAsync(int projectId, int assignmentId);
         Task<ProjectDto> UpdateProjectStatusAsync(int projectId, ProjectStatus status);
         Task<PagedResponse<ProjectDto>> GetTeamMemberProjectsByUserIdAsync(int userId, ProjectFilterRequest request);
         Task<ProjectDto> GetTeamMemberProjectByIdAsync(int userId, int projectId);

@@ -1,0 +1,146 @@
+<div class="modal-header assign-modal__header">
+  <div>
+    <h5 class="modal-title mb-1">Assign to {{ skill.name }}</h5>
+    <p class="text-muted small mb-0">
+      @if (step === 1) {
+        Select one or more team members to assign
+      } @else {
+        Set role, rate, and hours for each member
+      }
+    </p>
+    <div class="assign-stepper mt-2">
+      <span class="assign-stepper__item" [class.assign-stepper__item--active]="step === 1" [class.assign-stepper__item--done]="step === 2">
+        @if (step === 2) {
+          <i class="fe fe-check"></i>
+        } @else {
+          1
+        }
+        Select members
+      </span>
+      <span class="assign-stepper__line"></span>
+      <span class="assign-stepper__item" [class.assign-stepper__item--active]="step === 2">2 Set details</span>
+    </div>
+  </div>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+
+@if (step === 1) {
+  <div class="modal-body assign-modal__body">
+    <div class="assign-search">
+      <i class="fe fe-search assign-search__icon"></i>
+      <input
+        type="search"
+        class="form-control assign-search__input"
+        placeholder="Search by name, role, or skill..."
+        [ngModel]="memberSearch"
+        (ngModelChange)="onMemberSearchInput($event)"
+        autocomplete="off" />
+    </div>
+
+    @if (selectedCount > 0) {
+      <div class="assign-selection-bar">{{ selectedCount }} member{{ selectedCount === 1 ? '' : 's' }} selected</div>
+    }
+
+    <div class="assign-member-list" (scroll)="onMemberListScroll($event)">
+      @if (membersLoading && members.length === 0) {
+        <p class="text-muted small text-center py-3 mb-0">Loading team members…</p>
+      }
+      @if (!membersLoading && members.length === 0) {
+        <p class="text-muted small text-center py-3 mb-0">
+          @if (memberSearch) {
+            No members match your search.
+          } @else {
+            No available members have this skill on their profile.
+          }
+        </p>
+      }
+      @for (m of members; track m.id) {
+        <label class="assign-member-card" [class.assign-member-card--selected]="isSelected(m.id)">
+          <input type="checkbox" class="form-check-input" [checked]="isSelected(m.id)" (change)="toggleMember(m)" />
+          <span class="assign-member-card__avatar">{{ memberInitials(m) }}</span>
+          <span class="assign-member-card__body">
+            <span class="assign-member-card__name">{{ displayName(m) }}</span>
+            <span class="assign-member-card__meta">{{ m.title || 'Team member' }}</span>
+            <span class="assign-member-card__tags">
+              @for (tag of skillTags(m); track tag) {
+                <span class="assign-tag">{{ tag }}</span>
+              }
+            </span>
+          </span>
+          <span
+            class="assign-member-card__status"
+            [class.assign-member-card__status--available]="m.isAvailable"
+            [title]="m.isAvailable ? 'Available' : 'Unavailable'"></span>
+        </label>
+      }
+      @if (membersLoading && members.length > 0) {
+        <p class="text-muted small text-center py-2 mb-0">Loading more…</p>
+      }
+      @if (membersHasMore && !membersLoading && members.length > 0) {
+        <p class="text-muted small text-center py-1 mb-0">Scroll for more</p>
+      }
+    </div>
+  </div>
+
+  <div class="modal-footer assign-modal__footer">
+    <span class="text-muted small">{{ selectedCount }} selected</span>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="selectedCount === 0" (click)="goToStep2()">
+        Next — set details <i class="fe fe-arrow-right ms-1"></i>
+      </button>
+    </div>
+  </div>
+} @else {
+  <div class="modal-body assign-modal__body">
+    @for (d of memberDetails; track d.member.id) {
+      <div class="assign-detail-card">
+        <div class="assign-detail-card__head">
+          <span class="assign-member-card__avatar">{{ memberInitials(d.member) }}</span>
+          <div>
+            <div class="fw-semibold">{{ displayName(d.member) }}</div>
+            <small class="text-muted">{{ d.member.title }}</small>
+          </div>
+        </div>
+        <label class="form-label small fw-semibold mt-2">Role on this project</label>
+        <input type="text" class="form-control form-control-sm mb-2" [(ngModel)]="d.role" />
+
+        <div class="row g-2">
+          <div class="col-4">
+            <label class="form-label small">Hourly rate ($)</label>
+            <input type="number" class="form-control form-control-sm" [(ngModel)]="d.hourlyRate" min="0.01" step="0.01" />
+          </div>
+          <div class="col-4">
+            <label class="form-label small">Allocated hours</label>
+            <input type="number" class="form-control form-control-sm" [(ngModel)]="d.allocatedHours" min="1" step="1" />
+          </div>
+          <div class="col-4">
+            <label class="form-label small">Estimated cost</label>
+            <div class="assign-estimated-cost">{{ detailLineCost(d) | number: '1.0-0' }}</div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="assign-track-total">
+      <span>Total estimated cost for this skill</span>
+      <strong>{{ totalTrackCost | number: '1.0-0' }}</strong>
+    </div>
+  </div>
+
+  <div class="modal-footer assign-modal__footer">
+    <button type="button" class="btn btn-light" (click)="backToStep1()">
+      <i class="fe fe-arrow-left me-1"></i> Back
+    </button>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-light" (click)="activeModal.dismiss()" [disabled]="saving">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="saving || !canSubmit()" (click)="submit()">
+        @if (saving) {
+          Assigning...
+        } @else {
+          <i class="fe fe-check me-1"></i> Assign to {{ skill.name }}
+        }
+      </button>
+    </div>
+  </div>
+}

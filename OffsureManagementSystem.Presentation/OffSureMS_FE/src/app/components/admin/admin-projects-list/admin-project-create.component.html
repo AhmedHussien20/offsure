@@ -1,0 +1,57 @@
+<div class="modal-header">
+  <div>
+    <h5 class="modal-title mb-1">New project</h5>
+    <p class="text-muted small mb-0">Create a project without a client request. Assign the team after creation.</p>
+  </div>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body project-form-modal">
+  <form [formGroup]="form" class="generic-form">
+    <div class="row gy-3 gx-3 align-items-start mb-2">
+      <div class="col-md-4">
+        <app-paginated-select
+          formControlName="clientId"
+          label="Client"
+          fieldIcon="fe fe-briefcase"
+          [required]="true"
+          placeholder="Search clients..."
+          [pageSize]="20"
+          [loadPage]="loadClients" />
+      </div>
+      <div class="col-md-4">
+        <app-paginated-select
+          formControlName="serviceCategoryId"
+          label="Service category"
+          fieldIcon="fe fe-folder"
+          [required]="true"
+          placeholder="Search categories..."
+          [loadPage]="loadCategories" />
+      </div>
+      <div class="col-md-4">
+        <app-paginated-select
+          formControlName="serviceId"
+          label="Service"
+          fieldIcon="fe fe-layers"
+          [required]="true"
+          placeholder="Select category first..."
+          [disabled]="!serviceCategoryId"
+          [resetToken]="serviceResetToken"
+          [loadPage]="loadServices" />
+      </div>
+    </div>
+
+    @if (formConfig.length) {
+      <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+    }
+
+    <app-project-budget-fields [form]="form" mode="standalone" idPrefix="np"></app-project-budget-fields>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-light" (click)="activeModal.dismiss()" [disabled]="creating">Cancel</button>
+  <button type="button" class="btn btn-primary" [disabled]="creating || form.invalid" (click)="submit()">
+    {{ creating ? 'Creating...' : 'Create project' }}
+  </button>
+</div>

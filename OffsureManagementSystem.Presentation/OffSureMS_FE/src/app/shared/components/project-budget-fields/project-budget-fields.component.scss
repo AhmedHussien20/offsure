@@ -1,0 +1,22 @@
+@use '../../styles/generic-form-controls' as gfc;
+
+:host {
+  display: block;
+}
+
+:host ::ng-deep {
+  @include gfc.gf-field-label;
+
+  .budget-section > .form-label {
+    margin-bottom: 0.75rem;
+  }
+
+  @include gfc.gf-text-input;
+}
+
+.budget-section {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(98, 89, 202, 0.15);
+  background: rgba(98, 89, 202, 0.04);
+}

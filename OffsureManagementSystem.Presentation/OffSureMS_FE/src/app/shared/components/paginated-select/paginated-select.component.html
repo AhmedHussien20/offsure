@@ -1,0 +1,31 @@
+<div class="gf-paginated-select">
+  <label class="form-label" [attr.for]="label">
+    {{ label }}
+    @if (required) {
+      <span class="required">*</span>
+    }
+  </label>
+  <div class="generic-form__control generic-form__select-wrap">
+    <div class="gf-select-icon-wrap">
+      <i [class]="fieldIcon"></i>
+      <ng-select
+        class="custom-ng-select"
+        [items]="items"
+        bindLabel="label"
+        bindValue="value"
+        [loading]="loading"
+        [disabled]="disabled"
+        [searchable]="true"
+        [clearable]="true"
+        [closeOnSelect]="true"
+        [placeholder]="placeholder"
+        typeToSearchText="Type to search..."
+        [ngModel]="value"
+        (ngModelChange)="onSelectChange($event)"
+        (search)="onSearch($event.term)"
+        (scrollToEnd)="onScrollToEnd()"
+        (blur)="handleBlur()">
+      </ng-select>
+    </div>
+  </div>
+</div>

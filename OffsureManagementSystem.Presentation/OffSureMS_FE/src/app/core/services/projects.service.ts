@@ -13,6 +13,7 @@ import {
   UpdateProjectStatusDto,
 } from '../models/projects/project.models';
 import { normalizeProjectStatus } from '../utils/enum-status.util';
+import { parseRequiredSkillIds, stripSkillsMarker } from '../utils/project-skill.util';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectsService {
@@ -80,6 +81,12 @@ export class ProjectsService {
       .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
   }
 
+  removeAssignment(projectId: number, assignmentId: number): Observable<BaseResponse<ProjectDto>> {
+    return this.api
+      .delete<BaseResponse<ProjectDto>>(this.service, `${projectId}/assignments/${assignmentId}`)
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
+  }
+
   updateStatus(id: number, dto: UpdateProjectStatusDto): Observable<BaseResponse<ProjectDto>> {
     const status = normalizeProjectStatus(dto.status);
     const body: UpdateProjectStatusDto = { status };
@@ -102,8 +109,13 @@ export class ProjectsService {
   }
 
   private mapProject(dto: ProjectDto): ProjectDto {
+    const rawDesc = dto.description ?? '';
+    const requiredSkillIds =
+      dto.requiredSkillIds?.length ? dto.requiredSkillIds : parseRequiredSkillIds(rawDesc);
     return {
       ...dto,
+      description: stripSkillsMarker(rawDesc),
+      requiredSkillIds,
       status: normalizeProjectStatus(dto.status) as ProjectStatus,
     };
   }

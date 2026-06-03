@@ -15,11 +15,13 @@
       [showPagination]="true"
       [showEmployeeFilter]="false"
       [showExportExcel]="false"
-      [showAddButton]="false"
+      [showAddButton]="true"
+      [addButtonLabel]="'New project'"
       [rowClickable]="true"
       [onSearch]="onSearch"
       (pageChange)="onPageChange($event)"
       (entriesChange)="onEntriesChange($event)"
+      (addClick)="openCreateProject()"
       (rowClick)="onRowClick($event)">
     </app-generic-table>
 </div>

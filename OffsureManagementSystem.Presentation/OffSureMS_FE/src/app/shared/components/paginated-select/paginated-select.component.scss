@@ -1,0 +1,11 @@
+@use '../../styles/generic-form-controls' as gfc;
+
+:host {
+  display: block;
+  @include gfc.gf-field-label;
+}
+
+:host ::ng-deep {
+  @include gfc.gf-select-control-wrap;
+  @include gfc.gf-ng-select-styled;
+}

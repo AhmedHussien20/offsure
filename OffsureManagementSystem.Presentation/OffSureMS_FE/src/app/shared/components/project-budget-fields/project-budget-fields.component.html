@@ -1,0 +1,118 @@
+<div class="budget-section" [formGroup]="form">
+  <label class="form-label d-block">Budget</label>
+
+  @if (mode === 'convert') {
+    <div class="btn-group btn-group-sm w-100 mb-3" role="group">
+      <input
+        type="radio"
+        class="btn-check"
+        [id]="idPrefix + '-same'"
+        value="sameAsRequest"
+        formControlName="budgetMode" />
+      <label class="btn btn-outline-primary" [for]="idPrefix + '-same'">Same as request</label>
+      <input
+        type="radio"
+        class="btn-check"
+        [id]="idPrefix + '-custom'"
+        value="custom"
+        formControlName="budgetMode" />
+      <label class="btn btn-outline-primary" [for]="idPrefix + '-custom'">Custom budget</label>
+    </div>
+
+    @if (budgetMode === 'sameAsRequest') {
+      <div class="alert alert-light border mb-0 py-2">
+        Client budget:
+        <strong>{{ requestBudget != null ? (requestBudget | number: '1.0-2') : 'Not specified' }}</strong>
+      </div>
+    }
+  }
+
+  @if (mode === 'standalone' || budgetMode === 'custom') {
+    @if (mode === 'convert' && budgetMode === 'custom') {
+      <div class="btn-group btn-group-sm mb-3" role="group">
+        <input
+          type="radio"
+          class="btn-check"
+          [id]="idPrefix + '-total'"
+          value="total"
+          formControlName="customBudgetType" />
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Total amount</label>
+        <input
+          type="radio"
+          class="btn-check"
+          [id]="idPrefix + '-hourly'"
+          value="hourly"
+          formControlName="customBudgetType" />
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">By hour</label>
+      </div>
+    }
+
+    @if (mode === 'standalone') {
+      <div class="btn-group btn-group-sm mb-3" role="group">
+        <input
+          type="radio"
+          class="btn-check"
+          [id]="idPrefix + '-total'"
+          value="total"
+          formControlName="customBudgetType" />
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Total amount</label>
+        <input
+          type="radio"
+          class="btn-check"
+          [id]="idPrefix + '-hourly'"
+          value="hourly"
+          formControlName="customBudgetType" />
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">By hour</label>
+      </div>
+    }
+
+    @if (customBudgetType === 'total') {
+        <div class="generic-form__control">
+          <div class="input-wrapper">
+            <i class="fe fe-hash"></i>
+            <input
+              type="number"
+              class="form-control"
+              formControlName="totalBudget"
+            min="0"
+            step="0.01"
+            placeholder="Total budget" />
+        </div>
+      </div>
+    } @else {
+      <div class="row g-2">
+        <div class="col-6">
+          <div class="generic-form__control">
+            <div class="input-wrapper">
+              <i class="fe fe-hash"></i>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="hourlyRate"
+                min="0"
+                step="0.01"
+                placeholder="Rate / hour" />
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="generic-form__control">
+            <div class="input-wrapper">
+              <i class="fe fe-clock"></i>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="expectedHours"
+                min="1"
+                step="1"
+                placeholder="Expected hours" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <small class="text-muted d-block mt-2">
+        Estimated total: <strong>{{ computedHourlyTotal | number: '1.0-2' }}</strong>
+      </small>
+    }
+  }
+</div>

@@ -5,6 +5,7 @@ export interface ClientFilterRequest {
   isActive?: boolean;
   city?: string;
   country?: string;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }

@@ -16,10 +16,16 @@ export interface ProjectFilterRequest {
   pageSize?: number;
 }
 
+export type ProjectBudgetMode = 'sameAsRequest' | 'custom';
+
 export interface CreateProjectDto {
+  /** 0 = create without an existing client request (requires clientId + serviceId). */
   serviceRequestId: number;
+  clientId?: number;
+  serviceId?: number;
   name: string;
   description?: string;
+  startDate?: string;
   targetEndDate?: string;
   budget?: number;
 }
@@ -30,11 +36,13 @@ export interface UpdateProjectDto {
   targetEndDate?: string;
   budget?: number;
   progress?: number;
+  requiredSkillIds?: number[];
 }
 
 export interface AssignProjectTeamMemberDto {
   teamMemberId: number;
   role?: string;
+  skillId?: number;
   hourlyRate?: number;
   allocatedHours?: number;
 }
@@ -70,5 +78,6 @@ export interface ProjectDto {
   targetEndDate: string | null;
   budget: number | null;
   progress: number | null;
+  requiredSkillIds?: number[];
   teamMembers: ProjectAssignmentDto[];
 }

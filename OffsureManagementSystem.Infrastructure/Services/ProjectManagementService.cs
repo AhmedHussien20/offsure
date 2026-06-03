@@ -9,6 +9,7 @@ using TaskMangment.Application.Common.Responses;
 using Client = OffshoreManagementSystem.Domain.Entities.Client;
 using Project = OffshoreManagementSystem.Domain.Entities.Project;
 using ProjectAssignment = OffshoreManagementSystem.Domain.Entities.ProjectAssignment;
+using DomainService = OffshoreManagementSystem.Domain.Entities.Service;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
 using TeamMember = OffshoreManagementSystem.Domain.Entities.TeamMember;
 
@@ -20,6 +21,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
         private readonly IRepository<Client> _clientRepo;
+        private readonly IRepository<DomainService> _serviceRepo;
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly IEmailNotificationService _emailNotificationService;
 
@@ -28,6 +30,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<ProjectAssignment> projectAssignmentRepo,
             IRepository<ServiceRequest> serviceRequestRepo,
             IRepository<Client> clientRepo,
+            IRepository<DomainService> serviceRepo,
             IRepository<TeamMember> teamMemberRepo,
             IEmailNotificationService emailNotificationService)
         {
@@ -35,6 +38,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _projectAssignmentRepo = projectAssignmentRepo;
             _serviceRequestRepo = serviceRequestRepo;
             _clientRepo = clientRepo;
+            _serviceRepo = serviceRepo;
             _teamMemberRepo = teamMemberRepo;
             _emailNotificationService = emailNotificationService;
         }
@@ -120,19 +124,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             ValidateCreateProjectInput(dto);
 
-            var request = await _serviceRequestRepo
-                .Query()
-                .Include(r => r.Project)
-                .FirstOrDefaultAsync(r => r.Id == dto.ServiceRequestId);
+            ServiceRequest request;
+            if (dto.ServiceRequestId > 0)
+            {
+                request = await LoadRequestForProjectConversionAsync(dto.ServiceRequestId);
+            }
+            else
+            {
+                request = await CreateStandaloneServiceRequestAsync(dto);
+            }
 
-            if (request is null)
-                throw new AppException("Resource not found.", 404);
-
-            if (request.Status != ServiceRequestStatus.InProgress)
-                throw new AppException("Only approved requests can be converted to projects.", 400);
-
-            if (request.Project is not null)
-                throw new AppException("A project already exists for this request.", 400);
+            var startDate = dto.StartDate.HasValue
+                ? DateTime.SpecifyKind(dto.StartDate.Value.Date, DateTimeKind.Utc)
+                : DateTime.UtcNow;
 
             var project = new Project
             {
@@ -140,7 +144,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Name = string.IsNullOrWhiteSpace(dto.Name) ? request.Title.Trim() : dto.Name.Trim(),
                 Description = dto.Description?.Trim() ?? request.Description ?? string.Empty,
                 Status = ProjectStatus.InProgress,
-                StartDate = DateTime.UtcNow,
+                StartDate = startDate,
                 TargetEndDate = dto.TargetEndDate,
                 Budget = dto.Budget ?? request.Budget,
                 Progress = 0,
@@ -153,6 +157,62 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetProjectByIdAsync(project.Id);
         }
 
+        private async Task<ServiceRequest> LoadRequestForProjectConversionAsync(int serviceRequestId)
+        {
+            var request = await _serviceRequestRepo
+                .Query()
+                .Include(r => r.Project)
+                .FirstOrDefaultAsync(r => r.Id == serviceRequestId);
+
+            if (request is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (request.Status != ServiceRequestStatus.InProgress)
+                throw new AppException("Only approved requests can be converted to projects.", 400);
+
+            if (request.Project is not null)
+                throw new AppException("A project already exists for this request.", 400);
+
+            return request;
+        }
+
+        private async Task<ServiceRequest> CreateStandaloneServiceRequestAsync(CreateProjectDto dto)
+        {
+            if (!dto.ClientId.HasValue || dto.ClientId.Value <= 0)
+                throw new AppException("Client is required.", 400);
+
+            if (!dto.ServiceId.HasValue || dto.ServiceId.Value <= 0)
+                throw new AppException("Service is required.", 400);
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new AppException("Project name is required.", 400);
+
+            if (!await _clientRepo.IsExistAsync(dto.ClientId.Value))
+                throw new AppException("Client not found.", 404);
+
+            if (!await _serviceRepo.IsExistAsync(dto.ServiceId.Value))
+                throw new AppException("Service not found.", 404);
+
+            var request = new ServiceRequest
+            {
+                ClientId = dto.ClientId.Value,
+                ServiceId = dto.ServiceId.Value,
+                Title = dto.Name.Trim(),
+                Description = dto.Description?.Trim() ?? string.Empty,
+                Status = ServiceRequestStatus.InProgress,
+                RequestedDate = DateTime.UtcNow,
+                DueDate = dto.TargetEndDate,
+                Budget = dto.Budget,
+                Priority = 3,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _serviceRequestRepo.AddAsync(request);
+            await _serviceRequestRepo.SaveChangesAsync();
+
+            return request;
+        }
+
         public async Task<ProjectDto> UpdateProjectAsync(int id, UpdateProjectDto dto)
         {
             ValidateUpdateProjectInput(dto);
@@ -162,7 +222,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Resource not found.", 404);
 
             project.Name = dto.Name.Trim();
-            project.Description = dto.Description?.Trim() ?? string.Empty;
+            if (dto.RequiredSkillIds is not null)
+            {
+                var clean = ProjectDescriptionSkills.StripSkillsMarker(project.Description);
+                project.Description = ProjectDescriptionSkills.EmbedRequiredSkillIds(clean, dto.RequiredSkillIds);
+            }
+            else if (dto.Description is not null)
+            {
+                var skillIds = ProjectDescriptionSkills.ParseRequiredSkillIds(project.Description);
+                project.Description = ProjectDescriptionSkills.EmbedRequiredSkillIds(dto.Description, skillIds);
+            }
+
             project.TargetEndDate = dto.TargetEndDate;
             project.Budget = dto.Budget;
             project.Progress = dto.Progress;
@@ -187,18 +257,34 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await EnsureProjectExistsAsync(projectId);
             await EnsureTeamMemberExistsAsync(dto.TeamMemberId);
 
-            var existingAssignment = await _projectAssignmentRepo
-                .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == dto.TeamMemberId)
-                .FirstOrDefaultAsync();
+            var role = dto.Role.Trim();
+            if (dto.SkillId is > 0)
+            {
+                role = ProjectDescriptionSkills.FormatSkillRole(dto.SkillId.Value, role);
+                var projectAssignments = await _projectAssignmentRepo
+                    .GetAll(a => a.ProjectId == projectId)
+                    .ToListAsync();
 
-            if (existingAssignment is not null)
-                throw new AppException("Team member is already assigned to this project.", 400);
+                if (projectAssignments.Any(a =>
+                        a.TeamMemberId == dto.TeamMemberId &&
+                        ProjectDescriptionSkills.SkillIdFromRole(a.Role) == dto.SkillId))
+                    throw new AppException("This team member is already assigned for this skill.", 400);
+            }
+            else
+            {
+                var existingAssignment = await _projectAssignmentRepo
+                    .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == dto.TeamMemberId)
+                    .FirstOrDefaultAsync();
+
+                if (existingAssignment is not null)
+                    throw new AppException("Team member is already assigned to this project.", 400);
+            }
 
             var assignment = new ProjectAssignment
             {
                 ProjectId = projectId,
                 TeamMemberId = dto.TeamMemberId,
-                Role = dto.Role.Trim(),
+                Role = role,
                 AssignedDate = DateTime.UtcNow,
                 HourlyRate = dto.HourlyRate,
                 AllocatedHours = dto.AllocatedHours,
@@ -217,6 +303,23 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var assignment = await _projectAssignmentRepo
                 .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == teamMemberId)
+                .FirstOrDefaultAsync();
+
+            if (assignment is null)
+                throw new AppException("Resource not found.", 404);
+
+            _projectAssignmentRepo.HardDelete(assignment);
+            await _projectAssignmentRepo.SaveChangesAsync();
+
+            return await GetProjectByIdAsync(projectId);
+        }
+
+        public async Task<ProjectDto> RemoveAssignmentAsync(int projectId, int assignmentId)
+        {
+            await EnsureProjectExistsAsync(projectId);
+
+            var assignment = await _projectAssignmentRepo
+                .GetAll(a => a.ProjectId == projectId && a.Id == assignmentId)
                 .FirstOrDefaultAsync();
 
             if (assignment is null)
@@ -357,8 +460,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static void ValidateCreateProjectInput(CreateProjectDto dto)
         {
-            if (dto.ServiceRequestId <= 0)
-                throw new AppException("Invalid request.", 400);
+            if (dto.ServiceRequestId > 0)
+                return;
+
+            if (!dto.ClientId.HasValue || dto.ClientId.Value <= 0)
+                throw new AppException("Client is required.", 400);
+
+            if (!dto.ServiceId.HasValue || dto.ServiceId.Value <= 0)
+                throw new AppException("Service is required.", 400);
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new AppException("Project name is required.", 400);
         }
 
         private static void ValidateUpdateProjectInput(UpdateProjectDto dto)
@@ -444,7 +556,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 Id = project.Id,
                 Name = project.Name,
-                Description = project.Description,
+                Description = ProjectDescriptionSkills.StripSkillsMarker(project.Description),
+                RequiredSkillIds = ProjectDescriptionSkills.ParseRequiredSkillIds(project.Description),
                 ServiceRequestId = project.ServiceRequestId,
                 ServiceRequestTitle = project.ServiceRequest?.Title ?? string.Empty,
                 ClientId = project.ServiceRequest?.ClientId,

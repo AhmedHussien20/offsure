@@ -238,28 +238,37 @@ $gf-control-height: 46px;
     }
 
     .ng-value-container {
-      height: calc(var(--gf-control-height) - 4px) !important;
+      height: 100% !important;
       padding-left: 14px !important;
       padding-top: 0 !important;
       padding-bottom: 0 !important;
-      align-items: center;
+      padding-block-start: 0 !important;
+      padding-block-end: 0 !important;
+      display: flex !important;
+      align-items: center !important;
     }
 
-    .ng-input {
+    &.ng-select-single .ng-select-container .ng-value-container .ng-input {
       top: 0 !important;
-      padding-left: 0 !important;
-      padding-right: 0 !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
 
       > input {
-        height: calc(var(--gf-control-height) - 8px) !important;
+        height: auto !important;
         font-size: 0.9rem;
+        line-height: 1.4;
       }
     }
 
     .ng-placeholder {
       color: #adb5bd;
-      top: 50% !important;
-      transform: translateY(-50%);
+      top: 0 !important;
+      bottom: 0 !important;
+      transform: none !important;
+      display: flex !important;
+      align-items: center !important;
+      line-height: 1.4;
       padding-left: 0 !important;
     }
 
@@ -415,20 +424,37 @@ $gf-control-height: 46px;
     }
 
     .ng-value-container {
-      height: calc(var(--gf-control-height) - 4px) !important;
+      height: 100% !important;
       padding-left: 14px !important;
       padding-top: 0 !important;
       padding-bottom: 0 !important;
-      align-items: center;
+      padding-block-start: 0 !important;
+      padding-block-end: 0 !important;
+      display: flex !important;
+      align-items: center !important;
     }
 
-    .ng-input > input {
-      height: calc(var(--gf-control-height) - 8px) !important;
-      font-size: 0.9rem;
+    &.ng-select-single .ng-select-container .ng-value-container .ng-input {
+      top: 0 !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+
+      > input {
+        height: auto !important;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
     }
 
     .ng-placeholder {
       color: #adb5bd;
+      top: 0 !important;
+      bottom: 0 !important;
+      transform: none !important;
+      display: flex !important;
+      align-items: center !important;
+      line-height: 1.4;
     }
 
     .ng-arrow-wrapper,

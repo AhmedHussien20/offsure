@@ -10,6 +10,7 @@ export interface TeamMemberRequest {
   leaderId?: number;
   isAvailable?: boolean;
   skillId?: number;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }

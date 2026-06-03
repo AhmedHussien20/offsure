@@ -14,9 +14,13 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
 
     public class CreateProjectDto
     {
+        /// <summary>When 0 or omitted with ClientId/ServiceId, creates a standalone project (auto service request).</summary>
         public int ServiceRequestId { get; set; }
+        public int? ClientId { get; set; }
+        public int? ServiceId { get; set; }
         public string? Name { get; set; }
         public string? Description { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? TargetEndDate { get; set; }
         public decimal? Budget { get; set; }
     }
@@ -28,12 +32,15 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public DateTime? TargetEndDate { get; set; }
         public decimal? Budget { get; set; }
         public int? Progress { get; set; }
+        /// <summary>When set, persists required skill ids on the project (stored in description metadata).</summary>
+        public List<int>? RequiredSkillIds { get; set; }
     }
 
     public class AssignProjectTeamMemberDto
     {
         public int TeamMemberId { get; set; }
         public string Role { get; set; } = string.Empty;
+        public int? SkillId { get; set; }
         public decimal? HourlyRate { get; set; }
         public int? AllocatedHours { get; set; }
     }
@@ -60,6 +67,7 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public DateTime? TargetEndDate { get; set; }
         public decimal? Budget { get; set; }
         public int? Progress { get; set; }
+        public List<int> RequiredSkillIds { get; set; } = new();
         public List<ProjectAssignmentDto> TeamMembers { get; set; } = new();
     }
 

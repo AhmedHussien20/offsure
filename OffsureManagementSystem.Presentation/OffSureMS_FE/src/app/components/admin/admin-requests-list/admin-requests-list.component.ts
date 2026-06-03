@@ -1,27 +1,33 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProjectStatus } from 'app/core/models/projects/project.models';
 import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
-import { normalizeProjectStatus, normalizeServiceRequestStatus } from 'app/core/utils/enum-status.util';
+import {
+  normalizeProjectStatus,
+  normalizeServiceRequestStatus,
+  serviceRequestStatusKey,
+} from 'app/core/utils/enum-status.util';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
-import { ADMIN_REQUEST_COLUMNS } from '../admin.constants';
+import { ADMIN_REQUEST_COLUMNS, SERVICE_REQUEST_STATUS_BADGES } from '../admin.constants';
 import { AdminConvertProjectComponent } from './admin-convert-project.component';
+
+type StepState = 'done' | 'active' | 'pending';
 
 @Component({
   selector: 'app-admin-requests-list',
   standalone: true,
-  imports: [CommonModule, SharedModule, GenericTableComponent, FormsModule, RouterModule],
+  imports: [CommonModule, SharedModule, GenericTableComponent, RouterModule],
   templateUrl: './admin-requests-list.component.html',
+  styleUrl: './admin-requests-list.component.scss',
 })
 export class AdminRequestsListComponent implements OnInit {
-  @ViewChild('requestActions', { static: true }) requestActions!: TemplateRef<unknown>;
+  @ViewChild('requestDetail', { static: true }) requestDetail!: TemplateRef<unknown>;
 
   columns = ADMIN_REQUEST_COLUMNS;
   data: ServiceRequestDto[] = [];
@@ -29,13 +35,6 @@ export class AdminRequestsListComponent implements OnInit {
   totalPages = 0;
   page = 1;
   entries = 10;
-
-  statusOptions = [
-    ServiceRequestStatus.Pending,
-    ServiceRequestStatus.InProgress,
-    ServiceRequestStatus.Completed,
-    ServiceRequestStatus.Cancelled,
-  ];
 
   searchCriteria = new SearchCriteria({
     pageIndex: 1,
@@ -90,48 +89,104 @@ export class AdminRequestsListComponent implements OnInit {
     return id != null && id > 0;
   }
 
-  canShowConvertToProject(item: ServiceRequestDto): boolean {
-    return !this.hasLinkedProject(item);
+  canAccept(item: ServiceRequestDto): boolean {
+    return normalizeServiceRequestStatus(item.status) === ServiceRequestStatus.Pending;
   }
 
-  isStatusChangeDisabled(item: ServiceRequestDto): boolean {
-    return normalizeServiceRequestStatus(item.status) === ServiceRequestStatus.Completed;
+  canConvert(item: ServiceRequestDto): boolean {
+    return (
+      !this.hasLinkedProject(item) &&
+      normalizeServiceRequestStatus(item.status) === ServiceRequestStatus.InProgress
+    );
   }
 
-  canCompleteRequest(item: ServiceRequestDto): boolean {
-    if (!this.hasLinkedProject(item)) {
-      return true;
-    }
-    return normalizeProjectStatus(item.projectStatus) === ProjectStatus.Completed;
+  showConvertBanner(item: ServiceRequestDto): boolean {
+    return this.canConvert(item);
   }
 
-  statusOptionsFor(item: ServiceRequestDto): ServiceRequestStatus[] {
-    if (this.canCompleteRequest(item)) {
-      return this.statusOptions;
-    }
-    return this.statusOptions.filter(s => s !== ServiceRequestStatus.Completed);
+  statusBadgeClass(status: unknown): string {
+    return SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.class ?? 'bg-light';
   }
 
-  updateStatus(item: ServiceRequestDto, status: ServiceRequestStatus): void {
-    if (this.isStatusChangeDisabled(item)) {
-      return;
-    }
+  statusLabel(status: unknown): string {
+    return SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.text ?? String(status ?? '');
+  }
 
-    if (status === ServiceRequestStatus.Completed && !this.canCompleteRequest(item)) {
-      this.toastr.warning('Complete the linked project before marking this request as Completed.');
-      this.loadRequests();
-      return;
-    }
+  requestSteps(item: ServiceRequestDto): { key: string; label: string; state: StepState }[] {
+    const status = normalizeServiceRequestStatus(item.status);
+    const cancelled = status === ServiceRequestStatus.Cancelled;
+    const completed = status === ServiceRequestStatus.Completed;
+    const inProgress = status === ServiceRequestStatus.InProgress || completed || this.hasLinkedProject(item);
+    const pendingReview =
+      status === ServiceRequestStatus.Pending || inProgress || completed;
 
-    this.serviceRequestsService.updateStatus(item.id, { status }).subscribe({
+    const step = (key: string, label: string, index: number): { key: string; label: string; state: StepState } => {
+      let activeIndex = 0;
+      if (cancelled) {
+        activeIndex = 1;
+      } else if (completed) {
+        activeIndex = 3;
+      } else if (inProgress) {
+        activeIndex = 2;
+      } else if (pendingReview) {
+        activeIndex = 1;
+      }
+
+      let state: StepState = 'pending';
+      if (index < activeIndex) state = 'done';
+      else if (index === activeIndex) state = 'active';
+      return { key, label, state };
+    };
+
+    return [
+      step('submitted', 'Submitted', 0),
+      step('review', cancelled ? 'Cancelled' : 'Pending review', 1),
+      step('progress', 'In progress', 2),
+      step('done', 'Completed', 3),
+    ];
+  }
+
+  activityLog(item: ServiceRequestDto): { text: string; date?: string }[] {
+    const entries: { text: string; date?: string }[] = [
+      { text: `Submitted by ${item.clientName}`, date: item.requestedDate },
+    ];
+    const status = normalizeServiceRequestStatus(item.status);
+    if (status === ServiceRequestStatus.InProgress || this.hasLinkedProject(item)) {
+      entries.push({ text: 'Accepted by admin', date: item.requestedDate });
+    }
+    if (this.hasLinkedProject(item)) {
+      entries.push({ text: 'Converted to project' });
+    }
+    if (status === ServiceRequestStatus.Completed) {
+      entries.push({ text: 'Request completed' });
+    }
+    if (status === ServiceRequestStatus.Cancelled) {
+      entries.push({ text: 'Request rejected / cancelled' });
+    }
+    return entries;
+  }
+
+  acceptRequest(item: ServiceRequestDto): void {
+    this.serviceRequestsService.updateStatus(item.id, { status: ServiceRequestStatus.InProgress }).subscribe({
       next: () => {
-        this.toastr.success('Request status updated.');
+        this.toastr.success('Request accepted.');
+        item.status = ServiceRequestStatus.InProgress;
         this.loadRequests();
       },
-      error: err => {
+      error: err => this.toastr.error(err?.error?.message || 'Failed to accept request.'),
+    });
+  }
+
+  rejectRequest(item: ServiceRequestDto): void {
+    if (!confirm('Reject this request? The client will see it as cancelled.')) {
+      return;
+    }
+    this.serviceRequestsService.updateStatus(item.id, { status: ServiceRequestStatus.Cancelled }).subscribe({
+      next: () => {
+        this.toastr.success('Request rejected.');
         this.loadRequests();
-        this.toastr.error(err?.error?.message || 'Failed to update status.');
       },
+      error: err => this.toastr.error(err?.error?.message || 'Failed to reject request.'),
     });
   }
 
@@ -142,13 +197,14 @@ export class AdminRequestsListComponent implements OnInit {
     }
 
     if (normalizeServiceRequestStatus(item.status) !== ServiceRequestStatus.InProgress) {
-      this.toastr.warning('Set request status to In Progress before creating a project.');
+      this.toastr.warning('Accept the request before converting to a project.');
       return;
     }
 
     const modalRef = this.modalService.open(AdminConvertProjectComponent, {
       centered: true,
-      size: 'md',
+      size: 'lg',
+      backdrop: 'static',
     });
     modalRef.componentInstance.request = item;
 

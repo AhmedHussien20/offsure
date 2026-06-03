@@ -1,0 +1,27 @@
+<div class="modal-header">
+  <div>
+    <h5 class="modal-title mb-1">Convert to project</h5>
+    <p class="text-muted small mb-0">Set the project name, timeline, and budget. You can assign the team after creation.</p>
+  </div>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body project-form-modal">
+  <form [formGroup]="form" class="generic-form">
+    @if (formConfig.length) {
+      <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+    }
+    <app-project-budget-fields
+      [form]="form"
+      mode="convert"
+      [requestBudget]="request.budget"
+      idPrefix="cv"></app-project-budget-fields>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-light" (click)="activeModal.dismiss()" [disabled]="creating">Cancel</button>
+  <button type="button" class="btn btn-primary" [disabled]="creating || form.invalid" (click)="submit()">
+    {{ creating ? 'Creating...' : 'Create project' }}
+  </button>
+</div>

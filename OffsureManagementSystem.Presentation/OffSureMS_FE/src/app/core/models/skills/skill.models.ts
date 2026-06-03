@@ -31,6 +31,7 @@ export interface SkillCategoryDto {
 export interface SkillRequest {
   skillCategoryId?: number;
   isActive?: boolean;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }

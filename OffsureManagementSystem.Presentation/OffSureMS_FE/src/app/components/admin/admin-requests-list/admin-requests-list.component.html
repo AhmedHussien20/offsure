@@ -1,59 +1,136 @@
 <app-page-header></app-page-header>
 
 <div class="card custom-card">
-    <app-generic-table
-      [columns]="columns"
-      [data]="data"
-      [page]="page"
-      [entries]="entries"
-      [totalItems]="totalItems"
-      [totalPages]="totalPages"
-      [searchCriteria]="searchCriteria"
-      [labels]="labels"
-      [dropdownOptions]="dropdownOptions"
-      [showFilters]="true"
-      [showPagination]="true"
-      [showEmployeeFilter]="false"
-      [showExportExcel]="false"
-      [showAddButton]="false"
-      [expandable]="true"
-      [expandTemplate]="requestActions"
-      [onSearch]="onSearch"
-      (pageChange)="onPageChange($event)"
-      (entriesChange)="onEntriesChange($event)">
-    </app-generic-table>
+  <app-generic-table
+    [columns]="columns"
+    [data]="data"
+    [page]="page"
+    [entries]="entries"
+    [totalItems]="totalItems"
+    [totalPages]="totalPages"
+    [searchCriteria]="searchCriteria"
+    [labels]="labels"
+    [dropdownOptions]="dropdownOptions"
+    [showFilters]="true"
+    [showPagination]="true"
+    [showEmployeeFilter]="false"
+    [showExportExcel]="false"
+    [showAddButton]="false"
+    [expandable]="true"
+    [expandTemplate]="requestDetail"
+    [onSearch]="onSearch"
+    (pageChange)="onPageChange($event)"
+    (entriesChange)="onEntriesChange($event)">
+  </app-generic-table>
 </div>
 
-<ng-template #requestActions let-item>
-  <div class="d-flex flex-wrap align-items-center gap-2">
-    <label class="mb-0 me-1 fw-semibold">Status:</label>
-    <select
-      class="form-select form-select-sm w-auto no-expand"
-      [ngModel]="item.status"
-      [disabled]="isStatusChangeDisabled(item)"
-      (ngModelChange)="updateStatus(item, $event)">
-      @for (s of statusOptionsFor(item); track s) {
-        <option [ngValue]="s">{{ s === 'InProgress' ? 'In Progress' : (s === 'Cancelled' ? 'Cancelled' : s) }}</option>
-      }
-    </select>
-    @if (canShowConvertToProject(item)) {
-      <button
-        type="button"
-        class="btn btn-sm btn-primary no-expand"
-        [disabled]="item.status !== 'InProgress'"
-        (click)="convertToProject(item); $event.stopPropagation()">
-        Convert to Project
-      </button>
-      <small class="text-muted">Set status to In Progress, then convert to a project.</small>
-    } @else if (!canCompleteRequest(item)) {
-      <small class="text-warning w-100">
-        Finish the project (mark it Completed) before completing this request.
-        <a [routerLink]="['/admin/projects', item.projectId]" class="ms-1">Open project</a>
-      </small>
-    } @else {
-      <a [routerLink]="['/admin/projects', item.projectId]" class="btn btn-sm btn-outline-primary">
-        Open project
-      </a>
+<ng-template #requestDetail let-item>
+  <div class="request-detail-panel" (click)="$event.stopPropagation()">
+    <div class="request-detail-panel__header">
+      <div>
+        <h4 class="request-detail-panel__title">{{ item.title }}</h4>
+        <p class="request-detail-panel__meta">
+          {{ item.serviceName }} — {{ item.clientName }}
+        </p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="badge {{ statusBadgeClass(item.status) }}">
+          {{ statusLabel(item.status) }}
+        </span>
+        <div class="request-detail-panel__actions">
+          @if (canAccept(item)) {
+            <button type="button" class="btn btn-sm btn-outline-danger no-expand" (click)="rejectRequest(item)">
+              Reject
+            </button>
+            <button type="button" class="btn btn-sm btn-primary no-expand" (click)="acceptRequest(item)">
+              Accept request
+            </button>
+          }
+          @if (canConvert(item)) {
+            <button type="button" class="btn btn-sm btn-primary no-expand" (click)="convertToProject(item)">
+              Convert to project
+            </button>
+          }
+          @if (hasLinkedProject(item)) {
+            <a [routerLink]="['/admin/projects', item.projectId]" class="btn btn-sm btn-outline-primary no-expand">
+              Open project
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (showConvertBanner(item)) {
+      <div class="request-convert-banner">
+        <span>Request accepted. Convert it to a project to assign your team.</span>
+        <button type="button" class="btn btn-sm btn-success no-expand" (click)="convertToProject(item)">
+          Convert
+        </button>
+      </div>
     }
+
+    <div class="request-detail-grid">
+      <div class="request-info-card">
+        <div class="request-info-row">
+          <div class="request-info-item">
+            <label>Client</label>
+            <span>{{ item.clientName }}</span>
+          </div>
+          <div class="request-info-item">
+            <label>Service</label>
+            <span>{{ item.serviceName }}</span>
+          </div>
+          <div class="request-info-item">
+            <label>Submitted</label>
+            <span>{{ item.requestedDate | date: 'mediumDate' }}</span>
+          </div>
+          <div class="request-info-item">
+            <label>Contact email</label>
+            <span>{{ item.clientEmail || '—' }}</span>
+          </div>
+          <div class="request-info-item">
+            <label>Due date</label>
+            <span>{{ item.dueDate ? (item.dueDate | date: 'mediumDate') : '—' }}</span>
+          </div>
+          <div class="request-info-item">
+            <label>Budget</label>
+            <span>{{ item.budget != null ? (item.budget | number: '1.0-2') : 'Not specified' }}</span>
+          </div>
+        </div>
+        <div class="request-info-description">
+          <label class="d-block mb-1" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #94a3b8">
+            Description
+          </label>
+          <p>{{ item.description || 'No description provided.' }}</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="request-sidebar-card">
+          <h6>Request status</h6>
+          <ul class="request-stepper">
+            @for (step of requestSteps(item); track step.key) {
+              <li [class]="step.state">
+                <span class="request-step-dot"></span>
+                <span class="request-step-label">{{ step.label }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+        <div class="request-sidebar-card">
+          <h6>Activity</h6>
+          <ul class="request-activity">
+            @for (entry of activityLog(item); track entry.text) {
+              <li>
+                <strong>{{ entry.text }}</strong>
+                @if (entry.date) {
+                  <span class="d-block text-muted" style="font-size: 0.72rem">{{ entry.date | date: 'medium' }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </ng-template>

@@ -111,6 +111,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Team member removed successfully."));
         }
 
+        [HttpDelete("{id:int}/assignments/{assignmentId:int}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> RemoveAssignment(int id, int assignmentId)
+        {
+            var project = await _projectManagementService.RemoveAssignmentAsync(id, assignmentId);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Assignment removed successfully."));
+        }
+
         [HttpPatch("{id:int}/status")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateProjectStatus(

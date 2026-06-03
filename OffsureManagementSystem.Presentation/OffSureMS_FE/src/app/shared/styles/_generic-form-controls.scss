@@ -1,0 +1,215 @@
+// Shared field chrome (login / register / generic-form)
+$gf-control-height: 46px;
+
+@mixin gf-field-label {
+  .form-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 6px;
+    min-height: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.25;
+
+    .required {
+      color: #e53e3e;
+      margin-left: 2px;
+    }
+  }
+}
+
+@mixin gf-select-control-wrap {
+  .generic-form__control {
+    width: 100%;
+    height: $gf-control-height;
+    min-height: $gf-control-height;
+  }
+
+  .generic-form__select-wrap {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+@mixin gf-text-input {
+  .generic-form__control {
+    width: 100%;
+    height: $gf-control-height;
+    min-height: $gf-control-height;
+  }
+
+  .input-wrapper {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    > i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #667eea;
+      font-size: 1rem;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .form-control {
+      width: 100%;
+      height: 100%;
+      min-height: $gf-control-height;
+      padding: 0 16px 0 42px;
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      font-size: 0.9rem;
+      line-height: calc(#{$gf-control-height} - 4px);
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: #667eea;
+        background: #fff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      &::placeholder {
+        color: #adb5bd;
+      }
+    }
+  }
+}
+
+@mixin gf-ng-select-styled {
+  .custom-ng-select.ng-select {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+
+    .ng-select-container {
+      height: $gf-control-height !important;
+      min-height: $gf-control-height !important;
+      max-height: $gf-control-height !important;
+      border: 2px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      background: #fff !important;
+      color: #4a5568 !important;
+      align-items: center;
+      transition: all 0.2s ease;
+      box-shadow: none !important;
+    }
+
+    &.ng-select-focused .ng-select-container,
+    &.ng-select-opened .ng-select-container {
+      border-color: #667eea !important;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+    }
+
+    &.ng-select-disabled .ng-select-container {
+      background-color: #f1f5f9 !important;
+      cursor: not-allowed;
+      opacity: 0.85;
+    }
+
+    &.is-invalid .ng-select-container {
+      border-color: #e53e3e !important;
+    }
+
+    .ng-value-container {
+      height: 100% !important;
+      min-height: 0 !important;
+      padding-left: 42px !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      padding-block-start: 0 !important;
+      padding-block-end: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    &.ng-select-single .ng-select-container .ng-value-container .ng-input {
+      top: 0 !important;
+      bottom: 0 !important;
+      left: 42px !important;
+      right: 50px !important;
+      width: auto !important;
+      height: 100% !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+
+      > input {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        padding: 0;
+        margin: 0;
+      }
+    }
+
+    .ng-placeholder {
+      color: #adb5bd !important;
+      position: static !important;
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      transform: none !important;
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ng-value {
+      font-size: 0.9rem;
+      color: #4a5568;
+      line-height: 1.4;
+    }
+
+    .ng-arrow-wrapper {
+      height: 100% !important;
+      display: flex;
+      align-items: center;
+      padding-right: 10px;
+      padding-block-start: 0 !important;
+    }
+
+    .ng-clear-wrapper {
+      height: 100% !important;
+      display: flex;
+      align-items: center;
+      padding-block-start: 0 !important;
+    }
+  }
+
+  .gf-select-icon-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    > i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #667eea;
+      font-size: 1rem;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .custom-ng-select.ng-select {
+      position: relative;
+      z-index: 1;
+    }
+  }
+}

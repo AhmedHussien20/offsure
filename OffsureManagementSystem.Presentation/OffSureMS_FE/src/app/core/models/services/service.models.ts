@@ -17,6 +17,7 @@ export enum ServiceRequestPriority {
 
 export interface ServiceCategoryRequest {
   isActive?: boolean;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }
@@ -46,6 +47,7 @@ export interface ServiceCategoryDto {
 export interface ServiceFilterRequest {
   serviceCategoryId?: number;
   isVisible?: boolean;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }
