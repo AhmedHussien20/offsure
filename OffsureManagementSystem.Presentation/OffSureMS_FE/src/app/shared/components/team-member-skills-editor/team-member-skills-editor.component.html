@@ -1,0 +1,125 @@
+<div class="team-skills-editor">
+  @if (!readonly) {
+    <div class="skill-search">
+      <i class="fe fe-search skill-search__icon"></i>
+      <input
+        type="search"
+        class="form-control skill-search__input"
+        placeholder="Search by name or category..."
+        [ngModel]="skillSearchQuery"
+        (ngModelChange)="onSkillSearchInput($event)"
+        autocomplete="off" />
+    </div>
+  }
+
+  @if (selectedCount > 0) {
+    <div class="skill-selected-group">
+      <span class="skill-selection-bar">
+        {{ selectedCount }} skill{{ selectedCount === 1 ? '' : 's' }} selected
+        @if (mode === 'live' && savingLive) {
+          <span class="text-muted fw-normal"> · saving…</span>
+        }
+      </span>
+      <div class="skill-picker skill-picker--selected">
+        @for (d of selectedDrafts; track d.skillId) {
+          @if (!readonly) {
+            <button type="button" class="skill-picker__chip skill-picker__chip--on" (click)="removeDraft(d.skillId)">
+              {{ d.skillName }}
+              <small>({{ d.skillCategoryName }})</small>
+              <i class="fe fe-x ms-1"></i>
+            </button>
+          } @else {
+            <span class="skill-picker__chip skill-picker__chip--on">
+              {{ d.skillName }}
+              <small>({{ d.skillCategoryName }})</small>
+            </span>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  @if (!readonly) {
+    <div class="skill-picker" (scroll)="onSkillPickerScroll($event)">
+      @if (skillsLoading && skillsList.length === 0) {
+        <p class="text-muted small mb-0 py-2">Loading skills…</p>
+      }
+      @for (skill of skillsList; track skill.id) {
+        <label class="skill-picker__chip" [class.skill-picker__chip--on]="isSkillSelected(skill.id)">
+          <input
+            type="checkbox"
+            class="d-none"
+            [checked]="isSkillSelected(skill.id)"
+            (change)="toggleSkill(skill)" />
+          {{ skill.name }}
+          <small class="text-muted">({{ skill.skillCategoryName }})</small>
+        </label>
+      }
+      @if (!skillsLoading && skillsList.length === 0) {
+        <p class="text-muted small mb-0 py-2">
+          @if (skillSearchQuery) {
+            No skills match "{{ skillSearchQuery }}".
+          } @else {
+            No skills found. Add skills under Admin → Skills.
+          }
+        </p>
+      }
+      @if (skillsLoading && skillsList.length > 0) {
+        <p class="text-muted small mb-0 py-2">Loading more…</p>
+      }
+      @if (skillsHasMore && !skillsLoading && skillsList.length > 0) {
+        <p class="text-muted small mb-0 py-2 w-100">Scroll for more</p>
+      }
+    </div>
+  }
+
+  @if (selectedCount > 0) {
+    <div class="skill-detail-list">
+      @for (d of selectedDrafts; track d.skillId) {
+        <div class="skill-detail-card">
+          <div class="skill-detail-card__head">
+            <div>
+              <div class="skill-detail-card__title">{{ d.skillName }}</div>
+              <div class="skill-detail-card__meta">{{ d.skillCategoryName }}</div>
+            </div>
+            @if (!readonly) {
+              <button type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeDraft(d.skillId)">
+                Remove
+              </button>
+            }
+          </div>
+          <div class="row g-2">
+            <div class="col-sm-6">
+              <label class="form-label small mb-1">Proficiency (1–5)</label>
+              <input
+                type="number"
+                class="form-control form-control-sm"
+                [(ngModel)]="d.proficiencyLevel"
+                (ngModelChange)="onDraftFieldChange(d)"
+                [readonly]="readonly"
+                min="1"
+                max="5"
+                step="1" />
+              <small class="text-muted">{{ proficiencyLabel(d.proficiencyLevel) }}</small>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small mb-1">Years of experience</label>
+              <input
+                type="number"
+                class="form-control form-control-sm"
+                [(ngModel)]="d.yearsOfExperience"
+                (ngModelChange)="onDraftFieldChange(d)"
+                [readonly]="readonly"
+                min="0"
+                step="1" />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (readonly) {
+    <p class="text-muted small mb-0">No skills on this profile yet.</p>
+  } @else {
+    <p class="text-muted small mb-0 mt-2">Select skills above, then set proficiency and years for each.</p>
+  }
+</div>

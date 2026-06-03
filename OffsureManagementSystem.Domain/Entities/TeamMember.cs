@@ -11,6 +11,8 @@ namespace OffshoreManagementSystem.Domain.Entities
         public string PhoneNumber { get; set; }
         public int? LeaderId { get; set; } // Reference to another TeamMember for hierarchy
         public bool IsAvailable { get; set; } = true;
+        /// <summary>Default hourly salary/rate entered by admin when creating the member.</summary>
+        public decimal? HourlySalary { get; set; }
 
         // Navigation Properties
         public virtual User User { get; set; }

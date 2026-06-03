@@ -112,11 +112,16 @@ export class ProjectsService {
     const rawDesc = dto.description ?? '';
     const requiredSkillIds =
       dto.requiredSkillIds?.length ? dto.requiredSkillIds : parseRequiredSkillIds(rawDesc);
+    const budgetType =
+      dto.budgetType === 'Hourly' || (dto.budgetType as unknown) === 1 ? 'Hourly' : 'Total';
     return {
       ...dto,
       description: stripSkillsMarker(rawDesc),
       requiredSkillIds,
       status: normalizeProjectStatus(dto.status) as ProjectStatus,
+      budgetType,
+      hourlyRate: dto.hourlyRate ?? null,
+      expectedHours: dto.expectedHours ?? null,
     };
   }
 }

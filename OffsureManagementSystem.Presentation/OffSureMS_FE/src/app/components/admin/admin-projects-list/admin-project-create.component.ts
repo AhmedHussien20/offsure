@@ -10,7 +10,7 @@ import { ProjectsService } from 'app/core/services/projects.service';
 import { ServiceCategoriesService } from 'app/core/services/service-categories.service';
 import { ServicesService } from 'app/core/services/services.service';
 import {
-  resolveProjectBudget,
+  buildProjectBudgetFields,
   updateProjectBudgetValidators,
 } from 'app/core/utils/project-budget-form.util';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
@@ -192,7 +192,6 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const budget = resolveProjectBudget(this.form);
     const raw = this.form.getRawValue();
     const dto: CreateProjectDto = {
       serviceRequestId: 0,
@@ -202,7 +201,7 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
       description: raw.description || undefined,
       startDate: raw.startDate || undefined,
       targetEndDate: raw.targetEndDate || undefined,
-      budget,
+      ...buildProjectBudgetFields(this.form),
     };
 
     this.creating = true;

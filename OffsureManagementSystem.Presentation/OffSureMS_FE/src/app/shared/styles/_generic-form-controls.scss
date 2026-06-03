@@ -155,10 +155,6 @@ $gf-control-height: 46px;
 
     .ng-placeholder {
       color: #adb5bd !important;
-      position: static !important;
-      display: block !important;
-      width: 100% !important;
-      max-width: 100% !important;
       margin: 0 !important;
       padding: 0 !important;
       transform: none !important;
@@ -166,6 +162,11 @@ $gf-control-height: 46px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .ng-select-container.ng-has-value .ng-placeholder,
+    &.ng-select-filtered .ng-placeholder {
+      display: none !important;
     }
 
     .ng-value {

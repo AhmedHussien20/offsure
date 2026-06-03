@@ -3,20 +3,29 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
+import { UpsertTeamMemberSkillDto } from 'app/core/models/team-members/team-member.models';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
+import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-admin-team-form',
   standalone: true,
-  imports: [CommonModule, SharedModule, ReactiveFormsModule, GenericFormComponent],
+  imports: [
+    CommonModule,
+    SharedModule,
+    ReactiveFormsModule,
+    GenericFormComponent,
+    TeamMemberSkillsEditorComponent,
+  ],
   templateUrl: './admin-team-form.component.html',
 })
 export class AdminTeamFormComponent implements OnInit {
   formGroup!: FormGroup;
   formConfig: FormFieldConfig[] = [];
+  skillAssignments: UpsertTeamMemberSkillDto[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -34,6 +43,7 @@ export class AdminTeamFormComponent implements OnInit {
       title: [''],
       phoneNumber: [''],
       yearsOfExperience: [null],
+      hourlySalary: [null],
       isAvailable: [true],
     });
 
@@ -45,7 +55,18 @@ export class AdminTeamFormComponent implements OnInit {
       { type: 'input', inputType: 'text', name: 'title', label: 'Job Title' },
       { type: 'input', inputType: 'text', name: 'phoneNumber', label: 'Phone' },
       { type: 'input', inputType: 'number', name: 'yearsOfExperience', label: 'Years of Experience' },
+      {
+        type: 'input',
+        inputType: 'number',
+        name: 'hourlySalary',
+        label: 'Hourly salary ($)',
+        placeholder: 'Default rate per hour',
+      },
     ];
+  }
+
+  onSkillsChange(skills: UpsertTeamMemberSkillDto[]): void {
+    this.skillAssignments = skills;
   }
 
   onSubmit(): void {
@@ -64,7 +85,9 @@ export class AdminTeamFormComponent implements OnInit {
         title: raw.title?.trim(),
         phoneNumber: raw.phoneNumber?.trim(),
         yearsOfExperience: raw.yearsOfExperience != null ? Number(raw.yearsOfExperience) : undefined,
+        hourlySalary: raw.hourlySalary != null && raw.hourlySalary !== '' ? Number(raw.hourlySalary) : undefined,
         isAvailable: true,
+        skillAssignments: this.skillAssignments.length ? this.skillAssignments : undefined,
       })
       .subscribe({
         next: () => {

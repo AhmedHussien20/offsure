@@ -2,9 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { AssignProjectTeamMemberDto } from 'app/core/models/projects/project.models';
+import { AssignProjectTeamMemberDto, ProjectDto } from 'app/core/models/projects/project.models';
 import { SkillDto } from 'app/core/models/skills/skill.models';
 import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
+import { resolveAssignmentDefaults } from 'app/core/utils/project-budget-form.util';
 import { isNearScrollEnd } from 'app/core/utils/scroll-pagination.util';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
@@ -31,6 +32,7 @@ const MEMBER_SEARCH_DEBOUNCE_MS = 300;
 })
 export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
   @Input() projectId = 0;
+  @Input() project: ProjectDto | null = null;
   @Input() skill!: SkillDto;
   @Input() excludedMemberIds: number[] = [];
 
@@ -127,12 +129,15 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
     this.memberDetails = [...this.selectedMemberIds]
       .map(id => this.membersById.get(id))
       .filter((m): m is TeamMemberDto => !!m)
-      .map(member => ({
-        member,
-        role: member.title?.trim() || `${this.skill.name} specialist`,
-        hourlyRate: null,
-        allocatedHours: null,
-      }));
+      .map(member => {
+        const defaults = resolveAssignmentDefaults(this.project, member);
+        return {
+          member,
+          role: member.title?.trim() || `${this.skill.name} specialist`,
+          hourlyRate: defaults.hourlyRate,
+          allocatedHours: defaults.allocatedHours,
+        };
+      });
     this.step = 2;
   }
 

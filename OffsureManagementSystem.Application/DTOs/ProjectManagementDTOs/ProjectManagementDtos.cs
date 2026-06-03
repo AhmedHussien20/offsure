@@ -23,6 +23,9 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public DateTime? StartDate { get; set; }
         public DateTime? TargetEndDate { get; set; }
         public decimal? Budget { get; set; }
+        public ProjectBudgetType BudgetType { get; set; } = ProjectBudgetType.Total;
+        public decimal? HourlyRate { get; set; }
+        public int? ExpectedHours { get; set; }
     }
 
     public class UpdateProjectDto
@@ -31,6 +34,9 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public string? Description { get; set; }
         public DateTime? TargetEndDate { get; set; }
         public decimal? Budget { get; set; }
+        public ProjectBudgetType? BudgetType { get; set; }
+        public decimal? HourlyRate { get; set; }
+        public int? ExpectedHours { get; set; }
         public int? Progress { get; set; }
         /// <summary>When set, persists required skill ids on the project (stored in description metadata).</summary>
         public List<int>? RequiredSkillIds { get; set; }
@@ -66,6 +72,9 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public DateTime? EndDate { get; set; }
         public DateTime? TargetEndDate { get; set; }
         public decimal? Budget { get; set; }
+        public ProjectBudgetType BudgetType { get; set; }
+        public decimal? HourlyRate { get; set; }
+        public int? ExpectedHours { get; set; }
         public int? Progress { get; set; }
         public List<int> RequiredSkillIds { get; set; } = new();
         public List<ProjectAssignmentDto> TeamMembers { get; set; } = new();

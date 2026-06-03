@@ -5,6 +5,7 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
     using OffshoreManagementSystem.Domain.BaseEntity;
     using OffshoreManagementSystem.Domain.Entities;
     using OffsureManagementSystem.Domain.Entities;
+    using OffsureManagementSystem.Domain.Entities.Enum;
 
     public class ApplicationDbContext : DbContext
     {
@@ -166,6 +167,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.Property(e => e.IsAvailable)
                     .HasDefaultValue(true);
+
+                entity.Property(e => e.HourlySalary)
+                    .HasPrecision(18, 2);
 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.TeamMembers)
@@ -429,6 +433,14 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasDefaultValue(0);
 
                 entity.Property(e => e.Budget)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.BudgetType)
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .HasDefaultValue(ProjectBudgetType.Total);
+
+                entity.Property(e => e.HourlyRate)
                     .HasPrecision(18, 2);
 
                 entity.HasOne(e => e.ServiceRequest)

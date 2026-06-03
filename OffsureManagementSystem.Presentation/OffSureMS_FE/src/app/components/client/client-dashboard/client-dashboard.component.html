@@ -86,10 +86,10 @@
                     <td colspan="3" class="text-center text-muted py-4">No active projects.</td>
                   </tr>
                 }
-                @for (item of ongoingProjects; track item.projectId) {
+                @for (item of ongoingProjects; track item.id) {
                   <tr>
                     <td>
-                      <a [routerLink]="['/client/projects', item.projectId]">{{ item.projectName }}</a>
+                      <a [routerLink]="['/client/projects', item.id]">{{ item.name }}</a>
                     </td>
                     <td>{{ item.serviceName }}</td>
                     <td>

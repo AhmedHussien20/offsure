@@ -7,6 +7,7 @@ import {
   ClientDto,
   ClientFilterRequest,
   ClientServiceRequestSummaryDto,
+  CreateClientDto,
   UpdateClientProfileDto,
 } from '../models/clients/client.models';
 import { projectStatusKey, serviceRequestStatusKey } from '../utils/enum-status.util';
@@ -23,6 +24,12 @@ export class ClientsService {
       .pipe(map(res => this.mapPagedClients(res)));
   }
 
+  create(dto: CreateClientDto): Observable<BaseResponse<ClientDto>> {
+    return this.api
+      .post<BaseResponse<ClientDto>>(this.service, '', dto)
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
+  }
+
   getById(id: number): Observable<BaseResponse<ClientDto>> {
     return this.api
       .get<BaseResponse<ClientDto>>(this.service, `${id}`)
@@ -33,6 +40,19 @@ export class ClientsService {
     return this.api
       .get<BaseResponse<ClientDto>>(this.service, 'profile')
       .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
+  }
+
+  getProfileRecentRequests(limit = 5): Observable<BaseResponse<ClientServiceRequestSummaryDto[]>> {
+    return this.api
+      .get<BaseResponse<ClientServiceRequestSummaryDto[]>>(this.service, 'profile/recent-requests', {
+        limit,
+      })
+      .pipe(
+        map(res => ({
+          ...res,
+          data: (res.data ?? []).map(r => this.mapServiceRequestSummary(r)),
+        }))
+      );
   }
 
   updateProfile(dto: UpdateClientProfileDto): Observable<BaseResponse<ClientDto>> {

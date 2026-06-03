@@ -11,6 +11,20 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public string? Country { get; set; }
     }
 
+    public class CreateClientDto
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string CompanyName { get; set; } = string.Empty;
+        public string? ContactPersonPhone { get; set; }
+        public string? CompanyAddress { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public string? PostalCode { get; set; }
+    }
+
     public class UpdateClientProfileDto
     {
         public string CompanyName { get; set; } = string.Empty;

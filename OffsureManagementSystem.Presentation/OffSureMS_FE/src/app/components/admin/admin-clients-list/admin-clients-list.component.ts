@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ClientDto } from 'app/core/models/clients/client.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { ClientsService } from 'app/core/services/clients.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ADMIN_CLIENT_COLUMNS } from '../admin.constants';
+import { AdminClientCreateComponent } from './admin-client-create.component';
 
 @Component({
   selector: 'app-admin-clients-list',
@@ -28,7 +30,10 @@ export class AdminClientsListComponent implements OnInit {
     sortDirection: 'DESC',
   });
 
-  constructor(private clientsService: ClientsService) {}
+  constructor(
+    private clientsService: ClientsService,
+    private modalService: NgbModal
+  ) {}
 
   ngOnInit(): void {
     this.loadClients();
@@ -52,6 +57,19 @@ export class AdminClientsListComponent implements OnInit {
     this.page = 1;
     this.searchCriteria.pageIndex = 1;
     this.loadClients();
+  }
+
+  onAdd(): void {
+    const modalRef = this.modalService.open(AdminClientCreateComponent, {
+      centered: true,
+      size: 'lg',
+      scrollable: true,
+    });
+    modalRef.closed.subscribe((created: boolean) => {
+      if (created) {
+        this.loadClients();
+      }
+    });
   }
 
   private loadClients(): void {

@@ -13,6 +13,11 @@ namespace OffshoreManagementSystem.Domain.Entities
         public DateTime? EndDate { get; set; }
         public DateTime? TargetEndDate { get; set; }
         public decimal? Budget { get; set; }
+        public ProjectBudgetType BudgetType { get; set; } = ProjectBudgetType.Total;
+        /// <summary>When <see cref="BudgetType"/> is Hourly, the billing rate per hour used for assignments.</summary>
+        public decimal? HourlyRate { get; set; }
+        /// <summary>When <see cref="BudgetType"/> is Hourly, minimum expected hours for the project.</summary>
+        public int? ExpectedHours { get; set; }
         public int? Progress { get; set; } // 0-100
 
         // Navigation Properties

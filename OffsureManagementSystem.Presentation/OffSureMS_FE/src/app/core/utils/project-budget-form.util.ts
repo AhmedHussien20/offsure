@@ -1,5 +1,10 @@
 import { FormGroup, Validators } from '@angular/forms';
-import { ProjectBudgetMode } from '../models/projects/project.models';
+import {
+  CreateProjectDto,
+  ProjectBudgetMode,
+  ProjectBudgetType,
+  ProjectCustomBudgetType,
+} from '../models/projects/project.models';
 
 export function resolveProjectBudget(form: FormGroup, requestBudget?: number | null): number | undefined {
   const mode = form.get('budgetMode')?.value;
@@ -14,6 +19,37 @@ export function resolveProjectBudget(form: FormGroup, requestBudget?: number | n
   }
   const total = Number(form.get('totalBudget')?.value);
   return Number.isFinite(total) && total > 0 ? total : undefined;
+}
+
+export function buildProjectBudgetFields(
+  form: FormGroup,
+  requestBudget?: number | null
+): Pick<CreateProjectDto, 'budget' | 'budgetType' | 'hourlyRate' | 'expectedHours'> {
+  const mode = form.get('budgetMode')?.value as ProjectBudgetMode | undefined;
+  if (mode === 'sameAsRequest') {
+    return {
+      budget: requestBudget ?? undefined,
+      budgetType: 'Total',
+    };
+  }
+
+  const customType = form.get('customBudgetType')?.value as ProjectCustomBudgetType | undefined;
+  if (customType === 'hourly') {
+    const hourlyRate = Number(form.get('hourlyRate')?.value) || 0;
+    const expectedHours = Number(form.get('expectedHours')?.value) || 0;
+    const budget = hourlyRate * expectedHours;
+    return {
+      budgetType: 'Hourly',
+      hourlyRate: hourlyRate > 0 ? hourlyRate : undefined,
+      expectedHours: expectedHours > 0 ? expectedHours : undefined,
+      budget: budget > 0 ? budget : undefined,
+    };
+  }
+
+  return {
+    budgetType: 'Total',
+    budget: resolveProjectBudget(form, requestBudget),
+  };
 }
 
 export function updateProjectBudgetValidators(form: FormGroup, mode: 'standalone' | 'convert'): void {
@@ -42,4 +78,28 @@ export function updateProjectBudgetValidators(form: FormGroup, mode: 'standalone
   totalCtrl?.updateValueAndValidity({ emitEvent: false });
   rateCtrl?.updateValueAndValidity({ emitEvent: false });
   hoursCtrl?.updateValueAndValidity({ emitEvent: false });
+}
+
+/** Defaults for assign-modal rate/hours from project (and member salary fallback). */
+export function resolveAssignmentDefaults(
+  project: {
+    budgetType?: ProjectBudgetType;
+    hourlyRate?: number | null;
+    expectedHours?: number | null;
+  } | null | undefined,
+  member: { hourlySalary?: number | null }
+): { hourlyRate: number | null; allocatedHours: number | null } {
+  const fromProject = project?.budgetType === 'Hourly';
+  const hourlyRate =
+    fromProject && project?.hourlyRate != null && project.hourlyRate > 0
+      ? project.hourlyRate
+      : member.hourlySalary != null && member.hourlySalary > 0
+        ? member.hourlySalary
+        : null;
+  const allocatedHours =
+    fromProject && project?.expectedHours != null && project.expectedHours > 0
+      ? project.expectedHours
+      : null;
+
+  return { hourlyRate, allocatedHours };
 }

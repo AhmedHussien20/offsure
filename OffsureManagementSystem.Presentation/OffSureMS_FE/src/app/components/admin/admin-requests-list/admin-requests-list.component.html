@@ -47,9 +47,9 @@
             </button>
           }
           @if (canConvert(item)) {
-            <button type="button" class="btn btn-sm btn-primary no-expand" (click)="convertToProject(item)">
+            <!-- <button type="button" class="btn btn-sm btn-primary no-expand" (click)="convertToProject(item)">
               Convert to project
-            </button>
+            </button> -->
           }
           @if (hasLinkedProject(item)) {
             <a [routerLink]="['/admin/projects', item.projectId]" class="btn btn-sm btn-outline-primary no-expand">

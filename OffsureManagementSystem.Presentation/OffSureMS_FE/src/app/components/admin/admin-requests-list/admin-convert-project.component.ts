@@ -8,6 +8,7 @@ import { ServiceRequestDto } from 'app/core/models/services/service.models';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
 import { ProjectsService } from 'app/core/services/projects.service';
 import {
+  buildProjectBudgetFields,
   resolveProjectBudget,
   updateProjectBudgetValidators,
 } from 'app/core/utils/project-budget-form.util';
@@ -116,7 +117,7 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
       description: this.request.description,
       startDate: raw.startDate || undefined,
       targetEndDate: raw.targetEndDate || undefined,
-      budget,
+      ...buildProjectBudgetFields(this.form, this.request.budget),
     };
 
     this.creating = true;

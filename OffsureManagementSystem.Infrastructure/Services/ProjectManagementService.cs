@@ -147,6 +147,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 StartDate = startDate,
                 TargetEndDate = dto.TargetEndDate,
                 Budget = dto.Budget ?? request.Budget,
+                BudgetType = dto.BudgetType,
+                HourlyRate = dto.BudgetType == ProjectBudgetType.Hourly ? dto.HourlyRate : null,
+                ExpectedHours = dto.BudgetType == ProjectBudgetType.Hourly ? dto.ExpectedHours : null,
                 Progress = 0,
                 CreatedAt = DateTime.UtcNow
             };
@@ -235,6 +238,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             project.TargetEndDate = dto.TargetEndDate;
             project.Budget = dto.Budget;
+            if (dto.BudgetType.HasValue)
+            {
+                project.BudgetType = dto.BudgetType.Value;
+                project.HourlyRate = dto.BudgetType == ProjectBudgetType.Hourly ? dto.HourlyRate : null;
+                project.ExpectedHours = dto.BudgetType == ProjectBudgetType.Hourly ? dto.ExpectedHours : null;
+            }
+
             project.Progress = dto.Progress;
             project.UpdatedAt = DateTime.UtcNow;
 
@@ -244,6 +254,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(project.Description),
                 nameof(project.TargetEndDate),
                 nameof(project.Budget),
+                nameof(project.BudgetType),
+                nameof(project.HourlyRate),
+                nameof(project.ExpectedHours),
                 nameof(project.Progress),
                 nameof(project.UpdatedAt));
             await _projectRepo.SaveChangesAsync();
@@ -569,6 +582,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 EndDate = project.EndDate,
                 TargetEndDate = project.TargetEndDate,
                 Budget = project.Budget,
+                BudgetType = project.BudgetType,
+                HourlyRate = project.HourlyRate,
+                ExpectedHours = project.ExpectedHours,
                 Progress = project.Progress,
                 TeamMembers = project.ProjectAssignments
                     .OrderBy(a => a.TeamMember.User.FirstName)

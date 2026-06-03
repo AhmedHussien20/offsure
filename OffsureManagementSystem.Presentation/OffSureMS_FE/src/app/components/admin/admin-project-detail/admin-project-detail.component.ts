@@ -211,6 +211,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
       scrollable: true,
     });
     modalRef.componentInstance.projectId = this.project.id;
+    modalRef.componentInstance.project = this.project;
     modalRef.componentInstance.skill = slot.skill;
     modalRef.componentInstance.excludedMemberIds = slot.assignments.map(a => a.teamMemberId);
 

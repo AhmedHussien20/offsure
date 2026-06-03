@@ -266,10 +266,13 @@ $gf-control-height: 46px;
       top: 0 !important;
       bottom: 0 !important;
       transform: none !important;
-      display: flex !important;
-      align-items: center !important;
       line-height: 1.4;
       padding-left: 0 !important;
+    }
+
+    .ng-select-container.ng-has-value .ng-placeholder,
+    &.ng-select-filtered .ng-placeholder {
+      display: none !important;
     }
 
     .ng-arrow-wrapper {
@@ -452,9 +455,12 @@ $gf-control-height: 46px;
       top: 0 !important;
       bottom: 0 !important;
       transform: none !important;
-      display: flex !important;
-      align-items: center !important;
       line-height: 1.4;
+    }
+
+    .ng-select-container.ng-has-value .ng-placeholder,
+    &.ng-select-filtered .ng-placeholder {
+      display: none !important;
     }
 
     .ng-arrow-wrapper,

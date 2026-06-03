@@ -1,4 +1,11 @@
 import { ProjectAssignmentDto } from '../models/projects/project.models';
+import { SkillDto } from '../models/skills/skill.models';
+
+export interface ProjectSkillSlotView {
+  skill: SkillDto;
+  assignments: ProjectAssignmentDto[];
+  pending: boolean;
+}
 
 const SKILLS_MARKER = /^@@SKILLS:\[([^\]]*)\]@@\r?\n?/;
 const ROLE_SKILL_PREFIX = /^\[skill:(\d+)\]\s*/i;
@@ -75,6 +82,20 @@ export interface ProjectFinancials {
   profit: number;
   marginPercent: number | null;
   hasCompleteCostData: boolean;
+}
+
+export function buildProjectSkillSlots(
+  project: { requiredSkillIds?: number[]; teamMembers?: ProjectAssignmentDto[] },
+  skillCatalogById: Map<number, SkillDto>
+): ProjectSkillSlotView[] {
+  const ids = project.requiredSkillIds ?? [];
+  return ids
+    .map(id => skillCatalogById.get(id))
+    .filter((s): s is SkillDto => !!s)
+    .map(skill => {
+      const assignments = assignmentsForSkill(project.teamMembers, skill.id);
+      return { skill, assignments, pending: assignments.length === 0 };
+    });
 }
 
 export function computeProjectFinancials(

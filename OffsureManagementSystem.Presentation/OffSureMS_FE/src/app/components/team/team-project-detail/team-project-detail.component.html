@@ -5,61 +5,13 @@
 } @else if (!project) {
   <div class="alert alert-warning">Project not found or you are not assigned.</div>
 } @else {
-  <div class="row">
-    <div class="col-xl-8">
-      <div class="card custom-card">
-        <div class="card-header">
-          <h5 class="mb-0">{{ project.name }}</h5>
-        </div>
-        <div class="card-body">
-          <p class="text-muted mb-3">{{ project.description || 'No description provided.' }}</p>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <strong>Client:</strong> {{ project.clientName }}
-            </div>
-            <div class="col-md-6">
-              <strong>Service:</strong> {{ project.serviceName }}
-            </div>
-            <div class="col-md-6">
-              <strong>My Role:</strong> {{ myRole }}
-            </div>
-            <div class="col-md-6">
-              <strong>Status:</strong>
-              <span class="badge ms-1 {{ statusBadgeClass(project.status) }}">
-                {{ statusLabel(project.status) }}
-              </span>
-            </div>
-            <div class="col-md-6">
-              <strong>Progress:</strong> {{ project.progress ?? 0 }}%
-            </div>
-            <div class="col-md-6">
-              <strong>Target End:</strong>
-              {{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-xl-4">
-      <div class="card custom-card">
-        <div class="card-header">
-          <h5 class="mb-0">Project Team</h5>
-        </div>
-        <div class="card-body p-0">
-          <ul class="list-group list-group-flush">
-            @if ((project.teamMembers?.length ?? 0) === 0) {
-              <li class="list-group-item text-muted">No team members listed.</li>
-            }
-            @for (member of project.teamMembers; track member.id) {
-              <li class="list-group-item">
-                <div class="fw-semibold">{{ member.teamMemberName }}</div>
-                <small class="text-muted">{{ member.role }}</small>
-              </li>
-            }
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-project-detail-readonly
+    [project]="project"
+    audience="team"
+    [myRole]="myRole"
+    [highlightMemberId]="teamMemberId"
+    [statusBadgeClassFn]="statusBadgeClassFn"
+    [statusLabelFn]="statusLabelFn"
+    backLink="/team/projects"
+    backLabel="Back to projects" />
 }

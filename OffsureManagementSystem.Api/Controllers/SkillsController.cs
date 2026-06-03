@@ -28,7 +28,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Administrator,TeamMember")]
+        [Authorize(Roles = "Administrator,TeamMember,Client")]
         public async Task<ActionResult<ApiResponse<SkillDto>>> GetById(int id)
         {
             var skill = await _skillManagementService.GetSkillByIdAsync(id);

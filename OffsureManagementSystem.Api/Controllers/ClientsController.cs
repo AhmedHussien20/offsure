@@ -28,6 +28,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<PagedResponse<ClientDto>>.Ok(clients));
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<ClientDto>>> CreateClient(CreateClientDto dto)
+        {
+            var client = await _clientManagementService.CreateClientAsync(dto);
+            return Ok(ApiResponse<ClientDto>.Ok(client, "Client created successfully."));
+        }
+
         [HttpGet("{id:int}")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ClientDto>>> GetClientById(int id)
@@ -42,6 +50,17 @@ namespace OffsureManagementSystem.API.Controllers
         {
             var client = await _clientManagementService.GetClientProfileAsync(GetCurrentUserId());
             return Ok(ApiResponse<ClientDto>.Ok(client));
+        }
+
+        [HttpGet("profile/recent-requests")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<ClientServiceRequestSummaryDto>>>> GetClientRecentServiceRequests(
+            [FromQuery] int limit = 5)
+        {
+            var requests = await _clientManagementService.GetClientRecentServiceRequestsAsync(
+                GetCurrentUserId(),
+                limit);
+            return Ok(ApiResponse<IReadOnlyList<ClientServiceRequestSummaryDto>>.Ok(requests));
         }
 
         [HttpPut("profile")]

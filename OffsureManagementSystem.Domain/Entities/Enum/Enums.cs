@@ -29,4 +29,11 @@ namespace OffsureManagementSystem.Domain.Entities.Enum
         OnHold = 3,
         Cancelled = 4
     }
+
+    /// <summary>How project budget is defined: fixed total or rate × expected hours.</summary>
+    public enum ProjectBudgetType
+    {
+        Total = 0,
+        Hourly = 1
+    }
 }

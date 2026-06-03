@@ -10,6 +10,19 @@ export interface ClientFilterRequest {
   pageSize?: number;
 }
 
+export interface CreateClientDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  companyName: string;
+  contactPersonPhone?: string;
+  companyAddress?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
+}
+
 export interface UpdateClientProfileDto {
   companyName?: string;
   contactPersonPhone?: string;

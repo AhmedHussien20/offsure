@@ -17,6 +17,8 @@ export interface ProjectFilterRequest {
 }
 
 export type ProjectBudgetMode = 'sameAsRequest' | 'custom';
+export type ProjectBudgetType = 'Total' | 'Hourly';
+export type ProjectCustomBudgetType = 'total' | 'hourly';
 
 export interface CreateProjectDto {
   /** 0 = create without an existing client request (requires clientId + serviceId). */
@@ -28,6 +30,9 @@ export interface CreateProjectDto {
   startDate?: string;
   targetEndDate?: string;
   budget?: number;
+  budgetType?: ProjectBudgetType;
+  hourlyRate?: number;
+  expectedHours?: number;
 }
 
 export interface UpdateProjectDto {
@@ -35,6 +40,9 @@ export interface UpdateProjectDto {
   description?: string;
   targetEndDate?: string;
   budget?: number;
+  budgetType?: ProjectBudgetType;
+  hourlyRate?: number;
+  expectedHours?: number;
   progress?: number;
   requiredSkillIds?: number[];
 }
@@ -77,6 +85,9 @@ export interface ProjectDto {
   endDate: string | null;
   targetEndDate: string | null;
   budget: number | null;
+  budgetType?: ProjectBudgetType;
+  hourlyRate: number | null;
+  expectedHours: number | null;
   progress: number | null;
   requiredSkillIds?: number[];
   teamMembers: ProjectAssignmentDto[];

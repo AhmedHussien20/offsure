@@ -23,6 +23,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string? PhoneNumber { get; set; }
         public int? LeaderId { get; set; }
         public bool IsAvailable { get; set; } = true;
+        public decimal? HourlySalary { get; set; }
         public List<UpsertTeamMemberSkillDto> SkillAssignments { get; set; } = new();
     }
 
@@ -36,6 +37,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string? PhoneNumber { get; set; }
         public int? LeaderId { get; set; }
         public bool IsAvailable { get; set; } = true;
+        public decimal? HourlySalary { get; set; }
         public List<UpsertTeamMemberSkillDto> SkillAssignments { get; set; } = new();
     }
 
@@ -76,6 +78,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public int? LeaderId { get; set; }
         public string? LeaderName { get; set; }
         public bool IsAvailable { get; set; }
+        public decimal? HourlySalary { get; set; }
         public List<TeamMemberSkillDto> SkillAssignments { get; set; } = new();
     }
 

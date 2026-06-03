@@ -1,38 +1,31 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SkillDto } from 'app/core/models/skills/skill.models';
 import { TeamMemberDto, TeamMemberSkillDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
-import { SkillsService } from 'app/core/services/skills.service';
 import { TeamContextService } from 'app/core/services/team-context.service';
 import { TeamPortalService } from 'app/core/services/team-portal.service';
+import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
-import { PROFICIENCY_LABELS } from '../team.constants';
 
 @Component({
   selector: 'app-team-profile',
   standalone: true,
-  imports: [CommonModule, SharedModule, ReactiveFormsModule],
+  imports: [CommonModule, SharedModule, ReactiveFormsModule, TeamMemberSkillsEditorComponent],
   templateUrl: './team-profile.component.html',
   styleUrl: './team-profile.component.scss',
 })
 export class TeamProfileComponent implements OnInit {
   profile: TeamMemberDto | null = null;
-  skillCatalog: SkillDto[] = [];
   loading = true;
   savingProfile = false;
-  savingSkill = false;
   cvBusy = false;
 
   profileForm!: FormGroup;
-  skillForm!: FormGroup;
-  proficiencyLabels = PROFICIENCY_LABELS;
 
   constructor(
     private teamContext: TeamContextService,
     private teamPortal: TeamPortalService,
-    private skillsService: SkillsService,
     private fb: FormBuilder,
     private toastr: ToastrService
   ) {}
@@ -42,18 +35,6 @@ export class TeamProfileComponent implements OnInit {
       title: ['', Validators.required],
       yearsOfExperience: [0, [Validators.required, Validators.min(0)]],
       phoneNumber: [''],
-    });
-
-    this.skillForm = this.fb.group({
-      skillId: [null, Validators.required],
-      proficiencyLevel: [3, [Validators.required, Validators.min(1), Validators.max(5)]],
-      yearsOfExperience: [0, [Validators.required, Validators.min(0)]],
-    });
-
-    this.skillsService.getAll({ pageIndex: 1, pageSize: 500 } as any).subscribe({
-      next: res => {
-        this.skillCatalog = res.data?.data ?? [];
-      },
     });
 
     this.loadProfile();
@@ -67,8 +48,8 @@ export class TeamProfileComponent implements OnInit {
     return this.profile?.skillAssignments ?? [];
   }
 
-  proficiencyLabel(level: number): string {
-    return this.proficiencyLabels[level] ?? `Level ${level}`;
+  onSkillsProfileChange(profile: TeamMemberDto): void {
+    this.profile = profile;
   }
 
   saveProfile(): void {
@@ -97,46 +78,6 @@ export class TeamProfileComponent implements OnInit {
           this.savingProfile = false;
         },
       });
-  }
-
-  addSkill(): void {
-    if (this.skillForm.invalid) {
-      this.skillForm.markAllAsTouched();
-      return;
-    }
-
-    const raw = this.skillForm.getRawValue();
-    this.savingSkill = true;
-    this.teamPortal
-      .assignSkill({
-        skillId: Number(raw.skillId),
-        proficiencyLevel: Number(raw.proficiencyLevel),
-        yearsOfExperience: Number(raw.yearsOfExperience),
-      })
-      .subscribe({
-        next: res => {
-          this.profile = res.data ?? this.profile;
-          this.skillForm.reset({ skillId: null, proficiencyLevel: 3, yearsOfExperience: 0 });
-          this.toastr.success('Skill added.');
-          this.savingSkill = false;
-        },
-        error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to add skill.');
-          this.savingSkill = false;
-        },
-      });
-  }
-
-  removeSkill(skillId: number): void {
-    this.teamPortal.removeSkill(skillId).subscribe({
-      next: res => {
-        this.profile = res.data ?? this.profile;
-        this.toastr.success('Skill removed.');
-      },
-      error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to remove skill.');
-      },
-    });
   }
 
   generateCv(): void {

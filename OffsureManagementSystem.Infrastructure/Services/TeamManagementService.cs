@@ -134,6 +134,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty,
                 LeaderId = dto.LeaderId,
                 IsAvailable = dto.IsAvailable,
+                HourlySalary = dto.HourlySalary,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -178,6 +179,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             member.PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty;
             member.LeaderId = dto.LeaderId;
             member.IsAvailable = dto.IsAvailable;
+            member.HourlySalary = dto.HourlySalary;
             member.UpdatedAt = DateTime.UtcNow;
 
             _teamMemberRepo.SaveInclude(
@@ -187,6 +189,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(member.PhoneNumber),
                 nameof(member.LeaderId),
                 nameof(member.IsAvailable),
+                nameof(member.HourlySalary),
                 nameof(member.UpdatedAt));
 
             _userRepo.SaveInclude(
@@ -642,6 +645,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 LeaderId = member.LeaderId,
                 LeaderName = UserDisplayName.FromTeamMember(member.Leader),
                 IsAvailable = member.IsAvailable,
+                HourlySalary = member.HourlySalary,
                 SkillAssignments = member.TeamMemberSkills
                     .OrderBy(s => s.Skill.Name)
                     .Select(MapSkill)

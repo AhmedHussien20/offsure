@@ -191,8 +191,8 @@
             <ng-template *ngIf="field.selectType === 'simple'" ng-option-tmp let-item="item">
               {{ item.label | translate }}
             </ng-template>
-            <ng-template *ngIf="field.selectType === 'simple'" ng-label-tmp let-item="item">
-              {{ item.label | translate }}
+            <ng-template *ngIf="field.selectType === 'simple'" ng-label-tmp let-label="label">
+              {{ label | translate }}
             </ng-template>
 
             <ng-template *ngIf="field.selectType === 'employee'" ng-option-tmp let-item="item" let-index="index">
@@ -226,8 +226,8 @@
             <ng-template *ngIf="!field.selectType" ng-option-tmp let-item="item">
               {{ item.label }}
             </ng-template>
-            <ng-template *ngIf="!field.selectType" ng-label-tmp let-item="item">
-              {{ item.label }}
+            <ng-template *ngIf="!field.selectType" ng-label-tmp let-label="label">
+              {{ label }}
             </ng-template>
           </ng-select>
 

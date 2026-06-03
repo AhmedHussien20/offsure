@@ -105,6 +105,11 @@
         <label class="form-label small fw-semibold mt-2">Role on this project</label>
         <input type="text" class="form-control form-control-sm mb-2" [(ngModel)]="d.role" />
 
+        @if (project?.budgetType === 'Hourly') {
+          <p class="text-muted small mb-2">
+            Rate and hours are pre-filled from the project budget. You can change them for this assignment.
+          </p>
+        }
         <div class="row g-2">
           <div class="col-4">
             <label class="form-label small">Hourly rate ($)</label>

@@ -2,7 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { ClientDto, UpdateClientProfileDto } from 'app/core/models/clients/client.models';
+import {
+  ClientDto,
+  ClientServiceRequestSummaryDto,
+  UpdateClientProfileDto,
+} from 'app/core/models/clients/client.models';
 import { ClientsService } from 'app/core/services/clients.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
@@ -16,6 +20,7 @@ import { ToastrService } from 'ngx-toastr';
 })
 export class ClientProfileComponent implements OnInit {
   profile: ClientDto | null = null;
+  recentRequests: ClientServiceRequestSummaryDto[] = [];
   loading = true;
   saving = false;
 
@@ -51,10 +56,6 @@ export class ClientProfileComponent implements OnInit {
       .map(p => p[0])
       .join('')
       .toUpperCase();
-  }
-
-  get recentRequests() {
-    return (this.profile?.serviceRequests ?? []).slice(0, 5);
   }
 
   saveProfile(): void {
@@ -96,12 +97,28 @@ export class ClientProfileComponent implements OnInit {
         this.profile = res.data ?? null;
         if (this.profile) {
           this.patchForm(this.profile);
+          this.loadRecentRequests();
+          return;
         }
         this.loading = false;
       },
       error: err => {
         this.loading = false;
         this.toastr.error(err?.error?.message || 'Failed to load profile.');
+      },
+    });
+  }
+
+  private loadRecentRequests(): void {
+    this.clientsService.getProfileRecentRequests(5).subscribe({
+      next: res => {
+        this.recentRequests = res.data ?? [];
+        this.loading = false;
+      },
+      error: err => {
+        this.recentRequests = [];
+        this.loading = false;
+        this.toastr.error(err?.error?.message || 'Failed to load recent requests.');
       },
     });
   }

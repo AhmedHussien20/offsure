@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProjectDto } from 'app/core/models/projects/project.models';
 import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
+import { ProjectDetailReadonlyComponent } from 'app/shared/components/project-detail-readonly/project-detail-readonly.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { projectStatusKey } from 'app/core/utils/enum-status.util';
 import { PROJECT_STATUS_BADGES } from '../client.constants';
@@ -11,7 +12,7 @@ import { PROJECT_STATUS_BADGES } from '../client.constants';
 @Component({
   selector: 'app-client-project-detail',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule],
+  imports: [CommonModule, SharedModule, RouterModule, ProjectDetailReadonlyComponent],
   templateUrl: './client-project-detail.component.html',
 })
 export class ClientProjectDetailComponent implements OnInit {
@@ -45,11 +46,9 @@ export class ClientProjectDetailComponent implements OnInit {
     });
   }
 
-  statusBadgeClass(status: unknown): string {
-    return PROJECT_STATUS_BADGES[projectStatusKey(status)]?.class ?? 'bg-light';
-  }
+  readonly statusBadgeClassFn = (status: unknown): string =>
+    PROJECT_STATUS_BADGES[projectStatusKey(status)]?.class ?? 'bg-light';
 
-  statusLabel(status: unknown): string {
-    return PROJECT_STATUS_BADGES[projectStatusKey(status)]?.text ?? String(status ?? '');
-  }
+  readonly statusLabelFn = (status: unknown): string =>
+    PROJECT_STATUS_BADGES[projectStatusKey(status)]?.text ?? String(status ?? '');
 }

@@ -35,6 +35,7 @@ export interface CreateTeamMemberDto {
   phoneNumber?: string;
   leaderId?: number;
   isAvailable?: boolean;
+  hourlySalary?: number;
   skillAssignments?: UpsertTeamMemberSkillDto[];
 }
 
@@ -86,6 +87,7 @@ export interface TeamMemberDto {
   leaderId: number | null;
   leaderName: string | null;
   isAvailable: boolean;
+  hourlySalary: number | null;
   skillAssignments: TeamMemberSkillDto[];
 }
 

@@ -3,14 +3,16 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
+import { UpsertTeamMemberSkillDto } from 'app/core/models/team-members/team-member.models';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
+import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-admin-team-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent, TeamMemberSkillsEditorComponent],
   template: `
     <div class="modal-header">
       <h5 class="modal-title">Add Team Member</h5>
@@ -18,6 +20,10 @@ import { ToastrService } from 'ngx-toastr';
     </div>
     <div class="modal-body">
       <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+      <hr class="my-3" />
+      <h6 class="mb-1">Skills</h6>
+      <p class="text-muted small mb-2">Select skills and set proficiency for this member.</p>
+      <app-team-member-skills-editor mode="draft" (assignmentsChange)="onSkillsChange($event)" />
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Cancel</button>
@@ -29,6 +35,7 @@ import { ToastrService } from 'ngx-toastr';
 })
 export class AdminTeamCreateComponent {
   saving = false;
+  skillAssignments: UpsertTeamMemberSkillDto[] = [];
   form!: FormGroup;
   formConfig: FormFieldConfig[] = [
     { type: 'input', inputType: 'text', name: 'firstName', label: 'First Name', validations: { required: true } },
@@ -38,6 +45,13 @@ export class AdminTeamCreateComponent {
     { type: 'input', inputType: 'text', name: 'title', label: 'Job Title' },
     { type: 'input', inputType: 'text', name: 'phoneNumber', label: 'Phone' },
     { type: 'input', inputType: 'number', name: 'yearsOfExperience', label: 'Years of Experience' },
+    {
+      type: 'input',
+      inputType: 'number',
+      name: 'hourlySalary',
+      label: 'Hourly salary ($)',
+      placeholder: 'Default rate per hour',
+    },
   ];
 
   constructor(
@@ -54,8 +68,13 @@ export class AdminTeamCreateComponent {
       title: [''],
       phoneNumber: [''],
       yearsOfExperience: [null],
+      hourlySalary: [null],
       isAvailable: [true],
     });
+  }
+
+  onSkillsChange(skills: UpsertTeamMemberSkillDto[]): void {
+    this.skillAssignments = skills;
   }
 
   submit(): void {
@@ -75,7 +94,9 @@ export class AdminTeamCreateComponent {
         title: raw.title?.trim(),
         phoneNumber: raw.phoneNumber?.trim(),
         yearsOfExperience: raw.yearsOfExperience != null ? Number(raw.yearsOfExperience) : undefined,
+        hourlySalary: raw.hourlySalary != null && raw.hourlySalary !== '' ? Number(raw.hourlySalary) : undefined,
         isAvailable: true,
+        skillAssignments: this.skillAssignments.length ? this.skillAssignments : undefined,
       })
       .subscribe({
         next: () => {

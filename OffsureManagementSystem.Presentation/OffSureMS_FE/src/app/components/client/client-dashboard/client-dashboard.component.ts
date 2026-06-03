@@ -4,13 +4,13 @@ import { RouterModule } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { SpkEcommerceComponent } from 'app/@spk/reusable-ecommerce/spk-ecommerce/spk-ecommerce.component';
 import { ClientContextService } from 'app/core/services/client-context.service';
+import { ClientsService } from 'app/core/services/clients.service';
 import { ClientDto, ClientServiceRequestSummaryDto } from 'app/core/models/clients/client.models';
+import { ProjectsService } from 'app/core/services/projects.service';
+import { ProjectDto, ProjectStatus } from 'app/core/models/projects/project.models';
 import { SharedModule } from 'app/shared/shared.module';
-import { ProjectStatus } from 'app/core/models/projects/project.models';
-import {
-  normalizeProjectStatus,
-  serviceRequestStatusKey,
-} from 'app/core/utils/enum-status.util';
+import { serviceRequestStatusKey } from 'app/core/utils/enum-status.util';
+import { forkJoin } from 'rxjs';
 import { SERVICE_REQUEST_STATUS_BADGES } from '../client.constants';
 import { ClientRequestCreateComponent } from '../client-request-form/client-request-create.component';
 
@@ -24,13 +24,15 @@ import { ClientRequestCreateComponent } from '../client-request-form/client-requ
 export class ClientDashboardComponent implements OnInit {
   profile: ClientDto | null = null;
   recentRequests: ClientServiceRequestSummaryDto[] = [];
-  ongoingProjects: ClientServiceRequestSummaryDto[] = [];
+  ongoingProjects: ProjectDto[] = [];
   loading = true;
 
   statCards: { label: string; value: string; icon: string; description: string; subValue: string }[] = [];
 
   constructor(
     private clientContext: ClientContextService,
+    private clientsService: ClientsService,
+    private projectsService: ProjectsService,
     private modalService: NgbModal
   ) {}
 
@@ -53,7 +55,7 @@ export class ClientDashboardComponent implements OnInit {
           },
           {
             label: 'Active Projects',
-            value: String(this.countOngoingProjects(profile)),
+            value: '0',
             icon: 'ti-folder',
             description: 'Projects in progress',
             subValue: '',
@@ -67,13 +69,28 @@ export class ClientDashboardComponent implements OnInit {
           },
         ];
 
-        this.recentRequests = (profile.serviceRequests ?? []).slice(0, 5);
-        this.ongoingProjects = (profile.serviceRequests ?? []).filter(
-          r =>
-            r.projectId &&
-            normalizeProjectStatus(r.projectStatus) === ProjectStatus.InProgress
-        );
-        this.loading = false;
+        forkJoin({
+          recent: this.clientsService.getProfileRecentRequests(5),
+          ongoing: this.projectsService.getMy({
+            pageIndex: 1,
+            pageSize: 10,
+            status: ProjectStatus.InProgress,
+          }),
+        }).subscribe({
+          next: ({ recent, ongoing }) => {
+            this.recentRequests = recent.data ?? [];
+            const ongoingPaged = ongoing.data;
+            this.ongoingProjects = ongoingPaged?.data ?? [];
+            const activeCard = this.statCards.find(c => c.label === 'Active Projects');
+            if (activeCard) {
+              activeCard.value = String(ongoingPaged?.totalCount ?? this.ongoingProjects.length);
+            }
+            this.loading = false;
+          },
+          error: () => {
+            this.loading = false;
+          },
+        });
       },
       error: () => {
         this.loading = false;
@@ -99,11 +116,4 @@ export class ClientDashboardComponent implements OnInit {
     });
   }
 
-  private countOngoingProjects(profile: ClientDto): number {
-    return (profile.serviceRequests ?? []).filter(
-      r =>
-        r.projectId &&
-        normalizeProjectStatus(r.projectStatus) === ProjectStatus.InProgress
-    ).length;
-  }
 }

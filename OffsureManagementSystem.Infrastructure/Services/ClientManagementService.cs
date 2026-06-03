@@ -5,6 +5,7 @@ using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using TaskMangment.Application.Common.Responses;
 using Client = OffshoreManagementSystem.Domain.Entities.Client;
+using OffsureManagementSystem.Domain.Entities;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
 using User = OffshoreManagementSystem.Domain.Entities.User;
 
@@ -14,13 +15,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
     {
         private readonly IRepository<Client> _clientRepo;
         private readonly IRepository<User> _userRepo;
+        private readonly IRepository<Role> _roleRepo;
+        private readonly IRepository<ServiceRequest> _serviceRequestRepo;
 
         public ClientManagementService(
             IRepository<Client> clientRepo,
-            IRepository<User> userRepo)
+            IRepository<User> userRepo,
+            IRepository<Role> roleRepo,
+            IRepository<ServiceRequest> serviceRequestRepo)
         {
             _clientRepo = clientRepo;
             _userRepo = userRepo;
+            _roleRepo = roleRepo;
+            _serviceRequestRepo = serviceRequestRepo;
         }
 
         public async Task<PagedResponse<ClientDto>> GetAllClientsAsync(ClientFilterRequest request)
@@ -41,6 +48,56 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 GetPageSize(request));
         }
 
+        public async Task<ClientDto> CreateClientAsync(CreateClientDto dto)
+        {
+            ValidateCreateInput(dto);
+
+            var normalizedEmail = NormalizeEmail(dto.Email);
+            var emailExists = await _userRepo
+                .GetAll(u => u.Email == normalizedEmail)
+                .AnyAsync();
+
+            if (emailExists)
+                throw new AppException("Email already exists.", 400);
+
+            var clientRole = await _roleRepo
+                .GetAll(r => r.Name == "Client")
+                .FirstOrDefaultAsync();
+
+            if (clientRole is null)
+                throw new AppException("Resource not found.", 404);
+
+            var user = new User
+            {
+                FirstName = dto.FirstName.Trim(),
+                LastName = dto.LastName.Trim(),
+                Email = normalizedEmail,
+                PasswordHash = HashPassword(dto.Password),
+                RoleId = clientRole.Id,
+                IsEmailVerified = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var client = new Client
+            {
+                User = user,
+                CompanyName = dto.CompanyName.Trim(),
+                ContactPersonPhone = dto.ContactPersonPhone?.Trim() ?? string.Empty,
+                CompanyAddress = dto.CompanyAddress?.Trim() ?? string.Empty,
+                City = dto.City?.Trim() ?? string.Empty,
+                Country = dto.Country?.Trim() ?? string.Empty,
+                PostalCode = dto.PostalCode?.Trim() ?? string.Empty,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _clientRepo.AddAsync(client);
+            await _clientRepo.SaveChangesAsync();
+
+            return await GetClientByIdAsync(client.Id);
+        }
+
         public async Task<ClientDto> GetClientByIdAsync(int id)
         {
             var client = await BuildClientQuery()
@@ -54,13 +111,43 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ClientDto> GetClientProfileAsync(int userId)
         {
-            var client = await BuildClientQuery()
+            var client = await BuildClientProfileQuery()
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
             if (client is null)
                 throw new AppException("Client profile not found for current user.", 404);
 
-            return MapClient(client);
+            return await MapClientProfileAsync(client);
+        }
+
+        public async Task<IReadOnlyList<ClientServiceRequestSummaryDto>> GetClientRecentServiceRequestsAsync(
+            int userId,
+            int limit = 5)
+        {
+            if (limit < 1)
+                limit = 5;
+            if (limit > 50)
+                limit = 50;
+
+            var clientId = await _clientRepo
+                .Query()
+                .Where(c => c.UserId == userId)
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync();
+
+            if (clientId == 0)
+                throw new AppException("Client profile not found for current user.", 404);
+
+            var requests = await _serviceRequestRepo
+                .Query()
+                .Include(r => r.Service)
+                .Include(r => r.Project)
+                .Where(r => r.ClientId == clientId)
+                .OrderByDescending(r => r.RequestedDate)
+                .Take(limit)
+                .ToListAsync();
+
+            return requests.Select(MapRequest).ToList();
         }
 
         public async Task<ClientDto> UpdateClientProfileAsync(int userId, UpdateClientProfileDto dto)
@@ -145,6 +232,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     .ThenInclude(r => r.Project);
         }
 
+        private IQueryable<Client> BuildClientProfileQuery()
+        {
+            return _clientRepo
+                .Query()
+                .Include(c => c.User);
+        }
+
         private static IQueryable<Client> ApplyFilters(
             IQueryable<Client> query,
             ClientFilterRequest request)
@@ -207,11 +301,31 @@ namespace OffsureManagementSystem.Infrastructure.Services
             };
         }
 
+        private static void ValidateCreateInput(CreateClientDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.FirstName)
+                || string.IsNullOrWhiteSpace(dto.LastName)
+                || string.IsNullOrWhiteSpace(dto.Email)
+                || !dto.Email.Contains('@')
+                || string.IsNullOrWhiteSpace(dto.Password)
+                || dto.Password.Length < 8
+                || string.IsNullOrWhiteSpace(dto.CompanyName))
+            {
+                throw new AppException("Invalid request.", 400);
+            }
+        }
+
         private static void ValidateProfileInput(UpdateClientProfileDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.CompanyName))
                 throw new AppException("Invalid request.", 400);
         }
+
+        private static string NormalizeEmail(string email)
+            => email.Trim().ToLowerInvariant();
+
+        private static string HashPassword(string password)
+            => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
 
         private static string Normalize(string value)
             => value.Trim().ToLowerInvariant();
@@ -235,6 +349,24 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Select(MapRequest)
                 .ToList();
 
+            return MapClientCore(client, requests.Count, requests.Count(r => r.ProjectId.HasValue), requests);
+        }
+
+        private async Task<ClientDto> MapClientProfileAsync(Client client)
+        {
+            var requestQuery = _serviceRequestRepo.Query().Where(r => r.ClientId == client.Id);
+            var requestsCount = await requestQuery.CountAsync();
+            var projectsCount = await requestQuery.CountAsync(r => r.Project != null);
+
+            return MapClientCore(client, requestsCount, projectsCount, new List<ClientServiceRequestSummaryDto>());
+        }
+
+        private static ClientDto MapClientCore(
+            Client client,
+            int requestsCount,
+            int projectsCount,
+            List<ClientServiceRequestSummaryDto> serviceRequests)
+        {
             return new ClientDto
             {
                 Id = client.Id,
@@ -251,9 +383,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Country = client.Country ?? string.Empty,
                 PostalCode = client.PostalCode ?? string.Empty,
                 IsActive = client.IsActive,
-                RequestsCount = requests.Count,
-                ProjectsCount = requests.Count(r => r.ProjectId.HasValue),
-                ServiceRequests = requests
+                RequestsCount = requestsCount,
+                ProjectsCount = projectsCount,
+                ServiceRequests = serviceRequests
             };
         }
 
