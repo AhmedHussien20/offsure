@@ -237,6 +237,7 @@
                             <div class="col-4" *ngFor="let item of activeShortcuts">
 
                                 <a [routerLink]="canAccessShortcut(item) ? item.path : null"
+                                    [queryParams]="canAccessShortcut(item) ? item.queryParams : null"
                                     class="text-decoration-none" [class.disabled-shortcut]="!canAccessShortcut(item)"
                                     [ngbTooltip]="!canAccessShortcut(item) ? ('GENERAL.NO_PERMISSION' | translate) : null"
                                     container="body" placement="bottom">

@@ -1,271 +1,313 @@
-<div class="card">
-  <div class="card-body">
-    <form [formGroup]="formGroup" (ngSubmit)="onSubmit()" class="row gy-2 gx-3 align-items-start generic-form"
-      [dir]="'rtl'">
-      <div class="d-flex justify-content-end mb-4">
+<form
+  [formGroup]="formGroup"
+  (ngSubmit)="onSubmit()"
+  class="row gy-3 gx-3 align-items-start generic-form">
 
-        <button *ngIf="showSubmit" type="submit" class="btn btn-primary">
-          {{ submitLabel | translate }}
-        </button>
-      </div>
-      <div *ngFor="let field of orderedFields" [ngClass]="{
-       'col-md-4': field.type !== 'file' && field.type !== 'textarea',
-       'col-md-12': field.type === 'file' || field.type === 'textarea'
-     }">
-        <label *ngIf="field.type !== 'file' && field.type !== 'checkbox'" [for]="field.name">{{ field.label | translate}}</label>
-        <div *ngIf="field.inputType !== 'mobile' && (field.type === 'input' || field.type === 'text' || field.type === 'number' || field.inputType === 'password')" class="input-group">
-          <div *ngIf="field.prefix" class="input-group-text">
-            {{ field.prefix | translate}}
+  @for (field of orderedFields; track field.name) {
+    <div
+      class="form-group"
+      [ngClass]="{
+        'col-md-4': field.type !== 'file' && field.type !== 'textarea',
+        'col-md-12': field.type === 'file' || field.type === 'textarea'
+      }">
+
+      @if (field.type !== 'file') {
+        <label class="form-label" [for]="field.name">
+          {{ field.label | translate }}
+          @if (field.validations?.required) {
+            <span class="required">*</span>
+          }
+        </label>
+      }
+
+      <!-- Text-like inputs -->
+      @if (isTextInput(field)) {
+        @if (field.prefix) {
+          <div class="generic-form__control">
+            <div class="input-group generic-form__prefixed">
+              <span class="input-group-text">{{ field.prefix | translate }}</span>
+              <div class="input-wrapper flex-grow-1" [class.password-wrapper]="field.inputType === 'password'">
+                <i [class]="getFieldIcon(field)"></i>
+                <input
+                  [type]="field.inputType === 'password' && field.showPassword ? 'text' : (field.inputType || 'text')"
+                  class="form-control"
+                  [id]="field.name"
+                  [formControlName]="field.name"
+                  [placeholder]="field.placeholder ? (field.placeholder | translate) : (field.label | translate)"
+                  [readOnly]="field.disabled"
+                  autocomplete="new-password"
+                  [class.is-invalid]="isInvalid(field.name)" />
+
+                @if (field.inputType === 'password') {
+                  <button
+                    type="button"
+                    class="toggle-password"
+                    (click)="toggleFieldPassword(field)"
+                    aria-label="Toggle password visibility">
+                    <i class="fe" [class.fe-eye]="!field.showPassword" [class.fe-eye-off]="field.showPassword"></i>
+                  </button>
+                }
+              </div>
+            </div>
           </div>
-          <input [type]="field.inputType === 'password' && field.showPassword ? 'text' : field.inputType"
-            class="form-control" [id]="field.name" [formControlName]="field.name"
-            [placeholder]="field.placeholder ? (field.placeholder | translate) : (field.label | translate)"
-            [readOnly]="field.disabled" [disabled]="field.disabled" autocomplete="new-password" [ngClass]="{
-    'is-invalid':
-      formGroup.controls[field.name].invalid &&
-      (formGroup.controls[field.name].dirty ||
-        formGroup.controls[field.name].touched)
-  }" />
+        } @else {
+          <div class="generic-form__control">
+            <div class="input-wrapper" [class.password-wrapper]="field.inputType === 'password'">
+              <i [class]="getFieldIcon(field)"></i>
+              <input
+                [type]="field.inputType === 'password' && field.showPassword ? 'text' : (field.inputType || 'text')"
+                class="form-control"
+                [id]="field.name"
+                [formControlName]="field.name"
+                [placeholder]="field.placeholder ? (field.placeholder | translate) : (field.label | translate)"
+                [readOnly]="field.disabled"
+                autocomplete="new-password"
+                [class.is-invalid]="isInvalid(field.name)" />
 
-          <button *ngIf="field.name === 'password'" type="button" class="btn btn-outline-secondary"
-            (click)="onGeneratePassword(field.name)">
+              @if (field.inputType === 'password') {
+                <button
+                  type="button"
+                  class="toggle-password"
+                  (click)="toggleFieldPassword(field)"
+                  aria-label="Toggle password visibility">
+                  <i class="fe" [class.fe-eye]="!field.showPassword" [class.fe-eye-off]="field.showPassword"></i>
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        @if (field.name === 'password') {
+          <button type="button" class="btn-generate-password" (click)="onGeneratePassword(field.name)">
             {{ 'FORM.GENERATE' | translate }}
           </button>
-          <button *ngIf="field.inputType === 'password'" type="button" class="btn btn-outline-secondary"
-            (click)="field.showPassword = !field.showPassword">
-            <i [class]="field.showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-          </button>
+        }
 
-          <div *ngIf="
-              formGroup.controls[field.name].invalid &&
-              (formGroup.controls[field.name].dirty ||
-                formGroup.controls[field.name].touched)
-            " class="invalid-feedback">
-            <div *ngIf="formGroup.controls[field.name].errors?.['required']">
-              {{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}
-            </div>
-            <div *ngIf="formGroup.controls[field.name].errors?.['minlength']">
-              {{ 'FORM.MINIMUM_LENGTH' | translate }}
-              {{ formGroup.controls[field.name].errors?.['minlength'].requiredLength }}
-              {{ 'FORM.CHARACTERS' | translate }}
-            </div>
-            <div *ngIf="formGroup.controls[field.name].errors?.['maxlength']">
-              {{ 'FORM.MAXIMUM_LENGTH' | translate }}
-              {{ formGroup.controls[field.name].errors?.['maxlength'].requiredLength }}
-              {{ 'FORM.CHARACTERS' | translate }}
-            </div>
+        @if (isInvalid(field.name)) {
+          <div class="invalid-feedback">
+            @if (formGroup.controls[field.name].errors?.['required']) {
+              <div>{{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}</div>
+            }
+            @if (formGroup.controls[field.name].errors?.['minlength']) {
+              <div>
+                {{ 'FORM.MINIMUM_LENGTH' | translate }}
+                {{ formGroup.controls[field.name].errors?.['minlength'].requiredLength }}
+                {{ 'FORM.CHARACTERS' | translate }}
+              </div>
+            }
+            @if (formGroup.controls[field.name].errors?.['maxlength']) {
+              <div>
+                {{ 'FORM.MAXIMUM_LENGTH' | translate }}
+                {{ formGroup.controls[field.name].errors?.['maxlength'].requiredLength }}
+                {{ 'FORM.CHARACTERS' | translate }}
+              </div>
+            }
+            @if (formGroup.controls[field.name].errors?.['decimal'] && field.inputType === 'number') {
+              <div>{{ 'FORM.INVALID_DECIMAL_NUMBER' | translate }}</div>
+            }
+            @if (formGroup.controls[field.name].errors?.['email']) {
+              <div>{{ 'FORM.PATTERN_INVALID_EMAIL' | translate }}</div>
+            }
+            @if (formGroup.controls[field.name].errors?.['pattern'] && field.name === 'mobile') {
+              <div>{{ 'FORM.INVALID_SAUDI_MOBILE' | translate }}</div>
+            }
+            @if (formGroup.controls[field.name].errors?.['duplicate']) {
+              <div>Duplicate value.</div>
+            }
+            @if (formGroup.controls[field.name].errors?.['phone']) {
+              <div>Invalid phone format.</div>
+            }
+            @if (field.name === 'confirmPassword' && formGroup.controls[field.name]?.errors?.['passwordMismatch']) {
+              <div>{{ 'FORM.PASSWORD_MISMATCH' | translate }}</div>
+            }
+          </div>
+        }
+      }
 
-            <div *ngIf="formGroup.controls[field.name].errors?.['decimal']
-            && field.inputType === 'number'" class="input-group">
-              {{ 'FORM.INVALID_DECIMAL_NUMBER' | translate }}
-            </div>
-
-            <div *ngIf="formGroup.controls[field.name].errors?.['email']">
-              {{ 'FORM.PATTERN_INVALID_EMAIL' | translate }}
-            </div>
-            <div *ngIf="
-            formGroup.controls[field.name].errors?.['pattern']&& field.name === 'mobile'">
-              {{ 'FORM.INVALID_SAUDI_MOBILE' | translate }}
-            </div>
-            <div *ngIf="formGroup.controls[field.name].errors?.['duplicate']">
-              Duplicate value.
-            </div>
-            <div *ngIf="formGroup.controls[field.name].errors?.['phone']">
-              Invalid phone format.
-            </div>
-            <!-- Password mismatch message -->
-            <!-- Password mismatch -->
-            <div *ngIf="
-  field.name === 'confirmPassword' &&
-  formGroup.controls[field.name]?.errors?.['passwordMismatch']
-">
-              {{ 'FORM.PASSWORD_MISMATCH' | translate }}
-            </div>
-
+      <!-- Mobile with country code -->
+      @if (field.inputType === 'mobile') {
+        <div class="generic-form__control">
+          <div class="generic-form__mobile-row">
+          <select class="form-select generic-form__country-code" [formControlName]="field.name + 'Code'">
+            @for (code of field.countryCodes; track code.value) {
+              <option [value]="code.value">{{ code.label }}</option>
+            }
+          </select>
+          <div class="input-wrapper flex-grow-1">
+            <i class="fe fe-phone"></i>
+            <input
+              type="text"
+              class="form-control"
+              [formControlName]="field.name"
+              [placeholder]="field.label | translate"
+              [class.is-invalid]="isInvalid(field.name)" />
+          </div>
           </div>
         </div>
 
- <div *ngIf="field.inputType === 'mobile'" class="input-group">
-
-  <select
-    class="form-select"
-    style="max-width: 100px"
-    [formControlName]="field.name + 'Code'">
-    <option *ngFor="let code of field.countryCodes" [value]="code.value">
-      {{ code.label }}
-    </option>
-  </select>
-
-  <input
-    type="text"
-    class="form-control"
-    [formControlName]="field.name"
-    [placeholder]="field.label | translate"
-    [ngClass]="{
-      'is-invalid':
-        formGroup.controls[field.name].invalid &&
-        (formGroup.controls[field.name].dirty ||
-         formGroup.controls[field.name].touched)
-    }"
-  />
- <div *ngIf="formGroup.controls['mobile']?.invalid &&
-            (formGroup.controls['mobile']?.dirty || 
-             formGroup.controls['mobile']?.touched)"
-     class="invalid-feedback">
-  <div *ngIf="formGroup.controls['mobile']?.errors?.['required']">
-    {{ 'FORM.MOBILE_IS_REQUIRED' | translate }}
-  </div>
-
-  <div *ngIf="formGroup.controls['mobile']?.errors?.['pattern']">
-    {{ 'FORM.INVALID_MOBILE' | translate }}
-  </div>
-</div>
-
-
-</div>
-
-
-
-        <!-- TEXTAREA -->
-        <div *ngIf="field.type === 'textarea'" class="mb-3 col-md-8">
-
-          <textarea class="form-control" rows="4" [formControlName]="field.name" [placeholder]="field.label | translate"
-            style="direction: rtl; text-align: right"></textarea>
-
-          <div *ngIf="formGroup.get(field.name)?.invalid && formGroup.get(field.name)?.touched"
-            class="text-danger mt-1">
-            {{ 'VALIDATION.REQUIRED' | translate }}
+        @if (isInvalid(field.name)) {
+          <div class="invalid-feedback">
+            @if (formGroup.controls[field.name]?.errors?.['required']) {
+              <div>{{ 'FORM.MOBILE_IS_REQUIRED' | translate }}</div>
+            }
+            @if (formGroup.controls[field.name]?.errors?.['pattern']) {
+              <div>{{ 'FORM.INVALID_MOBILE' | translate }}</div>
+            }
           </div>
-        </div>
+        }
+      }
 
+      <!-- Textarea -->
+      @if (field.type === 'textarea') {
+        <textarea
+          class="form-control generic-form__textarea"
+          rows="4"
+          [id]="field.name"
+          [formControlName]="field.name"
+          [placeholder]="field.placeholder ? (field.placeholder | translate) : (field.label | translate)"
+          [class.is-invalid]="isInvalid(field.name)">
+        </textarea>
 
-        <!-- ================= SELECT FIELD ================= -->
-        <div *ngIf="field.type === 'select'" class="generic-form__select-wrap">
+        @if (isInvalid(field.name)) {
+          <div class="invalid-feedback">{{ 'VALIDATION.REQUIRED' | translate }}</div>
+        }
+      }
 
-          <ng-select [items]="field.options" bindLabel="label" bindValue="value" [multiple]="field.multiple"
-            [searchable]="true" [closeOnSelect]="!field.multiple" placeholder="{{ 'FORM.SELECT' | translate }}"
-            [formControlName]="field.name" class="custom-ng-select">
+      <!-- Select -->
+      @if (field.type === 'select') {
+        <div class="generic-form__control generic-form__select-wrap">
+          <ng-select
+            [items]="field.options"
+            bindLabel="label"
+            bindValue="value"
+            [multiple]="field.multiple"
+            [searchable]="true"
+            [closeOnSelect]="!field.multiple"
+            placeholder="{{ 'FORM.SELECT' | translate }}"
+            [formControlName]="field.name"
+            class="custom-ng-select"
+            [class.is-invalid]="isInvalid(field.name)">
 
-            <!-- ================= SIMPLE SELECT (label only) ================= -->
             <ng-template *ngIf="field.selectType === 'simple'" ng-option-tmp let-item="item">
               {{ item.label | translate }}
             </ng-template>
-
             <ng-template *ngIf="field.selectType === 'simple'" ng-label-tmp let-item="item">
               {{ item.label | translate }}
             </ng-template>
 
-
-            <!-- ================= EMPLOYEE SELECT (image + name + info) ================= -->
             <ng-template *ngIf="field.selectType === 'employee'" ng-option-tmp let-item="item" let-index="index">
               <div class="d-flex align-items-center p-2">
-                <img [src]="item.imageUrl || 'assets/images/user.png'" (error)="onImageError($event)" width="28"
-                  height="28" class="rounded-circle border me-2" />
-
+                <img
+                  [src]="item.imageUrl || 'assets/images/user.png'"
+                  (error)="onImageError($event)"
+                  width="28"
+                  height="28"
+                  class="rounded-circle border me-2" />
                 <div class="flex-grow-1">
                   <div class="fw-bold">{{ item.label }}</div>
-                  <div *ngIf="item.mobile" class="text-muted small">📱 {{ item.mobile }}</div>
-                  <div *ngIf="item.email" class="text-muted small">✉️ {{ item.email }}</div>
+                  <div *ngIf="item.mobile" class="text-muted small">{{ item.mobile }}</div>
+                  <div *ngIf="item.email" class="text-muted small">{{ item.email }}</div>
                 </div>
               </div>
-
               <hr *ngIf="index < field.options.length - 1" />
             </ng-template>
-
             <ng-template *ngIf="field.selectType === 'employee'" ng-label-tmp let-item="item">
               <div class="d-flex align-items-center">
-                <img [src]="item.imageUrl || 'assets/images/user.png'" (error)="onImageError($event)" width="20"
-                  height="20" class="rounded-circle border me-2" />
+                <img
+                  [src]="item.imageUrl || 'assets/images/user.png'"
+                  (error)="onImageError($event)"
+                  width="20"
+                  height="20"
+                  class="rounded-circle border me-2" />
                 {{ item.label }}
               </div>
             </ng-template>
 
-
-            <!-- ================= FALLBACK (if selectType not provided) ================= -->
             <ng-template *ngIf="!field.selectType" ng-option-tmp let-item="item">
               {{ item.label }}
             </ng-template>
-
             <ng-template *ngIf="!field.selectType" ng-label-tmp let-item="item">
               {{ item.label }}
             </ng-template>
-
           </ng-select>
 
-          <!-- ================= VALIDATION ================= -->
-          <div *ngIf="formGroup.get(field.name)?.invalid && formGroup.get(field.name)?.touched"
-            class="text-danger mt-1">
-            {{ 'VALIDATION.REQUIRED' | translate }}
-          </div>
-
+          @if (isInvalid(field.name)) {
+            <div class="invalid-feedback">{{ 'VALIDATION.REQUIRED' | translate }}</div>
+          }
         </div>
+      }
 
-
-        <!-- Checkbox -->
-        <div *ngIf="field.type === 'checkbox'" class="mt-2">
-          <label class="d-block mb-1" [for]="field.name">{{ field.label | translate }}</label>
-          <div class="generic-form__checkbox">
-            <input class="form-check-input" type="checkbox" [id]="field.name" [formControlName]="field.name"
-              [readOnly]="field.disabled" [disabled]="field.disabled" [ngClass]="{
-                'is-invalid':
-                  formGroup.controls[field.name].invalid &&
-                  (formGroup.controls[field.name].dirty ||
-                    formGroup.controls[field.name].touched)
-              }" />
-          </div>
-
-          <div *ngIf="
-              formGroup.controls[field.name].invalid &&
-              (formGroup.controls[field.name].dirty ||
-                formGroup.controls[field.name].touched)
-            " class="invalid-feedback">
-            <div *ngIf="formGroup.controls[field.name].errors?.['required']">
-              {{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}
-            </div>
+      <!-- Checkbox / toggle -->
+      @if (field.type === 'checkbox') {
+        <div class="generic-form__control generic-form__toggle-wrap">
+          <div class="form-check form-switch generic-form__switch mb-0">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              [id]="field.name"
+              [formControlName]="field.name"
+              [readOnly]="field.disabled"
+              [class.is-invalid]="isInvalid(field.name)" />
           </div>
         </div>
 
-        <mat-form-field *ngIf="field.type === 'date'" appearance="outline" class="w-100">
+        @if (isInvalid(field.name)) {
+          <div class="invalid-feedback">
+            @if (formGroup.controls[field.name].errors?.['required']) {
+              <div>{{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}</div>
+            }
+          </div>
+        }
+      }
 
-          <mat-label>{{ field.label | translate }}</mat-label>
+      <!-- Date -->
+      @if (field.type === 'date') {
+        <div class="generic-form__control">
+          <div class="input-wrapper">
+            <i class="fe fe-calendar"></i>
+            <input
+              type="date"
+              class="form-control generic-form__date-input"
+              [id]="field.name"
+              [formControlName]="field.name"
+              [min]="formatDateBound(field.minDate)"
+              [max]="formatDateBound(field.maxDate)"
+              [readOnly]="field.disabled"
+              [class.is-invalid]="isInvalid(field.name)" />
+          </div>
+        </div>
 
-          <input matInput [id]="field.name" [formControlName]="field.name" [matDatepicker]="picker"
-            [min]="field.minDate" [max]="field.maxDate" [disabled]="field.disabled">
-
-          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
-
-          <!-- Validation -->
-          <mat-error *ngIf="formGroup.get(field.name)?.hasError('required')">
-            {{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}
-          </mat-error>
-
-        </mat-form-field>
-
-
-
-        <!-- ================= FILE UPLOAD ================= -->
-        <div *ngIf="field.type === 'file'" class="col-md-12">
-
-          <label class="mb-2 d-block">
-            {{ field.label | translate }}
-          </label>
-
-          <dropzone class="dropzone-container" [config]="getDropzoneConfig(field)"
-            (addedFile)="onFileAdded($event, field)" (removedFile)="onFileRemoved($event, field)">
-          </dropzone>
-
-          <!-- Validation -->
-          <div *ngIf="
-    formGroup.get(field.name)?.invalid &&
-    formGroup.get(field.name)?.touched
-  " class="text-danger mt-1">
+        @if (isInvalid(field.name)) {
+          <div class="invalid-feedback">
             {{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}
           </div>
+        }
+      }
 
-        </div>
+      <!-- File upload -->
+      @if (field.type === 'file') {
+        <dropzone
+          class="dropzone-container"
+          [config]="getDropzoneConfig(field)"
+          (addedFile)="onFileAdded($event, field)"
+          (removedFile)="onFileRemoved($event, field)">
+        </dropzone>
 
-      </div>
-    </form>
-  </div>
-</div>
+        @if (isInvalid(field.name)) {
+          <div class="invalid-feedback">
+            {{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}
+          </div>
+        }
+      }
+    </div>
+  }
+
+  @if (showSubmit) {
+    <div class="col-12 d-flex justify-content-end generic-form__actions">
+      <button type="submit" class="btn generic-form__submit">
+        {{ submitLabel | translate }}
+      </button>
+    </div>
+  }
+</form>

@@ -1,5 +1,5 @@
 export interface FormFieldConfig {
-  type: 'input' | 'select' | 'textarea' | 'date' | 'checkbox' | 'radio' | 'file' ; 
+  type: 'input' | 'select' | 'textarea' | 'date' | 'checkbox' | 'radio' | 'file' | 'text' | 'number'; 
 
   inputType?: 'text' | 'number' | 'email' | 'password' | 'url' | 'mobile';
   countryCodes?: {
@@ -24,6 +24,9 @@ export interface FormFieldConfig {
   prefix?: string;
   placeholder?: string;
   disabled?: boolean;
+  minDate?: Date | string;
+  maxDate?: Date | string;
+  icon?: string;
   
   showPassword?: boolean;
 

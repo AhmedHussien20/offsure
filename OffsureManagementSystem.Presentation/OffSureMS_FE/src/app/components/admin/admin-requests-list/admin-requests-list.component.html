@@ -28,7 +28,7 @@
   <div class="d-flex flex-wrap align-items-center gap-2">
     <label class="mb-0 me-1 fw-semibold">Status:</label>
     <select
-      class="form-select form-select-sm w-auto"
+      class="form-select form-select-sm w-auto no-expand"
       [ngModel]="item.status"
       [disabled]="isStatusChangeDisabled(item)"
       (ngModelChange)="updateStatus(item, $event)">
@@ -39,9 +39,9 @@
     @if (canShowConvertToProject(item)) {
       <button
         type="button"
-        class="btn btn-sm btn-primary"
+        class="btn btn-sm btn-primary no-expand"
         [disabled]="item.status !== 'InProgress'"
-        (click)="convertToProject(item)">
+        (click)="convertToProject(item); $event.stopPropagation()">
         Convert to Project
       </button>
       <small class="text-muted">Set status to In Progress, then convert to a project.</small>

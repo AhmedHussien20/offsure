@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Input, Output, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbPaginationModule, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
@@ -59,7 +59,7 @@ interface HasId {
   ],
   styleUrls: ['./generic-table.component.scss']
 })
-export class GenericTableComponent<T> implements OnInit, OnDestroy {
+export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   @Output() exportPdfClick = new EventEmitter<void>();
   @Input() showExportPdf: boolean = false;
   @Input() showExportExcel: boolean = true;
@@ -471,35 +471,63 @@ onRowClick(item: T, event: MouseEvent) {
 
   // أضف هذه المتغيرات داخل الـ Component class
 
-@Input() expandable: boolean = false;          
-@Input() expandTemplate: any;               
-@Output() expandedRowChange = new EventEmitter<any>(); 
+@Input() expandable: boolean = false;
+@Input() expandTemplate: any;
+@Input() rowKey: string = 'id';
+@Output() expandedRowChange = new EventEmitter<any>();
 
-expandedRow: any = null;                       
+expandedRow: any = null;
+private expandedRowKey: unknown = null;
+
+ngOnChanges(changes: SimpleChanges): void {
+  if (changes['data'] && this.expandable && this.expandedRowKey != null) {
+    this.syncExpandedRowFromData();
+  }
+}
+
+private getRowKey(item: T): unknown {
+  return item == null ? null : (item as Record<string, unknown>)[this.rowKey];
+}
+
+private syncExpandedRowFromData(): void {
+  const match = this.data?.find(item => this.getRowKey(item) === this.expandedRowKey);
+  if (match) {
+    this.expandedRow = match;
+  } else {
+    this.expandedRow = null;
+    this.expandedRowKey = null;
+    this.expandedRowChange.emit(null);
+  }
+}
 
 toggleExpandRow(item: T, event: MouseEvent) {
   if (!this.expandable) return;
-  
+
   const target = event.target as HTMLElement;
   if (
     target.closest('button') ||
     target.closest('input') ||
+    target.closest('select') ||
+    target.closest('textarea') ||
     target.closest('a') ||
     target.closest('.no-expand')
   ) {
     return;
   }
-  
-  if (this.expandedRow === item) {
+
+  const key = this.getRowKey(item);
+  if (this.expandedRowKey === key) {
     this.expandedRow = null;
+    this.expandedRowKey = null;
   } else {
     this.expandedRow = item;
+    this.expandedRowKey = key;
   }
-  
+
   this.expandedRowChange.emit(this.expandedRow);
 }
 
 isRowExpanded(item: T): boolean {
-  return this.expandable && this.expandedRow === item;
+  return this.expandable && this.getRowKey(item) === this.expandedRowKey;
 }
 }

@@ -402,8 +402,8 @@ private MENUITEMS: MenuItem[] = [
     const user = this.auth.getUser() ?? this.auth.getCurrentUser();
     if (!user) return false;
 
-    const roleName = (user as any).role ?? (user as any).roleLevelName ?? '';
-    if (item.requiredRole && roleName !== item.requiredRole) {
+    const roleName = String((user as any).role ?? (user as any).roleLevelName ?? '').trim();
+    if (item.requiredRole && roleName.toLowerCase() !== item.requiredRole.toLowerCase()) {
       return false;
     }
 

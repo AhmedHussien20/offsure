@@ -2,16 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProjectStatus } from 'app/core/models/projects/project.models';
 import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
 import { normalizeProjectStatus, normalizeServiceRequestStatus } from 'app/core/utils/enum-status.util';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
-import { ProjectsService } from 'app/core/services/projects.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 import { ADMIN_REQUEST_COLUMNS } from '../admin.constants';
+import { AdminConvertProjectComponent } from './admin-convert-project.component';
 
 @Component({
   selector: 'app-admin-requests-list',
@@ -56,7 +57,7 @@ export class AdminRequestsListComponent implements OnInit {
 
   constructor(
     private serviceRequestsService: ServiceRequestsService,
-    private projectsService: ProjectsService,
+    private modalService: NgbModal,
     private toastr: ToastrService
   ) {}
 
@@ -128,6 +129,7 @@ export class AdminRequestsListComponent implements OnInit {
         this.loadRequests();
       },
       error: err => {
+        this.loadRequests();
         this.toastr.error(err?.error?.message || 'Failed to update status.');
       },
     });
@@ -139,27 +141,22 @@ export class AdminRequestsListComponent implements OnInit {
       return;
     }
 
-    if (item.status !== ServiceRequestStatus.InProgress) {
+    if (normalizeServiceRequestStatus(item.status) !== ServiceRequestStatus.InProgress) {
       this.toastr.warning('Set request status to In Progress before creating a project.');
       return;
     }
 
-    this.projectsService
-      .create({
-        serviceRequestId: item.id,
-        name: item.title,
-        description: item.description,
-        budget: item.budget ?? undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.toastr.success('Project created from request.');
-          this.loadRequests();
-        },
-        error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to create project.');
-        },
-      });
+    const modalRef = this.modalService.open(AdminConvertProjectComponent, {
+      centered: true,
+      size: 'md',
+    });
+    modalRef.componentInstance.request = item;
+
+    modalRef.closed.subscribe((created: boolean) => {
+      if (created) {
+        this.loadRequests();
+      }
+    });
   }
 
   private loadRequests(): void {

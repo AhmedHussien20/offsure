@@ -19,6 +19,7 @@ export const clientRoutes: Routes = [
         loadComponent: () =>
           import('./client-requests-list/client-requests-list.component').then(m => m.ClientRequestsListComponent),
       },
+      
       {
         path: 'projects',
         data: { breadcrumb: 'My Projects', title: 'My Projects' },

@@ -98,10 +98,18 @@ export const appConfig: ApplicationConfig = {
         // TOASTR
         importProvidersFrom(
             ToastrModule.forRoot({
-                timeOut: 4000,
+                timeOut: 4500,
                 closeButton: true,
                 progressBar: true,
-                positionClass: 'toast-top-right'
+                progressAnimation: 'decreasing',
+                positionClass: 'toast-top-right',
+                toastClass: 'ngx-toastr offsure-toast',
+                titleClass: 'offsure-toast__title',
+                messageClass: 'offsure-toast__message',
+                easing: 'ease-in-out',
+                easeTime: 300,
+                newestOnTop: true,
+                preventDuplicates: true,
             })
         ),
 

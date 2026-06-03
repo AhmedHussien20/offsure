@@ -81,7 +81,7 @@ export class SidemenuComponent implements OnInit, OnDestroy {
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
-        this.setNavActive(null, this.router.url);
+        this.setNavActive(null, event.urlAfterRedirects || event.url);
       }
     });
 
@@ -101,20 +101,27 @@ export class SidemenuComponent implements OnInit, OnDestroy {
     if (event?.ctrlKey) {
       return;
     }
-    console.log(event,currentPath);
-  
+
+    if (!menuData?.length) {
+      return;
+    }
+
+    const normalizedPath = this.normalizeRoutePath(currentPath);
     let isAnyItemActive = false;
-  
+
     const traverseMenu = (items: MenuItem[]) => {
       return items.map(item => {
         const newItem = { ...item, active: false, selected: false };
-  
-        if (newItem.path && (currentPath === newItem.path || currentPath.startsWith(newItem.path + '/'))) {
-          newItem.active = true;
-          newItem.selected = true;
-          isAnyItemActive = true;
+
+        if (newItem.path) {
+          const menuPath = this.normalizeRoutePath(newItem.path);
+          if (normalizedPath === menuPath || normalizedPath.startsWith(menuPath + '/')) {
+            newItem.active = true;
+            newItem.selected = true;
+            isAnyItemActive = true;
+          }
         }
-  
+
         if (newItem.children && newItem.children.length > 0) {
           newItem.children = traverseMenu(newItem.children);
           if (newItem.children.some(child => child.active)) {
@@ -122,18 +129,23 @@ export class SidemenuComponent implements OnInit, OnDestroy {
             newItem.selected = true;
           }
         }
-  
+
         return newItem;
       });
     };
-  
+
     this.menuItems = traverseMenu(menuData);
-  
-    if (isAnyItemActive) {
-      console.log("Active menu updated for path:", currentPath);
-    } else {
-      console.warn("No menu item matched the current path:", currentPath);
+  }
+
+  private normalizeRoutePath(url: string): string {
+    if (!url) {
+      return '';
     }
+    let path = url.split('?')[0].split('#')[0];
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.slice(0, -1);
+    }
+    return path;
   }
   
   private deepClone<T>(obj: T): T {
