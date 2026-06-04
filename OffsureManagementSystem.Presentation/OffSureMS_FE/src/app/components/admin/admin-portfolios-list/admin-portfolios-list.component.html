@@ -18,7 +18,7 @@
     [showAddButton]="true"
     [addButtonLabel]="'Add Portfolio'"
     [expandable]="true"
-    [expandTemplate]="portfolioActions"
+    [expandTemplate]="portfolioDetail"
     [onSearch]="onSearch"
     (pageChange)="onPageChange($event)"
     (entriesChange)="onEntriesChange($event)"
@@ -26,46 +26,8 @@
   </app-generic-table>
 </div>
 
-<ng-template #portfolioActions let-item>
-  <div class="d-flex flex-column gap-3">
-    <div class="d-flex flex-wrap align-items-center gap-2">
-      <button
-        type="button"
-        class="btn btn-sm"
-        [class.btn-outline-success]="!item.isPublished"
-        [class.btn-outline-secondary]="item.isPublished"
-        (click)="togglePublished(item)">
-        {{ item.isPublished ? 'Unpublish' : 'Publish' }}
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-danger" (click)="deletePortfolio(item)">
-        Delete
-      </button>
-      <span class="text-muted small">{{ imageCount(item) }} gallery image(s)</span>
-    </div>
-
-    <div class="border-top pt-2">
-      <label class="form-label fw-semibold small mb-2">Upload gallery image</label>
-      <div class="d-flex flex-wrap align-items-end gap-2">
-        <input
-          type="file"
-          class="form-control form-control-sm"
-          style="max-width: 14rem"
-          accept="image/*"
-          (change)="onUploadFileSelected(item, $event)" />
-        <input
-          type="text"
-          class="form-control form-control-sm"
-          style="max-width: 12rem"
-          placeholder="Alt text (optional)"
-          [(ngModel)]="uploadAltText[item.id]" />
-        <button
-          type="button"
-          class="btn btn-sm btn-primary"
-          [disabled]="uploadingId === item.id"
-          (click)="uploadImage(item)">
-          Upload
-        </button>
-      </div>
-    </div>
-  </div>
+<ng-template #portfolioDetail let-item>
+  <app-admin-portfolio-detail-panel
+    [portfolioId]="item.id"
+    (changed)="onPortfolioChanged()" />
 </ng-template>

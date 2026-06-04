@@ -1,0 +1,156 @@
+<div class="portfolio-detail-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="portfolio-detail-panel__loading text-muted">Loading portfolio details…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (portfolio) {
+    <div class="portfolio-detail-panel__header">
+      <div>
+        <h5 class="portfolio-detail-panel__title mb-0">{{ portfolio.title }}</h5>
+        <p class="portfolio-detail-panel__meta mb-0">
+          {{ display(portfolio.serviceName) }}
+          @if (portfolio.serviceCategoryName) {
+            <span> · {{ portfolio.serviceCategoryName }}</span>
+          }
+        </p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="portfolio.isPublished"
+          [class.bg-secondary-transparent]="!portfolio.isPublished">
+          {{ portfolio.isPublished ? 'Published' : 'Draft' }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-sm no-expand"
+          [class.btn-outline-success]="!portfolio.isPublished"
+          [class.btn-outline-secondary]="portfolio.isPublished"
+          [disabled]="publishing"
+          (click)="togglePublished()">
+          {{ publishing ? 'Updating…' : (portfolio.isPublished ? 'Unpublish' : 'Publish') }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger no-expand"
+          [disabled]="deleting"
+          (click)="deletePortfolio()">
+          {{ deleting ? 'Deleting…' : 'Delete portfolio' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="portfolio-detail-grid">
+      <div class="portfolio-detail-main">
+        <div class="portfolio-panel-card portfolio-media-card mb-3">
+          <h6 class="portfolio-panel-card__title">Gallery</h6>
+          <div class="portfolio-gallery">
+            <div class="portfolio-gallery-preview">
+              @if (activeImageUrl) {
+                <img [src]="activeImageUrl" [alt]="portfolio.title" />
+              } @else {
+                <div class="portfolio-gallery-empty">
+                  <i class="fe fe-image"></i>
+                  <span>No gallery images yet</span>
+                </div>
+              }
+            </div>
+            @if (sortedImages.length > 0) {
+              <div class="portfolio-gallery-thumbs">
+                @for (image of sortedImages; track image.id; let i = $index) {
+                  <button
+                    type="button"
+                    class="portfolio-gallery-thumb no-expand"
+                    [class.portfolio-gallery-thumb--active]="i === activeImageIndex"
+                    (click)="selectImage(i)"
+                    [attr.aria-label]="'View image ' + (i + 1)">
+                    <img [src]="imageUrl(image)" [alt]="image.imageAltText || portfolio.title" />
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="portfolio-panel-card portfolio-info-card">
+          <h6 class="portfolio-panel-card__title">Project details</h6>
+          <div class="portfolio-info-row">
+            <div class="portfolio-info-item portfolio-info-item--full">
+              <label>Description</label>
+              <span>{{ display(portfolio.description) }}</span>
+            </div>
+            <div class="portfolio-info-item">
+              <label>Client name</label>
+              <span>{{ display(portfolio.clientName) }}</span>
+            </div>
+            <div class="portfolio-info-item">
+              <label>Service</label>
+              <span>{{ display(portfolio.serviceName) }}</span>
+            </div>
+            <div class="portfolio-info-item">
+              <label>Category</label>
+              <span>{{ display(portfolio.serviceCategoryName) }}</span>
+            </div>
+            <div class="portfolio-info-item">
+              <label>Completed date</label>
+              <span>{{ formatDate(portfolio.completedDate) }}</span>
+            </div>
+            <div class="portfolio-info-item">
+              <label>Project value</label>
+              <span>{{ formatCurrency(portfolio.projectValue) }}</span>
+            </div>
+            <div class="portfolio-info-item">
+              <label>Thumbnail URL</label>
+              <span class="portfolio-info-truncate">{{ display(portfolio.thumbnailUrl) }}</span>
+            </div>
+            <div class="portfolio-info-item">
+              <label>Portfolio ID</label>
+              <span>{{ portfolio.id }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="portfolio-sidebar">
+        <div class="portfolio-panel-card">
+          <h6 class="portfolio-panel-card__title">Summary</h6>
+          <ul class="portfolio-stat-list">
+            <li>
+              <span class="portfolio-stat-label">Gallery images</span>
+              <strong>{{ sortedImages.length }}</strong>
+            </li>
+            <li>
+              <span class="portfolio-stat-label">Status</span>
+              <strong>{{ portfolio.isPublished ? 'Published' : 'Draft' }}</strong>
+            </li>
+            <li>
+              <span class="portfolio-stat-label">Service ID</span>
+              <strong>{{ display(portfolio.serviceId) }}</strong>
+            </li>
+          </ul>
+        </div>
+
+        <div class="portfolio-panel-card">
+          <h6 class="portfolio-panel-card__title">Upload gallery image</h6>
+          <input
+            type="file"
+            class="form-control form-control-sm mb-2 no-expand"
+            accept="image/*"
+            (change)="onUploadFileSelected($event)" />
+          <input
+            type="text"
+            class="form-control form-control-sm mb-2 no-expand"
+            placeholder="Alt text (optional)"
+            [(ngModel)]="uploadAltText" />
+          <button
+            type="button"
+            class="btn btn-sm btn-primary w-100 no-expand"
+            [disabled]="uploading"
+            (click)="uploadImage()">
+            {{ uploading ? 'Uploading…' : 'Upload image' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

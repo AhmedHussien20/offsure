@@ -71,7 +71,7 @@ export class ClientRequestCreateComponent implements OnInit {
       title: ['', [Validators.required, Validators.maxLength(200)]],
       description: [''],
       dueDate: [''],
-      budget: [null],
+      budget: [null, [Validators.required]],
       priority: [ServiceRequestPriority.Medium],
     });
 
@@ -146,7 +146,8 @@ export class ClientRequestCreateComponent implements OnInit {
         type: 'input',
         inputType: 'number',
         name: 'budget',
-        label: 'Budget (optional)',
+        label: 'Budget',
+        validations: { required: true },
       },
       {
         type: 'date',

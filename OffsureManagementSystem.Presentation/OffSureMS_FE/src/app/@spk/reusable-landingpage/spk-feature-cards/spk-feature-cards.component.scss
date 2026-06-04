@@ -6,7 +6,9 @@
 
 .card.features {
   width: 100%;
+  max-width: 260px;
   height: 200px;
+  margin-inline: auto;
 }
 
 .feature-card-body {

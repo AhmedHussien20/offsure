@@ -3,13 +3,9 @@
 
     <div class="auth-brand-section">
       <div class="brand-content">
-        <div class="brand-logo mb-4">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </div>
-        <h1 class="brand-title">Join Us Today</h1>
+        <a routerLink="/landing-page" class="brand-logo-link mb-4" aria-label="Go to landing page">
+          <img src="assets/images/offshore1.png" alt="Offshore TechX" class="brand-logo-image" />
+        </a>
         <p class="brand-subtitle">
           Create your account and start managing offshore operations
         </p>
@@ -117,15 +113,19 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Contact Phone</label>
+                  <label class="form-label">Contact Phone <span class="required">*</span></label>
                   <div class="input-wrapper">
                     <i class="fe fe-phone"></i>
                     <input
                       type="tel"
                       formControlName="contactPersonPhone"
                       class="form-control"
-                      placeholder="+1 234 567 8900" />
+                      placeholder="+1 234 567 8900"
+                      [class.is-invalid]="isInvalid('contactPersonPhone')" />
                   </div>
+                  @if (isInvalid('contactPersonPhone')) {
+                    <div class="invalid-feedback">Enter a valid Personal phone</div>
+                  }
                 </div>
               </div>
             </div>

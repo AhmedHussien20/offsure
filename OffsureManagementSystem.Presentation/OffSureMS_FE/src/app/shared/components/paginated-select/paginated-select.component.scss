@@ -2,10 +2,20 @@
 
 :host {
   display: block;
+  position: relative;
+  z-index: 0;
   @include gfc.gf-field-label;
+}
+
+:host:has(.ng-select-opened) {
+  z-index: 100;
 }
 
 :host ::ng-deep {
   @include gfc.gf-select-control-wrap;
   @include gfc.gf-ng-select-styled;
+
+  .gf-select-icon-wrap > i {
+    z-index: 2;
+  }
 }

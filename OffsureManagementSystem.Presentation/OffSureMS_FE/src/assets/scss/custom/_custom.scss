@@ -3538,9 +3538,18 @@ pre .tag {
 .mat-step-header:hover:not([aria-disabled]), .mat-step-header:hover[aria-disabled=false]{
   background-color: transparent !important;
 }
-.ng-dropdown-panel,
-.ng-select.ng-select-opened .ng-select-container{
-  z-index: 99 !important;
+.ng-dropdown-panel {
+  z-index: 1100 !important;
+  background-color: variables.$custom-white !important;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  background-color: variables.$custom-white !important;
+}
+
+.ng-select.ng-select-opened > .ng-select-container {
+  z-index: 1;
 }
 .NgxEditor__MenuBar{
   background-color: variables.$custom-white !important;

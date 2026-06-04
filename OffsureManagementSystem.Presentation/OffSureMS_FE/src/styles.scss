@@ -432,3 +432,11 @@ ul.productdetails {
   }
 }
 
+/* ng-select list panels above modals and generic-form field icons */
+.ng-dropdown-panel {
+  z-index: 1100 !important;
+}
+
+.ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  background-color: var(--custom-white, #fff) !important;
+}

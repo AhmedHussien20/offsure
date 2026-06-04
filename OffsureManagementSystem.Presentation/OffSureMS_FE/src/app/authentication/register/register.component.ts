@@ -56,7 +56,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
   ];
 
   private readonly stepFields: string[][] = [
-    ['firstName', 'lastName', 'email'],
+    ['firstName', 'lastName', 'email', 'contactPersonPhone'],
     ['companyName'],
     ['password', 'confirmedPassword'],
   ];
@@ -203,7 +203,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
         password: ['', [Validators.required, this.passwordStrengthValidator.bind(this)]],
         confirmedPassword: ['', [Validators.required]],
         companyName: ['', [Validators.required]],
-        contactPersonPhone: [''],
+        contactPersonPhone: ['', [Validators.required]],
         companyAddress: [''],
         city: [''],
         country: [''],

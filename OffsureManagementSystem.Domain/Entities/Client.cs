@@ -8,10 +8,10 @@ namespace OffshoreManagementSystem.Domain.Entities
         public string CompanyName { get; set; }
        
         public string ContactPersonPhone { get; set; }
-        public string CompanyAddress { get; set; }
-        public string City { get; set; }
-        public string Country { get; set; }
-        public string PostalCode { get; set; }
+        public string? CompanyAddress { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public string? PostalCode { get; set; }
         public bool IsActive { get; set; } = true;
 
         // Navigation Properties

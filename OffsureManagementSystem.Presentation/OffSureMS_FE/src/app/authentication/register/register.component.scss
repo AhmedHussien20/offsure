@@ -53,16 +53,24 @@
     text-align: center;
   }
 
-  .brand-logo {
-    svg {
-      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  .brand-logo-link {
+    display: inline-block;
+    text-decoration: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      opacity: 0.92;
+      transform: scale(1.02);
     }
   }
 
-  .brand-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
+  .brand-logo-image {
+    display: block;
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    margin-inline: auto;
+    border-radius: 8px;
   }
 
   .brand-subtitle {
@@ -580,10 +588,6 @@ textarea.form-control {
 
   .auth-brand-section {
     padding: 30px 20px;
-    
-    .brand-title {
-      font-size: 1.5rem;
-    }
     
     .brand-features {
       display: none;
