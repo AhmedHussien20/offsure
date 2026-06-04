@@ -1,0 +1,119 @@
+<div class="modal-header landing-portfolio-modal-header border-0">
+  <div class="landing-portfolio-modal-header-text">
+    <span class="landing-portfolio-modal-eyebrow">Portfolio project</span>
+    <h4 class="modal-title mb-0">{{ portfolio.title }}</h4>
+  </div>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body landing-portfolio-detail">
+  <div class="row g-4 align-items-start">
+    <div class="col-lg-6">
+      <div class="landing-portfolio-gallery">
+        <div class="landing-portfolio-gallery-main {{ portfolio.cardClass }}">
+          @if (activeImageUrl) {
+            <img [src]="activeImageUrl" [alt]="portfolio.title" />
+          } @else {
+            <div class="landing-portfolio-gallery-placeholder">
+              <i class="fe fe-image"></i>
+              <span>No photos available</span>
+            </div>
+          }
+          @if (hasMultipleImages) {
+            <span class="gallery-counter">{{ imagePositionLabel }}</span>
+            <button type="button" class="gallery-nav gallery-nav-prev" (click)="previousImage()" aria-label="Previous image">
+              <i class="fe fe-chevron-left"></i>
+            </button>
+            <button type="button" class="gallery-nav gallery-nav-next" (click)="nextImage()" aria-label="Next image">
+              <i class="fe fe-chevron-right"></i>
+            </button>
+          }
+        </div>
+        @if (hasMultipleImages) {
+          <div class="landing-portfolio-gallery-thumbs">
+            @for (url of portfolio.imageUrls; track url; let i = $index) {
+              <button
+                type="button"
+                class="gallery-thumb"
+                [class.gallery-thumb-active]="i === activeImageIndex"
+                (click)="selectImage(i)"
+                [attr.aria-label]="'View photo ' + (i + 1)">
+                <img [src]="url" [alt]="portfolio.title + ' photo ' + (i + 1)" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="landing-portfolio-detail-panel">
+        @if (portfolio.categoryName || portfolio.serviceName) {
+          <div class="landing-portfolio-tags mb-3">
+            @if (portfolio.categoryName) {
+              <span class="badge landing-portfolio-badge">{{ portfolio.categoryName }}</span>
+            }
+            @if (portfolio.serviceName) {
+              <span class="badge landing-portfolio-badge landing-portfolio-badge--muted">{{ portfolio.serviceName }}</span>
+            }
+          </div>
+        }
+
+        <p class="landing-portfolio-description">{{ portfolio.description }}</p>
+
+        <div class="landing-portfolio-meta row g-2 my-4">
+          @if (portfolio.serviceName) {
+            <div class="col-sm-6">
+              <div class="meta-box">
+                <span class="meta-label"><i class="fe fe-layers me-1"></i>Service</span>
+                <span class="meta-value">{{ portfolio.serviceName }}</span>
+              </div>
+            </div>
+          }
+          @if (portfolio.categoryName) {
+            <div class="col-sm-6">
+              <div class="meta-box">
+                <span class="meta-label"><i class="fe fe-grid me-1"></i>Category</span>
+                <span class="meta-value">{{ portfolio.categoryName }}</span>
+              </div>
+            </div>
+          }
+          @if (portfolio.clientName && portfolio.clientName !== '—') {
+            <div class="col-sm-6">
+              <div class="meta-box">
+                <span class="meta-label"><i class="fe fe-briefcase me-1"></i>Client</span>
+                <span class="meta-value">{{ portfolio.clientName }}</span>
+              </div>
+            </div>
+          }
+          @if (portfolio.year) {
+            <div class="col-sm-6">
+              <div class="meta-box">
+                <span class="meta-label"><i class="fe fe-calendar me-1"></i>Completed</span>
+                <span class="meta-value">{{ portfolio.year }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="landing-portfolio-footer">
+          <div class="landing-portfolio-delivered">
+            <span class="delivered-label">Delivered for</span>
+            <span class="delivered-value">{{ portfolio.clientName && portfolio.clientName !== '—' ? portfolio.clientName : 'Our client' }}</span>
+          </div>
+          @if (canRequestService) {
+            <button type="button" class="btn btn-primary landing-portfolio-cta" (click)="requestService()">
+              <i class="fe fe-send me-2"></i>Request this service
+            </button>
+          }
+        </div>
+
+        @if (canRequestService && !authService.isAuthenticated()) {
+          <p class="landing-portfolio-login-hint text-muted small mb-0 mt-2">
+            You will be asked to sign in before submitting your request.
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+</div>

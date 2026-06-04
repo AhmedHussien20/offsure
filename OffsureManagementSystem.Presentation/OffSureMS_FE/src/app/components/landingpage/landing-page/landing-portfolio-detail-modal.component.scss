@@ -1,0 +1,272 @@
+.landing-portfolio-modal-header {
+  padding: 1.25rem 1.5rem 0.5rem;
+  align-items: flex-start;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgb(var(--primary-rgb) / 8%) 0%, transparent 55%);
+}
+
+.landing-portfolio-modal-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.landing-portfolio-modal-eyebrow {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary-color, #667eea);
+  margin-bottom: 0.25rem;
+}
+
+.landing-portfolio-detail {
+  padding: 0 1.5rem 1.5rem;
+
+  .landing-portfolio-gallery {
+    --portfolio-gallery-height: 380px;
+  }
+
+  .landing-portfolio-gallery-main {
+    position: relative;
+    width: 100%;
+    height: var(--portfolio-gallery-height);
+    min-height: var(--portfolio-gallery-height);
+    max-height: var(--portfolio-gallery-height);
+    border-radius: 1rem;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgb(var(--primary-rgb) / 12%), rgb(var(--primary-rgb) / 4%));
+    box-shadow: 0 12px 32px rgb(var(--primary-rgb) / 12%);
+
+    > img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+  }
+
+  .landing-portfolio-gallery-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 3rem;
+    color: var(--text-muted);
+    opacity: 0.45;
+
+    span {
+      font-size: 0.85rem;
+    }
+  }
+
+  .gallery-counter {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 1rem;
+    background: rgb(0 0 0 / 55%);
+    color: #fff;
+  }
+
+  .gallery-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 95%);
+    color: var(--primary-color, #667eea);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 14%);
+    z-index: 2;
+    transition: transform 0.2s ease, background 0.2s ease;
+
+    &:hover {
+      background: #fff;
+      transform: translateY(-50%) scale(1.05);
+    }
+  }
+
+  .gallery-nav-prev {
+    left: 0.75rem;
+  }
+
+  .gallery-nav-next {
+    right: 0.75rem;
+  }
+
+  .landing-portfolio-gallery-thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+  }
+
+  .gallery-thumb {
+    width: 4.25rem;
+    height: 4.25rem;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 0.65rem;
+    overflow: hidden;
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .gallery-thumb-active {
+    border-color: var(--primary-color, #667eea);
+    box-shadow: 0 0 0 3px rgb(var(--primary-rgb) / 18%);
+  }
+
+  .landing-portfolio-detail-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .landing-portfolio-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .landing-portfolio-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    border-radius: 2rem;
+    background: rgb(var(--primary-rgb) / 12%);
+    color: var(--primary-color, #667eea);
+  }
+
+  .landing-portfolio-badge--muted {
+    background: var(--default-background, #f1f5f9);
+    color: var(--default-text-color);
+  }
+
+  .landing-portfolio-description {
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin-bottom: 0;
+  }
+
+  .meta-box {
+    background: var(--custom-white, #fff);
+    border: 1px solid var(--default-border, #e2e8f0);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    height: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: rgb(var(--primary-rgb) / 35%);
+      box-shadow: 0 4px 12px rgb(var(--primary-rgb) / 8%);
+    }
+
+    .meta-label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .meta-value {
+      font-weight: 600;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+  }
+
+  .landing-portfolio-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--default-border, #e2e8f0);
+  }
+
+  .landing-portfolio-delivered {
+    .delivered-label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.15rem;
+    }
+
+    .delivered-value {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+  }
+
+  .landing-portfolio-cta {
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    padding: 0.65rem 1.35rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 8px 20px rgb(102 126 234 / 35%);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgb(102 126 234 / 42%);
+    }
+  }
+
+  .landing-portfolio-login-hint {
+    text-align: end;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .landing-portfolio-detail .landing-portfolio-gallery {
+    --portfolio-gallery-height: 280px;
+  }
+
+  .landing-portfolio-detail .landing-portfolio-footer {
+    flex-direction: column;
+    align-items: stretch;
+
+    .landing-portfolio-cta {
+      width: 100%;
+    }
+  }
+
+  .landing-portfolio-detail .landing-portfolio-login-hint {
+    text-align: start;
+  }
+}

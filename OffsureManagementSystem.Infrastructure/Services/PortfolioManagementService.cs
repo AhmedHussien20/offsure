@@ -286,7 +286,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await using var output = File.Create(path);
             await content.CopyToAsync(output);
 
-            return path;
+            return safeFileName;
         }
 
         private static void ValidateAddPortfolioInput(AddPortfolioDto dto)
@@ -352,10 +352,21 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return new PortfolioImageDto
             {
                 Id = image.Id,
-                ImageUrl = image.ImageUrl,
+                ImageUrl = ToPublicImageUrl(image.ImageUrl),
                 ImageAltText = image.ImageAltText,
                 DisplayOrder = image.DisplayOrder
             };
+        }
+
+        private static string ToPublicImageUrl(string storedValue)
+        {
+            if (string.IsNullOrWhiteSpace(storedValue))
+                return string.Empty;
+
+            var fileName = Path.GetFileName(storedValue.Trim());
+            return string.IsNullOrEmpty(fileName)
+                ? string.Empty
+                : $"/portfolio-images/{fileName}";
         }
     }
 }

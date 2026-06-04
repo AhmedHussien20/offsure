@@ -1,15 +1,28 @@
 import { pagination1 } from './../../../shared/prismData/pagination';
 import { CommonModule, DOCUMENT, ViewportScroller } from '@angular/common';
-import { CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, HostListener, Inject, Renderer2, ViewChild, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  CUSTOM_ELEMENTS_SCHEMA,
+  Component,
+  ElementRef,
+  HostListener,
+  Inject,
+  Renderer2,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CarouselModule, OwlOptions, SlidesOutputData } from 'ngx-owl-carousel-o';
 import { SpkFeatureCardsComponent } from '../../../@spk/reusable-landingpage/spk-feature-cards/spk-feature-cards.component';
 import { NgbAccordionComponent } from '../../../@spk/reusable-ui-elements/ngb-accordion/ngb-accordion.component';
 import { TapToTopComponent } from '../../../shared/components/tap-to-top/tap-to-top.component';
 import { SharedModule } from '../../../shared/shared.module';
 import { PortfolioDto } from '../../../core/models/portfolios/portfolio.models';
+import { portfolioImageUrl } from '../../../core/utils/portfolio-image.util';
+import { LandingPortfolioCard } from './landing-portfolio.models';
+import { LandingPortfolioDetailModalComponent } from './landing-portfolio-detail-modal.component';
 import { ServiceCategoryDto, ServiceDto } from '../../../core/models/services/service.models';
 import { ContactService } from '../../../core/services/contact.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -18,6 +31,19 @@ import { PortfoliosService } from '../../../core/services/portfolios.service';
 import { ServiceCategoriesService } from '../../../core/services/service-categories.service';
 import { ServicesService } from '../../../core/services/services.service';
 import { ToastrService } from 'ngx-toastr';
+import {
+  LANDING_CAROUSEL_AUTOPLAY_MS,
+  LANDING_CAROUSEL_PAGE_SIZE,
+  LandingSwiperHost,
+  bindLandingSwiperEvents,
+  countLandingCarouselSlides,
+  initLandingSwiperCarousel,
+  readLandingCarouselNavState,
+  setupLandingCarouselSentinel,
+  slideLandingCarouselNext,
+  slideLandingCarouselPrev,
+  unbindLandingSwiperEvents,
+} from './landing-swiper.util';
 
 interface LandingServiceCategoryCard {
   id: number;
@@ -36,11 +62,23 @@ interface LandingServiceCard {
   description: string;
 }
 
-interface LandingPortfolioHighlight {
-  id: number;
+interface LandingSuccessStory {
   icon: string;
   title: string;
-  cardClass: string;
+  sector: string;
+  summary: string;
+  highlight: string;
+}
+
+interface LandingWhatWeOffer {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface LandingWhyChooseUs {
+  icon: string;
+  title: string;
   description: string;
 }
 
@@ -57,8 +95,38 @@ interface LandingPortfolioHighlight {
 export class LandingPageComponent {
   @ViewChild('swiperContainer1') swiperContainer1!: ElementRef;
   @ViewChild('swiperContainerPortfolio') swiperContainerPortfolio?: ElementRef;
-  @ViewChild('portfolioPagination') portfolioPagination?: ElementRef<HTMLElement>;
+  @ViewChild('swiperContainerCategories') swiperContainerCategories?: ElementRef;
+  @ViewChild('swiperContainerServices') swiperContainerServices?: ElementRef;
+  @ViewChild('portfolioLoadSentinel') portfolioLoadSentinel?: ElementRef<HTMLElement>;
+  @ViewChild('categoryLoadSentinel') categoryLoadSentinel?: ElementRef<HTMLElement>;
+  @ViewChild('serviceLoadSentinel') serviceLoadSentinel?: ElementRef<HTMLElement>;
+  @ViewChild('serviceCategories') serviceCategoriesSection?: ElementRef<HTMLElement>;
   accodionClass: any;
+  private portfolioLoadObserver?: IntersectionObserver;
+  private categoryLoadObserver?: IntersectionObserver;
+  private serviceLoadObserver?: IntersectionObserver;
+  private portfolioSwiperEl?: LandingSwiperHost;
+  private categorySwiperEl?: LandingSwiperHost;
+  private serviceSwiperEl?: LandingSwiperHost;
+  private readonly onPortfolioReachEnd = (): void => this.loadMorePortfolios();
+  private readonly onPortfolioSlideChange = (): void => this.syncPortfolioNav();
+  private readonly onPortfolioResize = (): void => this.syncPortfolioNav();
+  private readonly onPortfolioAfterInit = (): void => this.schedulePortfolioNavSync();
+  private readonly onCategoryReachEnd = (): void => this.loadMoreCategories();
+  private readonly onCategorySlideChange = (): void => this.syncCategoryNav();
+  private readonly onCategoryResize = (): void => this.syncCategoryNav();
+  private readonly onCategoryAfterInit = (): void => this.scheduleCategoryNavSync();
+  private readonly onServiceReachEnd = (): void => this.loadMoreCategoryServices();
+  private readonly onServiceSlideChange = (): void => this.syncServiceNav();
+  private readonly onServiceResize = (): void => this.syncServiceNav();
+  private readonly onServiceAfterInit = (): void => this.scheduleServiceNavSync();
+
+  portfolioCanGoPrev = false;
+  portfolioCanGoNext = false;
+  categoryCanGoPrev = false;
+  categoryCanGoNext = false;
+  serviceCanGoPrev = false;
+  serviceCanGoNext = false;
   private readonly serviceCategoryIcons = [
     'fe fe-package',
     'fe fe-code',
@@ -112,11 +180,27 @@ export class LandingPageComponent {
     );
   }
   serviceCategoryCards: LandingServiceCategoryCard[] = [];
+  categoryPageIndex = 1;
+  readonly categoryPageSize = LANDING_CAROUSEL_PAGE_SIZE;
+  categoryTotalCount = 0;
+  categoryLoading = false;
+  categoryLoadingMore = false;
   selectedCategoryId: number | null = null;
   selectedCategoryTitle = '';
   categoryServiceCards: LandingServiceCard[] = [];
+  servicePageIndex = 1;
+  readonly servicePageSize = LANDING_CAROUSEL_PAGE_SIZE;
+  serviceTotalCount = 0;
+  serviceLoading = false;
+  serviceLoadingMore = false;
   loadingCategoryServices = false;
-  portfolioHighlights: LandingPortfolioHighlight[] = [];
+  portfolioItems: LandingPortfolioCard[] = [];
+  portfolioPageIndex = 1;
+  readonly portfolioPageSize = 10;
+  portfolioTotalCount = 0;
+  portfolioLoading = false;
+  portfolioLoadingMore = false;
+  readonly carouselAutoplayDelayMs = LANDING_CAROUSEL_AUTOPLAY_MS;
   contactSubmitting = false;
   private readonly fb = inject(FormBuilder);
   readonly contactForm = this.fb.group({
@@ -128,113 +212,121 @@ export class LandingPageComponent {
   serviceCategoriesCount = 0;
   publicServicesCount = 0;
   publishedProjectsCount = 0;
-  readonly deliveryStepsCount = 4;
-  basicAccordions = [
+  readonly companyProfile = {
+    legalName: 'Offshore TechX',
+    platformName: 'Offsure Management System',
+    tagline: 'Remote networking expertise, delivered worldwide.',
+    heroSubtitle: 'Enterprise networking, security, and digital solutions — supported globally since 2018.',
+    foundedYear: 2018,
+    email: 'info@offshoretechx.net',
+    phone: '+1 (702) 605-8569',
+    website: 'https://offshoretechx.net/',
+    globalProjectsDelivered: 100,
+    yearsNetworkingExperience: 15,
+    supportHours: '24/7 deployment and support with SLA-backed response.',
+  };
+
+  readonly whatWeOffer: LandingWhatWeOffer[] = [
     {
-      title: ' Switch Easily From Vertical to Horizontal Menu ',
-      body: ` <p> The Spruha – Bootstrap 5 Admin &amp; Dashboard Template is available in both vertical and horizontal menus. Both menus are managed by single assets. Where users can easily switch from vertical to horizontal menus. </p> <p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer full Documentation  for more details. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-primary fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1One',
-      collapseId: 'collapsecustomicon1One',
-      collapsed: false,
-      accodionItemClass: 'accordion-item acc-primary',
-      accodionClass: 'accordion accordion-customicon1 accordion-primary accordions-items-seperate'
+      icon: 'fe fe-users',
+      title: 'Vendor Partnership',
+      description:
+        'We help companies improve their partnership with vendors and align technology decisions with business outcomes.',
     },
     {
-      title: 'Switch Easily From LTR to RTL Version',
-      body: ` <p class="mb-3"> The Spruha – Bootstrap 5 Admin & Dashboard Template is available in LTR & RTL versions with single assets.Using those single assets, it’s very easy to
-      switch from one version to another version.</p> <p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer full Documentation  for more details. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-secondary fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Two',
-      collapseId: 'collapsecustomicon1Two',
-      collapsed: false,
-      accodionItemClass: 'accordion-item acc-secondary',
-      accodionClass: 'accordion accordion-customicon1 accordion-secondary accordions-items-seperate'
+      icon: 'fe fe-book-open',
+      title: 'Technical Training',
+      description:
+        'Specialized training programs that empower your teams to adopt and operate the latest networking technologies effectively.',
     },
     {
-      title: 'Switch Easily From One Color to Another Color style',
-      body: ` <p class="mb-3"> The Spruha – Bootstrap 5 Admin &amp; Dashboard Template is available in different types of color styles. Where the users can change their template completely with those color styles. </p> <p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer full Documentation  for more details. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-success fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Three',
-      collapseId: 'collapsecustomicon1Three',
-      collapsed: false,
-      accodionItemClass: 'accordion-item acc-success',
-      accodionClass: 'accordion accordion-customicon1 accordion-success accordions-items-seperate'
-    },
-  ]
-  basicAccordions1 = [
-    {
-      title: ' Switch Easily From Full Width to Boxed Layout ',
-      body: ` <p class="mb-3"> T The Spruha – Bootstrap 5 Admin & Dashboard
-      Template is also available in two different
-      types of layouts
-      “Full Width” and “Boxed” Layouts. So that user
-      can switch their dashboard from one layout to
-      another
-      layout effortlessly.</p> <p class="mt-2 mb-3"><span class="fw-bold">Note: </span>Please Refer full Documentation  for more details. </p>
-      <a href="javascript:void(0);" class="btn btn-outline-info fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1One',
-      collapseId: 'collapsecustomicon1One',
-      collapsed: true,
-      accodionItemClass: 'accordion-item acc-info',
-      accodionClass: 'accordion accordion-customicon1 accordion-info accordions-items-seperate'
+      icon: 'fe fe-compass',
+      title: 'Consultation',
+      description:
+        'Comprehensive network solution consultation to optimize infrastructure design, operations, and long-term roadmaps.',
     },
     {
-      title: 'Change Easily Side Menu Styles',
-      body: `  <p>The Spruha – Bootstrap 5 Admin & Dashboard Template is also available in different types of
-      Side Menu Styles.
-      Where the users can change their Side Menu
-      styles by using single assets.
-  </p>
-  <p class="mt-2 mb-3">
-      <span class="fw-bold">Note: </span>Please Refer
-      full Documentation
-      for more details.
-  </p>
-      <a href="javascript:void(0);" class="btn btn-outline-danger fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Two',
-      collapseId: 'collapsecustomicon1Two',
-      collapsed: true,
-      accodionItemClass: 'accordion-item acc-danger',
-      accodionClass: 'accordion accordion-customicon1 accordion-danger accordions-items-seperate'
+      icon: 'fe fe-layers',
+      title: 'Design / Presales',
+      description:
+        'Expert design services including BOM, HLD, LLD, and complete documentation for enterprise network projects.',
     },
     {
-      title: ' Switch Easily From Fixed to Scrollable Layout',
-      body: `   <p>
-      The Spruha – Bootstrap 5 Admin & Dashboard
-      Template is also available in two
-      different types of layouts "Fixed Layout" and
-      "Scrollable Layout". Here users
-      can switch their Template from one layout to
-      another layout easily.
-  </p>
-  <p class="mt-2 mb-3">
-      <span class="fw-bold">Note: </span>Please Refer
-      full Documentation
-      for more details.
-  </p>
-      <a href="javascript:void(0);" class="btn btn-outline-warning fs-13">Click here</a>`,
-      headingId: 'headingcustomicon1Three',
-      collapseId: 'collapsecustomicon1Three',
-      collapsed: false,
-      accodionItemClass: 'accordion-item acc-warning',
-      accodionClass: 'accordion accordion-customicon1 accordion-warning accordions-items-seperate'
+      icon: 'fe fe-headphones',
+      title: 'Deployment / Support / SLA',
+      description:
+        'Dedicated 24/7 support to resolve issues promptly, minimize downtime, and keep your operations productive.',
     },
-  ]
+  ];
+
+  readonly whyChooseUs: LandingWhyChooseUs[] = [
+    {
+      icon: 'fe fe-award',
+      title: 'Unmatched Expertise',
+      description:
+        '15+ years of multi-vendor networking experience with expert certifications including CCIE (Cisco), PCNSE (Palo Alto), and NSE7 (Fortinet).',
+    },
+    {
+      icon: 'fe fe-globe',
+      title: 'Proven Global Success',
+      description:
+        'A track record of 100+ successfully completed projects worldwide, delivering reliable remote support across locations and complexity levels.',
+    },
+    {
+      icon: 'fe fe-trending-up',
+      title: 'Cost-Effective',
+      description:
+        'Access top-tier expertise without the overhead of maintaining a full in-house team — reducing cost while maintaining quality.',
+    },
+    {
+      icon: 'fe fe-sliders',
+      title: 'Scalable & Flexible Team',
+      description:
+        'We scale quickly to match your evolving needs and deploy dedicated teams tailored to each project requirement.',
+    },
+  ];
+
+  readonly successStories: LandingSuccessStory[] = [
+    {
+      icon: 'fe fe-phone',
+      title: 'Unified Communications Deployment',
+      sector: 'Insurance · 500 employees',
+      summary:
+        'Implemented a comprehensive Cisco IP Telephony solution that transformed communication infrastructure and enabled seamless unified communication with strong mobility support.',
+      highlight: 'Cisco IP Telephony',
+    },
+    {
+      icon: 'fe fe-shield',
+      title: 'Secure SD-WAN for a Leading Bank',
+      sector: 'Financial Services · 63 branches',
+      summary:
+        'Designed and deployed a Cisco SD-WAN solution and migrated 63 branches from traditional WAN to a modern SD-WAN infrastructure.',
+      highlight: 'Cisco SD-WAN',
+    },
+    {
+      icon: 'fe fe-lock',
+      title: 'Secure Firewall Migration',
+      sector: 'Enterprise · 100 branches',
+      summary:
+        'Executed a security infrastructure upgrade and migrated firewalls across 100 branches from Cisco appliances to next-generation Palo Alto Networks firewalls.',
+      highlight: 'Palo Alto NGFW',
+    },
+  ];
+
   basicAccordions2 = [
     {
-      title: ' <span class="me-3 fs-18 fw-bold">01.</span>How do I browse the available services?',
-      body: `<p>Start with the <strong>Service Categories</strong> section to explore the main areas Offsure currently offers. Each category highlights real service groups available in the system.</p><p class="mt-2 mb-3"><span class="fw-bold">Tip:</span> Begin with the category that best matches your business need, then continue to the portfolio section to see related delivery work.</p>
-             <a href="#service-categories" class="btn btn-outline-primary fs-13">Browse Categories</a>`,
+      title: ' <span class="me-3 fs-18 fw-bold">01.</span>Who is Offshore TechX?',
+      body: `<p>Founded in <strong>2018</strong>, Offshore TechX specializes in remote support for networking solutions worldwide. Our team combines deep industry knowledge with a portfolio of <strong>100+ successfully completed projects</strong>.</p><p class="mt-2 mb-3"><span class="fw-bold">Mission:</span> Provide unparalleled remote support that enhances client productivity while fostering innovation in digital communications.</p>
+             <a href="#about" class="btn btn-outline-primary fs-13">About Us</a>`,
       headingId: 'headingcustomicon20Five',
       collapseId: 'collapsecustomicon20Five',
       collapsed: true,
       accodionItemClass: 'accordion-item acc-primary',
     },
     {
-      title: ' <span class="me-3 fs-18 fw-bold">02.</span>Can I contact Offsure directly from this system?',
-      body: `<p>Yes. The landing page is designed to help visitors move from browsing into a real conversation with Offsure. Once you understand the service area you need, use the contact section to reach the team.</p><p class="mt-2 mb-3"><span class="fw-bold">Note:</span> The more clearly you describe your goal, timeline, and preferred service category, the easier it is for the team to respond effectively.</p>
-      <a href="#contact" class="btn btn-outline-danger fs-13">Contact Offsure</a>`,
+      title: ' <span class="me-3 fs-18 fw-bold">02.</span>What services does Offshore TechX offer?',
+      body: `<p>We deliver vendor partnership support, technical training, consultation, design/presales (BOM, HLD, LLD), and 24/7 deployment/support with SLA coverage across enterprise networking, unified communications, security, wireless, data center, cybersecurity, and digital solutions.</p><p class="mt-2 mb-3"><span class="fw-bold">Tip:</span> Browse live <strong>Service Categories</strong> on this page to see offerings currently published in the system.</p>
+      <a href="#service-categories" class="btn btn-outline-danger fs-13">Browse Categories</a>`,
       headingId: 'headingcustomiconFaqTwo',
       collapseId: 'collapsecustomiconFaqTwo',
       collapsed: true,
@@ -242,9 +334,9 @@ export class LandingPageComponent {
       accodionClass: 'accordion accordion-customicon1 accordion-danger accordions-items-seperate'
     },
     {
-      title: '<span class="me-3 fs-18 fw-bold">03.</span>Are the portfolio projects shown here real client work?',
-      body: `<p>Yes. The <strong>Our Work</strong> section is intended to present published portfolio projects that come from the system, so visitors can review real delivery examples instead of placeholder content.</p><p class="mt-2 mb-3"><span class="fw-bold">Note:</span> Only published projects are shown publicly, which helps keep the section focused on approved client-facing work.</p>
-      <a href="#highlights" class="btn btn-outline-success fs-13">View Our Work</a>`,
+      title: '<span class="me-3 fs-18 fw-bold">03.</span>Why choose remote / offshore support?',
+      body: `<p>Our model gives you certified multi-vendor expertise (CCIE, PCNSE, NSE7), proven global delivery, flexible team scaling, and significant cost efficiency compared with building and maintaining equivalent in-house capacity.</p><p class="mt-2 mb-3"><span class="fw-bold">Note:</span> We support Cisco, Fortinet, Palo Alto, F5, NetApp, Microsoft, and more across LAN/WAN, SD-WAN, SD-Access, UC, and data center platforms.</p>
+      <a href="#Clients" class="btn btn-outline-success fs-13">Success Stories</a>`,
       headingId: 'headingcustomiconFaqThree',
       collapseId: 'collapsecustomiconFaqThree',
       collapsed: true,
@@ -252,9 +344,9 @@ export class LandingPageComponent {
       accodionClass: 'accordion accordion-customicon1 accordion-success accordions-items-seperate'
     },
     {
-      title: '<span class="me-3 fs-18 fw-bold">04.</span>What information should I prepare before contacting the team?',
-      body: `<p>The best starting point is your business goal, the type of service you are looking for, any deadline or target launch date, and a short description of your current challenge.</p><p class="mt-2 mb-3"><span class="fw-bold">Tip:</span> If you already know the related service category or have seen a portfolio project similar to your need, mention it when you contact Offsure.</p>
-      <a href="#about" class="btn btn-outline-secondary fs-13">How It Works</a>`,
+      title: '<span class="me-3 fs-18 fw-bold">04.</span>How do I get started with a project?',
+      body: `<p>Share your business goal, target timeline, environment details (sites, vendors, current stack), and the outcome you need. If you already reviewed a category or portfolio example, reference it in your message so our team can respond faster.</p><p class="mt-2 mb-3"><span class="fw-bold">Contact:</span> info@offshoretechx.net · +1 (702) 605-8569</p>
+      <a href="#contact" class="btn btn-outline-secondary fs-13">Contact Us</a>`,
       headingId: 'headingcustomiconFaqFour',
       collapseId: 'collapsecustomiconFaqFour',
       collapsed: true,
@@ -262,16 +354,16 @@ export class LandingPageComponent {
       accodionClass: 'accordion accordion-customicon1 accordion-secondary accordions-items-seperate'
     },
     {
-      title: '<span class="me-3 fs-18 fw-bold">05.</span>Can I request a service even if it is not listed exactly as shown?',
-      body: `<p>Yes. The public categories help you understand Offsure’s main delivery areas, but your requirement does not need to match a card title perfectly to start a conversation.</p><p class="mt-2 mb-3"><span class="fw-bold">Note:</span> If your need is custom, use the closest category as a starting point and explain the project details in your message.</p>
-      <a href="#contact" class="btn btn-outline-info fs-13">Start a Conversation</a>`,
+      title: '<span class="me-3 fs-18 fw-bold">05.</span>Are portfolio projects on this site real work?',
+      body: `<p>Yes. The <strong>Our Work</strong> section presents published portfolio projects from the system. Only approved, published projects appear publicly so visitors can review real delivery examples.</p><p class="mt-2 mb-3"><span class="fw-bold">Website:</span> <a href="https://offshoretechx.net/" target="_blank" rel="noopener noreferrer">https://offshoretechx.net/</a></p>
+      <a href="#highlights" class="btn btn-outline-info fs-13">View Our Work</a>`,
       headingId: 'headingcustomiconFaqFive',
       collapseId: 'collapsecustomiconFaqFive',
       collapsed: true,
       accodionItemClass: 'accordion-item acc-info',
       accodionClass: 'accordion accordion-customicon1 accordion-info accordions-items-seperate'
     },
-  ]
+  ];
   constructor(
     @Inject(DOCUMENT) private document: Document,
     private el: ElementRef,
@@ -284,7 +376,9 @@ export class LandingPageComponent {
     private contactService: ContactService,
     private toastr: ToastrService,
     private appStateService: AppStateService,
-    private authService: AuthService
+    private authService: AuthService,
+    private modalService: NgbModal,
+    private cdr: ChangeDetectorRef
   ) {
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;
@@ -376,24 +470,128 @@ export class LandingPageComponent {
     // });
 
   }
-  private loadServiceCategories(): void {
-    this.serviceCategoriesService.getPublic({ pageIndex: 1, pageSize: 100, isActive: true }).subscribe({
-      next: (response) => {
-        const categories = [...(response.data?.data ?? [])].sort((first, second) =>
-          first.name.localeCompare(second.name)
-        );
+  get categoryHasMore(): boolean {
+    return this.serviceCategoryCards.length < this.categoryTotalCount;
+  }
 
-        this.serviceCategoriesCount = response.data?.totalCount ?? categories.length;
-        this.serviceCategoryCards = categories.map((category, index) =>
-          this.mapServiceCategoryToCard(category, index)
-        );
-      },
-      error: (error) => {
-        console.error('Failed to load public service categories for landing page.', error);
-        this.serviceCategoriesCount = 0;
-        this.serviceCategoryCards = [];
-      }
-    });
+  get serviceHasMore(): boolean {
+    return this.categoryServiceCards.length < this.serviceTotalCount;
+  }
+
+  loadMoreCategories(): void {
+    if (!this.categoryHasMore || this.categoryLoading || this.categoryLoadingMore) {
+      return;
+    }
+    this.loadCategoryPage(false);
+  }
+
+  loadMoreCategoryServices(): void {
+    if (!this.serviceHasMore || this.serviceLoading || this.serviceLoadingMore || !this.selectedCategoryId) {
+      return;
+    }
+    this.loadCategoryServicesPage(false);
+  }
+
+  private loadServiceCategories(): void {
+    this.loadCategoryPage(true);
+  }
+
+  private loadCategoryPage(reset: boolean): void {
+    if (reset) {
+      if (this.categoryLoading) return;
+      this.categoryLoading = true;
+      this.categoryPageIndex = 1;
+      this.serviceCategoryCards = [];
+    } else {
+      if (this.categoryLoadingMore || !this.categoryHasMore) return;
+      this.categoryLoadingMore = true;
+      this.categoryPageIndex += 1;
+    }
+
+    this.serviceCategoriesService
+      .getPublic({
+        pageIndex: this.categoryPageIndex,
+        pageSize: this.categoryPageSize,
+        isActive: true,
+      })
+      .subscribe({
+        next: response => {
+          const categories = [...(response.data?.data ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+          this.categoryTotalCount = response.data?.totalCount ?? 0;
+          this.serviceCategoriesCount = this.categoryTotalCount;
+          const startIndex = reset ? 0 : this.serviceCategoryCards.length;
+          const mapped = categories.map((category, index) =>
+            this.mapServiceCategoryToCard(category, startIndex + index)
+          );
+          this.serviceCategoryCards = reset ? mapped : [...this.serviceCategoryCards, ...mapped];
+          this.categoryLoading = false;
+          this.categoryLoadingMore = false;
+          this.initCategorySwiper();
+        },
+        error: error => {
+          console.error('Failed to load public service categories for landing page.', error);
+          this.categoryLoading = false;
+          this.categoryLoadingMore = false;
+          if (reset) {
+            this.serviceCategoriesCount = 0;
+            this.serviceCategoryCards = [];
+            this.categoryTotalCount = 0;
+          }
+        },
+      });
+  }
+
+  private loadCategoryServicesPage(reset: boolean): void {
+    if (!this.selectedCategoryId) {
+      return;
+    }
+
+    if (reset) {
+      if (this.serviceLoading) return;
+      this.serviceLoading = true;
+      this.loadingCategoryServices = true;
+      this.servicePageIndex = 1;
+      this.categoryServiceCards = [];
+    } else {
+      if (this.serviceLoadingMore || !this.serviceHasMore) return;
+      this.serviceLoadingMore = true;
+      this.servicePageIndex += 1;
+    }
+
+    this.servicesService
+      .getPublic({
+        serviceCategoryId: this.selectedCategoryId,
+        pageIndex: this.servicePageIndex,
+        pageSize: this.servicePageSize,
+      })
+      .subscribe({
+        next: response => {
+          const services = response.data?.data ?? [];
+          this.serviceTotalCount = response.data?.totalCount ?? 0;
+          const startIndex = reset ? 0 : this.categoryServiceCards.length;
+          const mapped = services.map((service, index) =>
+            this.mapServiceToCard(service, startIndex + index)
+          );
+          this.categoryServiceCards = reset ? mapped : [...this.categoryServiceCards, ...mapped];
+          this.serviceLoading = false;
+          this.serviceLoadingMore = false;
+          this.loadingCategoryServices = false;
+          this.initServiceSwiper();
+          if (reset) {
+            setTimeout(() => {
+              document.getElementById('category-services-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+          }
+        },
+        error: error => {
+          console.error('Failed to load services for category.', error);
+          this.categoryServiceCards = [];
+          this.serviceTotalCount = 0;
+          this.serviceLoading = false;
+          this.serviceLoadingMore = false;
+          this.loadingCategoryServices = false;
+        },
+      });
   }
 
   private loadPublicServices(): void {
@@ -408,81 +606,356 @@ export class LandingPageComponent {
     });
   }
 
-  private loadPortfolioHighlights(): void {
-    this.portfoliosService.getAll({ pageIndex: 1, pageSize: 24 }).subscribe({
-      next: (response) => {
-        const portfolios = response.data?.data ?? [];
-        this.publishedProjectsCount = response.data?.totalCount ?? portfolios.length;
-        this.portfolioHighlights = portfolios.map((portfolio, index) =>
-          this.mapPortfolioHighlight(portfolio, index)
-        );
-        this.initPortfolioSwiper();
-      },
-      error: (error) => {
-        console.error('Failed to load portfolio highlights for landing page.', error);
-        this.publishedProjectsCount = 0;
-        this.portfolioHighlights = [];
-      }
+  get portfolioHasMore(): boolean {
+    return this.portfolioItems.length < this.portfolioTotalCount;
+  }
+
+  get portfolioShowCarouselNav(): boolean {
+    return this.portfolioItems.length > 1 || this.portfolioHasMore;
+  }
+
+  get categoryShowCarouselNav(): boolean {
+    return this.serviceCategoryCards.length > 1 || this.categoryHasMore;
+  }
+
+  get serviceShowCarouselNav(): boolean {
+    return this.categoryServiceCards.length > 1 || this.serviceHasMore;
+  }
+
+  portfolioSlidePrev(): void {
+    slideLandingCarouselPrev(this.getPortfolioSwiperHost(), this.portfolioItems.length);
+    this.schedulePortfolioNavSync();
+  }
+
+  portfolioSlideNext(): void {
+    slideLandingCarouselNext(
+      this.getPortfolioSwiperHost(),
+      this.portfolioItems.length,
+      this.portfolioHasMore,
+      () => this.loadMorePortfolios()
+    );
+    this.schedulePortfolioNavSync();
+  }
+
+  categorySlidePrev(): void {
+    slideLandingCarouselPrev(this.getCategorySwiperHost(), this.serviceCategoryCards.length);
+    this.scheduleCategoryNavSync();
+  }
+
+  categorySlideNext(): void {
+    slideLandingCarouselNext(
+      this.getCategorySwiperHost(),
+      this.serviceCategoryCards.length,
+      this.categoryHasMore,
+      () => this.loadMoreCategories()
+    );
+    this.scheduleCategoryNavSync();
+  }
+
+  serviceSlidePrev(): void {
+    slideLandingCarouselPrev(this.getServiceSwiperHost(), this.categoryServiceCards.length);
+    this.scheduleServiceNavSync();
+  }
+
+  serviceSlideNext(): void {
+    slideLandingCarouselNext(
+      this.getServiceSwiperHost(),
+      this.categoryServiceCards.length,
+      this.serviceHasMore,
+      () => this.loadMoreCategoryServices()
+    );
+    this.scheduleServiceNavSync();
+  }
+
+  openPortfolioDetail(card: LandingPortfolioCard): void {
+    const modalRef = this.modalService.open(LandingPortfolioDetailModalComponent, {
+      centered: true,
+      size: 'xl',
+      scrollable: true,
     });
+    modalRef.componentInstance.portfolio = card;
+    modalRef.closed.subscribe(() => undefined);
+  }
+
+  portfolioCoverUrl(card: LandingPortfolioCard): string {
+    return card.imageUrls[0] ?? '';
+  }
+
+  loadMorePortfolios(): void {
+    if (!this.portfolioHasMore || this.portfolioLoading || this.portfolioLoadingMore) {
+      return;
+    }
+    this.loadPortfolioPage(false);
+  }
+
+  private loadPortfolioHighlights(): void {
+    this.loadPortfolioPage(true);
+  }
+
+  private loadPortfolioPage(reset: boolean): void {
+    if (reset) {
+      if (this.portfolioLoading) return;
+      this.portfolioLoading = true;
+      this.portfolioPageIndex = 1;
+      this.portfolioItems = [];
+    } else {
+      if (this.portfolioLoadingMore || !this.portfolioHasMore) return;
+      this.portfolioLoadingMore = true;
+      this.portfolioPageIndex += 1;
+    }
+
+    this.portfoliosService
+      .getAll({ pageIndex: this.portfolioPageIndex, pageSize: this.portfolioPageSize })
+      .subscribe({
+        next: response => {
+          const portfolios = response.data?.data ?? [];
+          this.portfolioTotalCount = response.data?.totalCount ?? 0;
+          this.publishedProjectsCount = this.portfolioTotalCount;
+          const startIndex = reset ? 0 : this.portfolioItems.length;
+          const mapped = portfolios.map((portfolio, index) =>
+            this.mapPortfolioCard(portfolio, startIndex + index)
+          );
+          this.portfolioItems = reset ? mapped : [...this.portfolioItems, ...mapped];
+          this.portfolioLoading = false;
+          this.portfolioLoadingMore = false;
+          this.initPortfolioSwiper();
+        },
+        error: error => {
+          console.error('Failed to load portfolio highlights for landing page.', error);
+          this.portfolioLoading = false;
+          this.portfolioLoadingMore = false;
+          if (reset) {
+            this.publishedProjectsCount = 0;
+            this.portfolioItems = [];
+            this.portfolioTotalCount = 0;
+          }
+        },
+      });
   }
 
   private initPortfolioSwiper(): void {
-    setTimeout(() => {
-      const swiperEl = this.swiperContainerPortfolio?.nativeElement as HTMLElement & {
-        initialize?: () => void;
-      };
-      if (!swiperEl || this.portfolioHighlights.length === 0) {
-        return;
+    this.initCarouselAfterView(this.swiperContainerPortfolio, this.portfolioItems.length, el => {
+      this.unbindPortfolioSwiperEvents();
+      this.portfolioSwiperEl = el;
+      this.bindPortfolioSwiperEvents(el);
+      this.portfolioLoadObserver = setupLandingCarouselSentinel(
+        this.portfolioLoadSentinel?.nativeElement,
+        this.portfolioLoadObserver,
+        () => this.portfolioHasMore && !this.portfolioLoading && !this.portfolioLoadingMore,
+        () => this.loadMorePortfolios()
+      );
+      this.schedulePortfolioNavSync();
+    });
+  }
+
+  private initCategorySwiper(): void {
+    this.initCarouselAfterView(this.swiperContainerCategories, this.serviceCategoryCards.length, el => {
+      this.unbindCategorySwiperEvents();
+      this.categorySwiperEl = el;
+      this.bindCategorySwiperEvents(el);
+      this.categoryLoadObserver = setupLandingCarouselSentinel(
+        this.categoryLoadSentinel?.nativeElement,
+        this.categoryLoadObserver,
+        () => this.categoryHasMore && !this.categoryLoading && !this.categoryLoadingMore,
+        () => this.loadMoreCategories()
+      );
+      this.scheduleCategoryNavSync();
+    });
+  }
+
+  private initServiceSwiper(): void {
+    this.initCarouselAfterView(this.swiperContainerServices, this.categoryServiceCards.length, el => {
+      this.unbindServiceSwiperEvents();
+      this.serviceSwiperEl = el;
+      this.bindServiceSwiperEvents(el);
+      this.serviceLoadObserver = setupLandingCarouselSentinel(
+        this.serviceLoadSentinel?.nativeElement,
+        this.serviceLoadObserver,
+        () =>
+          this.serviceHasMore &&
+          !this.serviceLoading &&
+          !this.serviceLoadingMore &&
+          !!this.selectedCategoryId,
+        () => this.loadMoreCategoryServices()
+      );
+      this.scheduleServiceNavSync();
+    });
+  }
+
+  private schedulePortfolioNavSync(): void {
+    this.syncPortfolioNav();
+    setTimeout(() => this.syncPortfolioNav(), 0);
+    setTimeout(() => this.syncPortfolioNav(), 120);
+    setTimeout(() => this.syncPortfolioNav(), 350);
+  }
+
+  private scheduleCategoryNavSync(): void {
+    this.syncCategoryNav();
+    setTimeout(() => this.syncCategoryNav(), 0);
+    setTimeout(() => this.syncCategoryNav(), 120);
+    setTimeout(() => this.syncCategoryNav(), 350);
+  }
+
+  private scheduleServiceNavSync(): void {
+    this.syncServiceNav();
+    setTimeout(() => this.syncServiceNav(), 0);
+    setTimeout(() => this.syncServiceNav(), 120);
+    setTimeout(() => this.syncServiceNav(), 350);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.syncPortfolioNav();
+    this.syncCategoryNav();
+    this.syncServiceNav();
+  }
+
+  private getPortfolioSwiperHost(): LandingSwiperHost | undefined {
+    return (this.portfolioSwiperEl ?? this.swiperContainerPortfolio?.nativeElement) as
+      | LandingSwiperHost
+      | undefined;
+  }
+
+  private getCategorySwiperHost(): LandingSwiperHost | undefined {
+    return (this.categorySwiperEl ?? this.swiperContainerCategories?.nativeElement) as
+      | LandingSwiperHost
+      | undefined;
+  }
+
+  private getServiceSwiperHost(): LandingSwiperHost | undefined {
+    return (this.serviceSwiperEl ?? this.swiperContainerServices?.nativeElement) as
+      | LandingSwiperHost
+      | undefined;
+  }
+
+  private syncPortfolioNav(): void {
+    const state = readLandingCarouselNavState(
+      this.getPortfolioSwiperHost(),
+      this.portfolioItems.length,
+      this.portfolioHasMore
+    );
+    this.portfolioCanGoPrev = state.canPrev;
+    this.portfolioCanGoNext = state.canNext;
+    this.cdr.markForCheck();
+  }
+
+  private syncCategoryNav(): void {
+    const state = readLandingCarouselNavState(
+      this.getCategorySwiperHost(),
+      this.serviceCategoryCards.length,
+      this.categoryHasMore
+    );
+    this.categoryCanGoPrev = state.canPrev;
+    this.categoryCanGoNext = state.canNext;
+    this.cdr.markForCheck();
+  }
+
+  private syncServiceNav(): void {
+    const state = readLandingCarouselNavState(
+      this.getServiceSwiperHost(),
+      this.categoryServiceCards.length,
+      this.serviceHasMore
+    );
+    this.serviceCanGoPrev = state.canPrev;
+    this.serviceCanGoNext = state.canNext;
+    this.cdr.markForCheck();
+  }
+
+  private initCarouselAfterView(
+    container: ElementRef | undefined,
+    itemCount: number,
+    onReady: (el: LandingSwiperHost) => void
+  ): void {
+    this.cdr.detectChanges();
+    void customElements.whenDefined('swiper-container').then(() => {
+      this.initCarouselWhenSlidesReady(container, itemCount, onReady, 0);
+    });
+  }
+
+  /** Swiper must initialize only after Angular has rendered swiper-slide children. */
+  private initCarouselWhenSlidesReady(
+    container: ElementRef | undefined,
+    itemCount: number,
+    onReady: (el: LandingSwiperHost) => void,
+    attempt: number
+  ): void {
+    const host = container?.nativeElement as LandingSwiperHost | undefined;
+    const domSlides = countLandingCarouselSlides(host);
+
+    if (domSlides >= itemCount && itemCount > 0) {
+      const el = initLandingSwiperCarousel(container, itemCount, this.carouselAutoplayDelayMs);
+      if (el) {
+        onReady(el);
       }
+      return;
+    }
 
-      const slideCount = this.portfolioHighlights.length;
-      const paginationEl = this.portfolioPagination?.nativeElement;
-      Object.assign(swiperEl, {
-        slidesPerView: 4,
-        slidesPerGroup: 1,
-        spaceBetween: 24,
-        loop: slideCount > 4,
-        watchOverflow: true,
-        pagination: paginationEl
-          ? {
-              el: paginationEl,
-              clickable: true,
-              type: 'bullets',
-            }
-          : false,
-        autoplay:
-          slideCount > 4
-            ? {
-                delay: 4500,
-                disableOnInteraction: false,
-              }
-            : false,
-        breakpoints: {
-          0: {
-            slidesPerView: 1,
-            slidesPerGroup: 1,
-            spaceBetween: 16,
-          },
-          768: {
-            slidesPerView: 2,
-            slidesPerGroup: 1,
-            spaceBetween: 20,
-          },
-          992: {
-            slidesPerView: 3,
-            slidesPerGroup: 1,
-            spaceBetween: 24,
-          },
-          1200: {
-            slidesPerView: 4,
-            slidesPerGroup: 1,
-            spaceBetween: 24,
-          },
-        },
-      });
+    if (attempt < 24) {
+      setTimeout(
+        () => this.initCarouselWhenSlidesReady(container, itemCount, onReady, attempt + 1),
+        50
+      );
+      return;
+    }
 
-      swiperEl.initialize?.();
-    }, 100);
+    const el = initLandingSwiperCarousel(container, itemCount, this.carouselAutoplayDelayMs);
+    if (el) {
+      onReady(el);
+    }
+  }
+
+  private bindPortfolioSwiperEvents(swiperEl: HTMLElement): void {
+    bindLandingSwiperEvents(swiperEl, {
+      onReachEnd: this.onPortfolioReachEnd,
+      onSlideChange: this.onPortfolioSlideChange,
+      onResize: this.onPortfolioResize,
+      onAfterInit: this.onPortfolioAfterInit,
+    });
+  }
+
+  private unbindPortfolioSwiperEvents(): void {
+    unbindLandingSwiperEvents(this.portfolioSwiperEl, {
+      onReachEnd: this.onPortfolioReachEnd,
+      onSlideChange: this.onPortfolioSlideChange,
+      onResize: this.onPortfolioResize,
+      onAfterInit: this.onPortfolioAfterInit,
+    });
+  }
+
+  private bindCategorySwiperEvents(swiperEl: HTMLElement): void {
+    bindLandingSwiperEvents(swiperEl, {
+      onReachEnd: this.onCategoryReachEnd,
+      onSlideChange: this.onCategorySlideChange,
+      onResize: this.onCategoryResize,
+      onAfterInit: this.onCategoryAfterInit,
+    });
+  }
+
+  private unbindCategorySwiperEvents(): void {
+    unbindLandingSwiperEvents(this.categorySwiperEl, {
+      onReachEnd: this.onCategoryReachEnd,
+      onSlideChange: this.onCategorySlideChange,
+      onResize: this.onCategoryResize,
+      onAfterInit: this.onCategoryAfterInit,
+    });
+  }
+
+  private bindServiceSwiperEvents(swiperEl: HTMLElement): void {
+    bindLandingSwiperEvents(swiperEl, {
+      onReachEnd: this.onServiceReachEnd,
+      onSlideChange: this.onServiceSlideChange,
+      onResize: this.onServiceResize,
+      onAfterInit: this.onServiceAfterInit,
+    });
+  }
+
+  private unbindServiceSwiperEvents(): void {
+    unbindLandingSwiperEvents(this.serviceSwiperEl, {
+      onReachEnd: this.onServiceReachEnd,
+      onSlideChange: this.onServiceSlideChange,
+      onResize: this.onServiceResize,
+      onAfterInit: this.onServiceAfterInit,
+    });
   }
 
   selectCategory(card: LandingServiceCategoryCard): void {
@@ -493,36 +966,26 @@ export class LandingPageComponent {
 
     this.selectedCategoryId = card.id;
     this.selectedCategoryTitle = card.title;
-    this.loadingCategoryServices = true;
-    this.categoryServiceCards = [];
-
-    this.servicesService
-      .getPublic({ serviceCategoryId: card.id, pageIndex: 1, pageSize: 100 })
-      .subscribe({
-        next: response => {
-          const services = response.data?.data ?? [];
-          this.categoryServiceCards = services.map((service, index) =>
-            this.mapServiceToCard(service, index)
-          );
-          this.loadingCategoryServices = false;
-          setTimeout(() => {
-            const panel = document.getElementById('category-services-panel');
-            panel?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          });
-        },
-        error: error => {
-          console.error('Failed to load services for category.', error);
-          this.categoryServiceCards = [];
-          this.loadingCategoryServices = false;
-        },
-      });
+    this.loadCategoryServicesPage(true);
   }
 
   clearCategorySelection(): void {
+    this.unbindServiceSwiperEvents();
+    this.serviceLoadObserver?.disconnect();
+    this.serviceSwiperEl = undefined;
     this.selectedCategoryId = null;
     this.selectedCategoryTitle = '';
     this.categoryServiceCards = [];
+    this.serviceTotalCount = 0;
+    this.servicePageIndex = 1;
     this.loadingCategoryServices = false;
+    this.serviceLoading = false;
+    this.serviceLoadingMore = false;
+
+    const section = this.serviceCategoriesSection?.nativeElement;
+    if (section) {
+      this.scroll(section);
+    }
   }
 
   goToContactFromCategory(): void {
@@ -609,23 +1072,25 @@ export class LandingPageComponent {
     };
   }
 
-  private mapPortfolioHighlight(portfolio: PortfolioDto, index: number): LandingPortfolioHighlight {
-    const summary = this.buildPortfolioDescription(portfolio);
-    const meta = [
-      portfolio.serviceCategoryName?.trim(),
-      portfolio.serviceName?.trim(),
-      portfolio.clientName?.trim(),
-      this.formatPortfolioCompletedDate(portfolio.completedDate),
-    ].filter((part): part is string => !!part);
-
-    const description = meta.length ? `${summary} · ${meta.join(' · ')}` : summary;
+  private mapPortfolioCard(portfolio: PortfolioDto, index: number): LandingPortfolioCard {
+    const description = this.buildPortfolioDescription(portfolio);
+    const imageUrls = (portfolio.images ?? [])
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map(img => portfolioImageUrl(img.imageUrl))
+      .filter(url => !!url);
 
     return {
       id: portfolio.id,
-      icon: this.serviceCategoryIcons[index % this.serviceCategoryIcons.length],
+      serviceId: portfolio.serviceId ?? null,
       title: portfolio.title,
+      summary: this.truncateText(description, 120),
+      description,
+      categoryName: portfolio.serviceCategoryName?.trim() ?? '',
+      serviceName: portfolio.serviceName?.trim() ?? '',
+      clientName: portfolio.clientName?.trim() ?? '',
+      year: this.formatPortfolioCompletedDate(portfolio.completedDate),
       cardClass: this.serviceCategoryCardClasses[index % this.serviceCategoryCardClasses.length],
-      description: this.truncateText(description, 150),
+      imageUrls,
     };
   }
 
@@ -661,6 +1126,12 @@ export class LandingPageComponent {
   }
 
   ngOnDestroy(): void {
+    this.portfolioLoadObserver?.disconnect();
+    this.categoryLoadObserver?.disconnect();
+    this.serviceLoadObserver?.disconnect();
+    this.unbindPortfolioSwiperEvents();
+    this.unbindCategorySwiperEvents();
+    this.unbindServiceSwiperEvents();
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;
     this.renderer.removeClass(this.document.body, 'landing-body');
@@ -742,62 +1213,6 @@ export class LandingPageComponent {
 
   activeSlides!: SlidesOutputData;
 
-  slidesStore: any[] = [
-    {
-      img: "./assets/images/faces/15.jpg",
-      name: 'Json Taylor',
-      role: 'CEO OF NORJA',
-      days: "12 days"
-    },
-    {
-      img: "./assets/images/faces/4.jpg",
-      name: 'Melissa Blue',
-      role: 'MANAGER CHO',
-      days: "7 days"
-    },
-    {
-      img: "./assets/images/faces/2.jpg",
-      name: 'Kiara Advain',
-      role: 'CEO OF EMPIRO',
-      days: "2 days"
-    },
-    {
-      img: "./assets/images/faces/10.jpg",
-      name: 'Jhonson Smith',
-      role: 'CHIEF SECRETARY MBIO',
-      days: "16 hours"
-    },
-    {
-      img: "./assets/images/faces/12.jpg",
-      name: 'Dwayne Stort',
-      role: 'CEO ARMEDILLO',
-      days: "22 days"
-    },
-    {
-      img: "./assets/images/faces/15.jpg",
-      name: 'Jasmine Kova',
-      role: 'Web Developer',
-      days: "26 days"
-    },
-    {
-      img: "./assets/images/faces/16.jpg",
-      name: 'Dolph MR',
-      role: 'CEO MR BRAND',
-      days: "1 month"
-    },
-    {
-      img: "./assets/images/faces/5.jpg",
-      name: 'Brenda Simpson',
-      role: 'CEO AIBMO',
-      days: "1 month"
-    },
-    {
-      img: "./assets/images/faces/5.jpg",
-      name: 'Julia Sams',
-      role: 'CHIEF SECRETARY BHOL',
-      days: "2 month"
-    }
-  ];
   show:boolean=false;
 
 

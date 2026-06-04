@@ -10,11 +10,60 @@
     color: var(--primary-color);
 }
 
-.landing-portfolio-swiper {
+.landing-carousel-nav-wrap {
+    position: relative;
+    padding-inline: 2.75rem;
+
+    .landing-carousel-nav {
+        position: absolute;
+        top: 42%;
+        transform: translateY(-50%);
+        z-index: 4;
+        width: 2.5rem;
+        height: 2.5rem;
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgb(255 255 255 / 96%);
+        color: var(--primary-color, #667eea);
+        box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+        cursor: pointer;
+        transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+
+        i {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        &:hover:not(.landing-carousel-nav--inactive) {
+            background: #fff;
+            transform: translateY(-50%) scale(1.06);
+        }
+
+        &.landing-carousel-nav--inactive {
+            opacity: 0.35;
+            box-shadow: none;
+        }
+    }
+
+    .landing-carousel-nav-prev {
+        left: 0;
+    }
+
+    .landing-carousel-nav-next {
+        right: 0;
+    }
+}
+
+.landing-carousel-swiper {
     width: 100%;
     max-width: 100%;
     position: relative;
+    overflow: visible;
 
+    swiper-container.landing-carousel-swiper-el,
     swiper-container.portfolio-swiper {
         display: block;
         width: 100% !important;
@@ -23,8 +72,76 @@
         box-sizing: border-box;
 
         &::part(pagination) {
-            display: none !important;
+            display: flex !important;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            margin-top: 1.75rem;
+            margin-bottom: 0.75rem;
+            min-height: 1.25rem;
         }
+
+        &::part(bullet) {
+            width: 1.25rem !important;
+            height: 0.35rem !important;
+            border-radius: 0.25rem !important;
+            background: var(--primary-color, #5b6cff) !important;
+            opacity: 0.35;
+        }
+
+        &::part(bullet-active) {
+            width: 1.25rem !important;
+            height: 0.35rem !important;
+            border-radius: 0.25rem !important;
+            background: var(--primary-color, #5b6cff) !important;
+            opacity: 1;
+            transform: scaleY(1.35);
+        }
+    }
+
+    swiper-slide {
+        height: auto;
+        box-sizing: border-box;
+    }
+
+    .landing-carousel-slide {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        padding-block: 0.25rem;
+    }
+}
+
+.landing-carousel-sentinel {
+    height: 1px;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+@media (max-width: 767.98px) {
+    .landing-carousel-nav-wrap {
+        padding-inline: 2.25rem;
+
+        .landing-carousel-nav {
+            width: 2.125rem;
+            height: 2.125rem;
+        }
+    }
+}
+
+.landing-portfolio-swiper {
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    overflow: visible;
+
+    swiper-container.portfolio-swiper {
+        display: block;
+        width: 100% !important;
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
     }
 
     swiper-slide {
@@ -39,45 +156,82 @@
         padding-block: 0.25rem;
     }
 
-    .portfolio-swiper-pagination {
-        position: static !important;
-        display: flex !important;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.35rem;
-        width: 100%;
-        margin-top: 1.5rem;
-        padding: 0;
-        transform: none !important;
-        left: auto !important;
-        bottom: auto !important;
-        text-align: center;
+}
 
-        .swiper-pagination-bullet {
-            width: 1.25rem;
-            height: 0.25rem;
-            margin: 0 !important;
-            border-radius: 0.25rem;
-            background: var(--primary-color);
-            opacity: 0.3;
-            transform: none;
-        }
+.landing-portfolio-slide-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-        .swiper-pagination-bullet-active {
-            opacity: 1;
-            background: var(--primary-color);
-        }
+    &:hover,
+    &:focus-visible {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgb(var(--primary-rgb) / 18%);
     }
 }
 
-.landing-portfolio-slide .features {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+.portfolio-load-sentinel {
+    height: 1px;
+    width: 100%;
+    margin-top: 1rem;
 }
 
-.landing-portfolio-slide:hover .features {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgb(var(--primary-rgb) / 18%);
+.landing-portfolio-card {
+    border: 1px solid var(--default-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: var(--custom-white);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: left;
+
+    &:hover,
+    &:focus-visible {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgb(var(--primary-rgb) / 15%);
+        outline: none;
+    }
+}
+
+.landing-portfolio-slide-card .landing-portfolio-card-media {
+    height: 200px;
+}
+
+.landing-portfolio-card-media {
+    position: relative;
+    height: 200px;
+    background: rgb(var(--primary-rgb) / 8%);
+    overflow: hidden;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+}
+
+.landing-portfolio-card-placeholder {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: var(--text-muted);
+    opacity: 0.45;
+}
+
+.landing-portfolio-photo-count {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    background: rgb(0 0 0 / 55%);
+    color: #fff;
+}
+
+.landing-portfolio-card-body {
+    padding: 1.25rem;
 }
 
 .landing-category-card-wrap {

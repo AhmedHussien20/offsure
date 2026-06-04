@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
@@ -9,6 +9,10 @@ import {
   ServiceDto,
   ServiceRequestPriority,
 } from 'app/core/models/services/service.models';
+import {
+  ServiceRequestCreatePrefill,
+  clearServiceRequestPrefill,
+} from 'app/core/models/services/service-request-prefill.model';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { ServicesService } from 'app/core/services/services.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
@@ -46,6 +50,8 @@ import { GenericFormComponent } from 'app/shared/components/generic-form/generic
   `,
 })
 export class ClientRequestCreateComponent implements OnInit {
+  @Input() prefill: ServiceRequestCreatePrefill | null = null;
+
   formGroup!: FormGroup;
   formConfig: FormFieldConfig[] = [];
   services: ServiceDto[] = [];
@@ -73,6 +79,7 @@ export class ClientRequestCreateComponent implements OnInit {
       next: res => {
         this.services = res.data?.data ?? [];
         this.buildFormConfig();
+        this.applyPrefill();
       },
       error: () => {
         this.toastr.error('Failed to load services.');
@@ -159,5 +166,25 @@ export class ClientRequestCreateComponent implements OnInit {
         ],
       },
     ];
+  }
+
+  private applyPrefill(): void {
+    if (!this.prefill) {
+      return;
+    }
+
+    const serviceId =
+      this.prefill.serviceId != null &&
+      this.services.some(s => s.id === this.prefill!.serviceId)
+        ? this.prefill.serviceId
+        : null;
+
+    this.formGroup.patchValue({
+      serviceId,
+      title: this.prefill.title ?? '',
+      description: this.prefill.description ?? '',
+    });
+
+    clearServiceRequestPrefill();
   }
 }

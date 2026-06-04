@@ -173,13 +173,13 @@
                 <div class="container main-banner-container">
                     <div class="row">
                         <div class="col-xl-6 col-lg-6 animation-zidex position-relative">
-                            <h4 class="fw-medium mt-7">Offsure Management System</h4>
-                            <p class="text-start fw-bold">Browse services, discover real delivery work, and find the
-                                right solution faster.</p>
+                            <h4 class="fw-medium mt-7">{{ companyProfile.platformName }}</h4>
+                            <p class="text-start fw-bold">{{ companyProfile.tagline }}</p>
                             <h6 class="pb-3">
-                                Offsure Management System is the public experience for exploring service categories,
-                                reviewing published portfolio projects, and moving from browsing to a real conversation
-                                with our team.</h6>
+                                {{ companyProfile.heroSubtitle }}
+                                Explore service categories, review delivered projects, and connect with
+                                {{ companyProfile.legalName }} for networking, security, and digital solutions.
+                            </h6>
                             <div class="d-flex flex-wrap gap-2">
                                 <a href="javascript:void(0)" class="btn btn-white text-primary  hero-cta-btn-primary"
                                     (click)="scroll(serviceCategories)">Browse Categories</a>
@@ -199,77 +199,165 @@
 
         <!-- Start:: Section-2 -->
         <section class="section hor-content main_features" id="service-categories" #serviceCategories>
-            <div class="container">
+            <div class="container text-center">
                 <h4 class="text-center fw-medium landing-card-header">Service Categories</h4>
                 <span class="landing-title"></span>
-                <h2 class="fw-medium text-center">Explore Our Service Categories</h2>
-                <p class="text-default mb-5 text-center">Browse the real service categories available in
-                    Offsure Management System and discover what the platform currently offers to your
-                    clients.</p>
-                <div class="row">
-                    @for (card of serviceCategoryCards; track card.id) {
-                    <div class="col-lg-3 col-md-6 d-flex">
-                        <div
-                            class="landing-category-card-wrap w-100"
-                            [class.landing-category-card-wrap--selected]="selectedCategoryId === card.id"
-                            role="button"
-                            tabindex="0"
-                            [attr.aria-expanded]="selectedCategoryId === card.id"
-                            [attr.aria-label]="'View services in ' + card.title"
-                            (click)="selectCategory(card)"
-                            (keydown.enter)="selectCategory(card)"
-                            (keydown.space)="$event.preventDefault(); selectCategory(card)">
-                            <spk-feature-cards
-                                [icon]="card.icon"
-                                [title]="card.title"
-                                [cardClass]="card.cardClass"
-                                [description]="card.description">
-                            </spk-feature-cards>
-                            <span class="landing-category-card-hint small text-primary">
-                                {{ selectedCategoryId === card.id ? 'Hide services' : 'View services' }}
-                            </span>
-                        </div>
-                    </div>
+                <h2 class="fw-medium text-center">What We Offer</h2>
+                <p class="text-default mb-5 text-center">
+                    From vendor partnership and technical training to consultation, design/presales, and 24/7 SLA-backed support —
+                    browse live categories below to see our current service lines.
+                </p>
+
+                @if (categoryLoading && !serviceCategoryCards.length) {
+                <p class="text-muted mb-0">Loading categories...</p>
+                } @else if (serviceCategoryCards.length) {
+                <div class="landing-carousel-swiper landing-carousel-nav-wrap swiper pagination-dynamic text-start">
+                    @if (categoryShowCarouselNav) {
+                    <button
+                        type="button"
+                        class="landing-carousel-nav landing-carousel-nav-prev"
+                        [class.landing-carousel-nav--inactive]="!categoryCanGoPrev"
+                        aria-label="Previous categories"
+                        (click)="categorySlidePrev()">
+                        <i class="fe fe-chevron-left"></i>
+                    </button>
+                    <button
+                        type="button"
+                        class="landing-carousel-nav landing-carousel-nav-next"
+                        [class.landing-carousel-nav--inactive]="!categoryCanGoNext"
+                        aria-label="Next categories"
+                        (click)="categorySlideNext()">
+                        <i class="fe fe-chevron-right"></i>
+                    </button>
                     }
+                    <div class="swiper-wrapper">
+                        <swiper-container
+                            #swiperContainerCategories
+                            class="landing-carousel-swiper-el mySwiper"
+                            slides-per-view="3"
+                            slides-per-group="1"
+                            space-between="24"
+                            [attr.autoplay-delay]="carouselAutoplayDelayMs"
+                            pagination="true"
+                            pagination-clickable="true"
+                            autoplay-disable-on-interaction="false">
+                            @for (card of serviceCategoryCards; track card.id) {
+                            <swiper-slide>
+                                <div class="landing-carousel-slide h-100">
+                                    <div
+                                        class="landing-category-card-wrap w-100"
+                                        [class.landing-category-card-wrap--selected]="selectedCategoryId === card.id"
+                                        role="button"
+                                        tabindex="0"
+                                        [attr.aria-expanded]="selectedCategoryId === card.id"
+                                        [attr.aria-label]="'View services in ' + card.title"
+                                        (click)="selectCategory(card)"
+                                        (keydown.enter)="selectCategory(card)"
+                                        (keydown.space)="$event.preventDefault(); selectCategory(card)">
+                                        <spk-feature-cards
+                                            [icon]="card.icon"
+                                            [title]="card.title"
+                                            [cardClass]="card.cardClass"
+                                            [description]="card.description">
+                                        </spk-feature-cards>
+                                        <span class="landing-category-card-hint small text-primary">
+                                            {{ selectedCategoryId === card.id ? 'Hide services' : 'View services' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </swiper-slide>
+                            }
+                        </swiper-container>
+                    </div>
+
                 </div>
 
+                <div #categoryLoadSentinel class="landing-carousel-sentinel" aria-hidden="true"></div>
+                @if (categoryLoadingMore) {
+                <p class="text-muted small mt-3 mb-0">Loading more categories...</p>
+                }
+                } @else {
+                <p class="text-muted mb-0">No service categories are available yet.</p>
+                }
+
                 @if (selectedCategoryId !== null) {
-                <div id="category-services-panel" class="landing-category-services-panel mt-5 pt-2">
-                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-                        <div class="flex-grow-1"></div>
+                <div id="category-services-panel" class="landing-category-services-panel mt-5 pt-2 text-center">
+                    <div class="d-flex flex-wrap justify-content-end gap-2 mb-2">
                         <button type="button" class="btn btn-sm btn-light" (click)="clearCategorySelection()">
                             Close
                         </button>
                     </div>
-                    <h4 class="text-center fw-medium landing-card-header">Services</h4>
+                    <h4 class="fw-medium landing-card-header">Services</h4>
                     <span class="landing-title"></span>
-                    <h2 class="fw-medium text-center">Services in {{ selectedCategoryTitle }}</h2>
-                    <p class="text-default mb-5 text-center">
-                        Explore the services available in this category, then contact us or log in to submit a request.
+                    <h2 class="fw-medium">Services in {{ selectedCategoryTitle }}</h2>
+                    <p class="text-default mb-4">
+                        Explore services in this category. Swipe to browse; more load as you reach the end.
                     </p>
 
-                    @if (loadingCategoryServices) {
-                    <p class="text-muted text-center mb-0">Loading services...</p>
+                    @if (loadingCategoryServices && !categoryServiceCards.length) {
+                    <p class="text-muted mb-0">Loading services...</p>
                     } @else if (categoryServiceCards.length === 0) {
-                    <p class="text-muted text-center mb-0">
+                    <p class="text-muted mb-0">
                         No public services are listed in this category yet. You can still
                         <a href="javascript:void(0)" (click)="goToContactFromCategory()">contact us</a>
                         about your needs.
                     </p>
                     } @else {
-                    <div class="row">
-                        @for (card of categoryServiceCards; track card.id) {
-                        <div class="col-lg-3 col-md-6 d-flex">
-                            <spk-feature-cards
-                                [icon]="card.icon"
-                                [title]="card.title"
-                                [cardClass]="card.cardClass"
-                                [description]="card.description">
-                            </spk-feature-cards>
-                        </div>
+                    <div class="landing-carousel-swiper landing-carousel-nav-wrap swiper pagination-dynamic text-start">
+                        @if (serviceShowCarouselNav) {
+                        <button
+                            type="button"
+                            class="landing-carousel-nav landing-carousel-nav-prev"
+                            [class.landing-carousel-nav--inactive]="!serviceCanGoPrev"
+                            aria-label="Previous services"
+                            (click)="serviceSlidePrev()">
+                            <i class="fe fe-chevron-left"></i>
+                        </button>
+                        <button
+                            type="button"
+                            class="landing-carousel-nav landing-carousel-nav-next"
+                            [class.landing-carousel-nav--inactive]="!serviceCanGoNext"
+                            aria-label="Next services"
+                            (click)="serviceSlideNext()">
+                            <i class="fe fe-chevron-right"></i>
+                        </button>
                         }
+                        <div class="swiper-wrapper">
+                            <swiper-container
+                                #swiperContainerServices
+                                class="landing-carousel-swiper-el mySwiper"
+                                slides-per-view="3"
+                                slides-per-group="1"
+                                space-between="24"
+                                [attr.autoplay-delay]="carouselAutoplayDelayMs"
+                                pagination="true"
+                                pagination-clickable="true"
+                                autoplay-disable-on-interaction="false">
+                                @for (card of categoryServiceCards; track card.id) {
+                                <swiper-slide>
+                                    <div class="landing-carousel-slide h-100">
+                                        <spk-feature-cards
+                                            [icon]="card.icon"
+                                            [title]="card.title"
+                                            [cardClass]="card.cardClass"
+                                            [description]="card.description">
+                                        </spk-feature-cards>
+                                    </div>
+                                </swiper-slide>
+                                }
+                            </swiper-container>
+                        </div>
+
                     </div>
-                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-5">
+
+                    <div #serviceLoadSentinel class="landing-carousel-sentinel" aria-hidden="true"></div>
+                    @if (serviceLoadingMore) {
+                    <p class="text-muted small mt-3 mb-0">Loading more services...</p>
+                    } @else if (!serviceHasMore && categoryServiceCards.length) {
+                    <p class="text-muted small mt-3 mb-0">All services in this category are shown.</p>
+                    }
+
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
                         <button type="button" class="btn btn-primary" (click)="goToContactFromCategory()">
                             Contact us about this category
                         </button>
@@ -365,15 +453,15 @@
                                                                     <div class="bg-transparent">
                                                                         <div class="counter-status">
                                                                             <div class="counter-icon">
-                                                                                <i class="fe fe-layers"></i>
+                                                                                <i class="fe fe-globe"></i>
                                                                             </div>
                                                                             <div
                                                                                 class="test-body text-center text-fixed-white">
                                                                                 <h1 class="fw-semibold mb-0"><span
-                                                                                        class="count">{{deliveryStepsCount}}</span></h1>
+                                                                                        class="count">{{ companyProfile.globalProjectsDelivered }}+</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Delivery Steps</h5>
+                                                                                        Global Projects</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -399,11 +487,14 @@
         <section class="section bg-landing working-section" id="about" #about>
             <div class="container">
                 <div class="row">
-                    <h4 class="text-center fw-medium landing-card-header">About Offsure</h4>
+                    <h4 class="text-center fw-medium landing-card-header">About {{ companyProfile.legalName }}</h4>
                     <span class="landing-title"></span>
                     <div class="text-center">
-                        <h2 class="text-center fw-medium">A browsing experience that leads to real delivery.
-                        </h2>
+                        <h2 class="text-center fw-medium">Remote networking expertise with proven global delivery.</h2>
+                        <p class="text-default mb-0">
+                            Founded in {{ companyProfile.foundedYear }}, we specialize in remote support for enterprise
+                            networking, unified communications, security, data center, and digital solutions.
+                        </p>
                     </div>
                     <div class="reveal">
                         <div class="working-container">
@@ -692,13 +783,17 @@
                                 </div>
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12">
                                     <div class="working-content content-1">
-                                        <h4 class="mb-3">Browse With Clarity</h4>
-                                        <p class="title-desc text-muted">Visitors can explore real service categories
-                                            and understand what Offsure currently offers without reading template
-                                            filler or outdated marketing text.</p>
-                                        <p class="title-desc text-muted mb-0">The landing page is being shaped around
-                                            live system data so browsing feels connected to the actual services your
-                                            team can deliver today.</p>
+                                        <h4 class="mb-3">Who We Are</h4>
+                                        <p class="title-desc text-muted">
+                                            Founded in {{ companyProfile.foundedYear }}, {{ companyProfile.legalName }}
+                                            provides remote support for networking solutions worldwide, with
+                                            {{ companyProfile.globalProjectsDelivered }}+ successfully completed projects.
+                                        </p>
+                                        <p class="title-desc text-muted mb-0">
+                                            Our experts are committed to seamless, efficient network operations —
+                                            backed by {{ companyProfile.yearsNetworkingExperience }} years of multi-vendor
+                                            experience across Cisco, Fortinet, Palo Alto, and more.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -707,13 +802,15 @@
                             <div class="row align-items-center justify-content-center">
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12 myorder-2">
                                     <div class="working-content content-2">
-                                        <h4 class="mb-3">Show Real Work</h4>
-                                        <p class="title-desc text-muted">Published portfolio projects help visitors
-                                            move from curiosity to confidence by showing the kind of work Offsure has
-                                            already delivered for real clients.</p>
-                                        <p class="title-desc text-muted mb-0">Instead of promising capabilities in
-                                            abstract, the platform can present actual projects connected to the
-                                            services and categories that power them.</p>
+                                        <h4 class="mb-3">Mission &amp; Core Values</h4>
+                                        <p class="title-desc text-muted">
+                                            Our mission is to deliver unparalleled remote support that enhances client
+                                            productivity while fostering innovation and collaboration in digital communications.
+                                        </p>
+                                        <p class="title-desc text-muted mb-0">
+                                            Integrity, excellence, and innovation guide how we serve clients — with a culture
+                                            built on collaboration, continuous learning, and operational excellence.
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12 myorder-1">
@@ -1931,13 +2028,13 @@ c-0.6137161,4.8149414-1.0946579,9.651413-1.4447937,14.4860229L43.0290565,232.100
                                 </div>
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12">
                                     <div class="working-content content-3">
-                                        <h4 class="mb-3">Guide Better Requests</h4>
-                                        <p class="title-desc text-muted">A strong landing page should do more than look
-                                            good. It should guide visitors toward the right service and help them
-                                            understand where they fit before they contact your team.</p>
-                                        <p class="title-desc text-muted mb-0">That creates a smoother path from
-                                            browsing to inquiry and gives Offsure better context when a new request
-                                            starts.</p>
+                                        <h4 class="mb-3">Why Choose Us</h4>
+                                        <p class="title-desc text-muted">
+                                            {{ whyChooseUs[0].description }}
+                                        </p>
+                                        <p class="title-desc text-muted mb-0">
+                                            {{ whyChooseUs[1].description }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -1946,13 +2043,16 @@ c-0.6137161,4.8149414-1.0946579,9.651413-1.4447937,14.4860229L43.0290565,232.100
                             <div class="row align-items-center justify-content-center">
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12 myorder-2">
                                     <div class="working-content content-4">
-                                        <h4 class="mb-3">Grow With The Platform</h4>
-                                        <p class="title-desc text-muted">As new categories, services, and portfolio
-                                            projects are added, the landing page can grow with the platform instead of
-                                            becoming another static marketing screen.</p>
-                                        <p class="title-desc text-muted mb-0">That keeps the browsing experience fresh,
-                                            aligned with your operations, and useful for both first-time visitors and
-                                            returning clients.</p>
+                                        <h4 class="mb-3">End-to-End Solutions</h4>
+                                        <p class="title-desc text-muted">
+                                            Beyond networking, we deliver enterprise and digital solutions — from mobile and
+                                            web development to Agile delivery, system integration, AI-driven automation, and
+                                            legacy support.
+                                        </p>
+                                        <p class="title-desc text-muted mb-0">
+                                            {{ whatWeOffer[3].description }}
+                                            {{ companyProfile.supportHours }}
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12 myorder-1">
@@ -2106,44 +2206,108 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         <!-- End:: Section-3 -->
 
         <!-- Start:: Section-5 -->
-        <section class="section highlights" id="highlights" #highlights>
+        <section class="section highlights landing-our-work" id="highlights" #highlights>
             <div class="container text-center">
                 <div class="row">
                     <h4 class="text-center fw-medium">Our Work</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium">A Selection of Projects We Delivered for Our Clients</h2>
+                    <h2 class="text-center fw-medium">Our Success Stories</h2>
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-xl-8">
-                        <p class="fs-15 mb-5 fw-normal">Explore published portfolio projects from Offsure Management
-                            System and see how our services translate into real delivery for clients.</p>
+                        <p class="fs-15 mb-5 fw-normal">
+                            Successfully completed {{ companyProfile.globalProjectsDelivered }}+ complex network projects for
+                            global clients. Browse published portfolio work below — swipe the carousel or scroll to load more.
+                        </p>
                     </div>
                 </div>
-                @if (portfolioHighlights.length) {
-                <div class="landing-portfolio-swiper">
-                    <swiper-container #swiperContainerPortfolio init="false" class="portfolio-swiper">
-                        @for (portfolio of portfolioHighlights; track portfolio.id) {
+
+                @if (portfolioLoading && !portfolioItems.length) {
+                <p class="text-muted mb-0">Loading projects...</p>
+                } @else if (portfolioItems.length) {
+                <div class="landing-portfolio-swiper landing-carousel-swiper landing-carousel-nav-wrap swiper pagination-dynamic text-start">
+                    @if (portfolioShowCarouselNav) {
+                    <button
+                        type="button"
+                        class="landing-carousel-nav landing-carousel-nav-prev"
+                        [class.landing-carousel-nav--inactive]="!portfolioCanGoPrev"
+                        aria-label="Previous projects"
+                        (click)="portfolioSlidePrev()">
+                        <i class="fe fe-chevron-left"></i>
+                    </button>
+                    <button
+                        type="button"
+                        class="landing-carousel-nav landing-carousel-nav-next"
+                        [class.landing-carousel-nav--inactive]="!portfolioCanGoNext"
+                        aria-label="Next projects"
+                        (click)="portfolioSlideNext()">
+                        <i class="fe fe-chevron-right"></i>
+                    </button>
+                    }
+                    <div class="swiper-wrapper">
+                    <swiper-container
+                        #swiperContainerPortfolio
+                        class="portfolio-swiper landing-carousel-swiper-el mySwiper"
+                        slides-per-view="3"
+                        slides-per-group="1"
+                        space-between="24"
+                        [attr.autoplay-delay]="carouselAutoplayDelayMs"
+                        pagination="true"
+                        pagination-clickable="true"
+                        autoplay-disable-on-interaction="false">
+                        @for (item of portfolioItems; track item.id) {
                         <swiper-slide>
-                            <div class="landing-portfolio-slide h-100">
-                                <spk-feature-cards
-                                    [icon]="portfolio.icon"
-                                    [title]="portfolio.title"
-                                    [cardClass]="portfolio.cardClass"
-                                    [description]="portfolio.description">
-                                </spk-feature-cards>
+                            <div class="landing-portfolio-slide landing-carousel-slide h-100">
+                                <article
+                                    class="landing-portfolio-card landing-portfolio-slide-card"
+                                    role="button"
+                                    tabindex="0"
+                                    (click)="openPortfolioDetail(item)"
+                                    (keydown.enter)="openPortfolioDetail(item)">
+                                    <div class="landing-portfolio-card-media {{ item.cardClass }}">
+                                        @if (portfolioCoverUrl(item)) {
+                                        <img [src]="portfolioCoverUrl(item)" [alt]="item.title" loading="lazy" />
+                                        } @else {
+                                        <div class="landing-portfolio-card-placeholder">
+                                            <i class="fe fe-image"></i>
+                                        </div>
+                                        }
+                                        @if (item.imageUrls.length > 1) {
+                                        <span class="landing-portfolio-photo-count">{{ item.imageUrls.length }} photos</span>
+                                        }
+                                    </div>
+                                    <div class="landing-portfolio-card-body text-start">
+                                        @if (item.categoryName) {
+                                        <span class="badge bg-primary-transparent text-primary mb-2">{{ item.categoryName }}</span>
+                                        }
+                                        <h5 class="fw-semibold mb-2">{{ item.title }}</h5>
+                                        <p class="text-muted small mb-3">{{ item.summary }}</p>
+                                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                            @if (item.serviceName) {
+                                            <span class="text-muted small">{{ item.serviceName }}</span>
+                                            }
+                                            <span class="text-muted small">{{ item.year }}</span>
+                                        </div>
+                                    </div>
+                                </article>
                             </div>
                         </swiper-slide>
                         }
                     </swiper-container>
-                    <div #portfolioPagination class="portfolio-swiper-pagination swiper-pagination"></div>
-                </div>
-                } @else {
-                <div class="row justify-content-center">
-                    <div class="col-xl-8">
-                        <p class="text-muted mb-0">Published portfolio projects will appear here as soon as they are
-                            available.</p>
                     </div>
+
                 </div>
+
+                <div #portfolioLoadSentinel class="landing-carousel-sentinel portfolio-load-sentinel" aria-hidden="true"></div>
+                @if (portfolioLoadingMore) {
+                <p class="text-muted small mt-3 mb-0">Loading more projects...</p>
+                } @else if (!portfolioHasMore && portfolioItems.length) {
+                <p class="text-muted small mt-3 mb-0">You have seen all published projects.</p>
+                }
+                } @else {
+                <p class="text-muted mb-0">
+                    Published portfolio projects will appear here as soon as they are available.
+                </p>
                 }
             </div>
         </section>
@@ -2155,11 +2319,11 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                 <div class="row">
                     <h4 class="text-center fw-medium landing-card-header">FAQ'S ?</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium">Frequently Asked Questions About Offsure</h2>
+                    <h2 class="text-center fw-medium">Frequently Asked Questions About {{ companyProfile.legalName }}</h2>
                     <div class="row justify-content-center">
                         <p class="col-xl-9 wow fadeInUp text-default sub-text mb-5" data-wow-delay="0s">
-                            These answers are here to help visitors understand how to browse the platform,
-                            review real work, and contact Offsure with the right project details.
+                            Learn about our remote networking services, global delivery experience, and how to start your
+                            next project with {{ companyProfile.legalName }}.
                         </p>
                     </div>
                     <div class="row align-items-center">
@@ -2182,51 +2346,34 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         <section class="section landing-testimonials section-bg px-3" id="Clients" #Clients>
             <div class="container text-center">
                 <div class="row">
-                    <h4 class="text-center fw-medium landing-card-header">Testimonials </h4>
+                    <h4 class="text-center fw-medium landing-card-header">Success Stories</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium mb-5">What People Are
-                        Saying About Our Product.</h2>
+                    <h2 class="text-center fw-medium mb-5">Proven delivery across industries worldwide.</h2>
                     <div class="swiper pagination-dynamic text-start">
                         <div class="swiper-wrapper">
                             <swiper-container #swiperContainer1 class="swiper mySwiper" space-between="10"
                                 slides-per-view="3" slides-per-group="1" autoplay-delay="2000" pagination="true"
                                 pagination-clickable="true" autoplay-disable-on-interaction="false">
-                                @for (slide of slidesStore; track $index) {
+                                @for (story of successStories; track story.title) {
                                 <swiper-slide>
                                     <div class="swiper-slide">
-                                        <div class="card custom-card testimonial-card">
-                                            <div class="card-body">
+                                        <div class="card custom-card testimonial-card h-100">
+                                            <div class="card-body text-start">
                                                 <div class="d-flex align-items-center mb-3">
-                                                    <span class="avatar avatar-md avatar-rounded me-3">
-                                                        <img src={{slide.img}} alt="">
+                                                    <span class="avatar avatar-md avatar-rounded me-3 bg-primary-transparent d-flex align-items-center justify-content-center">
+                                                        <i [class]="story.icon + ' text-primary fs-18'"></i>
                                                     </span>
                                                     <div>
-                                                        <p class="mb-0 fw-medium fs-14">{{slide.name}}</p>
-                                                        <p class="mb-0 fs-10 fw-medium text-muted">
-                                                            {{slide.role}}</p>
+                                                        <p class="mb-0 fw-medium fs-14">{{ story.title }}</p>
+                                                        <p class="mb-0 fs-10 fw-medium text-muted">{{ story.sector }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <span class="text-muted">- Lorem ipsum dolor sit amet
-                                                        consectetur adipisicing elit. Earum autem quaerat
-                                                        distinctio --</span>
+                                                    <span class="text-muted">{{ story.summary }}</span>
                                                 </div>
                                                 <div class="d-flex align-items-center justify-content-between">
-                                                    <div class="d-flex align-items-center">
-                                                        <span class="text-muted">Rating : </span>
-                                                        <span class="text-warning d-block ms-1">
-                                                            <i class="ri-star-fill me-1"></i>
-                                                            <i class="ri-star-fill me-1"></i>
-                                                            <i class="ri-star-fill me-1"></i>
-                                                            <i class="ri-star-fill me-1"></i>
-                                                            <i class="ri-star-half-fill me-1"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div class="float-end fs-12 fw-medium text-muted text-end">
-                                                        <span>{{slide.days}} ago</span>
-                                                        <span
-                                                            class="d-block fw-normal fs-12 text-success"><i>{{slide.name}}</i></span>
-                                                    </div>
+                                                    <span class="badge bg-primary-transparent text-primary">{{ story.highlight }}</span>
+                                                    <span class="fs-12 fw-medium text-muted">Delivered globally</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -2250,7 +2397,10 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                     <h4 class="text-center fw-semibold mt-7 landing-card-header ">Contact</h4>
                     <span class="landing-title"></span>
                     <h2 class="text-center fw-semibold mb-0 px-2">Get in Touch with <span
-                            class="text-primary">US.</span></h2>
+                            class="text-primary">{{ companyProfile.legalName }}</span></h2>
+                    <p class="text-center text-muted mb-0 mt-2">
+                        We are here to help with your networking, security, data center, and digital solution needs.
+                    </p>
                     <div class="card-body text-dark p-4">
                         <div class="statistics-info">
                             <div class="row justify-content-center">
@@ -2268,10 +2418,9 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                                                         <i class="fe fe-map-pin text-primary fs-23"></i>
                                                                     </div>
                                                                     <h4 class="mb-2 fw-semibold">
-                                                                        Main Branch</h4>
-                                                                    <p class="title-desc mb-1">150 Burno
-                                                                        Street</p>
-                                                                    <p>San Francisco, CA </p>
+                                                                        Global Coverage</h4>
+                                                                    <p class="title-desc mb-1">Remote support worldwide</p>
+                                                                    <p>Networking &amp; data center solutions</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2286,10 +2435,9 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                                                             class="fe fe-headphones text-secondary fs-23"></i>
                                                                     </div>
                                                                     <h4 class="mb-2 fw-semibold">
-                                                                        Phone & Email</h4>
-                                                                    <p class="mb-0">+125 254
-                                                                        3562 </p>
-                                                                    <p>georgeme&#64;abc.com</p>
+                                                                        Phone &amp; Email</h4>
+                                                                    <p class="mb-0">{{ companyProfile.phone }}</p>
+                                                                    <p>{{ companyProfile.email }}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2303,10 +2451,11 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                                                         <i class="fe fe-mail text-success fs-23"></i>
                                                                     </div>
                                                                     <h4 class="mb-2 fw-semibold">
-                                                                        Contact</h4>
+                                                                        Website</h4>
                                                                     <p class="mb-0">
-                                                                        www.example.com</p>
-                                                                    <p>example&#64;dev.com</p>
+                                                                        <a [href]="companyProfile.website" target="_blank" rel="noopener noreferrer">{{ companyProfile.website }}</a>
+                                                                    </p>
+                                                                    <p>Stay connected with our team</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2320,11 +2469,9 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                                                         <i class="fe fe-airplay text-danger fs-23"></i>
                                                                     </div>
                                                                     <h4 class="mb-2 fw-semibold">
-                                                                        Working Hours</h4>
-                                                                    <p class="mb-0">Monday -
-                                                                        Friday: 9am - 6pm</p>
-                                                                    <p>Satday - Sunday: Holiday
-                                                                    </p>
+                                                                        Support</h4>
+                                                                    <p class="mb-0">24/7 deployment &amp; support</p>
+                                                                    <p>SLA-backed response</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2417,51 +2564,44 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                             <div class="row">
                                 <div class="col-lg-4 col-sm-12 col-md-12 reveal revealleft position-relative">
                                     <h6>About</h6>
-                                    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
-                                        doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
-                                        veritatis et quasi architecto beatae vitae dicta sunt
-                                        explicabo.
+                                    <p>
+                                        {{ companyProfile.legalName }} specializes in remote support for networking solutions
+                                        worldwide — with {{ companyProfile.globalProjectsDelivered }}+ completed projects and
+                                        certified expertise across Cisco, Fortinet, Palo Alto, and more.
                                     </p>
-                                    <p class="mb-5 mb-lg-2">Duis aute irure dolor in reprehenderit in voluptate
-                                        velit esse cillum dolore eu fugiat nulla pariatur Excepteur sint occaecat .
+                                    <p class="mb-5 mb-lg-2">
+                                        We are here to help with networking, security, data center, unified communications,
+                                        and end-to-end digital solutions.
                                     </p>
                                 </div>
                                 <div class="col-lg-2 col-sm-6 col-md-4 reveal revealleft position-relative">
-                                    <h6>Pages</h6>
+                                    <h6>Explore</h6>
                                     <ul class="mb-5 mb-lg-0 ps-0">
-                                        <li><a routerLink="/dashboard">Dashboard</a></li>
-                                        <li><a routerLink="/elements/alerts">Elements</a></li>
-                                        <li><a routerLink="/forms/forms-elements/inputs">Forms</a></li>
-                                        <li><a routerLink="/charts/apex-charts/area-charts">Charts</a></li>
-                                        <li><a routerLink="/apps/tables/tables">Tables</a></li>
-                                        <li><a routerLink="/utilities/more">Other Pages</a></li>
+                                        <li><a href="javascript:void(0)" (click)="scroll(home)">Home</a></li>
+                                        <li><a href="javascript:void(0)" (click)="scroll(serviceCategories)">Service Categories</a></li>
+                                        <li><a href="javascript:void(0)" (click)="scroll(about)">About</a></li>
+                                        <li><a href="javascript:void(0)" (click)="scroll(highlights)">Our Work</a></li>
+                                        <li><a href="javascript:void(0)" (click)="scroll(faq)">FAQ</a></li>
+                                        <li><a href="javascript:void(0)" (click)="scroll(contact)">Contact</a></li>
                                     </ul>
                                 </div>
                                 <div class="col-lg-2 col-sm-6 col-md-4 reveal revealleft position-relative ">
-                                    <h6>Information</h6>
+                                    <h6>Capabilities</h6>
                                     <ul class="mb-5 mb-lg-0 ps-0">
-                                        <li><a routerLink="/elements/list-group">Our Team</a></li>
-                                        <li><a routerLink="/advancedui/contacts">Contact US</a></li>
-                                        <li><a routerLink="/pages/aboutus">About</a></li>
-                                        <li><a routerLink="/advancedui/search">Services</a></li>
-                                        <li><a routerLink="/apps/blog/blog-page">Blog</a></li>
-                                        <li><a routerLink="/pages/settings">Terms and Services</a></li>
+                                        @for (offer of whatWeOffer; track offer.title) {
+                                        <li><span class="text-fixed-white opacity-75">{{ offer.title }}</span></li>
+                                        }
                                     </ul>
                                 </div>
                                 <div class="col-lg-4 col-sm-12 col-md-4 reveal revealleft">
                                     <div class="">
                                         <a routerLink="/dashboard"><img loading="lazy" alt="" class="logo mb-3"
                                                 src="./assets/images/offshore.png"></a>
-                                        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
-                                            dolore eu fugiat nulla pariatur Excepteur sint occaecat.</p>
-                                        <div class="form-group">
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" placeholder="Enter your email"
-                                                    aria-label="Example text with button addon">
-                                                <button class="btn btn-primary" type="button"
-                                                    id="button-addon2">Submit</button>
-                                            </div>
-                                        </div>
+                                        <p>{{ companyProfile.email }} · {{ companyProfile.phone }}</p>
+                                        <p class="mb-3">
+                                            <a [href]="companyProfile.website" target="_blank" rel="noopener noreferrer" class="text-fixed-white">{{ companyProfile.website }}</a>
+                                        </p>
+                                        <a href="javascript:void(0)" class="btn btn-primary" (click)="scroll(contact)">Contact Us</a>
                                     </div>
                                     <div class="btn-list mt-6">
                                         <button type="button" class="btn btn-icon rounded-pill m-1"><i
@@ -2480,9 +2620,9 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                         <footer class="main-footer px-0 text-center">
                             <div class="row ">
                                 <div class="col-md-12 col-sm-12">
-                                    Copyright © 2025 <a href="javascript:void(0)">Spruha</a>.
-                                    Designed with <span class="fa fa-heart text-danger"></span> by <a target="_blank"
-                                        href="https://spruko.com/"> Spruko </a> All rights reserved.
+                                    Copyright © 2026
+                                    <a [href]="companyProfile.website" target="_blank" rel="noopener noreferrer">{{ companyProfile.legalName }}</a>.
+                                    All rights reserved.
                                 </div>
                             </div>
                         </footer>

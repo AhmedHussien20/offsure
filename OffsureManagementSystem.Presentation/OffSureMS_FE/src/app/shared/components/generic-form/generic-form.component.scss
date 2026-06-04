@@ -302,23 +302,18 @@ $gf-control-height: 46px;
   .generic-form__toggle-wrap {
     display: flex;
     align-items: center;
-    justify-content: center;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fff;
-    transition: border-color 0.2s ease;
-
-    &:focus-within {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
+    justify-content: flex-start;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
   }
 
   .generic-form__switch {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 100%;
+    justify-content: flex-start;
+    width: auto;
     height: 100%;
     padding: 0;
 
@@ -520,10 +515,14 @@ $gf-control-height: 46px;
     }
   }
 
-  .generic-form__checkbox-row,
-  .generic-form__toggle-wrap {
+  .generic-form__checkbox-row {
     background: #2b2b2b;
     border-color: #444;
+  }
+
+  .generic-form__toggle-wrap {
+    background: transparent;
+    border: none;
   }
 
   .custom-ng-select.ng-select .ng-select-container {

@@ -9,6 +9,10 @@ import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
+import {
+  readServiceRequestPrefill,
+  ServiceRequestCreatePrefill,
+} from 'app/core/models/services/service-request-prefill.model';
 import { CLIENT_REQUEST_COLUMNS } from '../client.constants';
 import { ClientRequestCreateComponent } from '../client-request-form/client-request-create.component';
 
@@ -27,6 +31,7 @@ export class ClientRequestsListComponent implements OnInit {
   entries = 10;
   loading = false;
   clientId: number | null = null;
+  private pendingCreatePrefill: ServiceRequestCreatePrefill | null = null;
 
   searchCriteria = new SearchCriteria({
     pageIndex: 1,
@@ -67,13 +72,15 @@ export class ClientRequestsListComponent implements OnInit {
     });
 
     if (this.route.snapshot.queryParamMap.get('new') === '1') {
+      this.pendingCreatePrefill = this.resolveCreatePrefill();
       this.router.navigate([], {
         relativeTo: this.route,
-        queryParams: { new: null },
+        queryParams: { new: null, serviceId: null },
         queryParamsHandling: 'merge',
         replaceUrl: true,
       });
-      this.openCreateModal();
+      this.openCreateModal(this.pendingCreatePrefill);
+      this.pendingCreatePrefill = null;
     }
   }
 
@@ -98,14 +105,34 @@ export class ClientRequestsListComponent implements OnInit {
   }
 
   onAdd(): void {
-    this.openCreateModal();
+    this.openCreateModal(null);
   }
 
-  private openCreateModal(): void {
+  private resolveCreatePrefill(): ServiceRequestCreatePrefill | null {
+    const fromStorage = readServiceRequestPrefill();
+    const serviceIdParam = this.route.snapshot.queryParamMap.get('serviceId');
+    const serviceId = serviceIdParam ? Number(serviceIdParam) : null;
+
+    if (fromStorage) {
+      if (serviceId != null && !Number.isNaN(serviceId)) {
+        fromStorage.serviceId = fromStorage.serviceId ?? serviceId;
+      }
+      return fromStorage;
+    }
+
+    if (serviceId != null && !Number.isNaN(serviceId)) {
+      return { serviceId };
+    }
+
+    return null;
+  }
+
+  private openCreateModal(prefill: ServiceRequestCreatePrefill | null): void {
     const modalRef = this.modalService.open(ClientRequestCreateComponent, {
       centered: true,
       size: 'lg',
     });
+    modalRef.componentInstance.prefill = prefill;
     modalRef.closed.subscribe((created: boolean) => {
       if (created) {
         this.loadRequests();

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using OffshoreManagementSystem.Infrastructure.DataContext;
 using OffsureManagementSystem.Infrastructure;
 using OffsureManagementSystem.Infrastructure.Services;
@@ -103,7 +104,17 @@ namespace OffsureManagementSystem.API
             });
 
 
+            var portfolioImageRoot = builder.Configuration["Storage:PortfolioImageRoot"]
+                ?? Path.Combine(AppContext.BaseDirectory, "storage", "portfolio-images");
+            Directory.CreateDirectory(portfolioImageRoot);
+
             var app = builder.Build();
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(portfolioImageRoot),
+                RequestPath = "/portfolio-images"
+            });
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

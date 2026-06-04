@@ -93,12 +93,10 @@ export class AdminPortfoliosListComponent implements OnInit {
   }
 
   openForm(): void {
-    this.loadServices();
     const modalRef = this.modalService.open(AdminPortfolioCreateComponent, {
       centered: true,
       size: 'lg',
     });
-    modalRef.componentInstance.serviceOptions = this.serviceOptions;
     modalRef.closed.subscribe((created: boolean) => {
       if (created) {
         this.loadPortfolios();

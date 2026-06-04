@@ -1,0 +1,73 @@
+<div class="modal-header">
+  <h5 class="modal-title">New portfolio</h5>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="form" class="generic-form">
+    <div class="row gy-3 gx-3 align-items-start mb-2">
+      <div class="col-md-6">
+        <app-paginated-select
+          formControlName="serviceCategoryId"
+          label="Service category"
+          fieldIcon="fe fe-folder"
+          [required]="true"
+          placeholder="Search categories..."
+          [loadPage]="loadCategories" />
+      </div>
+      <div class="col-md-6">
+        <app-paginated-select
+          formControlName="serviceId"
+          label="Service"
+          fieldIcon="fe fe-layers"
+          [required]="true"
+          placeholder="Select category first..."
+          [disabled]="!serviceCategoryId"
+          [resetToken]="serviceResetToken"
+          [loadPage]="loadServices" />
+      </div>
+    </div>
+
+    @if (formConfig.length) {
+      <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+    }
+
+    <div class="mt-3">
+      <label class="form-label fw-semibold">
+        Project photos <span class="text-danger">*</span>
+      </label>
+      <p class="text-muted small mb-2">
+        Add at least one image. These appear on the landing page gallery; visitors can switch between them like a product photo viewer.
+      </p>
+      <input
+        type="file"
+        class="form-control"
+        accept="image/*"
+        multiple
+        (change)="onImagesSelected($event)" />
+      @if (pendingImages.length) {
+        <div class="portfolio-create-previews mt-3">
+          @for (img of pendingImages; track img.previewUrl; let i = $index) {
+            <div class="portfolio-create-preview">
+              <img [src]="img.previewUrl" [alt]="img.altText || 'Preview'" />
+              <button type="button" class="btn btn-sm btn-icon btn-danger" (click)="removePendingImage(i)" title="Remove">
+                <i class="fe fe-x"></i>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-light" (click)="activeModal.dismiss()" [disabled]="creating">Cancel</button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    [disabled]="creating || form.invalid || pendingImages.length === 0"
+    (click)="save()">
+    {{ creating ? 'Saving...' : 'Save' }}
+  </button>
+</div>
