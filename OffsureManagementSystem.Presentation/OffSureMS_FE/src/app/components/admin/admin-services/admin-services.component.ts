@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ServiceCategoryDto, ServiceDto } from 'app/core/models/services/service.models';
@@ -17,7 +17,9 @@ import {
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_CATEGORY_COLUMNS, ADMIN_SERVICE_COLUMNS } from '../admin.constants';
 import { AdminServiceCategoryCreateComponent } from './admin-service-category-create.component';
+import { AdminServiceCategoryDetailPanelComponent } from './admin-service-category-detail-panel.component';
 import { AdminServiceCreateComponent } from './admin-service-create.component';
+import { AdminServiceDetailPanelComponent } from './admin-service-detail-panel.component';
 
 @Component({
   selector: 'app-admin-services',
@@ -27,13 +29,12 @@ import { AdminServiceCreateComponent } from './admin-service-create.component';
     SharedModule,
     NgbNavModule,
     GenericTableComponent,
+    AdminServiceCategoryDetailPanelComponent,
+    AdminServiceDetailPanelComponent,
   ],
   templateUrl: './admin-services.component.html',
 })
 export class AdminServicesComponent implements OnInit {
-  @ViewChild('categoryActions', { static: true }) categoryActions!: TemplateRef<unknown>;
-  @ViewChild('serviceActions', { static: true }) serviceActions!: TemplateRef<unknown>;
-
   activeTab: 'categories' | 'services' = 'categories';
 
   categoryColumns = ADMIN_CATEGORY_COLUMNS;
@@ -76,7 +77,6 @@ export class AdminServicesComponent implements OnInit {
   constructor(
     private categoriesService: ServiceCategoriesService,
     private servicesService: ServicesService,
-    private toastr: ToastrService,
     private modalService: NgbModal
   ) {}
 
@@ -154,35 +154,14 @@ export class AdminServicesComponent implements OnInit {
     });
   }
 
-  toggleCategoryActive(category: ServiceCategoryDto): void {
-    this.categoriesService
-      .update(category.id, {
-        name: category.name,
-        description: category.description,
-        isActive: !category.isActive,
-      })
-      .subscribe({
-        next: () => {
-          this.toastr.success(category.isActive ? 'Category deactivated.' : 'Category activated.');
-          this.loadCategoryOptions();
-          this.loadCategories();
-        },
-        error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update category.');
-        },
-      });
+  onCategoryChanged(): void {
+    this.loadCategoryOptions();
+    this.loadCategories();
   }
 
-  toggleVisibility(service: ServiceDto): void {
-    this.servicesService.setVisibility(service.id, { isVisible: !service.isVisible }).subscribe({
-      next: () => {
-        this.toastr.success(service.isVisible ? 'Service hidden from landing.' : 'Service shown on landing.');
-        this.loadServices();
-      },
-      error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to update visibility.');
-      },
-    });
+  onServiceChanged(): void {
+    this.loadServices();
+    this.loadCategories();
   }
 
   private loadCategoryOptions(): void {

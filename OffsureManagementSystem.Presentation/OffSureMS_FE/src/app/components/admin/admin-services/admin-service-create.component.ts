@@ -60,7 +60,7 @@ export class AdminServiceCreateComponent {
       name: ['', Validators.required],
       description: [''],
       serviceCategoryId: [null, Validators.required],
-      isVisible: [false],
+      isVisible: [true],
     });
   }
 

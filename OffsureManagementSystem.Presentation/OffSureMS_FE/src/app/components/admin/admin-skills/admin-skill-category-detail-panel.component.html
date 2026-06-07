@@ -1,0 +1,75 @@
+<div class="admin-detail-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="admin-detail-panel__loading text-muted">Loading category details…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (category) {
+    <div class="admin-detail-panel__header">
+      <div>
+        <h5 class="admin-detail-panel__title mb-0">{{ category.name }}</h5>
+        <p class="admin-detail-panel__meta mb-0">Skill category</p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="category.isActive"
+          [class.bg-secondary-transparent]="!category.isActive">
+          {{ category.isActive ? 'Active' : 'Inactive' }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-sm no-expand"
+          [class.btn-outline-success]="!category.isActive"
+          [class.btn-outline-secondary]="category.isActive"
+          [disabled]="updating"
+          (click)="toggleActive()">
+          {{ updating ? 'Updating…' : (category.isActive ? 'Deactivate' : 'Activate') }}
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-detail-grid">
+      <div class="admin-detail-main">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Category details</h6>
+          <div class="admin-detail-info-row">
+            <div class="admin-detail-info-item admin-detail-info-item--full">
+              <label>Description</label>
+              <span>{{ display(category.description) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Category name</label>
+              <span>{{ display(category.name) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Category ID</label>
+              <span>{{ category.id }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-detail-sidebar">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Summary</h6>
+          <ul class="admin-detail-stat-list">
+            <li>
+              <span class="admin-detail-stat-label">Skills</span>
+              <strong>{{ category.skillsCount }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Status</span>
+              <strong>{{ category.isActive ? 'Active' : 'Inactive' }}</strong>
+            </li>
+          </ul>
+        </div>
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Team skills</h6>
+          <p class="admin-detail-hint mb-0">
+            Inactive categories are hidden from team skill lists.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

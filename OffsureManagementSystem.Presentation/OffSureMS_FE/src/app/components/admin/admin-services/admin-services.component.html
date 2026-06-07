@@ -22,7 +22,7 @@
           [showAddButton]="true"
           [addButtonLabel]="'Add Category'"
           [expandable]="true"
-          [expandTemplate]="categoryActions"
+          [expandTemplate]="categoryDetail"
           [onSearch]="onCatSearch"
           (pageChange)="onCatPageChange($event)"
           (entriesChange)="onCatEntriesChange($event)"
@@ -52,7 +52,7 @@
           [showAddButton]="true"
           [addButtonLabel]="'Add Service'"
           [expandable]="true"
-          [expandTemplate]="serviceActions"
+          [expandTemplate]="serviceDetail"
           [onSearch]="onSvcSearch"
           (pageChange)="onSvcPageChange($event)"
           (entriesChange)="onSvcEntriesChange($event)"
@@ -64,30 +64,14 @@
 </ul>
 <div [ngbNavOutlet]="nav"></div>
 
-<ng-template #categoryActions let-item>
-  <div class="d-flex flex-wrap align-items-center gap-2">
-    <span class="text-muted small">Inactive categories are hidden from the public landing page.</span>
-    <button
-      type="button"
-      class="btn btn-sm"
-      [class.btn-outline-success]="!item.isActive"
-      [class.btn-outline-secondary]="item.isActive"
-      (click)="toggleCategoryActive(item)">
-      {{ item.isActive ? 'Deactivate' : 'Activate' }}
-    </button>
-  </div>
+<ng-template #categoryDetail let-item>
+  <app-admin-service-category-detail-panel
+    [categoryId]="item.id"
+    (changed)="onCategoryChanged()" />
 </ng-template>
 
-<ng-template #serviceActions let-item>
-  <div class="d-flex flex-wrap align-items-center gap-2">
-    <span class="text-muted small">Control visibility on the public landing page.</span>
-    <button
-      type="button"
-      class="btn btn-sm"
-      [class.btn-outline-success]="!item.isVisible"
-      [class.btn-outline-warning]="item.isVisible"
-      (click)="toggleVisibility(item)">
-      {{ item.isVisible ? 'Hide from landing' : 'Show on landing' }}
-    </button>
-  </div>
+<ng-template #serviceDetail let-item>
+  <app-admin-service-detail-panel
+    [serviceId]="item.id"
+    (changed)="onServiceChanged()" />
 </ng-template>

@@ -1,0 +1,83 @@
+<div class="admin-detail-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="admin-detail-panel__loading text-muted">Loading service details…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (service) {
+    <div class="admin-detail-panel__header">
+      <div>
+        <h5 class="admin-detail-panel__title mb-0">{{ service.name }}</h5>
+        <p class="admin-detail-panel__meta mb-0">{{ display(service.serviceCategoryName) }}</p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="service.isVisible"
+          [class.bg-secondary-transparent]="!service.isVisible">
+          {{ service.isVisible ? 'Visible' : 'Hidden' }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-sm no-expand"
+          [class.btn-outline-success]="!service.isVisible"
+          [class.btn-outline-warning]="service.isVisible"
+          [disabled]="updating"
+          (click)="toggleVisibility()">
+          {{ updating ? 'Updating…' : (service.isVisible ? 'Hide from landing' : 'Show on landing') }}
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-detail-grid">
+      <div class="admin-detail-main">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Service details</h6>
+          <div class="admin-detail-info-row">
+            <div class="admin-detail-info-item admin-detail-info-item--full">
+              <label>Description</label>
+              <span>{{ display(service.description) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Service name</label>
+              <span>{{ display(service.name) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Category</label>
+              <span>{{ display(service.serviceCategoryName) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Category ID</label>
+              <span>{{ display(service.serviceCategoryId) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Service ID</label>
+              <span>{{ service.id }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-detail-sidebar">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Summary</h6>
+          <ul class="admin-detail-stat-list">
+            <li>
+              <span class="admin-detail-stat-label">Landing visibility</span>
+              <strong>{{ service.isVisible ? 'Visible' : 'Hidden' }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Category</span>
+              <strong>{{ display(service.serviceCategoryName) }}</strong>
+            </li>
+          </ul>
+        </div>
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Landing page</h6>
+          <p class="admin-detail-hint mb-0">
+            Control whether this service appears on the public landing page.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

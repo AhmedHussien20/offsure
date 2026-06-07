@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { SkillCategoryDto, SkillDto } from 'app/core/models/skills/skill.models';
@@ -8,7 +8,6 @@ import { SkillCategoriesService } from 'app/core/services/skill-categories.servi
 import { SkillsService } from 'app/core/services/skills.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
-import { ToastrService } from 'ngx-toastr';
 import {
   ACTIVE_FILTER_OPTIONS,
   LIST_FILTER_LABELS,
@@ -16,7 +15,9 @@ import {
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_SKILL_CATEGORY_COLUMNS, ADMIN_SKILL_COLUMNS } from '../admin.constants';
 import { AdminSkillCategoryCreateComponent } from './admin-skill-category-create.component';
+import { AdminSkillCategoryDetailPanelComponent } from './admin-skill-category-detail-panel.component';
 import { AdminSkillCreateComponent } from './admin-skill-create.component';
+import { AdminSkillDetailPanelComponent } from './admin-skill-detail-panel.component';
 
 @Component({
   selector: 'app-admin-skills',
@@ -26,13 +27,12 @@ import { AdminSkillCreateComponent } from './admin-skill-create.component';
     SharedModule,
     NgbNavModule,
     GenericTableComponent,
+    AdminSkillCategoryDetailPanelComponent,
+    AdminSkillDetailPanelComponent,
   ],
   templateUrl: './admin-skills.component.html',
 })
 export class AdminSkillsComponent implements OnInit {
-  @ViewChild('categoryActions', { static: true }) categoryActions!: TemplateRef<unknown>;
-  @ViewChild('skillActions', { static: true }) skillActions!: TemplateRef<unknown>;
-
   activeTab: 'categories' | 'skills' = 'categories';
 
   categoryColumns = ADMIN_SKILL_CATEGORY_COLUMNS;
@@ -75,7 +75,6 @@ export class AdminSkillsComponent implements OnInit {
   constructor(
     private skillCategoriesService: SkillCategoriesService,
     private skillsService: SkillsService,
-    private toastr: ToastrService,
     private modalService: NgbModal
   ) {}
 
@@ -153,43 +152,14 @@ export class AdminSkillsComponent implements OnInit {
     });
   }
 
-  toggleCategoryActive(category: SkillCategoryDto): void {
-    this.skillCategoriesService
-      .update(category.id, {
-        name: category.name,
-        description: category.description,
-        isActive: !category.isActive,
-      })
-      .subscribe({
-        next: () => {
-          this.toastr.success(category.isActive ? 'Category deactivated.' : 'Category activated.');
-          this.loadCategoryOptions();
-          this.loadCategories();
-        },
-        error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update category.');
-        },
-      });
+  onCategoryChanged(): void {
+    this.loadCategoryOptions();
+    this.loadCategories();
   }
 
-  toggleSkillActive(skill: SkillDto): void {
-    this.skillsService
-      .update(skill.id, {
-        name: skill.name,
-        description: skill.description,
-        skillCategoryId: skill.skillCategoryId,
-        isActive: !skill.isActive,
-      })
-      .subscribe({
-        next: () => {
-          this.toastr.success(skill.isActive ? 'Skill deactivated.' : 'Skill activated.');
-          this.loadSkills();
-          this.loadCategories();
-        },
-        error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update skill.');
-        },
-      });
+  onSkillChanged(): void {
+    this.loadSkills();
+    this.loadCategories();
   }
 
   private loadCategoryOptions(): void {

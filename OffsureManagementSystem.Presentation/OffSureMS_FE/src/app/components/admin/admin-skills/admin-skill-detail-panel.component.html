@@ -1,0 +1,87 @@
+<div class="admin-detail-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="admin-detail-panel__loading text-muted">Loading skill details…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (skill) {
+    <div class="admin-detail-panel__header">
+      <div>
+        <h5 class="admin-detail-panel__title mb-0">{{ skill.name }}</h5>
+        <p class="admin-detail-panel__meta mb-0">{{ display(skill.skillCategoryName) }}</p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="skill.isActive"
+          [class.bg-secondary-transparent]="!skill.isActive">
+          {{ skill.isActive ? 'Active' : 'Inactive' }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-sm no-expand"
+          [class.btn-outline-success]="!skill.isActive"
+          [class.btn-outline-secondary]="skill.isActive"
+          [disabled]="updating"
+          (click)="toggleActive()">
+          {{ updating ? 'Updating…' : (skill.isActive ? 'Deactivate' : 'Activate') }}
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-detail-grid">
+      <div class="admin-detail-main">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Skill details</h6>
+          <div class="admin-detail-info-row">
+            <div class="admin-detail-info-item admin-detail-info-item--full">
+              <label>Description</label>
+              <span>{{ display(skill.description) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Skill name</label>
+              <span>{{ display(skill.name) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Category</label>
+              <span>{{ display(skill.skillCategoryName) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Category ID</label>
+              <span>{{ display(skill.skillCategoryId) }}</span>
+            </div>
+            <div class="admin-detail-info-item">
+              <label>Skill ID</label>
+              <span>{{ skill.id }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-detail-sidebar">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Summary</h6>
+          <ul class="admin-detail-stat-list">
+            <li>
+              <span class="admin-detail-stat-label">Team members</span>
+              <strong>{{ skill.assignedTeamMembersCount }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Status</span>
+              <strong>{{ skill.isActive ? 'Active' : 'Inactive' }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Category</span>
+              <strong>{{ display(skill.skillCategoryName) }}</strong>
+            </li>
+          </ul>
+        </div>
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Team assignment</h6>
+          <p class="admin-detail-hint mb-0">
+            Inactive skills cannot be assigned to team members.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

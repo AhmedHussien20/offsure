@@ -200,11 +200,15 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
     if (col.key !== 'status' || value === null || value === undefined) {
       return String(value ?? '');
     }
+    const projectKey = projectStatusKey(value);
+    if (col.badgeMap?.[projectKey]) {
+      return projectKey;
+    }
     const requestKey = serviceRequestStatusKey(value);
     if (col.badgeMap?.[requestKey]) {
       return requestKey;
     }
-    return projectStatusKey(value);
+    return projectKey;
   }
 
   getBadgeText(col: TableColumn, item: any): string {
