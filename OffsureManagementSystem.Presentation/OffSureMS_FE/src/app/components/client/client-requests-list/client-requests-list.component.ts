@@ -49,7 +49,8 @@ export class ClientRequestsListComponent implements OnInit {
   dropdownOptions = {
     status: [
       { id: 'Pending', name: 'Pending' },
-      { id: 'InProgress', name: 'In Progress' },
+      { id: 'PrimaryAccepted', name: 'Accepted' },
+      { id: 'AcceptedWithProject', name: 'With project' },
       { id: 'Completed', name: 'Completed' },
       { id: 'Cancelled', name: 'Cancelled' },
     ],

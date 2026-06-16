@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "npe": {
+    "OffshoreMS": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -42,7 +42,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/npe",
+            "outputPath": "dist/OffshoreMS",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -110,10 +110,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "npe:build:production"
+              "buildTarget": "OffshoreMS:build:production"
             },
             "development": {
-              "buildTarget": "npe:build:development"
+              "buildTarget": "OffshoreMS:build:development"
             }
           },
           "options": {

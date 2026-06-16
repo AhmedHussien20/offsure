@@ -152,7 +152,9 @@ export class AdminDashboardComponent implements OnInit {
 
               status === ServiceRequestStatus.Pending ||
 
-              status === ServiceRequestStatus.InProgress
+              status === ServiceRequestStatus.PrimaryAccepted ||
+
+              status === ServiceRequestStatus.AcceptedWithProject
 
             );
 

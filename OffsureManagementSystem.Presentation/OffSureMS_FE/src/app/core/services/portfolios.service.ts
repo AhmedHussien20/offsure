@@ -9,6 +9,7 @@ import {
   PortfolioDto,
   PortfolioFilterRequest,
   UpdatePortfolioDto,
+  UpdatePortfolioImageDto,
 } from '../models/portfolios/portfolio.models';
 
 @Injectable({ providedIn: 'root' })
@@ -21,8 +22,10 @@ export class PortfoliosService {
     return this.api.get<BaseResponse<PagedResponse<PortfolioDto>>>(this.service, '', request as Record<string, any>);
   }
 
-  getById(id: number): Observable<BaseResponse<PortfolioDto>> {
-    return this.api.get<BaseResponse<PortfolioDto>>(this.service, `${id}`);
+  getById(id: number, includeUnpublished = false): Observable<BaseResponse<PortfolioDto>> {
+    return this.api.get<BaseResponse<PortfolioDto>>(this.service, `${id}`, {
+      includeUnpublished,
+    });
   }
 
   create(dto: AddPortfolioDto): Observable<BaseResponse<PortfolioDto>> {
@@ -52,5 +55,17 @@ export class PortfoliosService {
 
   linkToService(id: number, dto: LinkPortfolioToServiceDto): Observable<BaseResponse<PortfolioDto>> {
     return this.api.patch<BaseResponse<PortfolioDto>>(this.service, `${id}/service`, dto);
+  }
+
+  setImageActive(
+    portfolioId: number,
+    imageId: number,
+    dto: UpdatePortfolioImageDto
+  ): Observable<BaseResponse<PortfolioDto>> {
+    return this.api.patch<BaseResponse<PortfolioDto>>(
+      this.service,
+      `${portfolioId}/images/${imageId}/active`,
+      dto
+    );
   }
 }

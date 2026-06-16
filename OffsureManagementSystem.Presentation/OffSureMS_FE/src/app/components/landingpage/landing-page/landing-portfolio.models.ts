@@ -8,6 +8,7 @@ export interface LandingPortfolioCard {
   serviceName: string;
   clientName: string;
   year: string;
+  icon: string;
   cardClass: string;
   imageUrls: string[];
 }

@@ -101,14 +101,25 @@
 .portfolio-gallery-thumbs {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-top: 0.75rem;
   overflow-x: auto;
   padding-bottom: 0.15rem;
 }
 
+.portfolio-gallery-thumb-wrap {
+  flex: 0 0 108px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &--inactive .portfolio-gallery-thumb img {
+    opacity: 0.45;
+  }
+}
+
 .portfolio-gallery-thumb {
-  flex: 0 0 72px;
+  position: relative;
   width: 72px;
   height: 72px;
   padding: 0;
@@ -129,6 +140,26 @@
     border-color: rgb(var(--primary-rgb, 98, 89, 202));
     box-shadow: 0 0 0 1px rgb(var(--primary-rgb, 98, 89, 202));
   }
+}
+
+.portfolio-gallery-thumb-badge {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 0.1rem 0.2rem;
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+  color: #fff;
+  background: rgb(0 0 0 / 65%);
+}
+
+.portfolio-gallery-visibility-btn {
+  width: 72px;
+  font-size: 0.58rem;
+  line-height: 1.2;
+  padding: 0.2rem 0.25rem;
+  white-space: normal;
 }
 
 .portfolio-info-row {
@@ -154,6 +185,20 @@
   text-transform: uppercase;
   color: #94a3b8;
   margin-bottom: 0.15rem;
+}
+
+.portfolio-info-item .form-control,
+.portfolio-info-item .form-select {
+  font-size: 0.9rem;
+}
+
+.portfolio-detail-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .portfolio-info-item span {

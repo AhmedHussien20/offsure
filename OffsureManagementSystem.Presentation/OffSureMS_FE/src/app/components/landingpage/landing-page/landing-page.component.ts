@@ -33,16 +33,20 @@ import { ServicesService } from '../../../core/services/services.service';
 import { ToastrService } from 'ngx-toastr';
 import {
   LANDING_CAROUSEL_AUTOPLAY_MS,
-  LANDING_CAROUSEL_PAGE_SIZE,
+  LANDING_CAROUSEL_PARAMS,
+  LANDING_FEATURE_CAROUSEL_PAGE_SIZE,
+  LANDING_FEATURE_CAROUSEL_PARAMS,
+  LandingCarouselInitHooks,
   LandingSwiperHost,
-  bindLandingSwiperEvents,
   countLandingCarouselSlides,
+  handleLandingCarouselReachEnd,
   initLandingSwiperCarousel,
   readLandingCarouselNavState,
   setupLandingCarouselSentinel,
   slideLandingCarouselNext,
   slideLandingCarouselPrev,
-  unbindLandingSwiperEvents,
+  tryLoadMoreAtCarouselEnd,
+  unbindLandingSwiperCarouselEvents,
 } from './landing-swiper.util';
 
 interface LandingServiceCategoryCard {
@@ -108,16 +112,55 @@ export class LandingPageComponent {
   private portfolioSwiperEl?: LandingSwiperHost;
   private categorySwiperEl?: LandingSwiperHost;
   private serviceSwiperEl?: LandingSwiperHost;
-  private readonly onPortfolioReachEnd = (): void => this.loadMorePortfolios();
-  private readonly onPortfolioSlideChange = (): void => this.syncPortfolioNav();
+  private readonly onPortfolioReachEnd = (): void => {
+    if (this.portfolioLoadingMore) {
+      return;
+    }
+    handleLandingCarouselReachEnd(
+      this.getPortfolioSwiperHost(),
+      this.portfolioItems.length,
+      this.portfolioHasMore && !this.portfolioLoading && !this.portfolioLoadingMore,
+      () => this.loadMorePortfolios()
+    );
+  };
+  private readonly onPortfolioSlideChange = (): void => {
+    this.syncPortfolioNav();
+    this.tryLoadMorePortfoliosAtEnd();
+  };
   private readonly onPortfolioResize = (): void => this.syncPortfolioNav();
   private readonly onPortfolioAfterInit = (): void => this.schedulePortfolioNavSync();
-  private readonly onCategoryReachEnd = (): void => this.loadMoreCategories();
-  private readonly onCategorySlideChange = (): void => this.syncCategoryNav();
+  private readonly onCategoryReachEnd = (): void => {
+    if (this.categoryLoadingMore) {
+      return;
+    }
+    handleLandingCarouselReachEnd(
+      this.getCategorySwiperHost(),
+      this.serviceCategoryCards.length,
+      this.categoryHasMore && !this.categoryLoading && !this.categoryLoadingMore,
+      () => this.loadMoreCategories()
+    );
+  };
+  private readonly onCategorySlideChange = (): void => {
+    this.syncCategoryNav();
+    this.tryLoadMoreCategoriesAtEnd();
+  };
   private readonly onCategoryResize = (): void => this.syncCategoryNav();
   private readonly onCategoryAfterInit = (): void => this.scheduleCategoryNavSync();
-  private readonly onServiceReachEnd = (): void => this.loadMoreCategoryServices();
-  private readonly onServiceSlideChange = (): void => this.syncServiceNav();
+  private readonly onServiceReachEnd = (): void => {
+    if (this.serviceLoadingMore) {
+      return;
+    }
+    handleLandingCarouselReachEnd(
+      this.getServiceSwiperHost(),
+      this.categoryServiceCards.length,
+      this.serviceHasMore && !this.serviceLoading && !this.serviceLoadingMore && !!this.selectedCategoryId,
+      () => this.loadMoreCategoryServices()
+    );
+  };
+  private readonly onServiceSlideChange = (): void => {
+    this.syncServiceNav();
+    this.tryLoadMoreServicesAtEnd();
+  };
   private readonly onServiceResize = (): void => this.syncServiceNav();
   private readonly onServiceAfterInit = (): void => this.scheduleServiceNavSync();
 
@@ -181,7 +224,7 @@ export class LandingPageComponent {
   }
   serviceCategoryCards: LandingServiceCategoryCard[] = [];
   categoryPageIndex = 1;
-  readonly categoryPageSize = LANDING_CAROUSEL_PAGE_SIZE;
+  readonly categoryPageSize = LANDING_FEATURE_CAROUSEL_PAGE_SIZE;
   categoryTotalCount = 0;
   categoryLoading = false;
   categoryLoadingMore = false;
@@ -189,7 +232,7 @@ export class LandingPageComponent {
   selectedCategoryTitle = '';
   categoryServiceCards: LandingServiceCard[] = [];
   servicePageIndex = 1;
-  readonly servicePageSize = LANDING_CAROUSEL_PAGE_SIZE;
+  readonly servicePageSize = LANDING_FEATURE_CAROUSEL_PAGE_SIZE;
   serviceTotalCount = 0;
   serviceLoading = false;
   serviceLoadingMore = false;
@@ -485,6 +528,33 @@ export class LandingPageComponent {
     this.loadCategoryPage(false);
   }
 
+  private tryLoadMoreCategoriesAtEnd(): void {
+    tryLoadMoreAtCarouselEnd(
+      this.getCategorySwiperHost(),
+      this.serviceCategoryCards.length,
+      this.categoryHasMore,
+      () => this.loadMoreCategories()
+    );
+  }
+
+  private tryLoadMoreServicesAtEnd(): void {
+    tryLoadMoreAtCarouselEnd(
+      this.getServiceSwiperHost(),
+      this.categoryServiceCards.length,
+      this.serviceHasMore,
+      () => this.loadMoreCategoryServices()
+    );
+  }
+
+  private tryLoadMorePortfoliosAtEnd(): void {
+    tryLoadMoreAtCarouselEnd(
+      this.getPortfolioSwiperHost(),
+      this.portfolioItems.length,
+      this.portfolioHasMore,
+      () => this.loadMorePortfolios()
+    );
+  }
+
   loadMoreCategoryServices(): void {
     if (!this.serviceHasMore || this.serviceLoading || this.serviceLoadingMore || !this.selectedCategoryId) {
       return;
@@ -734,52 +804,64 @@ export class LandingPageComponent {
   }
 
   private initPortfolioSwiper(): void {
-    this.initCarouselAfterView(this.swiperContainerPortfolio, this.portfolioItems.length, el => {
-      this.unbindPortfolioSwiperEvents();
-      this.portfolioSwiperEl = el;
-      this.bindPortfolioSwiperEvents(el);
-      this.portfolioLoadObserver = setupLandingCarouselSentinel(
-        this.portfolioLoadSentinel?.nativeElement,
-        this.portfolioLoadObserver,
-        () => this.portfolioHasMore && !this.portfolioLoading && !this.portfolioLoadingMore,
-        () => this.loadMorePortfolios()
-      );
-      this.schedulePortfolioNavSync();
-    });
+    this.initCarouselAfterView(
+      () => this.swiperContainerPortfolio,
+      this.portfolioItems.length,
+      el => {
+        this.portfolioSwiperEl = el;
+        this.portfolioLoadObserver = setupLandingCarouselSentinel(
+          this.portfolioLoadSentinel?.nativeElement,
+          this.portfolioLoadObserver,
+          () => this.portfolioHasMore && !this.portfolioLoading && !this.portfolioLoadingMore,
+          () => this.loadMorePortfolios()
+        );
+        this.schedulePortfolioNavSync();
+      },
+      LANDING_CAROUSEL_PARAMS,
+      this.createPortfolioCarouselHooks()
+    );
   }
 
   private initCategorySwiper(): void {
-    this.initCarouselAfterView(this.swiperContainerCategories, this.serviceCategoryCards.length, el => {
-      this.unbindCategorySwiperEvents();
-      this.categorySwiperEl = el;
-      this.bindCategorySwiperEvents(el);
-      this.categoryLoadObserver = setupLandingCarouselSentinel(
-        this.categoryLoadSentinel?.nativeElement,
-        this.categoryLoadObserver,
-        () => this.categoryHasMore && !this.categoryLoading && !this.categoryLoadingMore,
-        () => this.loadMoreCategories()
-      );
-      this.scheduleCategoryNavSync();
-    });
+    this.initCarouselAfterView(
+      () => this.swiperContainerCategories,
+      this.serviceCategoryCards.length,
+      el => {
+        this.categorySwiperEl = el;
+        this.categoryLoadObserver = setupLandingCarouselSentinel(
+          this.categoryLoadSentinel?.nativeElement,
+          this.categoryLoadObserver,
+          () => this.categoryHasMore && !this.categoryLoading && !this.categoryLoadingMore,
+          () => this.loadMoreCategories()
+        );
+        this.scheduleCategoryNavSync();
+      },
+      LANDING_FEATURE_CAROUSEL_PARAMS,
+      this.createCategoryCarouselHooks()
+    );
   }
 
   private initServiceSwiper(): void {
-    this.initCarouselAfterView(this.swiperContainerServices, this.categoryServiceCards.length, el => {
-      this.unbindServiceSwiperEvents();
-      this.serviceSwiperEl = el;
-      this.bindServiceSwiperEvents(el);
-      this.serviceLoadObserver = setupLandingCarouselSentinel(
-        this.serviceLoadSentinel?.nativeElement,
-        this.serviceLoadObserver,
-        () =>
-          this.serviceHasMore &&
-          !this.serviceLoading &&
-          !this.serviceLoadingMore &&
-          !!this.selectedCategoryId,
-        () => this.loadMoreCategoryServices()
-      );
-      this.scheduleServiceNavSync();
-    });
+    this.initCarouselAfterView(
+      () => this.swiperContainerServices,
+      this.categoryServiceCards.length,
+      el => {
+        this.serviceSwiperEl = el;
+        this.serviceLoadObserver = setupLandingCarouselSentinel(
+          this.serviceLoadSentinel?.nativeElement,
+          this.serviceLoadObserver,
+          () =>
+            this.serviceHasMore &&
+            !this.serviceLoading &&
+            !this.serviceLoadingMore &&
+            !!this.selectedCategoryId,
+          () => this.loadMoreCategoryServices()
+        );
+        this.scheduleServiceNavSync();
+      },
+      LANDING_FEATURE_CAROUSEL_PARAMS,
+      this.createServiceCarouselHooks()
+    );
   }
 
   private schedulePortfolioNavSync(): void {
@@ -791,16 +873,36 @@ export class LandingPageComponent {
 
   private scheduleCategoryNavSync(): void {
     this.syncCategoryNav();
-    setTimeout(() => this.syncCategoryNav(), 0);
-    setTimeout(() => this.syncCategoryNav(), 120);
-    setTimeout(() => this.syncCategoryNav(), 350);
+    this.tryLoadMoreCategoriesAtEnd();
+    setTimeout(() => {
+      this.syncCategoryNav();
+      this.tryLoadMoreCategoriesAtEnd();
+    }, 0);
+    setTimeout(() => {
+      this.syncCategoryNav();
+      this.tryLoadMoreCategoriesAtEnd();
+    }, 120);
+    setTimeout(() => {
+      this.syncCategoryNav();
+      this.tryLoadMoreCategoriesAtEnd();
+    }, 350);
   }
 
   private scheduleServiceNavSync(): void {
     this.syncServiceNav();
-    setTimeout(() => this.syncServiceNav(), 0);
-    setTimeout(() => this.syncServiceNav(), 120);
-    setTimeout(() => this.syncServiceNav(), 350);
+    this.tryLoadMoreServicesAtEnd();
+    setTimeout(() => {
+      this.syncServiceNav();
+      this.tryLoadMoreServicesAtEnd();
+    }, 0);
+    setTimeout(() => {
+      this.syncServiceNav();
+      this.tryLoadMoreServicesAtEnd();
+    }, 120);
+    setTimeout(() => {
+      this.syncServiceNav();
+      this.tryLoadMoreServicesAtEnd();
+    }, 350);
   }
 
   @HostListener('window:resize')
@@ -862,100 +964,116 @@ export class LandingPageComponent {
   }
 
   private initCarouselAfterView(
-    container: ElementRef | undefined,
+    containerRef: () => ElementRef | undefined,
     itemCount: number,
-    onReady: (el: LandingSwiperHost) => void
+    onReady: (el: LandingSwiperHost) => void,
+    carouselParams = LANDING_CAROUSEL_PARAMS,
+    hooks?: LandingCarouselInitHooks
   ): void {
     this.cdr.detectChanges();
     void customElements.whenDefined('swiper-container').then(() => {
-      this.initCarouselWhenSlidesReady(container, itemCount, onReady, 0);
+      this.initCarouselWhenSlidesReady(containerRef, itemCount, onReady, 0, carouselParams, hooks);
     });
   }
 
   /** Swiper must initialize only after Angular has rendered swiper-slide children. */
   private initCarouselWhenSlidesReady(
-    container: ElementRef | undefined,
+    containerRef: () => ElementRef | undefined,
     itemCount: number,
     onReady: (el: LandingSwiperHost) => void,
-    attempt: number
+    attempt: number,
+    carouselParams = LANDING_CAROUSEL_PARAMS,
+    hooks?: LandingCarouselInitHooks
   ): void {
+    this.cdr.detectChanges();
+    const container = containerRef();
     const host = container?.nativeElement as LandingSwiperHost | undefined;
+
+    if (!host && attempt < 40) {
+      setTimeout(
+        () =>
+          this.initCarouselWhenSlidesReady(
+            containerRef,
+            itemCount,
+            onReady,
+            attempt + 1,
+            carouselParams,
+            hooks
+          ),
+        50
+      );
+      return;
+    }
+
     const domSlides = countLandingCarouselSlides(host);
 
     if (domSlides >= itemCount && itemCount > 0) {
-      const el = initLandingSwiperCarousel(container, itemCount, this.carouselAutoplayDelayMs);
+      const el = initLandingSwiperCarousel(
+        container,
+        itemCount,
+        this.carouselAutoplayDelayMs,
+        carouselParams,
+        hooks
+      );
       if (el) {
         onReady(el);
       }
       return;
     }
 
-    if (attempt < 24) {
+    if (attempt < 40) {
       setTimeout(
-        () => this.initCarouselWhenSlidesReady(container, itemCount, onReady, attempt + 1),
+        () =>
+          this.initCarouselWhenSlidesReady(
+            containerRef,
+            itemCount,
+            onReady,
+            attempt + 1,
+            carouselParams,
+            hooks
+          ),
         50
       );
       return;
     }
 
-    const el = initLandingSwiperCarousel(container, itemCount, this.carouselAutoplayDelayMs);
+    const el = initLandingSwiperCarousel(
+      container,
+      itemCount,
+      this.carouselAutoplayDelayMs,
+      carouselParams,
+      hooks
+    );
     if (el) {
       onReady(el);
     }
   }
 
-  private bindPortfolioSwiperEvents(swiperEl: HTMLElement): void {
-    bindLandingSwiperEvents(swiperEl, {
-      onReachEnd: this.onPortfolioReachEnd,
-      onSlideChange: this.onPortfolioSlideChange,
-      onResize: this.onPortfolioResize,
-      onAfterInit: this.onPortfolioAfterInit,
-    });
-  }
-
-  private unbindPortfolioSwiperEvents(): void {
-    unbindLandingSwiperEvents(this.portfolioSwiperEl, {
-      onReachEnd: this.onPortfolioReachEnd,
-      onSlideChange: this.onPortfolioSlideChange,
-      onResize: this.onPortfolioResize,
-      onAfterInit: this.onPortfolioAfterInit,
-    });
-  }
-
-  private bindCategorySwiperEvents(swiperEl: HTMLElement): void {
-    bindLandingSwiperEvents(swiperEl, {
+  private createCategoryCarouselHooks(): LandingCarouselInitHooks {
+    return {
       onReachEnd: this.onCategoryReachEnd,
       onSlideChange: this.onCategorySlideChange,
       onResize: this.onCategoryResize,
       onAfterInit: this.onCategoryAfterInit,
-    });
+    };
   }
 
-  private unbindCategorySwiperEvents(): void {
-    unbindLandingSwiperEvents(this.categorySwiperEl, {
-      onReachEnd: this.onCategoryReachEnd,
-      onSlideChange: this.onCategorySlideChange,
-      onResize: this.onCategoryResize,
-      onAfterInit: this.onCategoryAfterInit,
-    });
-  }
-
-  private bindServiceSwiperEvents(swiperEl: HTMLElement): void {
-    bindLandingSwiperEvents(swiperEl, {
+  private createServiceCarouselHooks(): LandingCarouselInitHooks {
+    return {
       onReachEnd: this.onServiceReachEnd,
       onSlideChange: this.onServiceSlideChange,
       onResize: this.onServiceResize,
       onAfterInit: this.onServiceAfterInit,
-    });
+    };
   }
 
-  private unbindServiceSwiperEvents(): void {
-    unbindLandingSwiperEvents(this.serviceSwiperEl, {
-      onReachEnd: this.onServiceReachEnd,
-      onSlideChange: this.onServiceSlideChange,
-      onResize: this.onServiceResize,
-      onAfterInit: this.onServiceAfterInit,
-    });
+  private createPortfolioCarouselHooks(): LandingCarouselInitHooks {
+    return {
+      onReachEnd: this.onPortfolioReachEnd,
+      onSlideChange: this.onPortfolioSlideChange,
+      onResize: this.onPortfolioResize,
+      onAfterInit: this.onPortfolioAfterInit,
+    };
   }
 
   selectCategory(card: LandingServiceCategoryCard): void {
@@ -970,7 +1088,6 @@ export class LandingPageComponent {
   }
 
   clearCategorySelection(): void {
-    this.unbindServiceSwiperEvents();
     this.serviceLoadObserver?.disconnect();
     this.serviceSwiperEl = undefined;
     this.selectedCategoryId = null;
@@ -1089,6 +1206,7 @@ export class LandingPageComponent {
       serviceName: portfolio.serviceName?.trim() ?? '',
       clientName: portfolio.clientName?.trim() ?? '',
       year: this.formatPortfolioCompletedDate(portfolio.completedDate),
+      icon: this.serviceCategoryIcons[index % this.serviceCategoryIcons.length],
       cardClass: this.serviceCategoryCardClasses[index % this.serviceCategoryCardClasses.length],
       imageUrls,
     };
@@ -1129,9 +1247,9 @@ export class LandingPageComponent {
     this.portfolioLoadObserver?.disconnect();
     this.categoryLoadObserver?.disconnect();
     this.serviceLoadObserver?.disconnect();
-    this.unbindPortfolioSwiperEvents();
-    this.unbindCategorySwiperEvents();
-    this.unbindServiceSwiperEvents();
+    unbindLandingSwiperCarouselEvents(this.getCategorySwiperHost());
+    unbindLandingSwiperCarouselEvents(this.getServiceSwiperHost());
+    unbindLandingSwiperCarouselEvents(this.getPortfolioSwiperHost());
     const htmlElement =
       this.elementRef.nativeElement.ownerDocument.documentElement;
     this.renderer.removeClass(this.document.body, 'landing-body');

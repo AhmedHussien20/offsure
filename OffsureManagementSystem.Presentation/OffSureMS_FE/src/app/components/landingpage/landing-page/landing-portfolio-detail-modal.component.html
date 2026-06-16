@@ -15,7 +15,9 @@
             <img [src]="activeImageUrl" [alt]="portfolio.title" />
           } @else {
             <div class="landing-portfolio-gallery-placeholder">
-              <i class="fe fe-image"></i>
+              <div class="landing-portfolio-hexagon">
+                <i [class]="portfolio.icon"></i>
+              </div>
               <span>No photos available</span>
             </div>
           }

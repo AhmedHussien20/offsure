@@ -46,22 +46,28 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Take(GetPageSize(request))
                 .ToListAsync();
 
+            var publicView = !request.IncludeUnpublished;
+
             return new PagedResponse<PortfolioDto>(
-                portfolios.Select(MapPortfolio).ToList(),
+                portfolios.Select(p => MapPortfolio(p, publicView)).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
         }
 
-        public async Task<PortfolioDto> GetPortfolioByIdAsync(int id)
+        public async Task<PortfolioDto> GetPortfolioByIdAsync(int id, bool includeUnpublished = false)
         {
-            var portfolio = await BuildPortfolioQuery()
-                .FirstOrDefaultAsync(p => p.Id == id && p.IsPublished);
+            var query = BuildPortfolioQuery().Where(p => p.Id == id);
+
+            if (!includeUnpublished)
+                query = query.Where(p => p.IsPublished);
+
+            var portfolio = await query.FirstOrDefaultAsync();
 
             if (portfolio is null)
                 throw new AppException("Resource not found.", 404);
 
-            return MapPortfolio(portfolio);
+            return MapPortfolio(portfolio, publicView: !includeUnpublished);
         }
 
         public async Task<PortfolioDto> AddPortfolioAsync(AddPortfolioDto dto)
@@ -77,7 +83,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ClientName = dto.ClientName.Trim(),
                 ThumbnailUrl = dto.ThumbnailUrl?.Trim() ?? string.Empty,
                 CompletedDate = dto.CompletedDate,
-                ProjectValue = dto.ProjectValue,
                 IsPublished = dto.IsPublished,
                 CreatedAt = DateTime.UtcNow,
                 PortfolioProjectImages = dto.Images
@@ -87,6 +92,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         ImageUrl = i.ImageUrl.Trim(),
                         ImageAltText = i.ImageAltText?.Trim() ?? string.Empty,
                         DisplayOrder = i.DisplayOrder,
+                        IsActive = true,
                         CreatedAt = DateTime.UtcNow
                     })
                     .ToList()
@@ -111,7 +117,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             portfolio.ClientName = dto.ClientName.Trim();
             portfolio.ThumbnailUrl = dto.ThumbnailUrl?.Trim() ?? string.Empty;
             portfolio.CompletedDate = dto.CompletedDate;
-            portfolio.ProjectValue = dto.ProjectValue;
             portfolio.IsPublished = dto.IsPublished;
             portfolio.UpdatedAt = DateTime.UtcNow;
 
@@ -122,7 +127,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(portfolio.ClientName),
                 nameof(portfolio.ThumbnailUrl),
                 nameof(portfolio.CompletedDate),
-                nameof(portfolio.ProjectValue),
                 nameof(portfolio.IsPublished),
                 nameof(portfolio.UpdatedAt));
             await _portfolioRepo.SaveChangesAsync();
@@ -167,6 +171,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ImageUrl = imagePath,
                 ImageAltText = imageAltText?.Trim() ?? string.Empty,
                 DisplayOrder = displayOrder,
+                IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -196,6 +201,26 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetPortfolioForAdminByIdAsync(portfolioId);
         }
 
+        public async Task<PortfolioDto> SetImageActiveAsync(int portfolioId, int imageId, bool isActive)
+        {
+            await EnsurePortfolioExistsAsync(portfolioId);
+
+            var image = await _portfolioImageRepo.GetByIDAsync(imageId);
+            if (image is null || image.PortfolioProjectId != portfolioId)
+                throw new AppException("Resource not found.", 404);
+
+            image.IsActive = isActive;
+            image.UpdatedAt = DateTime.UtcNow;
+
+            _portfolioImageRepo.SaveInclude(
+                image,
+                nameof(image.IsActive),
+                nameof(image.UpdatedAt));
+            await _portfolioImageRepo.SaveChangesAsync();
+
+            return await GetPortfolioForAdminByIdAsync(portfolioId);
+        }
+
         private async Task<PortfolioDto> GetPortfolioForAdminByIdAsync(int id)
         {
             var portfolio = await BuildPortfolioQuery()
@@ -204,7 +229,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (portfolio is null)
                 throw new AppException("Resource not found.", 404);
 
-            return MapPortfolio(portfolio);
+            return MapPortfolio(portfolio, publicView: false);
         }
 
         private IQueryable<PortfolioProject> BuildPortfolioQuery()
@@ -258,7 +283,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 "clientname" => isDescending ? query.OrderByDescending(p => p.ClientName) : query.OrderBy(p => p.ClientName),
                 "servicename" => isDescending ? query.OrderByDescending(p => p.Service.Name) : query.OrderBy(p => p.Service.Name),
                 "completeddate" => isDescending ? query.OrderByDescending(p => p.CompletedDate) : query.OrderBy(p => p.CompletedDate),
-                "projectvalue" => isDescending ? query.OrderByDescending(p => p.ProjectValue) : query.OrderBy(p => p.ProjectValue),
                 _ => isDescending ? query.OrderByDescending(p => p.CompletedDate) : query.OrderBy(p => p.CompletedDate)
             };
         }
@@ -325,8 +349,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static int GetSkipCount(PortfolioFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
-        private static PortfolioDto MapPortfolio(PortfolioProject portfolio)
+        private static PortfolioDto MapPortfolio(PortfolioProject portfolio, bool publicView)
         {
+            var images = portfolio.PortfolioProjectImages
+                .OrderBy(i => i.DisplayOrder)
+                .AsEnumerable();
+
+            if (publicView)
+                images = images.Where(i => i.IsActive);
+
             return new PortfolioDto
             {
                 Id = portfolio.Id,
@@ -338,12 +369,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ClientName = portfolio.ClientName,
                 ThumbnailUrl = portfolio.ThumbnailUrl,
                 CompletedDate = portfolio.CompletedDate,
-                ProjectValue = portfolio.ProjectValue,
                 IsPublished = portfolio.IsPublished,
-                Images = portfolio.PortfolioProjectImages
-                    .OrderBy(i => i.DisplayOrder)
-                    .Select(MapImage)
-                    .ToList()
+                Images = images.Select(MapImage).ToList()
             };
         }
 
@@ -354,7 +381,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Id = image.Id,
                 ImageUrl = ToPublicImageUrl(image.ImageUrl),
                 ImageAltText = image.ImageAltText,
-                DisplayOrder = image.DisplayOrder
+                DisplayOrder = image.DisplayOrder,
+                IsActive = image.IsActive
             };
         }
 

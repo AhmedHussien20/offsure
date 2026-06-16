@@ -234,9 +234,10 @@
                         <swiper-container
                             #swiperContainerCategories
                             class="landing-carousel-swiper-el mySwiper"
-                            slides-per-view="3"
+                            slides-per-view="4"
                             slides-per-group="1"
                             space-between="24"
+                            autoplay="true"
                             [attr.autoplay-delay]="carouselAutoplayDelayMs"
                             pagination="true"
                             pagination-clickable="true"
@@ -255,6 +256,7 @@
                                         (keydown.enter)="selectCategory(card)"
                                         (keydown.space)="$event.preventDefault(); selectCategory(card)">
                                         <spk-feature-cards
+                                            cardVariant="category"
                                             [icon]="card.icon"
                                             [title]="card.title"
                                             [cardClass]="card.cardClass"
@@ -326,9 +328,10 @@
                             <swiper-container
                                 #swiperContainerServices
                                 class="landing-carousel-swiper-el mySwiper"
-                                slides-per-view="3"
+                                slides-per-view="4"
                                 slides-per-group="1"
                                 space-between="24"
+                                autoplay="true"
                                 [attr.autoplay-delay]="carouselAutoplayDelayMs"
                                 pagination="true"
                                 pagination-clickable="true"
@@ -337,6 +340,7 @@
                                 <swiper-slide>
                                     <div class="landing-carousel-slide h-100">
                                         <spk-feature-cards
+                                            cardVariant="service"
                                             [icon]="card.icon"
                                             [title]="card.title"
                                             [cardClass]="card.cardClass"
@@ -2251,6 +2255,7 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                         slides-per-view="3"
                         slides-per-group="1"
                         space-between="24"
+                        autoplay="true"
                         [attr.autoplay-delay]="carouselAutoplayDelayMs"
                         pagination="true"
                         pagination-clickable="true"
@@ -2269,7 +2274,9 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                         <img [src]="portfolioCoverUrl(item)" [alt]="item.title" loading="lazy" />
                                         } @else {
                                         <div class="landing-portfolio-card-placeholder">
-                                            <i class="fe fe-image"></i>
+                                            <div class="landing-portfolio-hexagon">
+                                                <i [class]="item.icon"></i>
+                                            </div>
                                         </div>
                                         }
                                         @if (item.imageUrls.length > 1) {

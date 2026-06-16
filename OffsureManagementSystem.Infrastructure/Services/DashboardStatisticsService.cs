@@ -205,7 +205,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static string FormatRequestStatus(ServiceRequestStatus status) => status switch
         {
             ServiceRequestStatus.Pending => "Pending",
-            ServiceRequestStatus.InProgress => "In Progress",
+            ServiceRequestStatus.PrimaryAccepted => "Accepted",
+            ServiceRequestStatus.AcceptedWithProject => "With project",
             ServiceRequestStatus.Completed => "Completed",
             ServiceRequestStatus.Cancelled => "Cancelled",
             _ => status.ToString(),

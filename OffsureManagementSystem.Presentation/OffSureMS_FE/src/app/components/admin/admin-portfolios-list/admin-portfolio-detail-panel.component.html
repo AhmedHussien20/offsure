@@ -21,22 +21,27 @@
           [class.bg-secondary-transparent]="!portfolio.isPublished">
           {{ portfolio.isPublished ? 'Published' : 'Draft' }}
         </span>
-        <button
-          type="button"
-          class="btn btn-sm no-expand"
-          [class.btn-outline-success]="!portfolio.isPublished"
-          [class.btn-outline-secondary]="portfolio.isPublished"
-          [disabled]="publishing"
-          (click)="togglePublished()">
-          {{ publishing ? 'Updating…' : (portfolio.isPublished ? 'Unpublish' : 'Publish') }}
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-danger no-expand"
-          [disabled]="deleting"
-          (click)="deletePortfolio()">
-          {{ deleting ? 'Deleting…' : 'Delete portfolio' }}
-        </button>
+        @if (!editing) {
+          <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
+            Edit
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm no-expand"
+            [class.btn-outline-success]="!portfolio.isPublished"
+            [class.btn-outline-secondary]="portfolio.isPublished"
+            [disabled]="publishing"
+            (click)="togglePublished()">
+            {{ publishing ? 'Updating…' : (portfolio.isPublished ? 'Unpublish' : 'Publish') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger no-expand"
+            [disabled]="deleting"
+            (click)="deletePortfolio()">
+            {{ deleting ? 'Deleting…' : 'Delete portfolio' }}
+          </button>
+        }
       </div>
     </div>
 
@@ -58,14 +63,34 @@
             @if (sortedImages.length > 0) {
               <div class="portfolio-gallery-thumbs">
                 @for (image of sortedImages; track image.id; let i = $index) {
-                  <button
-                    type="button"
-                    class="portfolio-gallery-thumb no-expand"
-                    [class.portfolio-gallery-thumb--active]="i === activeImageIndex"
-                    (click)="selectImage(i)"
-                    [attr.aria-label]="'View image ' + (i + 1)">
-                    <img [src]="imageUrl(image)" [alt]="image.imageAltText || portfolio.title" />
-                  </button>
+                  <div
+                    class="portfolio-gallery-thumb-wrap"
+                    [class.portfolio-gallery-thumb-wrap--inactive]="!image.isActive">
+                    <button
+                      type="button"
+                      class="portfolio-gallery-thumb no-expand"
+                      [class.portfolio-gallery-thumb--active]="i === activeImageIndex"
+                      (click)="selectImage(i)"
+                      [attr.aria-label]="'View image ' + (i + 1)">
+                      <img [src]="imageUrl(image)" [alt]="image.imageAltText || portfolio.title" />
+                      @if (!image.isActive) {
+                        <span class="portfolio-gallery-thumb-badge">Hidden</span>
+                      }
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm portfolio-gallery-visibility-btn no-expand"
+                      [class.btn-outline-success]="!image.isActive"
+                      [class.btn-outline-secondary]="image.isActive"
+                      [disabled]="isTogglingImage(image.id)"
+                      (click)="toggleImageActive(image, $event)">
+                      {{
+                        isTogglingImage(image.id)
+                          ? 'Updating…'
+                          : (image.isActive ? 'Hide from landing' : 'Show on landing')
+                      }}
+                    </button>
+                  </div>
                 }
               </div>
             }
@@ -74,40 +99,58 @@
 
         <div class="portfolio-panel-card portfolio-info-card">
           <h6 class="portfolio-panel-card__title">Project details</h6>
-          <div class="portfolio-info-row">
-            <div class="portfolio-info-item portfolio-info-item--full">
-              <label>Description</label>
-              <span>{{ display(portfolio.description) }}</span>
+          @if (editing) {
+            <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+            <div class="portfolio-info-row mt-2">
+              <div class="portfolio-info-item">
+                <label>Service</label>
+                <span>{{ display(portfolio.serviceName) }}</span>
+              </div>
+              <div class="portfolio-info-item">
+                <label>Category</label>
+                <span>{{ display(portfolio.serviceCategoryName) }}</span>
+              </div>
             </div>
-            <div class="portfolio-info-item">
-              <label>Client name</label>
-              <span>{{ display(portfolio.clientName) }}</span>
+            <div class="portfolio-detail-form-actions">
+              <button type="button" class="btn btn-sm btn-primary no-expand" [disabled]="saving" (click)="saveEdit()">
+                {{ saving ? 'Saving…' : 'Save changes' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-light no-expand" [disabled]="saving" (click)="cancelEdit()">
+                Cancel
+              </button>
             </div>
-            <div class="portfolio-info-item">
-              <label>Service</label>
-              <span>{{ display(portfolio.serviceName) }}</span>
+          } @else {
+            <div class="portfolio-info-row">
+              <div class="portfolio-info-item portfolio-info-item--full">
+                <label>Description</label>
+                <span>{{ display(portfolio.description) }}</span>
+              </div>
+              <div class="portfolio-info-item">
+                <label>Client name</label>
+                <span>{{ display(portfolio.clientName) }}</span>
+              </div>
+              <div class="portfolio-info-item">
+                <label>Service</label>
+                <span>{{ display(portfolio.serviceName) }}</span>
+              </div>
+              <div class="portfolio-info-item">
+                <label>Category</label>
+                <span>{{ display(portfolio.serviceCategoryName) }}</span>
+              </div>
+              <div class="portfolio-info-item">
+                <label>Completed date</label>
+                <span>{{ formatDate(portfolio.completedDate) }}</span>
+              </div>
+              <div class="portfolio-info-item">
+                <label>Thumbnail URL</label>
+                <span class="portfolio-info-truncate">{{ display(portfolio.thumbnailUrl) }}</span>
+              </div>
+              <div class="portfolio-info-item">
+                <label>Portfolio ID</label>
+                <span>{{ portfolio.id }}</span>
+              </div>
             </div>
-            <div class="portfolio-info-item">
-              <label>Category</label>
-              <span>{{ display(portfolio.serviceCategoryName) }}</span>
-            </div>
-            <div class="portfolio-info-item">
-              <label>Completed date</label>
-              <span>{{ formatDate(portfolio.completedDate) }}</span>
-            </div>
-            <div class="portfolio-info-item">
-              <label>Project value</label>
-              <span>{{ formatCurrency(portfolio.projectValue) }}</span>
-            </div>
-            <div class="portfolio-info-item">
-              <label>Thumbnail URL</label>
-              <span class="portfolio-info-truncate">{{ display(portfolio.thumbnailUrl) }}</span>
-            </div>
-            <div class="portfolio-info-item">
-              <label>Portfolio ID</label>
-              <span>{{ portfolio.id }}</span>
-            </div>
-          </div>
+          }
         </div>
       </div>
 
@@ -118,6 +161,10 @@
             <li>
               <span class="portfolio-stat-label">Gallery images</span>
               <strong>{{ sortedImages.length }}</strong>
+            </li>
+            <li>
+              <span class="portfolio-stat-label">Visible on landing</span>
+              <strong>{{ activeLandingImagesCount }}</strong>
             </li>
             <li>
               <span class="portfolio-stat-label">Status</span>

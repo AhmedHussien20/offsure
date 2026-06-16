@@ -214,9 +214,73 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
-    color: var(--text-muted);
-    opacity: 0.45;
+}
+
+.landing-portfolio-hexagon {
+    position: relative;
+    width: 4.5rem;
+    height: 5.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: inherit;
+        border-radius: 0.35rem;
+    }
+
+    &::before {
+        transform: rotate(60deg);
+    }
+
+    &::after {
+        transform: rotate(-60deg);
+    }
+
+    i {
+        position: relative;
+        z-index: 1;
+        font-size: 1.75rem;
+        color: #fff;
+        line-height: 1;
+    }
+}
+
+.landing-portfolio-card-media.main-features-1 .landing-portfolio-hexagon {
+    background: #6259ca;
+}
+
+.landing-portfolio-card-media.main-features-2 .landing-portfolio-hexagon {
+    background: #f5b849;
+}
+
+.landing-portfolio-card-media.main-features-3 .landing-portfolio-hexagon {
+    background: #198754;
+}
+
+.landing-portfolio-card-media.main-features-4 .landing-portfolio-hexagon {
+    background: #0dcaf0;
+}
+
+.landing-portfolio-card-media.main-features-5 .landing-portfolio-hexagon {
+    background: #6c757d;
+}
+
+.landing-portfolio-card-media.main-features-6 .landing-portfolio-hexagon {
+    background: #dc3545;
+}
+
+.landing-portfolio-card-media.main-features-7 .landing-portfolio-hexagon {
+    background: #6259ca;
+}
+
+.landing-portfolio-card-media.main-features-8 .landing-portfolio-hexagon {
+    background: #f5b849;
 }
 
 .landing-portfolio-photo-count {

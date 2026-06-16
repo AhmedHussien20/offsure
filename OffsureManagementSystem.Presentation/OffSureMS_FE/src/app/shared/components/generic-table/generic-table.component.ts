@@ -7,6 +7,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MyDatePipe } from 'app/components/utilities/pipline/MyDatePipe';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import {
+  isKnownServiceRequestStatusName,
   projectStatusKey,
   serviceRequestStatusKey,
 } from 'app/core/utils/enum-status.util';
@@ -200,14 +201,26 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
     if (col.key !== 'status' || value === null || value === undefined) {
       return String(value ?? '');
     }
+
+    // Resolve service-request statuses before project keys — unknown request names
+    // (e.g. PrimaryAccepted) would otherwise fall through to project "Pending".
+    if (isKnownServiceRequestStatusName(value)) {
+      const requestKey = serviceRequestStatusKey(value);
+      if (col.badgeMap?.[requestKey]) {
+        return requestKey;
+      }
+    }
+
     const projectKey = projectStatusKey(value);
     if (col.badgeMap?.[projectKey]) {
       return projectKey;
     }
+
     const requestKey = serviceRequestStatusKey(value);
     if (col.badgeMap?.[requestKey]) {
       return requestKey;
     }
+
     return projectKey;
   }
 
@@ -502,12 +515,22 @@ onRowClick(item: T, event: MouseEvent) {
 @Input() expandable: boolean = false;
 @Input() expandTemplate: any;
 @Input() rowKey: string = 'id';
+/** When set (e.g. from route query params), expands the matching row once it appears in `data`. */
+@Input() expandedRowId: unknown = null;
 @Output() expandedRowChange = new EventEmitter<any>();
 
 expandedRow: any = null;
 private expandedRowKey: unknown = null;
 
 ngOnChanges(changes: SimpleChanges): void {
+  if (changes['expandedRowId'] && this.expandable) {
+    const id = this.expandedRowId;
+    if (id != null && id !== '') {
+      this.expandedRowKey = id;
+      this.syncExpandedRowFromData();
+    }
+  }
+
   if (changes['data'] && this.expandable && this.expandedRowKey != null) {
     this.syncExpandedRowFromData();
   }
@@ -517,15 +540,26 @@ private getRowKey(item: T): unknown {
   return item == null ? null : (item as Record<string, unknown>)[this.rowKey];
 }
 
+private rowKeysMatch(a: unknown, b: unknown): boolean {
+  return a != null && b != null && String(a) === String(b);
+}
+
 private syncExpandedRowFromData(): void {
-  const match = this.data?.find(item => this.getRowKey(item) === this.expandedRowKey);
+  const match = this.data?.find(item => this.rowKeysMatch(this.getRowKey(item), this.expandedRowKey));
   if (match) {
     this.expandedRow = match;
+    this.expandedRowChange.emit(this.expandedRow);
+    this.scheduleScrollToExpandedRow();
   } else {
     this.expandedRow = null;
-    this.expandedRowKey = null;
     this.expandedRowChange.emit(null);
   }
+}
+
+private scheduleScrollToExpandedRow(): void {
+  setTimeout(() => {
+    document.querySelector('tr.expanded-row')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 320);
 }
 
 toggleExpandRow(item: T, event: MouseEvent) {
@@ -544,7 +578,7 @@ toggleExpandRow(item: T, event: MouseEvent) {
   }
 
   const key = this.getRowKey(item);
-  if (this.expandedRowKey === key) {
+  if (this.rowKeysMatch(this.expandedRowKey, key)) {
     this.expandedRow = null;
     this.expandedRowKey = null;
   } else {
@@ -556,6 +590,6 @@ toggleExpandRow(item: T, event: MouseEvent) {
 }
 
 isRowExpanded(item: T): boolean {
-  return this.expandable && this.getRowKey(item) === this.expandedRowKey;
+  return this.expandable && this.rowKeysMatch(this.getRowKey(item), this.expandedRowKey);
 }
 }

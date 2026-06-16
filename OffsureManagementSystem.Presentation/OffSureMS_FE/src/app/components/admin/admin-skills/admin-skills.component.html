@@ -74,5 +74,6 @@
 <ng-template #skillDetail let-item>
   <app-admin-skill-detail-panel
     [skillId]="item.id"
+    [categoryOptions]="categoryOptions"
     (changed)="onSkillChanged()" />
 </ng-template>

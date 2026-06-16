@@ -20,7 +20,6 @@ export interface AddPortfolioDto {
   clientName?: string;
   thumbnailUrl?: string;
   completedDate?: string;
-  projectValue?: number;
   isPublished?: boolean;
   images?: AddPortfolioImageDto[];
 }
@@ -31,7 +30,6 @@ export interface UpdatePortfolioDto {
   clientName?: string;
   thumbnailUrl?: string;
   completedDate?: string;
-  projectValue?: number;
   isPublished?: boolean;
 }
 
@@ -44,6 +42,11 @@ export interface PortfolioImageDto {
   imageUrl: string;
   imageAltText: string;
   displayOrder: number;
+  isActive: boolean;
+}
+
+export interface UpdatePortfolioImageDto {
+  isActive: boolean;
 }
 
 export interface PortfolioDto {
@@ -56,7 +59,6 @@ export interface PortfolioDto {
   clientName: string;
   thumbnailUrl: string;
   completedDate: string | null;
-  projectValue: number | null;
   isPublished: boolean;
   images: PortfolioImageDto[];
 }

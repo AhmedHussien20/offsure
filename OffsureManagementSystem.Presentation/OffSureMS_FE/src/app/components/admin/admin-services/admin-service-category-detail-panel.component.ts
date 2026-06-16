@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormFieldConfig } from 'app/core/models/form-field-config';
 import { ServiceCategoryDto, UpdateServiceCategoryDto } from 'app/core/models/services/service.models';
 import { ServiceCategoriesService } from 'app/core/services/service-categories.service';
+import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -9,7 +12,7 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-admin-service-category-detail-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent],
   templateUrl: './admin-service-category-detail-panel.component.html',
   styleUrl: './admin-service-category-detail-panel.component.scss',
 })
@@ -19,18 +22,34 @@ export class AdminServiceCategoryDetailPanelComponent implements OnChanges, OnDe
 
   loading = false;
   updating = false;
+  saving = false;
+  editing = false;
   loadError: string | null = null;
   category: ServiceCategoryDto | null = null;
+  form!: FormGroup;
+  readonly formConfig: FormFieldConfig[] = [
+    { type: 'input', inputType: 'text', name: 'name', label: 'Category Name', validations: { required: true } },
+    { type: 'textarea', name: 'description', label: 'Description' },
+    { type: 'checkbox', name: 'isActive', label: 'Active' },
+  ];
 
   private readonly destroy$ = new Subject<void>();
 
   constructor(
+    private fb: FormBuilder,
     private categoriesService: ServiceCategoriesService,
     private toastr: ToastrService
-  ) {}
+  ) {
+    this.form = this.fb.group({
+      name: ['', Validators.required],
+      description: [''],
+      isActive: [true],
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['categoryId'] && this.categoryId) {
+      this.editing = false;
       this.loadCategory();
     }
   }
@@ -47,8 +66,55 @@ export class AdminServiceCategoryDetailPanelComponent implements OnChanges, OnDe
     return String(value);
   }
 
-  toggleActive(): void {
+  startEdit(): void {
     if (!this.category) {
+      return;
+    }
+    this.patchForm(this.category);
+    this.editing = true;
+  }
+
+  cancelEdit(): void {
+    this.editing = false;
+    if (this.category) {
+      this.patchForm(this.category);
+    }
+  }
+
+  saveEdit(): void {
+    if (!this.category || this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.form.getRawValue();
+    const dto: UpdateServiceCategoryDto = {
+      name: String(raw.name).trim(),
+      description: raw.description ? String(raw.description).trim() : undefined,
+      isActive: !!raw.isActive,
+    };
+
+    this.saving = true;
+    this.categoriesService
+      .update(this.category.id, dto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toastr.success('Category updated.');
+          this.saving = false;
+          this.editing = false;
+          this.changed.emit();
+          this.loadCategory();
+        },
+        error: err => {
+          this.toastr.error(err?.error?.message || 'Failed to update category.');
+          this.saving = false;
+        },
+      });
+  }
+
+  toggleActive(): void {
+    if (!this.category || this.editing) {
       return;
     }
 
@@ -76,6 +142,14 @@ export class AdminServiceCategoryDetailPanelComponent implements OnChanges, OnDe
       });
   }
 
+  private patchForm(category: ServiceCategoryDto): void {
+    this.form.patchValue({
+      name: category.name,
+      description: category.description ?? '',
+      isActive: category.isActive,
+    });
+  }
+
   private loadCategory(): void {
     this.loading = true;
     this.loadError = null;
@@ -89,6 +163,8 @@ export class AdminServiceCategoryDetailPanelComponent implements OnChanges, OnDe
           this.category = res.data ?? null;
           if (!this.category) {
             this.loadError = 'Category not found.';
+          } else {
+            this.patchForm(this.category);
           }
           this.loading = false;
         },

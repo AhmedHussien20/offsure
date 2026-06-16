@@ -127,7 +127,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _serviceRequestRepo.SaveChangesAsync();
 
             var updatedRequest = await GetRequestByIdAsync(id);
-            if (status == ServiceRequestStatus.InProgress)
+            if (status == ServiceRequestStatus.PrimaryAccepted)
                 await _emailNotificationService.SendRequestConfirmationAsync(updatedRequest);
             else
                 await _emailNotificationService.SendStatusUpdateAsync(updatedRequest);
@@ -289,8 +289,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var isValid = currentStatus switch
             {
-                ServiceRequestStatus.Pending => newStatus is ServiceRequestStatus.InProgress or ServiceRequestStatus.Cancelled,
-                ServiceRequestStatus.InProgress => newStatus is ServiceRequestStatus.Completed or ServiceRequestStatus.Cancelled,
+                ServiceRequestStatus.Pending => newStatus is ServiceRequestStatus.PrimaryAccepted or ServiceRequestStatus.Cancelled,
+                ServiceRequestStatus.PrimaryAccepted => newStatus is ServiceRequestStatus.AcceptedWithProject or ServiceRequestStatus.Cancelled,
+                ServiceRequestStatus.AcceptedWithProject => newStatus is ServiceRequestStatus.Completed or ServiceRequestStatus.Cancelled,
                 _ => false
             };
 

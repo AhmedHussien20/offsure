@@ -83,7 +83,6 @@ export class AdminPortfolioCreateComponent implements OnInit, OnDestroy {
       description: [''],
       clientName: [''],
       completedDate: [new Date().toISOString().split('T')[0]],
-      projectValue: [null],
       isPublished: [false],
     });
 
@@ -114,13 +113,6 @@ export class AdminPortfolioCreateComponent implements OnInit, OnDestroy {
         name: 'completedDate',
         label: 'Completed date',
         icon: 'fe fe-calendar',
-      },
-      {
-        type: 'input',
-        inputType: 'number',
-        name: 'projectValue',
-        label: 'Project value',
-        icon: 'fe fe-dollar-sign',
       },
       {
         type: 'checkbox',
@@ -183,7 +175,6 @@ export class AdminPortfolioCreateComponent implements OnInit, OnDestroy {
       description: raw.description || undefined,
       clientName: (raw.clientName && String(raw.clientName).trim()) || '—',
       completedDate: raw.completedDate || undefined,
-      projectValue: raw.projectValue != null ? Number(raw.projectValue) : undefined,
       isPublished: !!raw.isPublished,
     };
 

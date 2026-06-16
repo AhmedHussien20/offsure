@@ -164,6 +164,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _projectRepo.AddAsync(project);
             await _projectRepo.SaveChangesAsync();
 
+            if (dto.ServiceRequestId > 0)
+            {
+                await LinkRequestToProjectAsync(request);
+            }
+
             if (dto.RequiredSkillIds is { Count: > 0 })
             {
                 await SyncProjectSkillsAsync(project.Id, dto.RequiredSkillIds);
@@ -182,8 +187,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (request is null)
                 throw new AppException("Resource not found.", 404);
 
-            if (request.Status != ServiceRequestStatus.InProgress)
-                throw new AppException("Only approved requests can be converted to projects.", 400);
+            if (request.Status != ServiceRequestStatus.PrimaryAccepted)
+                throw new AppException("Only accepted requests can be converted to projects.", 400);
 
             if (request.Project is not null)
                 throw new AppException("A project already exists for this request.", 400);
@@ -214,7 +219,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ServiceId = dto.ServiceId.Value,
                 Title = dto.Name.Trim(),
                 Description = dto.Description?.Trim() ?? string.Empty,
-                Status = ServiceRequestStatus.InProgress,
+                Status = ServiceRequestStatus.AcceptedWithProject,
                 RequestedDate = DateTime.UtcNow,
                 DueDate = dto.TargetEndDate,
                 Budget = dto.Budget,
@@ -226,6 +231,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _serviceRequestRepo.SaveChangesAsync();
 
             return request;
+        }
+
+        private async Task LinkRequestToProjectAsync(ServiceRequest request)
+        {
+            request.Status = ServiceRequestStatus.AcceptedWithProject;
+            request.UpdatedAt = DateTime.UtcNow;
+
+            _serviceRequestRepo.SaveInclude(
+                request,
+                nameof(request.Status),
+                nameof(request.UpdatedAt));
+            await _serviceRequestRepo.SaveChangesAsync();
         }
 
         public async Task<ProjectDto> UpdateProjectAsync(int id, UpdateProjectDto dto)

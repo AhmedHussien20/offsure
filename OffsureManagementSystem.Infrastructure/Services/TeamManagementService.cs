@@ -18,6 +18,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<Role> _roleRepo;
         private readonly IRepository<Skill> _skillRepo;
         private readonly IRepository<TeamMemberSkill> _teamMemberSkillRepo;
+        private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
         private readonly ITeamCvStorageService _cvStorageService;
 
         public TeamManagementService(
@@ -26,6 +27,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<Role> roleRepo,
             IRepository<Skill> skillRepo,
             IRepository<TeamMemberSkill> teamMemberSkillRepo,
+            IRepository<ProjectAssignment> projectAssignmentRepo,
             ITeamCvStorageService cvStorageService)
         {
             _teamMemberRepo = teamMemberRepo;
@@ -33,6 +35,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _roleRepo = roleRepo;
             _skillRepo = skillRepo;
             _teamMemberSkillRepo = teamMemberSkillRepo;
+            _projectAssignmentRepo = projectAssignmentRepo;
             _cvStorageService = cvStorageService;
         }
 
@@ -216,7 +219,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .AnyAsync();
 
             if (activeSubordinates)
-                throw new AppException("Invalid request.", 400);
+                throw new AppException("Cannot delete a team member who has direct reports. Reassign their team first.", 400);
+
+            var hasActiveProjectAssignments = await _projectAssignmentRepo
+                .GetAll(a => a.TeamMemberId == id && a.IsActive)
+                .AnyAsync();
+
+            if (hasActiveProjectAssignments)
+                throw new AppException("Cannot delete a team member who is assigned to a project. Unassign them first.", 400);
 
             var skillAssignments = await _teamMemberSkillRepo
                 .GetAll(s => s.TeamMemberId == id)

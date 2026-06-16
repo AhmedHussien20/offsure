@@ -16,9 +16,10 @@ namespace OffsureManagementSystem.Domain.Entities.Enum
     public enum ServiceRequestStatus
     {
         Pending = 0,
-        InProgress = 1,
+        PrimaryAccepted = 1,
         Completed = 2,
-        Cancelled = 3
+        Cancelled = 3,
+        AcceptedWithProject = 4,
     }
 
     public enum ProjectStatus

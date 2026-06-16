@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PROFICIENCY_LABELS } from 'app/components/team/team.constants';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
 import {
   TeamMemberDto,
@@ -10,6 +11,7 @@ import {
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
+import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -29,13 +31,14 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
   loading = false;
   saving = false;
   deleting = false;
+  editing = false;
   loadError: string | null = null;
   member: TeamMemberDto | null = null;
   initialSkills: TeamMemberSkillDto[] = [];
   skillAssignments: UpsertTeamMemberSkillDto[] = [];
 
   form!: FormGroup;
-  formConfig: FormFieldConfig[] = [
+  readonly formConfig: FormFieldConfig[] = [
     { type: 'input', inputType: 'text', name: 'firstName', label: 'First Name', validations: { required: true } },
     { type: 'input', inputType: 'text', name: 'lastName', label: 'Last Name', validations: { required: true } },
     { type: 'input', inputType: 'email', name: 'email', label: 'Email', validations: { required: true } },
@@ -57,7 +60,8 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private teamMembersService: TeamMembersService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private confirmDialog: ConfirmDialogService
   ) {
     this.form = this.fb.group({
       firstName: ['', Validators.required],
@@ -73,6 +77,7 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['memberId'] && this.memberId) {
+      this.editing = false;
       this.loadMember();
     }
   }
@@ -82,11 +87,41 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
     this.destroy$.complete();
   }
 
+  display(value: string | number | null | undefined): string {
+    if (value === null || value === undefined || value === '') {
+      return '—';
+    }
+    return String(value);
+  }
+
+  proficiencyLabel(level: number): string {
+    return PROFICIENCY_LABELS[level] ?? `Level ${level}`;
+  }
+
+  startEdit(): void {
+    if (!this.member) {
+      return;
+    }
+    this.patchForm(this.member);
+    this.initialSkills = [...(this.member.skillAssignments ?? [])];
+    this.skillAssignments = [];
+    this.editing = true;
+  }
+
+  cancelEdit(): void {
+    this.editing = false;
+    if (this.member) {
+      this.patchForm(this.member);
+      this.initialSkills = [...(this.member.skillAssignments ?? [])];
+      this.skillAssignments = [];
+    }
+  }
+
   onSkillsChange(skills: UpsertTeamMemberSkillDto[]): void {
     this.skillAssignments = skills;
   }
 
-  save(): void {
+  saveEdit(): void {
     if (!this.member || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -115,8 +150,10 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
           this.member = res.data ?? this.member;
           this.patchForm(this.member!);
           this.initialSkills = [...(this.member?.skillAssignments ?? [])];
+          this.skillAssignments = [];
           this.toastr.success('Team member updated.');
           this.saving = false;
+          this.editing = false;
           this.saved.emit();
         },
         error: err => {
@@ -126,13 +163,19 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
       });
   }
 
-  deleteMember(): void {
+  async deleteMember(): Promise<void> {
     if (!this.member) {
       return;
     }
 
     const name = `${this.member.firstName} ${this.member.lastName}`.trim() || 'this member';
-    if (!confirm(`Delete ${name}? This cannot be undone.`)) {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete team member',
+      message: `Delete ${name}? This action cannot be undone.`,
+      confirmLabel: 'Delete member',
+      variant: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -167,6 +210,7 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
             return;
           }
           this.initialSkills = [...(this.member.skillAssignments ?? [])];
+          this.skillAssignments = [];
           this.patchForm(this.member);
           this.loading = false;
         },

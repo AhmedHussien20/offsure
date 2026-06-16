@@ -119,8 +119,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (!VerifyPassword(dto.Password, user.PasswordHash))
                 throw new AppException("Invalid email or password.");
 
-            if (!user.IsActive)
-                throw new AppException("Your account has been deactivated. Please contact support.");
+            await EnsureUserCanAuthenticateAsync(user);
 
             if (!user.IsEmailVerified)
                 throw new AppException("Please verify your email before logging in.");
@@ -157,6 +156,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (user.RefreshTokenExpiry < DateTime.UtcNow)
                 throw new AppException("Refresh token has expired. Please login again.");
+
+            await EnsureUserCanAuthenticateAsync(user);
 
             var newAccessToken = await _jwtGenerator.GenerateToken(user);
             var newRefreshToken = _jwtGenerator.GenerateRefreshToken();
@@ -351,6 +352,22 @@ namespace OffsureManagementSystem.Infrastructure.Services
                           .Replace("+", "-")
                           .Replace("/", "_")
                           .Replace("=", "");
+        }
+
+        private async Task EnsureUserCanAuthenticateAsync(User user)
+        {
+            if (!user.IsActive)
+                throw new AppException("Your account has been deactivated. Please contact support.");
+
+            if (string.Equals(user.Role?.Name, "Client", StringComparison.OrdinalIgnoreCase))
+            {
+                var client = await _clientRepo
+                    .GetAll(c => c.UserId == user.Id)
+                    .FirstOrDefaultAsync();
+
+                if (client is not null && !client.IsActive)
+                    throw new AppException("Your client account has been deactivated. Please contact support.");
+            }
         }
 
         private static void ValidateAccountProfileInput(UpdateAccountProfileDto dto)

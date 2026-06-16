@@ -4,7 +4,7 @@ using Microsoft.Extensions.FileProviders;
 using OffshoreManagementSystem.Infrastructure.DataContext;
 using OffsureManagementSystem.Infrastructure;
 using OffsureManagementSystem.Infrastructure.Services;
-using Scalar.AspNetCore;
+using Serilog;
 using System.Text.Json.Serialization;
 
 namespace OffsureManagementSystem.API
@@ -59,7 +59,11 @@ namespace OffsureManagementSystem.API
                 {
                     policy.WithOrigins(
                             "http://localhost:4200",
-                            "http://127.0.0.1:4200")
+                            "http://localhost:5050",
+                            "http://41.38.219.114:5050",
+                            "http://127.0.0.1:4200"
+
+                            )
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -104,32 +108,49 @@ namespace OffsureManagementSystem.API
             });
 
 
-            var portfolioImageRoot = builder.Configuration["Storage:PortfolioImageRoot"]
-                ?? Path.Combine(AppContext.BaseDirectory, "storage", "portfolio-images");
-            Directory.CreateDirectory(portfolioImageRoot);
+            // =======================
+            // Configure Serilog
+            // =======================
+            var logDir = Path.Combine(AppContext.BaseDirectory, "Logs");
+            Directory.CreateDirectory(logDir);
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File(
+                    path: Path.Combine(logDir, "log-.txt"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 30,
+                    outputTemplate:
+                    "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}"
+                )
+                .CreateLogger();
+
+            builder.Host.UseSerilog();
 
             var app = builder.Build();
 
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(portfolioImageRoot),
-                RequestPath = "/portfolio-images"
-            });
-
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
+            
                 app.UseSwagger();
-
-                app.MapScalarApiReference(options =>
-                {
-                    options.Title = "OffshoreManagementSystem API";
-                    options.OpenApiRoutePattern = "/swagger/{documentName}/swagger.json";
-                });
-            }
+                app.UseSwaggerUI();
+            
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles(); // wwwroot
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(builder.Environment.ContentRootPath, "storage", "portfolio-images")
+                ),
+                RequestPath = "/portfolio-images"
+            });
             app.UseCors("AllowAngular");
             app.UseAuthentication();
             app.UseAuthorization();

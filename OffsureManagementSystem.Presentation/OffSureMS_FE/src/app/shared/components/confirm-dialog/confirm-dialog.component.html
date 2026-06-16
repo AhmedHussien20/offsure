@@ -1,0 +1,39 @@
+<div class="confirm-dialog">
+  <button
+    type="button"
+    class="btn-close confirm-dialog__close"
+    aria-label="Close"
+    (click)="dismiss()">
+  </button>
+
+  <div
+    class="confirm-dialog__icon"
+    [class.confirm-dialog__icon--danger]="variant === 'danger'"
+    [class.confirm-dialog__icon--warning]="variant === 'warning'"
+    [class.confirm-dialog__icon--primary]="variant === 'primary'">
+    <i [class]="iconClass"></i>
+  </div>
+
+  <h5 class="confirm-dialog__title">{{ title }}</h5>
+  <p class="confirm-dialog__message">{{ message }}</p>
+
+  <div class="confirm-dialog__actions" [class.confirm-dialog__actions--choice]="hasAlternateAction">
+    <button type="button" class="btn btn-light" (click)="dismiss()">
+      {{ cancelLabel }}
+    </button>
+    @if (hasAlternateAction) {
+      <button type="button" class="btn btn-outline-primary" (click)="alternateConfirm()">
+        {{ alternateConfirmLabel }}
+      </button>
+    }
+    <button
+      type="button"
+      class="btn"
+      [class.btn-danger]="variant === 'danger'"
+      [class.btn-warning]="variant === 'warning'"
+      [class.btn-primary]="variant === 'primary'"
+      (click)="confirm()">
+      {{ confirmLabel }}
+    </button>
+  </div>
+</div>

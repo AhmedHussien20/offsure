@@ -8,9 +8,12 @@ import {
   ProjectStatus,
 } from 'app/core/models/projects/project.models';
 import { SkillDto } from 'app/core/models/skills/skill.models';
+import { ServiceRequestStatus } from 'app/core/models/services/service.models';
 import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
+import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { SkillsService } from 'app/core/services/skills.service';
+import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -82,8 +85,10 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private projectsService: ProjectsService,
+    private serviceRequestsService: ServiceRequestsService,
     private skillsService: SkillsService,
     private modalService: NgbModal,
+    private confirmDialog: ConfirmDialogService,
     private fb: FormBuilder,
     private toastr: ToastrService,
     private breadcrumbService: BreadcrumbService
@@ -237,17 +242,12 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  markComplete(): void {
+  async markComplete(): Promise<void> {
     if (!this.project || this.isDeliveryLocked) return;
-    this.projectsService.updateStatus(this.project.id, { status: ProjectStatus.Completed }).subscribe({
-      next: res => {
-        this.project = res.data ?? this.project;
-        this.patchDeliveryForm();
-        this.buildSkillSlots();
-        this.toastr.success('Project marked complete.');
-      },
-      error: err => this.toastr.error(err?.error?.message || 'Failed to complete project.'),
-    });
+    const ok = await this.promptAndCompleteProject();
+    if (!ok) {
+      this.patchDeliveryForm();
+    }
   }
 
   onProgressSliderInput(event: Event): void {
@@ -281,10 +281,20 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  saveStatus(): void {
+  async saveStatus(): Promise<void> {
     if (!this.project || this.deliveryForm.get('status')?.invalid) return;
 
     const status = this.deliveryForm.get('status')?.value as ProjectStatus;
+    const current = normalizeProjectStatus(this.project.status);
+
+    if (status === ProjectStatus.Completed && current !== ProjectStatus.Completed) {
+      const ok = await this.promptAndCompleteProject();
+      if (!ok) {
+        this.patchDeliveryForm();
+      }
+      return;
+    }
+
     this.savingStatus = true;
     this.projectsService.updateStatus(this.project.id, { status }).subscribe({
       next: res => {
@@ -298,6 +308,90 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         this.toastr.error(err?.error?.message || 'Failed to update status.');
         this.savingStatus = false;
       },
+    });
+  }
+
+  private async promptAndCompleteProject(): Promise<boolean> {
+    if (!this.project || this.isDeliveryLocked) return false;
+
+    let completeLinkedRequest = false;
+
+    if (this.project.serviceRequestId > 0) {
+      const choice = await this.confirmDialog.confirmChoice({
+        title: 'Complete project',
+        message: `Mark "${this.project.name}" as completed. Do you also want to mark the linked service request as Completed?`,
+        confirmLabel: 'Project & request',
+        alternateConfirmLabel: 'Project only',
+        cancelLabel: 'Cancel',
+        variant: 'primary',
+        icon: 'ti-check',
+      });
+
+      if (!choice) {
+        return false;
+      }
+
+      completeLinkedRequest = choice === 'confirm';
+    } else {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Complete project',
+        message: `Mark "${this.project.name}" as completed?`,
+        confirmLabel: 'Complete',
+        variant: 'primary',
+        icon: 'ti-check',
+      });
+      if (!confirmed) {
+        return false;
+      }
+    }
+
+    return this.finalizeProjectCompleted(completeLinkedRequest);
+  }
+
+  private finalizeProjectCompleted(completeLinkedRequest: boolean): Promise<boolean> {
+    if (!this.project) {
+      return Promise.resolve(false);
+    }
+
+    this.savingStatus = true;
+
+    return new Promise(resolve => {
+      this.projectsService.updateStatus(this.project!.id, { status: ProjectStatus.Completed }).subscribe({
+        next: res => {
+          this.project = res.data ?? this.project;
+          this.patchDeliveryForm();
+          this.buildSkillSlots();
+
+          if (completeLinkedRequest && this.project?.serviceRequestId) {
+            this.serviceRequestsService
+              .updateStatus(this.project.serviceRequestId, { status: ServiceRequestStatus.Completed })
+              .subscribe({
+                next: () => {
+                  this.toastr.success('Project and linked request marked complete.');
+                  this.savingStatus = false;
+                  resolve(true);
+                },
+                error: err => {
+                  this.toastr.warning(
+                    err?.error?.message || 'Project completed, but the linked request could not be updated.'
+                  );
+                  this.savingStatus = false;
+                  resolve(true);
+                },
+              });
+            return;
+          }
+
+          this.toastr.success('Project marked complete.');
+          this.savingStatus = false;
+          resolve(true);
+        },
+        error: err => {
+          this.toastr.error(err?.error?.message || 'Failed to complete project.');
+          this.savingStatus = false;
+          resolve(false);
+        },
+      });
     });
   }
 

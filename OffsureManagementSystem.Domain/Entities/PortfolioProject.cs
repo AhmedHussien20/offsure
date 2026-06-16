@@ -10,7 +10,6 @@ namespace OffshoreManagementSystem.Domain.Entities
         public string ClientName { get; set; }
         public string ThumbnailUrl { get; set; }
         public DateTime CompletedDate { get; set; }
-        public decimal? ProjectValue { get; set; }
         public bool IsPublished { get; set; } = true;
 
         // Navigation Properties

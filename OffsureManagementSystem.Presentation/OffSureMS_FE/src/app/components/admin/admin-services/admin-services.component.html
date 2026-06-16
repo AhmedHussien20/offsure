@@ -73,5 +73,6 @@
 <ng-template #serviceDetail let-item>
   <app-admin-service-detail-panel
     [serviceId]="item.id"
+    [categoryOptions]="categoryOptions"
     (changed)="onServiceChanged()" />
 </ng-template>

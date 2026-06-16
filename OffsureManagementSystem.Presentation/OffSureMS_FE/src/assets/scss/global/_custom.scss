@@ -600,5 +600,17 @@ html[lang="ar"] .ng-select {
   font-size: 14px;
 }
 
+.confirm-dialog-window {
+  .modal-dialog {
+    max-width: 440px;
+  }
+
+  .modal-content {
+    border: 1px solid rgba(var(--primary-rgb, 98, 89, 202), 0.12);
+    border-radius: 12px;
+    box-shadow: 0 1.25rem 2.75rem rgba(15, 23, 42, 0.16);
+    overflow: hidden;
+  }
+}
 
 

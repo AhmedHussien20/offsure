@@ -29,9 +29,11 @@ namespace OffsureManagementSystem.API.Controllers
 
         [HttpGet("{id:int}")]
         [AllowAnonymous]
-        public async Task<ActionResult<ApiResponse<PortfolioDto>>> GetPortfolioById(int id)
+        public async Task<ActionResult<ApiResponse<PortfolioDto>>> GetPortfolioById(
+            int id,
+            [FromQuery] bool includeUnpublished = false)
         {
-            var portfolio = await _portfolioManagementService.GetPortfolioByIdAsync(id);
+            var portfolio = await _portfolioManagementService.GetPortfolioByIdAsync(id, includeUnpublished);
             return Ok(ApiResponse<PortfolioDto>.Ok(portfolio));
         }
 
@@ -92,6 +94,21 @@ namespace OffsureManagementSystem.API.Controllers
         {
             var portfolio = await _portfolioManagementService.LinkToServiceAsync(id, dto.ServiceId);
             return Ok(ApiResponse<PortfolioDto>.Ok(portfolio, "Portfolio project linked to service successfully."));
+        }
+
+        [HttpPatch("{id:int}/images/{imageId:int}/active")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<PortfolioDto>>> SetImageActive(
+            int id,
+            int imageId,
+            UpdatePortfolioImageDto dto)
+        {
+            var portfolio = await _portfolioManagementService.SetImageActiveAsync(id, imageId, dto.IsActive);
+            return Ok(ApiResponse<PortfolioDto>.Ok(
+                portfolio,
+                dto.IsActive
+                    ? "Portfolio image activated for the landing page."
+                    : "Portfolio image hidden from the landing page."));
         }
     }
 }

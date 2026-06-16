@@ -542,9 +542,6 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.Property(e => e.CompletedDate)
                     .IsRequired();
 
-                entity.Property(e => e.ProjectValue)
-                    .HasPrecision(18, 2);
-
                 entity.Property(e => e.IsPublished)
                     .HasDefaultValue(true);
 

@@ -88,7 +88,7 @@
             <ul class="list-group list-group-flush admin-dashboard-list">
               @for (request of pendingRequests; track request.id) {
                 <li class="list-group-item">
-                  <a [routerLink]="['/admin/requests']" class="admin-dashboard-list-link">
+                  <a [routerLink]="['/admin/requests']" [queryParams]="{ id: request.id }" class="admin-dashboard-list-link">
                     <div class="flex-grow-1 min-w-0">
                       <p class="mb-0 fw-semibold text-truncate">{{ request.clientName }}</p>
                       <p class="mb-0 fs-12 text-muted text-truncate">
@@ -181,7 +181,7 @@
             <ul class="list-group list-group-flush admin-dashboard-list">
               @for (member of teamMembers; track member.id) {
                 <li class="list-group-item">
-                  <a [routerLink]="['/admin/team']" class="admin-dashboard-list-link">
+                  <a [routerLink]="['/admin/team']" [queryParams]="{ id: member.id }" class="admin-dashboard-list-link">
                     <div class="d-flex align-items-center gap-3 min-w-0">
                       <span
                         class="avatar avatar-sm rounded-circle fw-semibold {{ memberAvatarClass($index) }}">

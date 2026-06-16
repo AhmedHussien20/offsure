@@ -1,5 +1,7 @@
 import { Component, Input } from '@angular/core';
 
+export type FeatureCardVariant = 'category' | 'service';
+
 @Component({
   selector: 'spk-feature-cards',
   imports: [],
@@ -11,4 +13,5 @@ export class SpkFeatureCardsComponent {
   @Input() cardClass: any; // Icon class (e.g., "fe fe-package")
   @Input() title!: string; // Title of the card (e.g., "Unique Design")
   @Input() description!: string; // Description text for the card
+  @Input() cardVariant: FeatureCardVariant = 'category';
 }

@@ -16,15 +16,20 @@
           [class.bg-secondary-transparent]="!skill.isActive">
           {{ skill.isActive ? 'Active' : 'Inactive' }}
         </span>
-        <button
-          type="button"
-          class="btn btn-sm no-expand"
-          [class.btn-outline-success]="!skill.isActive"
-          [class.btn-outline-secondary]="skill.isActive"
-          [disabled]="updating"
-          (click)="toggleActive()">
-          {{ updating ? 'Updating…' : (skill.isActive ? 'Deactivate' : 'Activate') }}
-        </button>
+        @if (!editing) {
+          <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
+            Edit
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm no-expand"
+            [class.btn-outline-success]="!skill.isActive"
+            [class.btn-outline-secondary]="skill.isActive"
+            [disabled]="updating"
+            (click)="toggleActive()">
+            {{ updating ? 'Updating…' : (skill.isActive ? 'Deactivate' : 'Activate') }}
+          </button>
+        }
       </div>
     </div>
 
@@ -32,28 +37,40 @@
       <div class="admin-detail-main">
         <div class="admin-detail-card">
           <h6 class="admin-detail-card__title">Skill details</h6>
-          <div class="admin-detail-info-row">
-            <div class="admin-detail-info-item admin-detail-info-item--full">
-              <label>Description</label>
-              <span>{{ display(skill.description) }}</span>
+          @if (editing) {
+            <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+            <div class="admin-detail-form-actions">
+              <button type="button" class="btn btn-sm btn-primary no-expand" [disabled]="saving" (click)="saveEdit()">
+                {{ saving ? 'Saving…' : 'Save changes' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-light no-expand" [disabled]="saving" (click)="cancelEdit()">
+                Cancel
+              </button>
             </div>
-            <div class="admin-detail-info-item">
-              <label>Skill name</label>
-              <span>{{ display(skill.name) }}</span>
+          } @else {
+            <div class="admin-detail-info-row">
+              <div class="admin-detail-info-item admin-detail-info-item--full">
+                <label>Description</label>
+                <span>{{ display(skill.description) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Skill name</label>
+                <span>{{ display(skill.name) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Category</label>
+                <span>{{ display(skill.skillCategoryName) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Category ID</label>
+                <span>{{ display(skill.skillCategoryId) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Skill ID</label>
+                <span>{{ skill.id }}</span>
+              </div>
             </div>
-            <div class="admin-detail-info-item">
-              <label>Category</label>
-              <span>{{ display(skill.skillCategoryName) }}</span>
-            </div>
-            <div class="admin-detail-info-item">
-              <label>Category ID</label>
-              <span>{{ display(skill.skillCategoryId) }}</span>
-            </div>
-            <div class="admin-detail-info-item">
-              <label>Skill ID</label>
-              <span>{{ skill.id }}</span>
-            </div>
-          </div>
+          }
         </div>
       </div>
 

@@ -2,9 +2,12 @@ import { TableColumn } from 'app/shared/components/generic-table/generic-table.c
 
 export const SERVICE_REQUEST_STATUS_BADGES: Record<string, { text: string; class: string }> = {
   Pending: { text: 'Pending', class: 'bg-warning-transparent' },
-  InProgress: { text: 'In Progress', class: 'bg-primary-transparent' },
+  PrimaryAccepted: { text: 'Accepted', class: 'bg-primary-transparent' },
+  AcceptedWithProject: { text: 'With project', class: 'bg-info-transparent' },
   Completed: { text: 'Completed', class: 'bg-success-transparent' },
   Cancelled: { text: 'Cancelled', class: 'bg-secondary-transparent' },
+  /** Legacy rows before migration */
+  InProgress: { text: 'Accepted', class: 'bg-primary-transparent' },
 };
 
 export const PROJECT_STATUS_BADGES: Record<string, { text: string; class: string }> = {

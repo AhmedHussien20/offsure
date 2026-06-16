@@ -1,6 +1,7 @@
 export enum ServiceRequestStatus {
   Pending = 'Pending',
-  InProgress = 'InProgress',
+  PrimaryAccepted = 'PrimaryAccepted',
+  AcceptedWithProject = 'AcceptedWithProject',
   Completed = 'Completed',
   Cancelled = 'Cancelled',
 }

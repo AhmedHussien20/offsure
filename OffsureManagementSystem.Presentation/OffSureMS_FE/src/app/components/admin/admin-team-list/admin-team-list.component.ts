@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
@@ -10,6 +11,8 @@ import {
   AVAILABILITY_FILTER_OPTIONS,
   LIST_FILTER_LABELS,
 } from 'app/core/constants/list-filter.constants';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_TEAM_COLUMNS } from '../admin.constants';
 import { AdminTeamCreateComponent } from './admin-team-create.component';
@@ -21,9 +24,10 @@ import { AdminTeamMemberPanelComponent } from './admin-team-member-panel.compone
   imports: [CommonModule, SharedModule, GenericTableComponent, AdminTeamMemberPanelComponent],
   templateUrl: './admin-team-list.component.html',
 })
-export class AdminTeamListComponent implements OnInit {
+export class AdminTeamListComponent implements OnInit, OnDestroy {
   columns = ADMIN_TEAM_COLUMNS;
   data: Array<TeamMemberDto & { availabilityLabel?: string }> = [];
+  expandedRowId: number | null = null;
   totalItems = 0;
   totalPages = 0;
   page = 1;
@@ -40,13 +44,25 @@ export class AdminTeamListComponent implements OnInit {
   labels: Record<string, string> = { ...LIST_FILTER_LABELS };
   dropdownOptions = { isAvailable: AVAILABILITY_FILTER_OPTIONS };
 
+  private readonly destroy$ = new Subject<void>();
+
   constructor(
     private teamMembersService: TeamMembersService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadTeam();
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const id = Number(params.get('id'));
+      this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;
+      this.loadTeam();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onSearch = (): void => {
@@ -95,14 +111,36 @@ export class AdminTeamListComponent implements OnInit {
       .subscribe({
         next: res => {
           const paged = res.data;
-          this.data = (paged?.data ?? []).map(m => ({
-            ...m,
-            fullName: teamMemberDisplayName(m),
-            availabilityLabel: m.isAvailable ? 'Available' : 'Unavailable',
-          }));
+          this.data = (paged?.data ?? []).map(m => this.mapTeamRow(m));
           this.totalItems = paged?.totalCount ?? 0;
           this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.entries));
+          this.ensureExpandedMemberVisible();
         },
       });
+  }
+
+  private mapTeamRow(member: TeamMemberDto): TeamMemberDto & { availabilityLabel?: string } {
+    return {
+      ...member,
+      fullName: teamMemberDisplayName(member),
+      availabilityLabel: member.isAvailable ? 'Available' : 'Unavailable',
+    };
+  }
+
+  private ensureExpandedMemberVisible(): void {
+    if (!this.expandedRowId || this.data.some(item => item.id === this.expandedRowId)) {
+      return;
+    }
+
+    this.teamMembersService.getById(this.expandedRowId).subscribe({
+      next: res => {
+        const member = res.data;
+        if (!member) {
+          return;
+        }
+        const row = this.mapTeamRow(member);
+        this.data = [row, ...this.data.filter(item => item.id !== row.id)];
+      },
+    });
   }
 }

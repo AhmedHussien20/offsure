@@ -202,9 +202,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ClientDto> DeactivateClientAsync(int id)
         {
-            var client = await _clientRepo.GetByIDAsync(id);
+            var client = await _clientRepo
+                .Query()
+                .Include(c => c.ServiceRequests)
+                    .ThenInclude(r => r.Project)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
             if (client is null)
                 throw new AppException("Resource not found.", 404);
+
+            if (!client.IsActive)
+                throw new AppException("Client is already inactive.", 400);
 
             client.IsActive = false;
             client.UpdatedAt = DateTime.UtcNow;

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProjectStatus } from 'app/core/models/projects/project.models';
 import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
@@ -12,8 +12,12 @@ import {
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
+import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { SERVICE_REQUEST_STATUS_FILTER_OPTIONS } from 'app/core/constants/list-filter.constants';
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { ADMIN_REQUEST_COLUMNS, SERVICE_REQUEST_STATUS_BADGES } from '../admin.constants';
 import { AdminConvertProjectComponent } from './admin-convert-project.component';
@@ -27,11 +31,12 @@ type StepState = 'done' | 'active' | 'pending';
   templateUrl: './admin-requests-list.component.html',
   styleUrl: './admin-requests-list.component.scss',
 })
-export class AdminRequestsListComponent implements OnInit {
+export class AdminRequestsListComponent implements OnInit, OnDestroy {
   @ViewChild('requestDetail', { static: true }) requestDetail!: TemplateRef<unknown>;
 
   columns = ADMIN_REQUEST_COLUMNS;
   data: ServiceRequestDto[] = [];
+  expandedRowId: number | null = null;
   totalItems = 0;
   totalPages = 0;
   page = 1;
@@ -47,22 +52,30 @@ export class AdminRequestsListComponent implements OnInit {
 
   labels: Record<string, string> = { status: 'Status', searchKey: 'Search' };
   dropdownOptions = {
-    status: [
-      { id: 'Pending', name: 'Pending' },
-      { id: 'InProgress', name: 'In Progress' },
-      { id: 'Completed', name: 'Completed' },
-      { id: 'Cancelled', name: 'Cancelled' },
-    ],
+    status: SERVICE_REQUEST_STATUS_FILTER_OPTIONS,
   };
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private serviceRequestsService: ServiceRequestsService,
     private modalService: NgbModal,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private route: ActivatedRoute,
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
-    this.loadRequests();
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const id = Number(params.get('id'));
+      this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;
+      this.loadRequests();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onSearch = (): void => {
@@ -97,7 +110,7 @@ export class AdminRequestsListComponent implements OnInit {
   canConvert(item: ServiceRequestDto): boolean {
     return (
       !this.hasLinkedProject(item) &&
-      normalizeServiceRequestStatus(item.status) === ServiceRequestStatus.InProgress
+      normalizeServiceRequestStatus(item.status) === ServiceRequestStatus.PrimaryAccepted
     );
   }
 
@@ -115,24 +128,18 @@ export class AdminRequestsListComponent implements OnInit {
 
   requestSteps(item: ServiceRequestDto): { key: string; label: string; state: StepState }[] {
     const status = normalizeServiceRequestStatus(item.status);
-    const cancelled = status === ServiceRequestStatus.Cancelled;
-    const completed = status === ServiceRequestStatus.Completed;
-    const inProgress = status === ServiceRequestStatus.InProgress || completed || this.hasLinkedProject(item);
-    const pendingReview =
-      status === ServiceRequestStatus.Pending || inProgress || completed;
+    let activeIndex = 0;
+    if (status === ServiceRequestStatus.Cancelled) {
+      activeIndex = 1;
+    } else if (status === ServiceRequestStatus.Completed) {
+      activeIndex = 3;
+    } else if (status === ServiceRequestStatus.AcceptedWithProject || this.hasLinkedProject(item)) {
+      activeIndex = 2;
+    } else if (status === ServiceRequestStatus.PrimaryAccepted) {
+      activeIndex = 1;
+    }
 
     const step = (key: string, label: string, index: number): { key: string; label: string; state: StepState } => {
-      let activeIndex = 0;
-      if (cancelled) {
-        activeIndex = 1;
-      } else if (completed) {
-        activeIndex = 3;
-      } else if (inProgress) {
-        activeIndex = 2;
-      } else if (pendingReview) {
-        activeIndex = 1;
-      }
-
       let state: StepState = 'pending';
       if (index < activeIndex) state = 'done';
       else if (index === activeIndex) state = 'active';
@@ -141,8 +148,8 @@ export class AdminRequestsListComponent implements OnInit {
 
     return [
       step('submitted', 'Submitted', 0),
-      step('review', cancelled ? 'Cancelled' : 'Pending review', 1),
-      step('progress', 'In progress', 2),
+      step('accepted', status === ServiceRequestStatus.Cancelled ? 'Cancelled' : 'Accepted', 1),
+      step('project', 'With project', 2),
       step('done', 'Completed', 3),
     ];
   }
@@ -152,10 +159,14 @@ export class AdminRequestsListComponent implements OnInit {
       { text: `Submitted by ${item.clientName}`, date: item.requestedDate },
     ];
     const status = normalizeServiceRequestStatus(item.status);
-    if (status === ServiceRequestStatus.InProgress || this.hasLinkedProject(item)) {
+    if (
+      status === ServiceRequestStatus.PrimaryAccepted ||
+      status === ServiceRequestStatus.AcceptedWithProject ||
+      this.hasLinkedProject(item)
+    ) {
       entries.push({ text: 'Accepted by admin', date: item.requestedDate });
     }
-    if (this.hasLinkedProject(item)) {
+    if (status === ServiceRequestStatus.AcceptedWithProject || this.hasLinkedProject(item)) {
       entries.push({ text: 'Converted to project' });
     }
     if (status === ServiceRequestStatus.Completed) {
@@ -167,21 +178,41 @@ export class AdminRequestsListComponent implements OnInit {
     return entries;
   }
 
-  acceptRequest(item: ServiceRequestDto): void {
-    this.serviceRequestsService.updateStatus(item.id, { status: ServiceRequestStatus.InProgress }).subscribe({
+  async acceptRequest(item: ServiceRequestDto): Promise<void> {
+    const label = item.title?.trim() || item.serviceName?.trim() || 'this request';
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Accept request',
+      message: `Accept "${label}"? The client will see it as accepted.`,
+      confirmLabel: 'Accept',
+      variant: 'primary',
+      icon: 'ti-check',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.serviceRequestsService.updateStatus(item.id, { status: ServiceRequestStatus.PrimaryAccepted }).subscribe({
       next: () => {
         this.toastr.success('Request accepted.');
-        item.status = ServiceRequestStatus.InProgress;
+        item.status = ServiceRequestStatus.PrimaryAccepted;
         this.loadRequests();
       },
       error: err => this.toastr.error(err?.error?.message || 'Failed to accept request.'),
     });
   }
 
-  rejectRequest(item: ServiceRequestDto): void {
-    if (!confirm('Reject this request? The client will see it as cancelled.')) {
+  async rejectRequest(item: ServiceRequestDto): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Reject request',
+      message: 'Reject this request? The client will see it as cancelled.',
+      confirmLabel: 'Reject',
+      variant: 'warning',
+      icon: 'ti-ban',
+    });
+    if (!confirmed) {
       return;
     }
+
     this.serviceRequestsService.updateStatus(item.id, { status: ServiceRequestStatus.Cancelled }).subscribe({
       next: () => {
         this.toastr.success('Request rejected.');
@@ -197,7 +228,7 @@ export class AdminRequestsListComponent implements OnInit {
       return;
     }
 
-    if (normalizeServiceRequestStatus(item.status) !== ServiceRequestStatus.InProgress) {
+    if (normalizeServiceRequestStatus(item.status) !== ServiceRequestStatus.PrimaryAccepted) {
       this.toastr.warning('Accept the request before converting to a project.');
       return;
     }
@@ -225,7 +256,24 @@ export class AdminRequestsListComponent implements OnInit {
           this.data = paged?.data ?? [];
           this.totalItems = paged?.totalCount ?? 0;
           this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.entries));
+          this.ensureExpandedRequestVisible();
         },
       });
+  }
+
+  private ensureExpandedRequestVisible(): void {
+    if (!this.expandedRowId || this.data.some(item => item.id === this.expandedRowId)) {
+      return;
+    }
+
+    this.serviceRequestsService.getById(this.expandedRowId).subscribe({
+      next: res => {
+        const item = res.data;
+        if (!item) {
+          return;
+        }
+        this.data = [item, ...this.data.filter(row => row.id !== item.id)];
+      },
+    });
   }
 }

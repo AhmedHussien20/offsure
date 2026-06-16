@@ -10,7 +10,8 @@ export const PROJECT_STATUS_FILTER_OPTIONS = [
 
 export const SERVICE_REQUEST_STATUS_FILTER_OPTIONS = [
   { id: 'Pending', name: 'Pending' },
-  { id: 'InProgress', name: 'In Progress' },
+  { id: 'PrimaryAccepted', name: 'Accepted' },
+  { id: 'AcceptedWithProject', name: 'With project' },
   { id: 'Completed', name: 'Completed' },
   { id: 'Cancelled', name: 'Cancelled' },
 ];

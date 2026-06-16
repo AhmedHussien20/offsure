@@ -19,7 +19,6 @@ namespace OffsureManagementSystem.Application.DTOs.PortfolioManagementDTOs
         public string ClientName { get; set; } = string.Empty;
         public string? ThumbnailUrl { get; set; }
         public DateTime CompletedDate { get; set; }
-        public decimal? ProjectValue { get; set; }
         public bool IsPublished { get; set; } = true;
         public List<AddPortfolioImageDto> Images { get; set; } = new();
     }
@@ -31,7 +30,6 @@ namespace OffsureManagementSystem.Application.DTOs.PortfolioManagementDTOs
         public string ClientName { get; set; } = string.Empty;
         public string? ThumbnailUrl { get; set; }
         public DateTime CompletedDate { get; set; }
-        public decimal? ProjectValue { get; set; }
         public bool IsPublished { get; set; } = true;
     }
 
@@ -58,7 +56,6 @@ namespace OffsureManagementSystem.Application.DTOs.PortfolioManagementDTOs
         public string ClientName { get; set; } = string.Empty;
         public string ThumbnailUrl { get; set; } = string.Empty;
         public DateTime CompletedDate { get; set; }
-        public decimal? ProjectValue { get; set; }
         public bool IsPublished { get; set; }
         public List<PortfolioImageDto> Images { get; set; } = new();
     }
@@ -69,5 +66,11 @@ namespace OffsureManagementSystem.Application.DTOs.PortfolioManagementDTOs
         public string ImageUrl { get; set; } = string.Empty;
         public string ImageAltText { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    public class UpdatePortfolioImageDto
+    {
+        public bool IsActive { get; set; }
     }
 }

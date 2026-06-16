@@ -1,40 +1,154 @@
-<div class="team-member-panel no-expand" (click)="$event.stopPropagation()">
+<div class="admin-detail-panel no-expand" (click)="$event.stopPropagation()">
   @if (loading) {
-    <div class="team-member-panel__loading text-muted">Loading member details…</div>
+    <div class="admin-detail-panel__loading text-muted">Loading member details…</div>
   } @else if (loadError) {
     <div class="alert alert-danger mb-0">{{ loadError }}</div>
   } @else if (member) {
-    <div class="team-member-panel__header">
+    <div class="admin-detail-panel__header">
       <div>
-        <h5 class="team-member-panel__title mb-0">{{ member.firstName }} {{ member.lastName }}</h5>
-        <p class="team-member-panel__meta mb-0">{{ member.email }}</p>
+        <h5 class="admin-detail-panel__title mb-0">{{ member.firstName }} {{ member.lastName }}</h5>
+        <p class="admin-detail-panel__meta mb-0">{{ member.email }}</p>
       </div>
-      <div class="d-flex flex-wrap gap-2">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-danger no-expand"
-          [disabled]="deleting || saving"
-          (click)="deleteMember()">
-          {{ deleting ? 'Deleting…' : 'Delete member' }}
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-primary no-expand"
-          [disabled]="saving || deleting"
-          (click)="save()">
-          {{ saving ? 'Saving…' : 'Save changes' }}
-        </button>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="member.isAvailable"
+          [class.bg-secondary-transparent]="!member.isAvailable">
+          {{ member.isAvailable ? 'Available' : 'Unavailable' }}
+        </span>
+        @if (!editing) {
+          <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
+            Edit
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger no-expand"
+            [disabled]="deleting"
+            (click)="deleteMember()">
+            {{ deleting ? 'Deleting…' : 'Delete member' }}
+          </button>
+        }
       </div>
     </div>
 
-    <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+    <div class="admin-detail-grid">
+      <div class="admin-detail-main">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Member details</h6>
+          @if (editing) {
+            <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+            <div class="admin-detail-form-actions">
+              <button type="button" class="btn btn-sm btn-primary no-expand" [disabled]="saving" (click)="saveEdit()">
+                {{ saving ? 'Saving…' : 'Save changes' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-light no-expand" [disabled]="saving" (click)="cancelEdit()">
+                Cancel
+              </button>
+            </div>
+          } @else {
+            <div class="admin-detail-info-row">
+              <div class="admin-detail-info-item">
+                <label>First name</label>
+                <span>{{ display(member.firstName) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Last name</label>
+                <span>{{ display(member.lastName) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Email</label>
+                <span>{{ display(member.email) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Job title</label>
+                <span>{{ display(member.title) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Phone</label>
+                <span>{{ display(member.phoneNumber) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Years of experience</label>
+                <span>{{ display(member.yearsOfExperience) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Hourly salary</label>
+                <span>
+                  @if (member.hourlySalary != null) {
+                    ${{ member.hourlySalary }}
+                  } @else {
+                    —
+                  }
+                </span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Availability</label>
+                <span>{{ member.isAvailable ? 'Available' : 'Unavailable' }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Leader</label>
+                <span>{{ display(member.leaderName) }}</span>
+              </div>
+            </div>
+          }
+        </div>
 
-    <hr class="my-3" />
-    <h6 class="mb-1">Skills</h6>
-    <p class="text-muted small mb-2">Update skills and proficiency for this member.</p>
-    <app-team-member-skills-editor
-      mode="draft"
-      [initialSkills]="initialSkills"
-      (assignmentsChange)="onSkillsChange($event)" />
+        <div class="admin-detail-card mt-3">
+          <h6 class="admin-detail-card__title">Skills</h6>
+          @if (editing) {
+            <p class="admin-detail-hint mb-2">Update skills and proficiency for this member.</p>
+            <app-team-member-skills-editor
+              mode="draft"
+              [initialSkills]="initialSkills"
+              (assignmentsChange)="onSkillsChange($event)" />
+          } @else if (member.skillAssignments?.length) {
+            <ul class="team-member-skill-list mb-0">
+              @for (skill of member.skillAssignments; track skill.id) {
+                <li class="team-member-skill-list__item">
+                  <div>
+                    <strong>{{ skill.skillName }}</strong>
+                    <span class="text-muted small d-block">{{ skill.skillCategoryName }}</span>
+                  </div>
+                  <div class="team-member-skill-list__meta text-end">
+                    <span class="badge bg-primary-transparent">{{ proficiencyLabel(skill.proficiencyLevel) }}</span>
+                    <span class="text-muted small d-block">{{ skill.yearsOfExperience }} yrs</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="admin-detail-hint mb-0">No skills assigned yet.</p>
+          }
+        </div>
+      </div>
+
+      <div class="admin-detail-sidebar">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Summary</h6>
+          <ul class="admin-detail-stat-list">
+            <li>
+              <span class="admin-detail-stat-label">Member ID</span>
+              <strong>{{ member.id }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">User ID</span>
+              <strong>{{ member.userId }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Skills</span>
+              <strong>{{ member.skillAssignments?.length ?? 0 }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Status</span>
+              <strong>{{ member.isAvailable ? 'Available' : 'Unavailable' }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Leader</span>
+              <strong>{{ display(member.leaderName) }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
   }
 </div>
