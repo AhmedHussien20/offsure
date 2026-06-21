@@ -1,0 +1,125 @@
+:host {
+  --rmdb-radius: 0.625rem;
+  --rmdb-border: rgba(0, 0, 0, 0.08);
+  --rmdb-bg: var(--custom-white, #fff);
+  --rmdb-head-bg: #f8f9fc;
+  --rmdb-text: var(--default-text-color, #1d212f);
+  --rmdb-muted: #6c757d;
+  --rmdb-row-hover: rgba(var(--primary-rgb, 92, 103, 247), 0.04);
+}
+
+:host-context([data-theme-mode='dark']) {
+  --rmdb-border: rgba(255, 255, 255, 0.12);
+  --rmdb-bg: rgb(var(--body-bg-rgb));
+  --rmdb-head-bg: rgba(255, 255, 255, 0.04);
+  --rmdb-text: rgba(255, 255, 255, 0.92);
+  --rmdb-muted: rgba(255, 255, 255, 0.55);
+  --rmdb-row-hover: rgba(255, 255, 255, 0.04);
+}
+
+.rm-dashboard-tables {
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-chart-card {
+  margin-bottom: 1.5rem;
+
+  .card-body {
+    padding: 1rem 1.15rem 0.5rem;
+  }
+}
+
+.rm-dashboard-block {
+  display: flex;
+  flex-direction: column;
+  background: var(--rmdb-bg);
+  border: 1px solid var(--rmdb-border);
+  border-radius: var(--rmdb-radius);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 30px 0 rgba(var(--primary-rgb, 92, 103, 247), 0.05);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--rmdb-border);
+    background: var(--rmdb-bg);
+  }
+
+  &__title {
+    margin: 0 0 0.2rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--rmdb-text);
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--rmdb-muted);
+  }
+
+  &__table {
+    flex: 1 1 auto;
+
+    .table {
+      margin-bottom: 0;
+      color: var(--rmdb-text);
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    thead th {
+      background: var(--rmdb-head-bg) !important;
+      color: var(--rmdb-muted) !important;
+      border-bottom: 1px solid var(--rmdb-border) !important;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.7rem 1.25rem;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 0.75rem 1.25rem;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--rmdb-border);
+      font-size: 0.875rem;
+    }
+
+    tbody tr {
+      background: var(--rmdb-bg);
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background: var(--rmdb-row-hover);
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+  }
+
+  &__link {
+    color: var(--primary-color, #5c67f7);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

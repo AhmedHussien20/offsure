@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
-import { UpsertTeamMemberSkillDto } from 'app/core/models/team-members/team-member.models';
+import { UpsertTeamMemberSkillDto, ResourceManagerUserDto } from 'app/core/models/team-members/team-member.models';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
@@ -36,6 +36,7 @@ import { ToastrService } from 'ngx-toastr';
 export class AdminTeamCreateComponent {
   saving = false;
   skillAssignments: UpsertTeamMemberSkillDto[] = [];
+  resourceManagers: ResourceManagerUserDto[] = [];
   form!: FormGroup;
   formConfig: FormFieldConfig[] = [
     { type: 'input', inputType: 'text', name: 'firstName', label: 'First Name', validations: { required: true } },
@@ -51,6 +52,14 @@ export class AdminTeamCreateComponent {
       name: 'hourlySalary',
       label: 'Hourly salary ($)',
       placeholder: 'Default rate per hour',
+    },
+    {
+      type: 'select',
+      name: 'resourceManagerId',
+      label: 'Resource manager',
+      selectType: 'simple',
+      options: [],
+      validations: { required: true },
     },
   ];
 
@@ -70,6 +79,23 @@ export class AdminTeamCreateComponent {
       yearsOfExperience: [null],
       hourlySalary: [null],
       isAvailable: [true],
+      resourceManagerId: [null, Validators.required],
+    });
+    this.loadResourceManagers();
+  }
+
+  loadResourceManagers(): void {
+    this.teamMembersService.getResourceManagers({ pageIndex: 1, pageSize: 100 }).subscribe({
+      next: res => {
+        this.resourceManagers = res.data?.data ?? [];
+        const rmField = this.formConfig.find(f => f.name === 'resourceManagerId');
+        if (rmField) {
+          rmField.options = this.resourceManagers.map(rm => ({
+            id: rm.id,
+            name: rm.fullName || `${rm.firstName} ${rm.lastName}`.trim(),
+          }));
+        }
+      },
     });
   }
 
@@ -95,6 +121,7 @@ export class AdminTeamCreateComponent {
         phoneNumber: raw.phoneNumber?.trim(),
         yearsOfExperience: raw.yearsOfExperience != null ? Number(raw.yearsOfExperience) : undefined,
         hourlySalary: raw.hourlySalary != null && raw.hourlySalary !== '' ? Number(raw.hourlySalary) : undefined,
+        resourceManagerId: Number(raw.resourceManagerId),
         isAvailable: true,
         skillAssignments: this.skillAssignments.length ? this.skillAssignments : undefined,
       })

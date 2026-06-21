@@ -7,9 +7,15 @@ export enum ProficiencyLevel {
 
 export interface TeamMemberRequest {
   userId?: number;
-  leaderId?: number;
+  resourceManagerId?: number;
   isAvailable?: boolean;
   skillId?: number;
+  searchKey?: string;
+  pageIndex?: number;
+  pageSize?: number;
+}
+
+export interface ResourceManagerRequest {
   searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
@@ -33,7 +39,7 @@ export interface CreateTeamMemberDto {
   title?: string;
   yearsOfExperience?: number;
   phoneNumber?: string;
-  leaderId?: number;
+  resourceManagerId?: number;
   isAvailable?: boolean;
   hourlySalary?: number;
   skillAssignments?: UpsertTeamMemberSkillDto[];
@@ -46,7 +52,7 @@ export interface UpdateTeamMemberDto {
   title?: string;
   yearsOfExperience?: number;
   phoneNumber?: string;
-  leaderId?: number;
+  resourceManagerId?: number;
   isAvailable?: boolean;
   hourlySalary?: number;
   skillAssignments?: UpsertTeamMemberSkillDto[];
@@ -60,6 +66,25 @@ export interface UpdateTeamMemberProfileDto {
 
 export interface UpdateTeamMemberAvailabilityDto {
   isAvailable: boolean;
+}
+
+export interface ResetTeamMemberPasswordDto {
+  newPassword: string;
+}
+
+export interface CreateResourceManagerDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface ResourceManagerUserDto {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  fullName: string;
 }
 
 export interface TeamMemberSkillDto {
@@ -86,8 +111,8 @@ export interface TeamMemberDto {
   yearsOfExperience: number;
   cv: string | null;
   phoneNumber: string;
-  leaderId: number | null;
-  leaderName: string | null;
+  resourceManagerId: number | null;
+  resourceManagerName: string | null;
   isAvailable: boolean;
   hourlySalary: number | null;
   skillAssignments: TeamMemberSkillDto[];

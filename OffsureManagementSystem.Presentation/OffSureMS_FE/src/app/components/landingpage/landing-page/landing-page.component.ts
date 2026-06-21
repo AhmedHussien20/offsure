@@ -459,6 +459,9 @@ export class LandingPageComponent {
     if (this.authService.isTeamMember()) {
       return '/team/dashboard';
     }
+    if (this.authService.isResourceManager()) {
+      return '/resource-manager/dashboard';
+    }
     return '/';
   }
 

@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { CreateProjectDto } from 'app/core/models/projects/project.models';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
@@ -19,8 +18,10 @@ import {
   PaginatedSelectLoader,
 } from 'app/shared/components/paginated-select/paginated-select.component';
 import { ProjectBudgetFieldsComponent } from 'app/shared/components/project-budget-fields/project-budget-fields.component';
+import { ProjectMilestoneCreateFieldsComponent } from 'app/shared/components/project-milestone-create-fields/project-milestone-create-fields.component';
 import { ToastrService } from 'ngx-toastr';
 import { map, Observable, of, Subject, takeUntil } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-admin-project-create',
@@ -31,6 +32,7 @@ import { map, Observable, of, Subject, takeUntil } from 'rxjs';
     GenericFormComponent,
     PaginatedSelectComponent,
     ProjectBudgetFieldsComponent,
+    ProjectMilestoneCreateFieldsComponent,
   ],
   templateUrl: './admin-project-create.component.html',
   styleUrl: './admin-project-create.component.scss',
@@ -123,6 +125,8 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
       totalBudget: [null],
       hourlyRate: [null],
       expectedHours: [null],
+      usesMilestones: [false],
+      milestoneCount: [null],
     });
 
     this.formConfig = [
@@ -193,6 +197,7 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     }
 
     const raw = this.form.getRawValue();
+    const isFixedBudget = raw.customBudgetType === 'total';
     const dto: CreateProjectDto = {
       serviceRequestId: 0,
       clientId: Number(raw.clientId),
@@ -202,6 +207,11 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
       startDate: raw.startDate || undefined,
       targetEndDate: raw.targetEndDate || undefined,
       ...buildProjectBudgetFields(this.form),
+      usesMilestones: isFixedBudget && !!raw.usesMilestones,
+      milestoneCount:
+        isFixedBudget && raw.usesMilestones && raw.milestoneCount != null
+          ? Number(raw.milestoneCount)
+          : undefined,
     };
 
     this.creating = true;
@@ -211,7 +221,9 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
         const projectId = res.data?.id;
         this.activeModal.close(true);
         if (projectId) {
-          this.router.navigate(['/admin/projects', projectId]);
+          this.router.navigate(['/admin/projects', projectId], {
+            queryParams: dto.usesMilestones ? { tab: 'milestones' } : undefined,
+          });
         }
       },
       error: err => {

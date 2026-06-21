@@ -9,7 +9,7 @@ namespace OffsureManagementSystem.API.Controllers
 {
     [Route("api/skill-categories")]
     [ApiController]
-    [Authorize(Roles = "Administrator")]
+    [Authorize(Roles = "Administrator,ResourceManager")]
     public class SkillCategoriesController : BaseController
     {
         private readonly ISkillManagementService _skillManagementService;

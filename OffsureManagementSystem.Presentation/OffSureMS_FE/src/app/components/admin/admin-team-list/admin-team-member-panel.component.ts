@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PROFICIENCY_LABELS } from 'app/components/team/team.constants';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
 import {
+  ResourceManagerUserDto,
   TeamMemberDto,
   TeamMemberSkillDto,
   UpsertTeamMemberSkillDto,
@@ -11,6 +13,7 @@ import {
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
+import { TeamMemberResetPasswordModalComponent } from 'app/shared/components/team-member-reset-password-modal/team-member-reset-password-modal.component';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
@@ -36,6 +39,7 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
   member: TeamMemberDto | null = null;
   initialSkills: TeamMemberSkillDto[] = [];
   skillAssignments: UpsertTeamMemberSkillDto[] = [];
+  resourceManagers: ResourceManagerUserDto[] = [];
 
   form!: FormGroup;
   readonly formConfig: FormFieldConfig[] = [
@@ -53,6 +57,14 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
       placeholder: 'Default rate per hour',
     },
     { type: 'checkbox', name: 'isAvailable', label: 'Available for assignment' },
+    {
+      type: 'select',
+      name: 'resourceManagerId',
+      label: 'Resource manager',
+      selectType: 'simple',
+      options: [],
+      validations: { required: true },
+    },
   ];
 
   private readonly destroy$ = new Subject<void>();
@@ -61,7 +73,8 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
     private fb: FormBuilder,
     private teamMembersService: TeamMembersService,
     private toastr: ToastrService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private modalService: NgbModal
   ) {
     this.form = this.fb.group({
       firstName: ['', Validators.required],
@@ -72,7 +85,9 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
       yearsOfExperience: [null],
       hourlySalary: [null],
       isAvailable: [true],
+      resourceManagerId: [null, Validators.required],
     });
+    this.loadResourceManagers();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -121,6 +136,20 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
     this.skillAssignments = skills;
   }
 
+  openResetPasswordModal(): void {
+    if (!this.member) {
+      return;
+    }
+
+    const modalRef = this.modalService.open(TeamMemberResetPasswordModalComponent, {
+      centered: true,
+      size: 'lg',
+    });
+    modalRef.componentInstance.memberId = this.member.id;
+    modalRef.componentInstance.memberName = `${this.member.firstName} ${this.member.lastName}`.trim();
+    modalRef.componentInstance.useResourceManagerPortal = false;
+  }
+
   saveEdit(): void {
     if (!this.member || this.form.invalid) {
       this.form.markAllAsTouched();
@@ -143,6 +172,7 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
         hourlySalary:
           raw.hourlySalary != null && raw.hourlySalary !== '' ? Number(raw.hourlySalary) : undefined,
         isAvailable: !!raw.isAvailable,
+        resourceManagerId: Number(raw.resourceManagerId),
         skillAssignments: this.skillAssignments.length ? this.skillAssignments : [],
       })
       .subscribe({
@@ -231,6 +261,22 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
       yearsOfExperience: member.yearsOfExperience ?? null,
       hourlySalary: member.hourlySalary ?? null,
       isAvailable: member.isAvailable ?? true,
+      resourceManagerId: member.resourceManagerId ?? null,
+    });
+  }
+
+  private loadResourceManagers(): void {
+    this.teamMembersService.getResourceManagers({ pageIndex: 1, pageSize: 100 }).subscribe({
+      next: res => {
+        this.resourceManagers = res.data?.data ?? [];
+        const rmField = this.formConfig.find(f => f.name === 'resourceManagerId');
+        if (rmField) {
+          rmField.options = this.resourceManagers.map(rm => ({
+            id: rm.id,
+            name: rm.fullName || `${rm.firstName} ${rm.lastName}`.trim(),
+          }));
+        }
+      },
     });
   }
 }

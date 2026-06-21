@@ -20,6 +20,12 @@ export type ProjectBudgetMode = 'sameAsRequest' | 'custom';
 export type ProjectBudgetType = 'Total' | 'Hourly';
 export type ProjectCustomBudgetType = 'total' | 'hourly';
 
+export enum MilestoneStatus {
+  NotStarted = 'NotStarted',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+}
+
 export interface CreateProjectDto {
   /** 0 = create without an existing client request (requires clientId + serviceId). */
   serviceRequestId: number;
@@ -33,6 +39,8 @@ export interface CreateProjectDto {
   budgetType?: ProjectBudgetType;
   hourlyRate?: number;
   expectedHours?: number;
+  usesMilestones?: boolean;
+  milestoneCount?: number;
 }
 
 export interface UpdateProjectDto {
@@ -62,6 +70,7 @@ export interface UpdateProjectStatusDto {
 export interface ProjectAssignmentDto {
   id: number;
   teamMemberId: number;
+  resourceManagerId?: number | null;
   teamMemberName: string;
   teamMemberTitle: string;
   role: string;
@@ -69,6 +78,52 @@ export interface ProjectAssignmentDto {
   assignedDate: string;
   hourlyRate: number | null;
   allocatedHours: number | null;
+}
+
+export interface UpdateProjectDeliveryDto {
+  status: ProjectStatus;
+  progress: number;
+}
+
+export interface ProjectResourceManagerDto {
+  userId: number;
+  fullName: string;
+  email: string;
+}
+
+export interface SetProjectResourceManagersDto {
+  resourceManagerUserIds: number[];
+}
+
+export interface ProjectMilestoneDto {
+  id: number;
+  projectId: number;
+  name: string;
+  description?: string | null;
+  order: number;
+  paymentPercentage: number;
+  paymentAmount: number;
+  startDate?: string | null;
+  endDate?: string | null;
+  status: MilestoneStatus;
+}
+
+export interface UpsertProjectMilestoneItemDto {
+  id?: number;
+  name: string;
+  description?: string;
+  order: number;
+  paymentPercentage: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface UpsertProjectMilestonesDto {
+  milestones: UpsertProjectMilestoneItemDto[];
+}
+
+export interface UpdateProjectMilestoneStatusDto {
+  status: MilestoneStatus;
 }
 
 export interface ProjectDto {
@@ -91,5 +146,9 @@ export interface ProjectDto {
   expectedHours: number | null;
   progress: number | null;
   requiredSkillIds?: number[];
+  resourceManagers?: ProjectResourceManagerDto[];
   teamMembers: ProjectAssignmentDto[];
+  usesMilestones?: boolean;
+  milestoneCount?: number | null;
+  milestones?: ProjectMilestoneDto[];
 }

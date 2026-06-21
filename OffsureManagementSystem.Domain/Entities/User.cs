@@ -26,6 +26,7 @@ namespace OffshoreManagementSystem.Domain.Entities
 
         // Navigation Properties
         public virtual ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
+        public virtual ICollection<TeamMember> ManagedTeamMembers { get; set; } = new List<TeamMember>();
         public virtual Client Client { get; set; }
         public virtual Role Role { get; set; }
 

@@ -41,6 +41,22 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<IReadOnlyList<TeamStructureDto>>.Ok(structure));
         }
 
+        [HttpGet("resource-managers")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ResourceManagerUserDto>>>> GetResourceManagers(
+            [FromQuery] ResourceManagerRequest request)
+        {
+            var managers = await _teamManagementService.GetResourceManagersAsync(request);
+            return Ok(ApiResponse<PagedResponse<ResourceManagerUserDto>>.Ok(managers));
+        }
+
+        [HttpPost("resource-managers")]
+        public async Task<ActionResult<ApiResponse<ResourceManagerUserDto>>> CreateResourceManager(
+            CreateResourceManagerDto dto)
+        {
+            var manager = await _teamManagementService.CreateResourceManagerAsync(dto);
+            return Ok(ApiResponse<ResourceManagerUserDto>.Ok(manager, "Resource manager created successfully."));
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApiResponse<TeamMemberDto>>> Create(CreateTeamMemberDto dto)
         {
@@ -98,6 +114,13 @@ namespace OffsureManagementSystem.API.Controllers
             var result = await _teamManagementService.StoreCvAsync(id, stream, file.FileName);
 
             return Ok(ApiResponse<CvStorageResultDto>.Ok(result, "Team member CV stored successfully."));
+        }
+
+        [HttpPost("{id:int}/reset-password")]
+        public async Task<ActionResult<ApiResponse<object>>> ResetPassword(int id, ResetTeamMemberPasswordDto dto)
+        {
+            await _teamManagementService.ResetTeamMemberPasswordAsync(id, dto);
+            return Ok(ApiResponse<object>.Ok(null!, "Team member password reset successfully."));
         }
     }
 }

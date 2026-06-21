@@ -27,6 +27,9 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public decimal? HourlyRate { get; set; }
         public int? ExpectedHours { get; set; }
         public List<int>? RequiredSkillIds { get; set; }
+        public bool UsesMilestones { get; set; }
+        public int? MilestoneCount { get; set; }
+        public List<UpsertProjectMilestoneItemDto>? Milestones { get; set; }
     }
 
     public class UpdateProjectDto
@@ -57,6 +60,24 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public ProjectStatus Status { get; set; }
     }
 
+    public class UpdateProjectDeliveryDto
+    {
+        public ProjectStatus Status { get; set; }
+        public int Progress { get; set; }
+    }
+
+    public class SetProjectResourceManagersDto
+    {
+        public List<int> ResourceManagerUserIds { get; set; } = new();
+    }
+
+    public class ProjectResourceManagerDto
+    {
+        public int UserId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
+
     public class ProjectDto
     {
         public int Id { get; set; }
@@ -78,13 +99,18 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public int? ExpectedHours { get; set; }
         public int? Progress { get; set; }
         public List<int> RequiredSkillIds { get; set; } = new();
+        public List<ProjectResourceManagerDto> ResourceManagers { get; set; } = new();
         public List<ProjectAssignmentDto> TeamMembers { get; set; } = new();
+        public bool UsesMilestones { get; set; }
+        public int? MilestoneCount { get; set; }
+        public List<ProjectMilestoneDto> Milestones { get; set; } = new();
     }
 
     public class ProjectAssignmentDto
     {
         public int Id { get; set; }
         public int TeamMemberId { get; set; }
+        public int? ResourceManagerId { get; set; }
         public string TeamMemberName { get; set; } = string.Empty;
         public string TeamMemberTitle { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
@@ -92,5 +118,40 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public DateTime AssignedDate { get; set; }
         public decimal? HourlyRate { get; set; }
         public int? AllocatedHours { get; set; }
+    }
+
+    public class ProjectMilestoneDto
+    {
+        public int Id { get; set; }
+        public int ProjectId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int Order { get; set; }
+        public decimal PaymentPercentage { get; set; }
+        public decimal PaymentAmount { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public MilestoneStatus Status { get; set; }
+    }
+
+    public class UpsertProjectMilestoneItemDto
+    {
+        public int? Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int Order { get; set; }
+        public decimal PaymentPercentage { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+    }
+
+    public class UpsertProjectMilestonesDto
+    {
+        public List<UpsertProjectMilestoneItemDto> Milestones { get; set; } = new();
+    }
+
+    public class UpdateProjectMilestoneStatusDto
+    {
+        public MilestoneStatus Status { get; set; }
     }
 }

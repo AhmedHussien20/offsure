@@ -19,7 +19,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrator,TeamMember")]
+        [Authorize(Roles = "Administrator,TeamMember,ResourceManager")]
         public async Task<ActionResult<ApiResponse<PagedResponse<SkillDto>>>> GetAll(
             [FromQuery] SkillRequest request)
         {
@@ -28,7 +28,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Administrator,TeamMember,Client")]
+        [Authorize(Roles = "Administrator,TeamMember,Client,ResourceManager")]
         public async Task<ActionResult<ApiResponse<SkillDto>>> GetById(int id)
         {
             var skill = await _skillManagementService.GetSkillByIdAsync(id);
@@ -36,7 +36,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,ResourceManager")]
         public async Task<ActionResult<ApiResponse<SkillDto>>> Create(CreateSkillDto dto)
         {
             var skill = await _skillManagementService.CreateSkillAsync(dto);
@@ -47,7 +47,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,ResourceManager")]
         public async Task<ActionResult<ApiResponse<SkillDto>>> Update(int id, UpdateSkillDto dto)
         {
             var skill = await _skillManagementService.UpdateSkillAsync(id, dto);

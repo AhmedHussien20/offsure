@@ -20,6 +20,9 @@
           <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
             Edit
           </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary no-expand" (click)="openResetPasswordModal()">
+            Reset password
+          </button>
           <button
             type="button"
             class="btn btn-sm btn-outline-danger no-expand"
@@ -86,8 +89,8 @@
                 <span>{{ member.isAvailable ? 'Available' : 'Unavailable' }}</span>
               </div>
               <div class="admin-detail-info-item">
-                <label>Leader</label>
-                <span>{{ display(member.leaderName) }}</span>
+                <label>Resource manager</label>
+                <span>{{ display(member.resourceManagerName) }}</span>
               </div>
             </div>
           }
@@ -143,8 +146,8 @@
               <strong>{{ member.isAvailable ? 'Available' : 'Unavailable' }}</strong>
             </li>
             <li>
-              <span class="admin-detail-stat-label">Leader</span>
-              <strong>{{ display(member.leaderName) }}</strong>
+              <span class="admin-detail-stat-label">Resource manager</span>
+              <strong>{{ display(member.resourceManagerName) }}</strong>
             </li>
           </ul>
         </div>

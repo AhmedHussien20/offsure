@@ -9,45 +9,61 @@ using TaskMangment.Application.Common.Responses;
 using Client = OffshoreManagementSystem.Domain.Entities.Client;
 using Project = OffshoreManagementSystem.Domain.Entities.Project;
 using ProjectAssignment = OffshoreManagementSystem.Domain.Entities.ProjectAssignment;
+using ProjectMilestone = OffshoreManagementSystem.Domain.Entities.ProjectMilestone;
+using ProjectResourceManager = OffshoreManagementSystem.Domain.Entities.ProjectResourceManager;
 using ProjectSkill = OffshoreManagementSystem.Domain.Entities.ProjectSkill;
 using Skill = OffshoreManagementSystem.Domain.Entities.Skill;
 using DomainService = OffshoreManagementSystem.Domain.Entities.Service;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
 using TeamMember = OffshoreManagementSystem.Domain.Entities.TeamMember;
+using User = OffshoreManagementSystem.Domain.Entities.User;
 
 namespace OffsureManagementSystem.Infrastructure.Services
 {
     public class ProjectManagementService : IProjectManagementService
     {
+        private const int MinMilestoneCount = 2;
+        private const int MaxMilestoneCount = 20;
+        private const decimal MilestonePercentageTolerance = 0.01m;
+
         private readonly IRepository<Project> _projectRepo;
         private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
         private readonly IRepository<ProjectSkill> _projectSkillRepo;
+        private readonly IRepository<ProjectResourceManager> _projectResourceManagerRepo;
+        private readonly IRepository<ProjectMilestone> _projectMilestoneRepo;
         private readonly IRepository<Skill> _skillRepo;
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
         private readonly IRepository<Client> _clientRepo;
         private readonly IRepository<DomainService> _serviceRepo;
         private readonly IRepository<TeamMember> _teamMemberRepo;
+        private readonly IRepository<User> _userRepo;
         private readonly IEmailNotificationService _emailNotificationService;
 
         public ProjectManagementService(
             IRepository<Project> projectRepo,
             IRepository<ProjectAssignment> projectAssignmentRepo,
             IRepository<ProjectSkill> projectSkillRepo,
+            IRepository<ProjectResourceManager> projectResourceManagerRepo,
+            IRepository<ProjectMilestone> projectMilestoneRepo,
             IRepository<Skill> skillRepo,
             IRepository<ServiceRequest> serviceRequestRepo,
             IRepository<Client> clientRepo,
             IRepository<DomainService> serviceRepo,
             IRepository<TeamMember> teamMemberRepo,
+            IRepository<User> userRepo,
             IEmailNotificationService emailNotificationService)
         {
             _projectRepo = projectRepo;
             _projectAssignmentRepo = projectAssignmentRepo;
             _projectSkillRepo = projectSkillRepo;
+            _projectResourceManagerRepo = projectResourceManagerRepo;
+            _projectMilestoneRepo = projectMilestoneRepo;
             _skillRepo = skillRepo;
             _serviceRequestRepo = serviceRequestRepo;
             _clientRepo = clientRepo;
             _serviceRepo = serviceRepo;
             _teamMemberRepo = teamMemberRepo;
+            _userRepo = userRepo;
             _emailNotificationService = emailNotificationService;
         }
 
@@ -127,6 +143,371 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetProjectDtoByIdAsync(projectId);
         }
 
+        public async Task<PagedResponse<ProjectDto>> GetResourceManagerProjectsByUserIdAsync(
+            int userId,
+            ProjectFilterRequest request)
+        {
+            var query = BuildProjectQuery()
+                .AsNoTracking()
+                .Where(p =>
+                    p.ProjectResourceManagers.Any(rm => !rm.IsDeleted && rm.ResourceManagerUserId == userId)
+                    || p.ProjectAssignments.Any(a =>
+                        a.IsActive
+                        && a.TeamMember.ResourceManagerId == userId
+                        && !a.TeamMember.IsDeleted));
+
+            query = await ApplyFiltersAsync(query, request);
+
+            var totalCount = await query.CountAsync();
+            var projects = await ApplySorting(query, request)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            return new PagedResponse<ProjectDto>(
+                projects.Select(MapProjectForResourceManager).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
+        }
+
+        public async Task<ProjectDto> GetResourceManagerProjectByIdAsync(int userId, int projectId)
+        {
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+            var project = await GetProjectDtoByIdAsync(projectId);
+            return StripFinancials(project);
+        }
+
+        public async Task<ProjectDto> AssignTeamMemberForResourceManagerAsync(
+            int userId,
+            int projectId,
+            AssignProjectTeamMemberDto dto)
+        {
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+            await EnsureTeamMemberManagedByUserAsync(userId, dto.TeamMemberId);
+
+            var project = await AssignTeamMemberAsync(projectId, dto);
+            return StripFinancials(project);
+        }
+
+        public async Task<ProjectDto> RemoveAssignmentForResourceManagerAsync(
+            int userId,
+            int projectId,
+            int assignmentId)
+        {
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+
+            var assignment = await _projectAssignmentRepo
+                .Query()
+                .Include(a => a.TeamMember)
+                .FirstOrDefaultAsync(a => a.ProjectId == projectId && a.Id == assignmentId && a.IsActive);
+
+            if (assignment is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (assignment.TeamMember?.ResourceManagerId != userId)
+                throw new AppException("You can only unassign your own team members.", 403);
+
+            DeactivateAssignment(assignment);
+            await _projectAssignmentRepo.SaveChangesAsync();
+
+            return await GetResourceManagerProjectByIdAsync(userId, projectId);
+        }
+
+        public async Task<ProjectDto> UpdateProjectDeliveryForResourceManagerAsync(
+            int userId,
+            int projectId,
+            UpdateProjectDeliveryDto dto)
+        {
+            if (dto.Progress is < 0 or > 100)
+                throw new AppException("Invalid request.", 400);
+
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            project.Status = dto.Status;
+            project.Progress = dto.Progress;
+            project.UpdatedAt = DateTime.UtcNow;
+
+            _projectRepo.SaveInclude(
+                project,
+                nameof(project.Status),
+                nameof(project.Progress),
+                nameof(project.UpdatedAt));
+            await _projectRepo.SaveChangesAsync();
+
+            return await GetResourceManagerProjectByIdAsync(userId, projectId);
+        }
+
+        public async Task<ProjectDto> SetProjectResourceManagersAsync(int projectId, SetProjectResourceManagersDto dto)
+        {
+            await EnsureProjectExistsAsync(projectId);
+
+            var userIds = (dto.ResourceManagerUserIds ?? new List<int>())
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            await ValidateResourceManagerUsersAsync(userIds);
+
+            var existing = await _projectResourceManagerRepo
+                .GetAll(r => r.ProjectId == projectId)
+                .ToListAsync();
+
+            var target = userIds.ToHashSet();
+
+            foreach (var row in existing.Where(r => !r.IsDeleted && !target.Contains(r.ResourceManagerUserId)))
+            {
+                row.IsDeleted = true;
+                row.UpdatedAt = DateTime.UtcNow;
+                _projectResourceManagerRepo.SaveInclude(
+                    row,
+                    nameof(row.IsDeleted),
+                    nameof(row.UpdatedAt));
+            }
+
+            foreach (var resourceManagerUserId in userIds)
+            {
+                var row = existing.FirstOrDefault(r => r.ResourceManagerUserId == resourceManagerUserId);
+                if (row is null)
+                {
+                    await _projectResourceManagerRepo.AddAsync(new ProjectResourceManager
+                    {
+                        ProjectId = projectId,
+                        ResourceManagerUserId = resourceManagerUserId,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                else if (row.IsDeleted)
+                {
+                    row.IsDeleted = false;
+                    row.UpdatedAt = DateTime.UtcNow;
+                    _projectResourceManagerRepo.SaveInclude(
+                        row,
+                        nameof(row.IsDeleted),
+                        nameof(row.UpdatedAt));
+                }
+            }
+
+            await _projectResourceManagerRepo.SaveChangesAsync();
+            return await GetProjectByIdAsync(projectId);
+        }
+
+        public async Task<ProjectDto> UpsertProjectMilestonesAsync(int projectId, UpsertProjectMilestonesDto dto)
+        {
+            var project = await _projectRepo
+                .Query()
+                .Include(p => p.ProjectMilestones.Where(m => !m.IsDeleted))
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            EnsureMilestoneProject(project);
+
+            var items = (dto.Milestones ?? new List<UpsertProjectMilestoneItemDto>())
+                .OrderBy(m => m.Order)
+                .ThenBy(m => m.Name)
+                .ToList();
+
+            if (items.Count == 0)
+                throw new AppException("Add at least one milestone.", 400);
+
+            if (items.Count > project.MilestoneCount)
+                throw new AppException($"This project allows up to {project.MilestoneCount} milestones.", 400);
+
+            ValidateMilestonePercentages(items);
+
+            var budget = project.Budget ?? 0;
+            var incomingIds = items.Where(m => m.Id.HasValue && m.Id.Value > 0).Select(m => m.Id!.Value).ToHashSet();
+            var existing = project.ProjectMilestones.Where(m => !m.IsDeleted).ToList();
+
+            foreach (var row in existing.Where(m => !incomingIds.Contains(m.Id)))
+            {
+                if (row.Status == MilestoneStatus.Completed)
+                    throw new AppException("Completed milestones cannot be removed.", 400);
+
+                row.IsDeleted = true;
+                row.UpdatedAt = DateTime.UtcNow;
+                _projectMilestoneRepo.SaveInclude(row, nameof(row.IsDeleted), nameof(row.UpdatedAt));
+            }
+
+            foreach (var item in items)
+            {
+                if (string.IsNullOrWhiteSpace(item.Name))
+                    throw new AppException("Each milestone needs a name.", 400);
+
+                var percentage = Math.Round(item.PaymentPercentage, 2);
+                var amount = CalculateMilestoneAmount(budget, percentage);
+
+                if (item.Id is > 0)
+                {
+                    var row = existing.FirstOrDefault(m => m.Id == item.Id.Value);
+                    if (row is null)
+                        throw new AppException("Milestone not found.", 404);
+
+                    if (row.Status == MilestoneStatus.Completed)
+                        throw new AppException("Completed milestones cannot be edited.", 400);
+
+                    row.Name = item.Name.Trim();
+                    row.Description = item.Description?.Trim();
+                    row.Order = item.Order > 0 ? item.Order : row.Order;
+                    row.PaymentPercentage = percentage;
+                    row.PaymentAmount = amount;
+                    row.StartDate = item.StartDate;
+                    row.EndDate = item.EndDate;
+                    row.UpdatedAt = DateTime.UtcNow;
+                    _projectMilestoneRepo.SaveInclude(
+                        row,
+                        nameof(row.Name),
+                        nameof(row.Description),
+                        nameof(row.Order),
+                        nameof(row.PaymentPercentage),
+                        nameof(row.PaymentAmount),
+                        nameof(row.StartDate),
+                        nameof(row.EndDate),
+                        nameof(row.UpdatedAt));
+                }
+                else
+                {
+                    await _projectMilestoneRepo.AddAsync(new ProjectMilestone
+                    {
+                        ProjectId = projectId,
+                        Name = item.Name.Trim(),
+                        Description = item.Description?.Trim(),
+                        Order = item.Order > 0 ? item.Order : items.IndexOf(item) + 1,
+                        PaymentPercentage = percentage,
+                        PaymentAmount = amount,
+                        StartDate = item.StartDate,
+                        EndDate = item.EndDate,
+                        Status = MilestoneStatus.NotStarted,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _projectMilestoneRepo.SaveChangesAsync();
+            return await GetProjectByIdAsync(projectId);
+        }
+
+        private async Task SyncProjectProgressFromMilestonesAsync(int projectId)
+        {
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null || !project.UsesMilestones)
+                return;
+
+            var milestones = await _projectMilestoneRepo
+                .GetAll(m => m.ProjectId == projectId && !m.IsDeleted)
+                .ToListAsync();
+
+            if (milestones.Count == 0)
+                return;
+
+            var completedPercent = milestones
+                .Where(m => m.Status == MilestoneStatus.Completed)
+                .Sum(m => m.PaymentPercentage);
+
+            var targetProgress = (int)Math.Round(completedPercent, MidpointRounding.AwayFromZero);
+            targetProgress = Math.Min(100, Math.Max(0, targetProgress));
+
+            var currentProgress = project.Progress ?? 0;
+            if (targetProgress <= currentProgress)
+                return;
+
+            project.Progress = targetProgress;
+            project.UpdatedAt = DateTime.UtcNow;
+            _projectRepo.SaveInclude(project, nameof(project.Progress), nameof(project.UpdatedAt));
+            await _projectRepo.SaveChangesAsync();
+        }
+
+        public async Task<ProjectDto> UpdateProjectMilestoneStatusAsync(
+            int projectId,
+            int milestoneId,
+            UpdateProjectMilestoneStatusDto dto)
+        {
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            EnsureMilestoneProject(project);
+
+            var milestone = await _projectMilestoneRepo
+                .GetAll(m => m.ProjectId == projectId && m.Id == milestoneId && !m.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            if (milestone is null)
+                throw new AppException("Milestone not found.", 404);
+
+            if (milestone.Status == MilestoneStatus.Completed)
+                throw new AppException("Completed milestones cannot be changed.", 400);
+
+            milestone.Status = dto.Status;
+            milestone.UpdatedAt = DateTime.UtcNow;
+            _projectMilestoneRepo.SaveInclude(milestone, nameof(milestone.Status), nameof(milestone.UpdatedAt));
+            await _projectMilestoneRepo.SaveChangesAsync();
+
+            await SyncProjectProgressFromMilestonesAsync(projectId);
+            await TryCompleteProjectFromMilestonesAsync(projectId);
+
+            return await GetProjectByIdAsync(projectId);
+        }
+
+        private async Task TryCompleteProjectFromMilestonesAsync(int projectId)
+        {
+            var milestones = await _projectMilestoneRepo
+                .GetAll(m => m.ProjectId == projectId && !m.IsDeleted)
+                .ToListAsync();
+
+            if (milestones.Count == 0)
+                return;
+
+            if (milestones.Any(m => m.Status != MilestoneStatus.Completed))
+                return;
+
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null || project.Status == ProjectStatus.Completed)
+                return;
+
+            project.Status = ProjectStatus.Completed;
+            project.Progress = 100;
+            project.EndDate = DateTime.UtcNow;
+            project.UpdatedAt = DateTime.UtcNow;
+            _projectRepo.SaveInclude(
+                project,
+                nameof(project.Status),
+                nameof(project.Progress),
+                nameof(project.EndDate),
+                nameof(project.UpdatedAt));
+            await _projectRepo.SaveChangesAsync();
+
+            await SendProjectCompletionNotificationAsync(projectId);
+        }
+
+        private static void EnsureMilestoneProject(Project project)
+        {
+            if (project.BudgetType == ProjectBudgetType.Hourly)
+                throw new AppException("Milestones are only available for fixed budget projects.", 400);
+
+            if (!project.UsesMilestones || !project.MilestoneCount.HasValue)
+                throw new AppException("This project does not use milestones.", 400);
+        }
+
+        private static void ValidateMilestonePercentages(IReadOnlyList<UpsertProjectMilestoneItemDto> items)
+        {
+            if (items.Any(m => m.PaymentPercentage <= 0))
+                throw new AppException("Each milestone needs a payment percentage greater than zero.", 400);
+
+            var total = items.Sum(m => m.PaymentPercentage);
+            if (Math.Abs(total - 100m) > MilestonePercentageTolerance)
+                throw new AppException("Milestone payment percentages must total 100%.", 400);
+        }
+
+        private static decimal CalculateMilestoneAmount(decimal budget, decimal paymentPercentage)
+            => Math.Round(budget * paymentPercentage / 100m, 2, MidpointRounding.AwayFromZero);
+
         public async Task<ProjectDto> CreateProjectAsync(CreateProjectDto dto)
         {
             ValidateCreateProjectInput(dto);
@@ -157,6 +538,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 BudgetType = dto.BudgetType,
                 HourlyRate = dto.BudgetType == ProjectBudgetType.Hourly ? dto.HourlyRate : null,
                 ExpectedHours = dto.BudgetType == ProjectBudgetType.Hourly ? dto.ExpectedHours : null,
+                UsesMilestones = dto.BudgetType != ProjectBudgetType.Hourly && dto.UsesMilestones,
+                MilestoneCount = dto.BudgetType != ProjectBudgetType.Hourly && dto.UsesMilestones
+                    ? dto.MilestoneCount
+                    : null,
                 Progress = 0,
                 CreatedAt = DateTime.UtcNow
             };
@@ -174,7 +559,50 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 await SyncProjectSkillsAsync(project.Id, dto.RequiredSkillIds);
             }
 
+            if (project.UsesMilestones && dto.Milestones is { Count: > 0 })
+            {
+                await CreateInitialMilestonesAsync(project, dto.Milestones);
+            }
+
             return await GetProjectByIdAsync(project.Id);
+        }
+
+        private async Task CreateInitialMilestonesAsync(Project project, List<UpsertProjectMilestoneItemDto> items)
+        {
+            var ordered = items
+                .OrderBy(m => m.Order)
+                .ThenBy(m => m.Name)
+                .ToList();
+
+            if (ordered.Count != project.MilestoneCount)
+                throw new AppException("Milestone entries must match the number of phases.", 400);
+
+            ValidateMilestonePercentages(ordered);
+
+            var budget = project.Budget ?? 0;
+            for (var index = 0; index < ordered.Count; index++)
+            {
+                var item = ordered[index];
+                if (string.IsNullOrWhiteSpace(item.Name))
+                    throw new AppException("Each milestone needs a name.", 400);
+
+                var percentage = Math.Round(item.PaymentPercentage, 2);
+                await _projectMilestoneRepo.AddAsync(new ProjectMilestone
+                {
+                    ProjectId = project.Id,
+                    Name = item.Name.Trim(),
+                    Description = item.Description?.Trim(),
+                    Order = item.Order > 0 ? item.Order : index + 1,
+                    PaymentPercentage = percentage,
+                    PaymentAmount = CalculateMilestoneAmount(budget, percentage),
+                    StartDate = item.StartDate,
+                    EndDate = item.EndDate,
+                    Status = MilestoneStatus.NotStarted,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _projectMilestoneRepo.SaveChangesAsync();
         }
 
         private async Task<ServiceRequest> LoadRequestForProjectConversionAsync(int serviceRequestId)
@@ -411,9 +839,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Service)
                 .Include(p => p.ProjectSkills)
+                .Include(p => p.ProjectResourceManagers.Where(rm => !rm.IsDeleted))
+                    .ThenInclude(rm => rm.ResourceManager)
                 .Include(p => p.ProjectAssignments.Where(a => a.IsActive))
                     .ThenInclude(a => a.TeamMember)
-                        .ThenInclude(t => t.User);
+                        .ThenInclude(t => t.User)
+                .Include(p => p.ProjectMilestones.Where(m => !m.IsDeleted));
         }
 
         private async Task<IQueryable<Project>> ApplyFiltersAsync(
@@ -536,7 +967,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static void ValidateCreateProjectInput(CreateProjectDto dto)
         {
             if (dto.ServiceRequestId > 0)
+            {
+                ValidateMilestoneCreateFields(dto);
                 return;
+            }
 
             if (!dto.ClientId.HasValue || dto.ClientId.Value <= 0)
                 throw new AppException("Client is required.", 400);
@@ -546,6 +980,38 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (string.IsNullOrWhiteSpace(dto.Name))
                 throw new AppException("Project name is required.", 400);
+
+            ValidateMilestoneCreateFields(dto);
+        }
+
+        private static void ValidateMilestoneCreateFields(CreateProjectDto dto)
+        {
+            if (dto.BudgetType == ProjectBudgetType.Hourly && dto.UsesMilestones)
+                throw new AppException("Milestones are only available for fixed budget projects.", 400);
+
+            if (!dto.UsesMilestones)
+                return;
+
+            if (!dto.MilestoneCount.HasValue
+                || dto.MilestoneCount.Value < MinMilestoneCount
+                || dto.MilestoneCount.Value > MaxMilestoneCount)
+            {
+                throw new AppException($"Enter between {MinMilestoneCount} and {MaxMilestoneCount} milestones.", 400);
+            }
+
+            if (dto.Milestones is { Count: > 0 })
+            {
+                if (dto.Milestones.Count != dto.MilestoneCount.Value)
+                    throw new AppException("Milestone entries must match the number of phases.", 400);
+
+                ValidateMilestonePercentages(dto.Milestones);
+
+                foreach (var milestone in dto.Milestones)
+                {
+                    if (string.IsNullOrWhiteSpace(milestone.Name))
+                        throw new AppException("Each milestone needs a name.", 400);
+                }
+            }
         }
 
         private static void ValidateUpdateProjectInput(UpdateProjectDto dto)
@@ -664,14 +1130,48 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 HourlyRate = project.HourlyRate,
                 ExpectedHours = project.ExpectedHours,
                 Progress = project.Progress,
+                ResourceManagers = project.ProjectResourceManagers?
+                    .Where(rm => !rm.IsDeleted)
+                    .OrderBy(rm => rm.ResourceManager?.FirstName)
+                    .ThenBy(rm => rm.ResourceManager?.LastName)
+                    .Select(rm => new ProjectResourceManagerDto
+                    {
+                        UserId = rm.ResourceManagerUserId,
+                        FullName = UserDisplayName.FromUser(rm.ResourceManager),
+                        Email = rm.ResourceManager?.Email ?? string.Empty
+                    })
+                    .ToList() ?? new List<ProjectResourceManagerDto>(),
                 TeamMembers = project.ProjectAssignments
                     .Where(a => a.IsActive)
                     .OrderBy(a => a.TeamMember.User.FirstName)
                     .ThenBy(a => a.TeamMember.User.LastName)
                     .Select(MapAssignment)
-                    .ToList()
+                    .ToList(),
+                UsesMilestones = project.UsesMilestones,
+                MilestoneCount = project.MilestoneCount,
+                Milestones = project.ProjectMilestones?
+                    .Where(m => !m.IsDeleted)
+                    .OrderBy(m => m.Order)
+                    .ThenBy(m => m.Name)
+                    .Select(MapMilestone)
+                    .ToList() ?? new List<ProjectMilestoneDto>()
             };
         }
+
+        private static ProjectMilestoneDto MapMilestone(ProjectMilestone milestone)
+            => new()
+            {
+                Id = milestone.Id,
+                ProjectId = milestone.ProjectId,
+                Name = milestone.Name,
+                Description = milestone.Description,
+                Order = milestone.Order,
+                PaymentPercentage = milestone.PaymentPercentage,
+                PaymentAmount = milestone.PaymentAmount,
+                StartDate = milestone.StartDate,
+                EndDate = milestone.EndDate,
+                Status = milestone.Status
+            };
 
         private async Task<ProjectDto> GetProjectDtoByIdAsync(int id)
         {
@@ -786,6 +1286,80 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Assign team members only to skills selected for this project.", 400);
         }
 
+        private async Task EnsureTeamMemberManagedByUserAsync(int resourceManagerUserId, int teamMemberId)
+        {
+            var managed = await _teamMemberRepo
+                .Query()
+                .AnyAsync(t =>
+                    t.Id == teamMemberId
+                    && !t.IsDeleted
+                    && t.ResourceManagerId == resourceManagerUserId);
+
+            if (!managed)
+                throw new AppException("You do not have access to this team member.", 403);
+        }
+
+        private async Task EnsureProjectAccessibleToResourceManagerAsync(int resourceManagerUserId, int projectId)
+        {
+            var isAssignedToProject = await _projectResourceManagerRepo
+                .GetAll(r =>
+                    r.ProjectId == projectId
+                    && !r.IsDeleted
+                    && r.ResourceManagerUserId == resourceManagerUserId)
+                .AnyAsync();
+
+            if (isAssignedToProject)
+                return;
+
+            var hasManagedMember = await _projectAssignmentRepo
+                .GetAll(a =>
+                    a.ProjectId == projectId
+                    && a.IsActive
+                    && a.TeamMember.ResourceManagerId == resourceManagerUserId
+                    && !a.TeamMember.IsDeleted)
+                .AnyAsync();
+
+            if (!hasManagedMember)
+                throw new AppException("You do not have access to this project.", 403);
+        }
+
+        private async Task ValidateResourceManagerUsersAsync(IReadOnlyCollection<int> userIds)
+        {
+            if (userIds.Count == 0)
+                return;
+
+            var validCount = await _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .CountAsync(u =>
+                    userIds.Contains(u.Id)
+                    && u.IsActive
+                    && !u.IsDeleted
+                    && u.Role != null
+                    && u.Role.Name == nameof(UserRole.ResourceManager));
+
+            if (validCount != userIds.Count)
+                throw new AppException("One or more resource managers are invalid.", 400);
+        }
+
+        private static ProjectDto MapProjectForResourceManager(Project project)
+            => StripFinancials(MapProject(project));
+
+        private static ProjectDto StripFinancials(ProjectDto project)
+        {
+            project.Budget = null;
+            project.HourlyRate = null;
+            project.ExpectedHours = null;
+
+            foreach (var assignment in project.TeamMembers)
+            {
+                assignment.HourlyRate = null;
+                assignment.AllocatedHours = null;
+            }
+
+            return project;
+        }
+
         private static ProjectAssignmentDto MapAssignment(ProjectAssignment assignment)
         {
             var skillId = assignment.SkillId ?? ProjectDescriptionSkills.SkillIdFromRole(assignment.Role);
@@ -793,6 +1367,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 Id = assignment.Id,
                 TeamMemberId = assignment.TeamMemberId,
+                ResourceManagerId = assignment.TeamMember?.ResourceManagerId,
                 TeamMemberName = UserDisplayName.FromTeamMember(assignment.TeamMember),
                 TeamMemberTitle = assignment.TeamMember?.Title ?? string.Empty,
                 Role = ProjectDescriptionSkills.StripSkillPrefixFromRole(assignment.Role),

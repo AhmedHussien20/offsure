@@ -41,6 +41,11 @@
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.06), #fff);
 }
 
+.finance-summary__tile--incomplete {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.14), #fffbeb);
+}
+
 .finance-summary__tile--profit {
   border-color: rgba(25, 177, 89, 0.3);
   background: linear-gradient(180deg, rgba(25, 177, 89, 0.08), #fff);
@@ -137,6 +142,13 @@
   border-top: 1px solid #f1f5f9;
 }
 
+.track-members__toggle {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .track-member {
   display: flex;
   align-items: center;
@@ -154,6 +166,29 @@
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   border-radius: 8px;
+}
+
+.track-member--incomplete-cost {
+  background: rgba(245, 158, 11, 0.06);
+  margin: 0 -0.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.track-member__cost-warning {
+  font-size: 0.72rem;
+  color: #b45309;
+  font-weight: 600;
+}
+
+.finance-cost-warning__list {
+  padding-left: 1.1rem;
+}
+
+.finance-cost-warning__name {
+  font-weight: 600;
+  color: #334155;
 }
 
 .track-member__avatar {

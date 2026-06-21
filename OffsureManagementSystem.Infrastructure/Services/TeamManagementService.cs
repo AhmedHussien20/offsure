@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
+using OffsureManagementSystem.Application.Common.Requests;
 using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using OffshoreManagementSystem.Domain.Entities;
 using OffsureManagementSystem.Domain.Entities;
+using OffsureManagementSystem.Domain.Entities.Enum;
 using System.Text;
 using TaskMangment.Application.Common.Responses;
 
@@ -49,8 +51,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (request.UserId.HasValue)
                 query = query.Where(t => t.UserId == request.UserId.Value);
 
-            if (request.LeaderId.HasValue)
-                query = query.Where(t => t.LeaderId == request.LeaderId.Value);
+            if (request.ResourceManagerId.HasValue)
+                query = query.Where(t => t.ResourceManagerId == request.ResourceManagerId.Value);
 
             if (request.IsAvailable.HasValue)
                 query = query.Where(t => t.IsAvailable == request.IsAvailable.Value);
@@ -98,7 +100,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             ValidateTeamMemberInput(dto.Title, dto.YearsOfExperience);
             ValidateUserInput(dto.FirstName, dto.LastName, dto.Email, dto.Password);
-            await ValidateLeaderAsync(dto.LeaderId);
+            await ValidateResourceManagerAsync(dto.ResourceManagerId);
             await ValidateSkillAssignmentsAsync(dto.SkillAssignments);
 
             var normalizedEmail = NormalizeEmail(dto.Email);
@@ -135,7 +137,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 YearsOfExperience = dto.YearsOfExperience,
                 CV = string.Empty,
                 PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty,
-                LeaderId = dto.LeaderId,
+                ResourceManagerId = dto.ResourceManagerId,
                 IsAvailable = dto.IsAvailable,
                 HourlySalary = dto.HourlySalary,
                 CreatedAt = DateTime.UtcNow
@@ -153,7 +155,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             ValidateTeamMemberInput(dto.Title, dto.YearsOfExperience);
             ValidateUserInput(dto.FirstName, dto.LastName, dto.Email);
-            await ValidateLeaderAsync(dto.LeaderId, id);
+            await ValidateResourceManagerAsync(dto.ResourceManagerId, id);
             await ValidateSkillAssignmentsAsync(dto.SkillAssignments);
 
             var member = await _teamMemberRepo
@@ -180,7 +182,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             member.Title = dto.Title.Trim();
             member.YearsOfExperience = dto.YearsOfExperience;
             member.PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty;
-            member.LeaderId = dto.LeaderId;
+            member.ResourceManagerId = dto.ResourceManagerId;
             member.IsAvailable = dto.IsAvailable;
             member.HourlySalary = dto.HourlySalary;
             member.UpdatedAt = DateTime.UtcNow;
@@ -190,7 +192,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(member.Title),
                 nameof(member.YearsOfExperience),
                 nameof(member.PhoneNumber),
-                nameof(member.LeaderId),
+                nameof(member.ResourceManagerId),
                 nameof(member.IsAvailable),
                 nameof(member.HourlySalary),
                 nameof(member.UpdatedAt));
@@ -214,12 +216,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (member is null)
                 throw new AppException("Resource not found.", 404);
 
-            var activeSubordinates = await _teamMemberRepo
-                .GetAll(t => t.LeaderId == id)
+            var hasManagedTeam = await _teamMemberRepo
+                .GetAll(t => t.ResourceManagerId == member.UserId && t.Id != id)
                 .AnyAsync();
 
-            if (activeSubordinates)
-                throw new AppException("Cannot delete a team member who has direct reports. Reassign their team first.", 400);
+            if (hasManagedTeam)
+                throw new AppException("Cannot delete a resource manager who still has team members assigned. Reassign their team first.", 400);
 
             var hasActiveProjectAssignments = await _projectAssignmentRepo
                 .GetAll(a => a.TeamMemberId == id && a.IsActive)
@@ -353,22 +355,25 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var members = await _teamMemberRepo
                 .GetAll()
                 .Include(t => t.User)
+                .Include(t => t.ResourceManager)
                 .OrderBy(t => t.User.FirstName)
                 .ThenBy(t => t.User.LastName)
                 .ToListAsync();
 
-            var childrenByLeader = members
-                .Where(t => t.LeaderId.HasValue)
-                .GroupBy(t => t.LeaderId!.Value)
+            var childrenByManager = members
+                .Where(t => t.ResourceManagerId.HasValue)
+                .GroupBy(t => t.ResourceManagerId!.Value)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            var roots = members
-                .Where(t => t.LeaderId is null || members.All(m => m.Id != t.LeaderId.Value))
-                .OrderBy(t => t.User.FirstName)
-                .ThenBy(t => t.User.LastName)
+            var managers = members
+                .Where(t => t.ResourceManager != null)
+                .Select(t => t.ResourceManager!)
+                .DistinctBy(u => u.Id)
+                .OrderBy(u => u.LastName)
+                .ThenBy(u => u.FirstName)
                 .ToList();
 
-            return roots.Select(root => MapStructure(root, childrenByLeader, new HashSet<int>())).ToList();
+            return managers.Select(manager => MapStructureForManager(manager, childrenByManager)).ToList();
         }
 
         public async Task<TeamMemberDto> GetTeamMemberProfileAsync(int userId)
@@ -473,8 +478,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return _teamMemberRepo.Query()
                 .Where(t => !t.IsDeleted && t.User.IsActive && !t.User.IsDeleted)
                 .Include(t => t.User)
-                .Include(t => t.Leader)
-                    .ThenInclude(l => l.User)
+                .Include(t => t.ResourceManager)
                 .Include(t => t.TeamMemberSkills)
                     .ThenInclude(ts => ts.Skill)
                         .ThenInclude(s => s.SkillCategory);
@@ -542,16 +546,272 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Resource not found.", 404);
         }
 
-        private async Task ValidateLeaderAsync(int? leaderId, int? teamMemberId = null)
+        private static TeamStructureDto MapStructureForManager(
+            User manager,
+            IReadOnlyDictionary<int, List<TeamMember>> childrenByManager)
         {
-            if (leaderId is null)
-                return;
+            childrenByManager.TryGetValue(manager.Id, out var children);
 
-            if (leaderId <= 0 || !await _teamMemberRepo.IsExistAsync(leaderId.Value))
+            return new TeamStructureDto
+            {
+                Id = manager.Id,
+                FullName = UserDisplayName.FromUser(manager),
+                Title = "Resource Manager",
+                YearsOfExperience = 0,
+                IsAvailable = manager.IsActive,
+                TeamMembers = (children ?? new List<TeamMember>())
+                    .OrderBy(t => t.User?.FirstName)
+                    .ThenBy(t => t.User?.LastName)
+                    .Select(MapStructureMember)
+                    .ToList()
+            };
+        }
+
+        private static TeamStructureDto MapStructureMember(TeamMember member)
+        {
+            return new TeamStructureDto
+            {
+                Id = member.Id,
+                FullName = UserDisplayName.FromTeamMember(member),
+                Title = member.Title,
+                YearsOfExperience = member.YearsOfExperience,
+                IsAvailable = member.IsAvailable
+            };
+        }
+
+        private async Task ValidateResourceManagerAsync(int? resourceManagerId, int? teamMemberId = null)
+        {
+            if (!resourceManagerId.HasValue || resourceManagerId.Value <= 0)
+                throw new AppException("Resource manager is required.", 400);
+
+            var manager = await _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u =>
+                    u.Id == resourceManagerId.Value
+                    && u.IsActive
+                    && !u.IsDeleted);
+
+            if (manager is null || manager.Role?.Name != nameof(UserRole.ResourceManager))
                 throw new AppException("Resource not found.", 404);
 
-            if (teamMemberId.HasValue && leaderId.Value == teamMemberId.Value)
-                throw new AppException("Invalid request.", 400);
+            if (teamMemberId.HasValue)
+            {
+                var member = await _teamMemberRepo.GetByIDAsync(teamMemberId.Value);
+                if (member is not null && member.UserId == resourceManagerId.Value)
+                    throw new AppException("Invalid request.", 400);
+            }
+        }
+
+        public async Task<PagedResponse<ResourceManagerUserDto>> GetResourceManagersAsync(ResourceManagerRequest request)
+        {
+            var query = _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .Where(u =>
+                    u.Role.Name == nameof(UserRole.ResourceManager)
+                    && u.IsActive
+                    && !u.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(request.searchKey))
+            {
+                var searchKey = Normalize(request.searchKey);
+                query = query.Where(u =>
+                    u.FirstName.ToLower().Contains(searchKey)
+                    || u.LastName.ToLower().Contains(searchKey)
+                    || u.Email.ToLower().Contains(searchKey));
+            }
+
+            var totalCount = await query.CountAsync();
+            var managers = await query
+                .OrderBy(u => u.LastName)
+                .ThenBy(u => u.FirstName)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            return new PagedResponse<ResourceManagerUserDto>(
+                managers.Select(MapResourceManagerUser).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
+        }
+
+        public async Task<ResourceManagerUserDto> CreateResourceManagerAsync(CreateResourceManagerDto dto)
+        {
+            ValidateUserInput(dto.FirstName, dto.LastName, dto.Email, dto.Password);
+
+            var normalizedEmail = NormalizeEmail(dto.Email);
+            var emailExists = await _userRepo
+                .GetAll(u => u.Email == normalizedEmail)
+                .AnyAsync();
+
+            if (emailExists)
+                throw new AppException("Email already exists.", 400);
+
+            var role = await _roleRepo
+                .GetAll(r => r.Name == nameof(UserRole.ResourceManager))
+                .FirstOrDefaultAsync();
+
+            if (role is null)
+                throw new AppException("Resource not found.", 404);
+
+            var user = new User
+            {
+                FirstName = dto.FirstName.Trim(),
+                LastName = dto.LastName.Trim(),
+                Email = normalizedEmail,
+                PasswordHash = HashPassword(dto.Password),
+                RoleId = role.Id,
+                IsEmailVerified = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _userRepo.AddAsync(user);
+            await _userRepo.SaveChangesAsync();
+
+            return MapResourceManagerUser(user);
+        }
+
+        public async Task<PagedResponse<TeamMemberDto>> GetManagedTeamMembersAsync(
+            int resourceManagerUserId,
+            TeamMemberRequest request)
+        {
+            request.ResourceManagerId = resourceManagerUserId;
+            return await GetAllAsync(request);
+        }
+
+        public Task<TeamMemberDto> GetManagedTeamMemberByIdAsync(int resourceManagerUserId, int teamMemberId)
+        {
+            return GetManagedTeamMemberInternalAsync(resourceManagerUserId, teamMemberId);
+        }
+
+        public async Task<TeamMemberDto> CreateManagedTeamMemberAsync(
+            int resourceManagerUserId,
+            CreateTeamMemberDto dto)
+        {
+            dto.ResourceManagerId = resourceManagerUserId;
+            dto.HourlySalary = null;
+            return await CreateAsync(dto);
+        }
+
+        public async Task<TeamMemberDto> UpdateManagedTeamMemberAsync(
+            int resourceManagerUserId,
+            int teamMemberId,
+            UpdateTeamMemberDto dto)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            dto.ResourceManagerId = resourceManagerUserId;
+            return await UpdateAsync(teamMemberId, dto);
+        }
+
+        public async Task DeleteManagedTeamMemberAsync(int resourceManagerUserId, int teamMemberId)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            await DeleteAsync(teamMemberId);
+        }
+
+        public async Task<TeamMemberDto> AssignSkillForResourceManagerAsync(
+            int resourceManagerUserId,
+            int teamMemberId,
+            UpsertTeamMemberSkillDto dto)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            return await AssignSkillAsync(teamMemberId, dto);
+        }
+
+        public async Task<TeamMemberDto> RemoveSkillForResourceManagerAsync(
+            int resourceManagerUserId,
+            int teamMemberId,
+            int skillId)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            return await RemoveSkillAsync(teamMemberId, skillId);
+        }
+
+        public async Task EnsureTeamMemberManagedByAsync(int resourceManagerUserId, int teamMemberId)
+        {
+            var member = await _teamMemberRepo
+                .Query()
+                .FirstOrDefaultAsync(t =>
+                    t.Id == teamMemberId
+                    && !t.IsDeleted
+                    && t.ResourceManagerId == resourceManagerUserId);
+
+            if (member is null)
+                throw new AppException("You do not have access to this team member.", 403);
+        }
+
+        public Task ResetTeamMemberPasswordAsync(int teamMemberId, ResetTeamMemberPasswordDto dto)
+            => ResetTeamMemberPasswordInternalAsync(teamMemberId, dto);
+
+        public async Task ResetManagedTeamMemberPasswordAsync(
+            int resourceManagerUserId,
+            int teamMemberId,
+            ResetTeamMemberPasswordDto dto)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            await ResetTeamMemberPasswordInternalAsync(teamMemberId, dto);
+        }
+
+        private async Task ResetTeamMemberPasswordInternalAsync(int teamMemberId, ResetTeamMemberPasswordDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
+                throw new AppException("Password must be at least 8 characters.", 400);
+
+            var member = await _teamMemberRepo
+                .Query()
+                .Include(t => t.User)
+                .ThenInclude(u => u.Role)
+                .FirstOrDefaultAsync(t => t.Id == teamMemberId && !t.IsDeleted);
+
+            if (member is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (member.User is null || member.User.IsDeleted || !member.User.IsActive)
+                throw new AppException("Team member account is not active.", 400);
+
+            if (member.User.Role?.Name != nameof(UserRole.TeamMember))
+                throw new AppException("Password can only be reset for team member accounts.", 400);
+
+            member.User.PasswordHash = HashPassword(dto.NewPassword);
+            member.User.RefreshToken = null;
+            member.User.RefreshTokenExpiry = null;
+            member.User.PasswordResetToken = null;
+            member.User.PasswordResetTokenExpiry = null;
+            member.User.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                member.User,
+                nameof(member.User.PasswordHash),
+                nameof(member.User.RefreshToken),
+                nameof(member.User.RefreshTokenExpiry),
+                nameof(member.User.PasswordResetToken),
+                nameof(member.User.PasswordResetTokenExpiry),
+                nameof(member.User.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+        }
+
+        private async Task<TeamMemberDto> GetManagedTeamMemberInternalAsync(
+            int resourceManagerUserId,
+            int teamMemberId)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            return await GetByIdAsync(teamMemberId);
+        }
+
+        private static ResourceManagerUserDto MapResourceManagerUser(User user)
+        {
+            return new ResourceManagerUserDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                FullName = UserDisplayName.FromUser(user)
+            };
         }
 
         private async Task ValidateSkillAssignmentsAsync(IEnumerable<UpsertTeamMemberSkillDto> assignments)
@@ -616,7 +876,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 "email" => isDescending ? query.OrderByDescending(t => t.User.Email) : query.OrderBy(t => t.User.Email),
                 "title" => isDescending ? query.OrderByDescending(t => t.Title) : query.OrderBy(t => t.Title),
                 "yearsofexperience" => isDescending ? query.OrderByDescending(t => t.YearsOfExperience) : query.OrderBy(t => t.YearsOfExperience),
-                "leaderid" => isDescending ? query.OrderByDescending(t => t.LeaderId) : query.OrderBy(t => t.LeaderId),
+                "resourcemanagerid" => isDescending ? query.OrderByDescending(t => t.ResourceManagerId) : query.OrderBy(t => t.ResourceManagerId),
                 "isavailable" => isDescending ? query.OrderByDescending(t => t.IsAvailable) : query.OrderBy(t => t.IsAvailable),
                 _ => isDescending ? query.OrderByDescending(t => t.Id) : query.OrderBy(t => t.Id)
             };
@@ -625,13 +885,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static bool IsDescending(string sortDirection)
             => !string.Equals(sortDirection, "ASC", StringComparison.OrdinalIgnoreCase);
 
-        private static int GetPageIndex(TeamMemberRequest request)
+        private static int GetPageIndex(BaseApiRequest request)
             => request.PageIndex < 1 ? 1 : request.PageIndex;
 
-        private static int GetPageSize(TeamMemberRequest request)
+        private static int GetPageSize(BaseApiRequest request)
             => request.PageSize < 1 ? 20 : request.PageSize;
 
-        private static int GetSkipCount(TeamMemberRequest request)
+        private static int GetSkipCount(BaseApiRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
         private static string BuildFullName(string firstName, string lastName)
@@ -654,8 +914,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 YearsOfExperience = member.YearsOfExperience,
                 CV = member.CV,
                 PhoneNumber = member.PhoneNumber,
-                LeaderId = member.LeaderId,
-                LeaderName = UserDisplayName.FromTeamMember(member.Leader),
+                ResourceManagerId = member.ResourceManagerId,
+                ResourceManagerName = UserDisplayName.FromUser(member.ResourceManager),
                 IsAvailable = member.IsAvailable,
                 HourlySalary = member.HourlySalary,
                 SkillAssignments = member.TeamMemberSkills
@@ -681,40 +941,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             };
         }
 
-        private static TeamStructureDto MapStructure(
-            TeamMember member,
-            IReadOnlyDictionary<int, List<TeamMember>> childrenByLeader,
-            HashSet<int> visited)
-        {
-            if (!visited.Add(member.Id))
-            {
-                return new TeamStructureDto
-                {
-                    Id = member.Id,
-                    FullName = UserDisplayName.FromTeamMember(member),
-                    Title = member.Title,
-                    YearsOfExperience = member.YearsOfExperience,
-                    IsAvailable = member.IsAvailable
-                };
-            }
-
-            childrenByLeader.TryGetValue(member.Id, out var children);
-
-            return new TeamStructureDto
-            {
-                Id = member.Id,
-                FullName = UserDisplayName.FromTeamMember(member),
-                Title = member.Title,
-                YearsOfExperience = member.YearsOfExperience,
-                IsAvailable = member.IsAvailable,
-                TeamMembers = (children ?? new List<TeamMember>())
-                    .OrderBy(t => t.User?.FirstName)
-                    .ThenBy(t => t.User?.LastName)
-                    .Select(child => MapStructure(child, childrenByLeader, new HashSet<int>(visited)))
-                    .ToList()
-            };
-        }
-
         private static string BuildCvContent(TeamMember member)
         {
             var builder = new StringBuilder();
@@ -723,7 +949,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             builder.AppendLine();
             builder.AppendLine($"Years of Experience: {member.YearsOfExperience}");
             builder.AppendLine($"Phone: {member.PhoneNumber}");
-            builder.AppendLine($"Leader: {(string.IsNullOrWhiteSpace(UserDisplayName.FromTeamMember(member.Leader)) ? "N/A" : UserDisplayName.FromTeamMember(member.Leader))}");
+            builder.AppendLine($"Resource Manager: {(string.IsNullOrWhiteSpace(UserDisplayName.FromUser(member.ResourceManager)) ? "N/A" : UserDisplayName.FromUser(member.ResourceManager))}");
             builder.AppendLine($"Availability: {(member.IsAvailable ? "Available" : "Unavailable")}");
             builder.AppendLine();
             builder.AppendLine("Skills Summary");

@@ -11,8 +11,11 @@ import {
   ProjectStatus,
   UpdateProjectDto,
   UpdateProjectStatusDto,
+  UpsertProjectMilestonesDto,
+  UpdateProjectMilestoneStatusDto,
 } from '../models/projects/project.models';
 import { normalizeProjectStatus } from '../utils/enum-status.util';
+import { normalizeMilestoneStatus } from '../utils/project-milestone.util';
 import { parseRequiredSkillIds, stripSkillsMarker } from '../utils/project-skill.util';
 
 @Injectable({ providedIn: 'root' })
@@ -95,6 +98,28 @@ export class ProjectsService {
       .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
   }
 
+  setResourceManagers(id: number, resourceManagerUserIds: number[]): Observable<BaseResponse<ProjectDto>> {
+    return this.api
+      .put<BaseResponse<ProjectDto>>(this.service, `${id}/resource-managers`, { resourceManagerUserIds })
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
+  }
+
+  upsertMilestones(id: number, dto: UpsertProjectMilestonesDto): Observable<BaseResponse<ProjectDto>> {
+    return this.api
+      .put<BaseResponse<ProjectDto>>(this.service, `${id}/milestones`, dto)
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
+  }
+
+  updateMilestoneStatus(
+    projectId: number,
+    milestoneId: number,
+    dto: UpdateProjectMilestoneStatusDto
+  ): Observable<BaseResponse<ProjectDto>> {
+    return this.api
+      .patch<BaseResponse<ProjectDto>>(this.service, `${projectId}/milestones/${milestoneId}/status`, dto)
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
+  }
+
   private mapPagedResponse(res: BaseResponse<PagedResponse<ProjectDto>>): BaseResponse<PagedResponse<ProjectDto>> {
     if (!res.data) {
       return res;
@@ -124,6 +149,13 @@ export class ProjectsService {
       budgetType,
       hourlyRate: dto.hourlyRate ?? null,
       expectedHours: dto.expectedHours ?? null,
+      resourceManagers: dto.resourceManagers ?? [],
+      usesMilestones: dto.usesMilestones ?? false,
+      milestoneCount: dto.milestoneCount ?? null,
+      milestones: (dto.milestones ?? []).map(m => ({
+        ...m,
+        status: normalizeMilestoneStatus(m.status),
+      })),
     };
   }
 }

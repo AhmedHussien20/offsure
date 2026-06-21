@@ -42,6 +42,14 @@ export const adminRoutes: Routes = [
           import('./admin-team-list/admin-team-list.component').then(m => m.AdminTeamListComponent),
       },
       {
+        path: 'resource-managers',
+        data: { breadcrumb: 'Resource Managers', title: 'Resource Managers' },
+        loadComponent: () =>
+          import('./admin-resource-managers-list/admin-resource-managers-list.component').then(
+            m => m.AdminResourceManagersListComponent
+          ),
+      },
+      {
         path: 'team/new',
         data: {
           breadcrumb: 'Add Member',

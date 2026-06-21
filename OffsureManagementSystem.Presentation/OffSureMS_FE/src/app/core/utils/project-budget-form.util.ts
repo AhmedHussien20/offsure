@@ -6,6 +6,12 @@ import {
   ProjectCustomBudgetType,
 } from '../models/projects/project.models';
 
+export function isHourlyBudgetProject(
+  project: { budgetType?: ProjectBudgetType } | null | undefined
+): boolean {
+  return project?.budgetType === 'Hourly';
+}
+
 export function resolveProjectBudget(form: FormGroup, requestBudget?: number | null): number | undefined {
   const mode = form.get('budgetMode')?.value;
   if (mode === 'sameAsRequest') {
@@ -98,6 +104,24 @@ export function resolveAssignmentDefaults(
         : null;
   const allocatedHours =
     fromProject && project?.expectedHours != null && project.expectedHours > 0
+      ? project.expectedHours
+      : null;
+
+  return { hourlyRate, allocatedHours };
+}
+
+/** RM assign modal: member salary for rate (hidden), project hours for prefill only. */
+export function resolveRmAssignmentDefaults(
+  project: {
+    budgetType?: ProjectBudgetType;
+    expectedHours?: number | null;
+  } | null | undefined,
+  member: { hourlySalary?: number | null }
+): { hourlyRate: number | null; allocatedHours: number | null } {
+  const hourlyRate =
+    member.hourlySalary != null && member.hourlySalary > 0 ? member.hourlySalary : null;
+  const allocatedHours =
+    project?.budgetType === 'Hourly' && project?.expectedHours != null && project.expectedHours > 0
       ? project.expectedHours
       : null;
 

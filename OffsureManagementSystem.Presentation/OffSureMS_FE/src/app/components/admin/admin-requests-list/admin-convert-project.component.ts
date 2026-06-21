@@ -14,6 +14,7 @@ import {
 } from 'app/core/utils/project-budget-form.util';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { ProjectBudgetFieldsComponent } from 'app/shared/components/project-budget-fields/project-budget-fields.component';
+import { ProjectMilestoneCreateFieldsComponent } from 'app/shared/components/project-milestone-create-fields/project-milestone-create-fields.component';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -21,7 +22,7 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-admin-convert-project',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent, ProjectBudgetFieldsComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent, ProjectBudgetFieldsComponent, ProjectMilestoneCreateFieldsComponent],
   templateUrl: './admin-convert-project.component.html',
   styleUrl: './admin-convert-project.component.scss',
 })
@@ -54,6 +55,8 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
       totalBudget: [null],
       hourlyRate: [null],
       expectedHours: [null],
+      usesMilestones: [false],
+      milestoneCount: [null],
     });
 
     this.formConfig = [
@@ -111,6 +114,7 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
     }
 
     const raw = this.form.getRawValue();
+    const isFixedBudget = raw.budgetMode === 'sameAsRequest' || raw.customBudgetType === 'total';
     const dto: CreateProjectDto = {
       serviceRequestId: this.request.id,
       name: String(raw.name).trim(),
@@ -118,6 +122,11 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
       startDate: raw.startDate || undefined,
       targetEndDate: raw.targetEndDate || undefined,
       ...buildProjectBudgetFields(this.form, this.request.budget),
+      usesMilestones: !!raw.usesMilestones && isFixedBudget,
+      milestoneCount:
+        raw.usesMilestones && isFixedBudget && raw.milestoneCount != null
+          ? Number(raw.milestoneCount)
+          : undefined,
     };
 
     this.creating = true;
@@ -127,7 +136,9 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
         const projectId = res.data?.id;
         this.activeModal.close(true);
         if (projectId) {
-          this.router.navigate(['/admin/projects', projectId]);
+          this.router.navigate(['/admin/projects', projectId], {
+            queryParams: dto.usesMilestones ? { tab: 'milestones' } : undefined,
+          });
         }
       },
       error: err => {

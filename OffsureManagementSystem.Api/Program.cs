@@ -144,13 +144,13 @@ namespace OffsureManagementSystem.API
             app.UseHttpsRedirection();
             app.UseStaticFiles(); // wwwroot
 
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(
-                    Path.Combine(builder.Environment.ContentRootPath, "storage", "portfolio-images")
-                ),
-                RequestPath = "/portfolio-images"
-            });
+            //app.UseStaticFiles(new StaticFileOptions
+            //{
+            //    FileProvider = new PhysicalFileProvider(
+            //        Path.Combine(builder.Environment.ContentRootPath, "storage", "portfolio-images")
+            //    ),
+            //    RequestPath = "/portfolio-images"
+            //});
             app.UseCors("AllowAngular");
             app.UseAuthentication();
             app.UseAuthorization();

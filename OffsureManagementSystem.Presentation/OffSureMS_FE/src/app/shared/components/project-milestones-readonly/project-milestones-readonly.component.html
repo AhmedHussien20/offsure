@@ -1,0 +1,76 @@
+<div class="card custom-card milestone-panel">
+  <div class="card-header border-bottom-0 milestone-panel__header">
+    <div>
+      <h5 class="mb-0">Payment milestones</h5>
+      <span class="fs-12 text-muted d-block mt-1">
+        {{ milestones.length }} of {{ maxMilestones }} phases
+      </span>
+    </div>
+  </div>
+
+  <div class="card-body pt-0">
+    @if (milestones.length === 0) {
+      <div class="milestone-empty">
+        <i class="fe fe-layers milestone-empty__icon" aria-hidden="true"></i>
+        <p class="milestone-empty__title">Phases not defined yet</p>
+        <p class="milestone-empty__hint">Payment phases will appear here once configured.</p>
+      </div>
+    } @else {
+      <div class="milestone-panel__overview">
+        <div class="milestone-panel__segments" role="img" [attr.aria-label]="allocatedPercent + '% allocated across phases'">
+          @for (m of milestones; track m.id) {
+            <span
+              class="milestone-panel__segment"
+              [class.milestone-panel__segment--completed]="m.status === milestoneStatus.Completed"
+              [class.milestone-panel__segment--in-progress]="m.status === milestoneStatus.InProgress"
+              [style.flex-grow]="m.paymentPercentage"
+              [title]="m.name + ': ' + (m.paymentPercentage | number: '1.0-2') + '%'"></span>
+          }
+        </div>
+        <div class="milestone-panel__overview-meta">
+          <span class="milestone-panel__overview-label">Allocation</span>
+          <span
+            class="milestone-panel__overview-value"
+            [class.milestone-panel__overview-value--valid]="allocatedPercent === 100">
+            {{ allocatedPercent | number: '1.0-0' }}%
+          </span>
+        </div>
+      </div>
+
+      <div class="milestone-list">
+        @for (m of milestones; track m.id) {
+          <article
+            class="milestone-item"
+            [class.milestone-item--completed]="m.status === milestoneStatus.Completed"
+            [class.milestone-item--in-progress]="m.status === milestoneStatus.InProgress">
+            <div class="milestone-item__head">
+              <span class="milestone-item__order">{{ m.order }}</span>
+              <div class="milestone-item__title min-width-0">
+                <h6 class="mb-0 text-truncate">{{ m.name }}</h6>
+                <span class="milestone-item__share">{{ m.paymentPercentage | number: '1.0-2' }}% of budget</span>
+                @if (m.description) {
+                  <p class="milestone-item__description mb-0">{{ m.description }}</p>
+                }
+                @if (m.startDate || m.endDate) {
+                  <span class="milestone-item__dates">
+                    <i class="fe fe-calendar me-1"></i>
+                    {{ m.startDate ? (m.startDate | date: 'mediumDate') : '—' }}
+                    –
+                    {{ m.endDate ? (m.endDate | date: 'mediumDate') : '—' }}
+                  </span>
+                }
+              </div>
+              <div class="milestone-item__amount">{{ m.paymentAmount | number: '1.0-0' }}</div>
+            </div>
+
+            <div class="milestone-item__foot">
+              <span class="milestone-item__badge" [ngClass]="statusBadgeClass(m.status)">
+                {{ statusLabel(m.status) }}
+              </span>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</div>

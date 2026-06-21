@@ -5,12 +5,16 @@ import { BaseResponse } from '../models/base.response';
 import { PagedResponse } from '../models/paged-response.model';
 import {
   CreateTeamMemberDto,
+  CreateResourceManagerDto,
   CvStorageResultDto,
+  ResourceManagerRequest,
+  ResourceManagerUserDto,
   TeamMemberDto,
   TeamMemberRequest,
   TeamStructureDto,
   UpdateTeamMemberDto,
   UpsertTeamMemberSkillDto,
+  ResetTeamMemberPasswordDto,
 } from '../models/team-members/team-member.models';
 
 @Injectable({ providedIn: 'root' })
@@ -59,5 +63,23 @@ export class TeamMembersService {
     const formData = new FormData();
     formData.append('file', file, file.name);
     return this.api.postFormData<BaseResponse<CvStorageResultDto>>(this.service, `${id}/cv/upload`, formData);
+  }
+
+  getResourceManagers(
+    request?: ResourceManagerRequest
+  ): Observable<BaseResponse<PagedResponse<ResourceManagerUserDto>>> {
+    return this.api.get<BaseResponse<PagedResponse<ResourceManagerUserDto>>>(
+      this.service,
+      'resource-managers',
+      request as Record<string, unknown>
+    );
+  }
+
+  createResourceManager(dto: CreateResourceManagerDto): Observable<BaseResponse<ResourceManagerUserDto>> {
+    return this.api.post<BaseResponse<ResourceManagerUserDto>>(this.service, 'resource-managers', dto);
+  }
+
+  resetPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {
+    return this.api.post<BaseResponse<object>>(this.service, `${id}/reset-password`, dto);
   }
 }

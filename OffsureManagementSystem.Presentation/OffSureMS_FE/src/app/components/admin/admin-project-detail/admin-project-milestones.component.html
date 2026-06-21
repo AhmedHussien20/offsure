@@ -1,0 +1,189 @@
+<div class="card custom-card milestone-panel">
+  <div class="card-header border-bottom-0 milestone-panel__header">
+    <div>
+      <h5 class="mb-0">Payment milestones</h5>
+      <span class="fs-12 text-muted d-block mt-1">
+        {{ milestones.length }} of {{ maxMilestones }} phases · must total 100%
+      </span>
+    </div>
+    @if (canEditPhases && !editing) {
+      <button type="button" class="btn btn-sm btn-primary" (click)="startEditing()">
+        <i class="fe fe-{{ milestones.length ? 'edit-2' : 'plus' }} me-1"></i>
+        {{ milestones.length ? 'Edit phases' : 'Define phases' }}
+      </button>
+    }
+  </div>
+
+  <div class="card-body pt-0">
+    @if (!editing && milestones.length > 0) {
+      <div class="milestone-panel__overview">
+        <div class="milestone-panel__segments" role="img" [attr.aria-label]="allocatedPercent + '% of budget allocated across phases'">
+          @for (m of milestones; track m.id) {
+            <span
+              class="milestone-panel__segment"
+              [class.milestone-panel__segment--completed]="m.status === milestoneStatus.Completed"
+              [class.milestone-panel__segment--in-progress]="m.status === milestoneStatus.InProgress"
+              [style.flex-grow]="m.paymentPercentage"
+              [title]="m.name + ': ' + (m.paymentPercentage | number: '1.0-2') + '%'"></span>
+          }
+        </div>
+        <div class="milestone-panel__overview-meta">
+          <span class="milestone-panel__overview-label">Allocation</span>
+          <span
+            class="milestone-panel__overview-value"
+            [class.milestone-panel__overview-value--valid]="allocatedPercent === 100">
+            {{ allocatedPercent | number: '1.0-0' }}%
+          </span>
+        </div>
+      </div>
+    }
+
+    @if (editing) {
+      <div class="milestone-editor">
+        @for (draft of drafts; track draft.localKey; let i = $index) {
+          <div class="milestone-editor__row" [class.milestone-editor__row--locked]="isDraftCompleted(draft)">
+            <span class="milestone-editor__index">{{ i + 1 }}</span>
+            <div class="milestone-editor__fields row g-2 flex-grow-1">
+              @if (isDraftCompleted(draft)) {
+                <div class="col-12">
+                  <span class="badge milestone-item__badge milestone-item__badge--completed mb-2">Completed — locked</span>
+                </div>
+              }
+              <div class="col-md-5">
+                <label class="form-label small text-muted mb-1">Phase name</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="draft.name"
+                  [readonly]="isDraftCompleted(draft)"
+                  placeholder="e.g. Discovery" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Share (%)</label>
+                <input
+                  type="number"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="draft.paymentPercentage"
+                  [readonly]="isDraftCompleted(draft)"
+                  min="0.01"
+                  max="100"
+                  step="0.01" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Payment</label>
+                <div class="milestone-editor__amount">{{ amountFor(draft.paymentPercentage) | number: '1.0-0' }}</div>
+              </div>
+              <div class="col-md-1 text-end d-flex align-items-end justify-content-end">
+                @if (!isDraftCompleted(draft)) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-icon btn-light milestone-editor__remove"
+                    title="Remove phase"
+                    (click)="removeDraft(i)">
+                    <i class="fe fe-trash-2"></i>
+                  </button>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label small text-muted mb-1">Description</label>
+                <textarea
+                  class="form-control form-control-sm"
+                  rows="2"
+                  [(ngModel)]="draft.description"
+                  [readonly]="isDraftCompleted(draft)"
+                  placeholder="Optional phase details"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small text-muted mb-1">Start date</label>
+                <input type="date" class="form-control form-control-sm" [(ngModel)]="draft.startDate" [readonly]="isDraftCompleted(draft)" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small text-muted mb-1">End date</label>
+                <input type="date" class="form-control form-control-sm" [(ngModel)]="draft.endDate" [readonly]="isDraftCompleted(draft)" />
+              </div>
+            </div>
+          </div>
+        }
+
+        <div class="milestone-editor__footer">
+          <div class="milestone-editor__totals">
+            @if (canAddDraft) {
+              <button type="button" class="btn btn-sm btn-light" (click)="addDraft()">
+                <i class="fe fe-plus me-1"></i> Add phase
+              </button>
+            }
+            <span
+              class="milestone-editor__percent-pill"
+              [class.milestone-editor__percent-pill--valid]="milestonesPercentagesValid(drafts)"
+              [class.milestone-editor__percent-pill--invalid]="drafts.length > 0 && !milestonesPercentagesValid(drafts)">
+              Total {{ draftPercentageTotal | number: '1.0-2' }}% / 100%
+            </span>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-primary" [disabled]="saving || !draftsValid" (click)="saveMilestones()">
+              {{ saving ? 'Saving…' : 'Save phases' }}
+            </button>
+            <button type="button" class="btn btn-sm btn-light" [disabled]="saving" (click)="cancelEditing()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    } @else if (milestones.length === 0) {
+      <div class="milestone-empty">
+        <i class="fe fe-layers milestone-empty__icon" aria-hidden="true"></i>
+        <p class="milestone-empty__title">No phases defined yet</p>
+        <p class="milestone-empty__hint">
+          Define all {{ maxMilestones }} payment phases here — each needs a name, description, start/end dates, and share of the budget (totaling 100%).
+        </p>
+        @if (!locked) {
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="startEditing()">Define phases</button>
+        }
+      </div>
+    } @else {
+      <div class="milestone-list">
+        @for (m of milestones; track m.id) {
+          <article
+            class="milestone-item"
+            [class.milestone-item--completed]="m.status === milestoneStatus.Completed"
+            [class.milestone-item--in-progress]="m.status === milestoneStatus.InProgress">
+            <div class="milestone-item__head">
+              <span class="milestone-item__order">{{ m.order }}</span>
+              <div class="milestone-item__title min-width-0">
+                <h6 class="mb-0 text-truncate">{{ m.name }}</h6>
+                <span class="milestone-item__share">{{ m.paymentPercentage | number: '1.0-2' }}% of budget</span>
+                @if (m.description) {
+                  <p class="milestone-item__description mb-0">{{ m.description }}</p>
+                }
+                @if (m.startDate || m.endDate) {
+                  <span class="milestone-item__dates">
+                    <i class="fe fe-calendar me-1"></i>
+                    {{ m.startDate ? (m.startDate | date: 'mediumDate') : '—' }}
+                    –
+                    {{ m.endDate ? (m.endDate | date: 'mediumDate') : '—' }}
+                  </span>
+                }
+              </div>
+              <div class="milestone-item__amount">{{ m.paymentAmount | number: '1.0-0' }}</div>
+            </div>
+
+            <div class="milestone-item__foot">
+              <span class="milestone-item__badge" [ngClass]="statusBadgeClass(m.status)">
+                {{ statusLabel(m.status) }}
+              </span>
+              @if (!locked && !isMilestoneCompleted(m)) {
+                <select
+                  class="form-select form-select-sm milestone-item__status"
+                  [ngModel]="m.status"
+                  [disabled]="statusUpdatingId === m.id"
+                  (ngModelChange)="updateStatus(m, $event)">
+                  @for (opt of milestoneStatusOptions; track opt.value) {
+                    <option [ngValue]="opt.value">Mark {{ opt.label | lowercase }}</option>
+                  }
+                </select>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</div>

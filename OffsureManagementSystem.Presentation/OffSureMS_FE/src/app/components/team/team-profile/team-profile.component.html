@@ -24,8 +24,8 @@
             <span class="badge {{ profile.isAvailable ? 'bg-success-transparent' : 'bg-danger-transparent' }}">
               {{ profile.isAvailable ? 'Available' : 'Busy' }}
             </span>
-            @if (profile.leaderName) {
-              <p class="text-muted small mt-2 mb-0">Reports to: {{ profile.leaderName }}</p>
+            @if (profile.resourceManagerName) {
+              <p class="text-muted small mt-2 mb-0">Resource manager: {{ profile.resourceManagerName }}</p>
             }
           </div>
         </div>

@@ -13,13 +13,18 @@ import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { SkillsService } from 'app/core/services/skills.service';
+import { TeamMembersService } from 'app/core/services/team-members.service';
+import { ResourceManagerUserDto } from 'app/core/models/team-members/team-member.models';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { normalizeProjectStatus, projectStatusKey } from 'app/core/utils/enum-status.util';
+import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
 import {
   assignmentsForSkill,
+  assignmentCostIssue,
+  assignmentCostIsComplete,
   assignmentLineCost,
   computeProjectFinancials,
   displayRole,
@@ -28,6 +33,7 @@ import {
 import { isNearScrollEnd } from 'app/core/utils/scroll-pagination.util';
 import { PROJECT_STATUS_BADGES } from '../admin.constants';
 import { AdminAssignSkillModalComponent } from './admin-assign-skill-modal.component';
+import { AdminProjectMilestonesComponent } from './admin-project-milestones.component';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
@@ -41,11 +47,13 @@ export interface ProjectSkillSlot {
 const SKILLS_PAGE_SIZE = 10;
 const SKILLS_SEARCH_DEBOUNCE_MS = 300;
 const SKILLS_SAVE_DEBOUNCE_MS = 450;
+const RM_PAGE_SIZE = 10;
+const RM_SEARCH_DEBOUNCE_MS = 300;
 
 @Component({
   selector: 'app-admin-project-detail',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, NgbNavModule, AdminProjectMilestonesComponent],
   templateUrl: './admin-project-detail.component.html',
   styleUrl: './admin-project-detail.component.scss',
 })
@@ -66,8 +74,22 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
 
   selectedSkillIds = new Set<number>();
   skillSlots: ProjectSkillSlot[] = [];
-  financials: ProjectFinancials = computeProjectFinancials(0, []);
   deliveryForm!: FormGroup;
+
+  resourceManagersList: ResourceManagerUserDto[] = [];
+  selectedResourceManagerIds = new Set<number>();
+  savingResourceManagers = false;
+  resourceManagersLoading = false;
+  resourceManagersPageIndex = 1;
+  resourceManagersHasMore = true;
+  resourceManagersTotalCount = 0;
+  resourceManagerSearchQuery = '';
+  resourceManagersCatalogById = new Map<number, ResourceManagerUserDto>();
+  expandedSkillIds = new Set<number>();
+  activeTab: 'overview' | 'milestones' | 'staffing' = 'overview';
+  milestoneAutoEdit = false;
+
+  readonly trackMembersPreview = 5;
 
   readonly statusOptions: { value: ProjectStatus; label: string }[] = [
     { value: ProjectStatus.Pending, label: 'Pending' },
@@ -80,6 +102,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   private projectId = 0;
   private readonly destroy$ = new Subject<void>();
   private readonly skillSearch$ = new Subject<string>();
+  private readonly resourceManagerSearch$ = new Subject<string>();
   private skillsSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
@@ -87,6 +110,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     private projectsService: ProjectsService,
     private serviceRequestsService: ServiceRequestsService,
     private skillsService: SkillsService,
+    private teamMembersService: TeamMembersService,
     private modalService: NgbModal,
     private confirmDialog: ConfirmDialogService,
     private fb: FormBuilder,
@@ -104,6 +128,12 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
       this.loadSkillsPage(false);
     });
 
+    this.resourceManagerSearch$
+      .pipe(debounceTime(RM_SEARCH_DEBOUNCE_MS), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.loadResourceManagersPage(false);
+      });
+
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
     if (!this.projectId) {
       this.loading = false;
@@ -111,6 +141,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     }
 
     this.loadSkillsPage(false);
+    this.loadResourceManagersPage(false);
     this.loadProject();
   }
 
@@ -136,10 +167,32 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     return this.selectedSkillIds.size > 0;
   }
 
+  get isHourlyBudget(): boolean {
+    return isHourlyBudgetProject(this.project);
+  }
+
+  get usesMilestones(): boolean {
+    return !!this.project?.usesMilestones && !this.isHourlyBudget;
+  }
+
+  get revenue(): number {
+    return this.project?.budget ?? 0;
+  }
+
+  get costSummary(): ProjectFinancials {
+    return computeProjectFinancials(this.project?.budget, this.project?.teamMembers);
+  }
+
   get selectedSkillsForDisplay(): SkillDto[] {
     return [...this.selectedSkillIds]
       .map(id => this.skillCatalogById.get(id))
       .filter((s): s is SkillDto => !!s);
+  }
+
+  get selectedResourceManagersForDisplay(): ResourceManagerUserDto[] {
+    return [...this.selectedResourceManagerIds]
+      .map(id => this.resourceManagersCatalogById.get(id))
+      .filter((rm): rm is ResourceManagerUserDto => !!rm);
   }
 
   get pendingSkillNames(): string {
@@ -147,6 +200,22 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
       .filter(s => s.pending)
       .map(s => s.skill.name)
       .join(', ');
+  }
+
+  get milestoneCountLabel(): string | null {
+    if (!this.project?.usesMilestones) {
+      return null;
+    }
+    const defined = this.project.milestones?.length ?? 0;
+    const max = this.project.milestoneCount ?? 0;
+    return max > 0 ? `${defined}/${max}` : null;
+  }
+
+  get incompleteCostAssignments(): ProjectAssignmentDto[] {
+    if (!this.isHourlyBudget) {
+      return [];
+    }
+    return (this.project?.teamMembers ?? []).filter(a => !assignmentCostIsComplete(a));
   }
 
   statusBadgeClass(status: unknown): string {
@@ -169,9 +238,18 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     return displayRole(role);
   }
 
+  onProjectUpdated(project: ProjectDto): void {
+    this.project = project;
+    this.buildSkillSlots();
+    this.patchDeliveryForm();
+  }
+
   lineCost(assignment: ProjectAssignmentDto): number {
     return assignmentLineCost(assignment);
   }
+
+  readonly isAssignmentCostComplete = assignmentCostIsComplete;
+  readonly assignmentCostIssueLabel = assignmentCostIssue;
 
   isSkillSelected(skillId: number): boolean {
     return this.selectedSkillIds.has(skillId);
@@ -203,8 +281,65 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     this.scheduleSaveRequiredSkills();
   }
 
+  isResourceManagerSelected(userId: number): boolean {
+    return this.selectedResourceManagerIds.has(userId);
+  }
+
+  onResourceManagerSearchInput(value: string): void {
+    this.resourceManagerSearchQuery = value;
+    this.resourceManagerSearch$.next(value);
+  }
+
+  onResourceManagerPickerScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (!isNearScrollEnd(el) || this.resourceManagersLoading || !this.resourceManagersHasMore) {
+      return;
+    }
+    this.loadResourceManagersPage(true);
+  }
+
+  visibleAssignments(slot: ProjectSkillSlot): ProjectAssignmentDto[] {
+    const assignments = slot.assignments;
+    if (assignments.length <= this.trackMembersPreview || this.expandedSkillIds.has(slot.skill.id)) {
+      return assignments;
+    }
+    return assignments.slice(0, this.trackMembersPreview);
+  }
+
+  hiddenAssignmentCount(slot: ProjectSkillSlot): number {
+    return Math.max(0, slot.assignments.length - this.trackMembersPreview);
+  }
+
+  isSkillMembersExpanded(skillId: number): boolean {
+    return this.expandedSkillIds.has(skillId);
+  }
+
+  toggleSkillMembersExpanded(skillId: number): void {
+    if (this.expandedSkillIds.has(skillId)) {
+      this.expandedSkillIds.delete(skillId);
+    } else {
+      this.expandedSkillIds.add(skillId);
+    }
+  }
+
+  toggleResourceManager(manager: ResourceManagerUserDto): void {
+    if (this.isDeliveryLocked || !this.project) return;
+
+    this.resourceManagersCatalogById.set(manager.id, manager);
+    if (this.selectedResourceManagerIds.has(manager.id)) {
+      this.selectedResourceManagerIds.delete(manager.id);
+    } else {
+      this.selectedResourceManagerIds.add(manager.id);
+    }
+    this.saveResourceManagers();
+  }
+
   skillSlotCost(slot: ProjectSkillSlot): number {
     return slot.assignments.reduce((sum, a) => sum + assignmentLineCost(a), 0);
+  }
+
+  slotHasIncompleteCost(slot: ProjectSkillSlot): boolean {
+    return slot.assignments.some(a => !assignmentCostIsComplete(a));
   }
 
   openAssignModal(slot: ProjectSkillSlot): void {
@@ -495,10 +630,90 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     this.selectedSkillIds = new Set(ids);
   }
 
+  private syncResourceManagerSelection(): void {
+    const ids = (this.project?.resourceManagers ?? []).map(rm => rm.userId);
+    this.selectedResourceManagerIds = new Set(ids);
+    this.syncResourceManagerCatalogFromProject();
+  }
+
+  private syncResourceManagerCatalogFromProject(): void {
+    (this.project?.resourceManagers ?? []).forEach(rm => {
+      this.resourceManagersCatalogById.set(rm.userId, {
+        id: rm.userId,
+        firstName: '',
+        lastName: '',
+        fullName: rm.fullName,
+        email: rm.email,
+      });
+    });
+  }
+
+  private loadResourceManagersPage(append: boolean): void {
+    if (this.resourceManagersLoading) return;
+    if (append && !this.resourceManagersHasMore) return;
+
+    const pageIndex = append ? this.resourceManagersPageIndex + 1 : 1;
+    this.resourceManagersLoading = true;
+
+    this.teamMembersService
+      .getResourceManagers({
+        pageIndex,
+        pageSize: RM_PAGE_SIZE,
+        searchKey: this.resourceManagerSearchQuery.trim() || undefined,
+      })
+      .subscribe({
+        next: res => {
+          const paged = res.data;
+          const batch = paged?.data ?? [];
+          batch.forEach(rm => this.resourceManagersCatalogById.set(rm.id, rm));
+
+          if (append) {
+            const existing = new Set(this.resourceManagersList.map(rm => rm.id));
+            this.resourceManagersList = [
+              ...this.resourceManagersList,
+              ...batch.filter(rm => !existing.has(rm.id)),
+            ];
+          } else {
+            this.resourceManagersList = batch;
+          }
+
+          this.resourceManagersPageIndex = pageIndex;
+          this.resourceManagersTotalCount = paged?.totalCount ?? 0;
+          this.resourceManagersHasMore = this.resourceManagersList.length < this.resourceManagersTotalCount;
+          this.resourceManagersLoading = false;
+        },
+        error: () => {
+          this.resourceManagersLoading = false;
+          if (!append) {
+            this.toastr.error('Failed to load resource managers.');
+          }
+        },
+      });
+  }
+
+  private saveResourceManagers(): void {
+    if (!this.project) return;
+
+    this.savingResourceManagers = true;
+    this.projectsService
+      .setResourceManagers(this.project.id, [...this.selectedResourceManagerIds])
+      .subscribe({
+        next: res => {
+          this.project = res.data ?? this.project;
+          this.syncResourceManagerSelection();
+          this.savingResourceManagers = false;
+        },
+        error: err => {
+          this.savingResourceManagers = false;
+          this.syncResourceManagerSelection();
+          this.toastr.error(err?.error?.message || 'Failed to update resource managers.');
+        },
+      });
+  }
+
   private buildSkillSlots(): void {
     if (!this.project) {
       this.skillSlots = [];
-      this.financials = computeProjectFinancials(0, []);
       return;
     }
 
@@ -510,8 +725,6 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         const assignments = assignmentsForSkill(this.project!.teamMembers, skill.id);
         return { skill, assignments, pending: assignments.length === 0 };
       });
-
-    this.financials = computeProjectFinancials(this.project.budget, this.project.teamMembers);
   }
 
   private loadProject(): void {
@@ -523,15 +736,41 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
           this.breadcrumbService.setDynamicLabel(this.project.name);
         }
         this.syncSkillSelection();
+        this.syncResourceManagerSelection();
         this.ensureRequiredSkillsInCatalog();
         this.buildSkillSlots();
         this.patchDeliveryForm();
+        this.applyInitialTab();
         this.loading = false;
       },
       error: () => {
         this.loading = false;
       },
     });
+  }
+
+  private applyInitialTab(): void {
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+
+    if (tab === 'staffing') {
+      this.activeTab = 'staffing';
+      return;
+    }
+
+    if (tab === 'overview') {
+      this.activeTab = 'overview';
+      return;
+    }
+
+    if (this.usesMilestones) {
+      this.activeTab = 'milestones';
+      if (tab === 'milestones') {
+        this.milestoneAutoEdit = true;
+      }
+      return;
+    }
+
+    this.activeTab = 'overview';
   }
 
   private patchDeliveryForm(): void {

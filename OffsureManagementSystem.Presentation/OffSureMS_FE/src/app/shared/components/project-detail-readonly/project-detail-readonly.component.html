@@ -1,7 +1,6 @@
 <div class="project-detail-header mb-3">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
     <div>
-      <h4 class="mb-1">{{ project.name }}</h4>
       <span class="badge {{ statusBadgeClassFn(project.status) }}">{{ statusLabelFn(project.status) }}</span>
       <p class="text-muted small mb-0 mt-1">{{ headerSubtitle }}</p>
       @if (isTeam && myRole) {
@@ -14,167 +13,207 @@
   </div>
 </div>
 
-<div class="row g-3">
-  <div class="col-xl-8">
-    @if (isClient) {
-      <div class="finance-summary finance-summary--single mb-3">
-        <div class="finance-summary__tile finance-summary__tile--revenue">
-          <span class="finance-summary__label">Budget</span>
-          <span class="finance-summary__value">{{ project.budget != null ? (project.budget | number: '1.0-0') : '—' }}</span>
-          <span class="finance-summary__hint">Agreed project budget</span>
-        </div>
-      </div>
-    }
-
-    <div class="card custom-card mb-3">
-      <div class="card-header border-bottom-0">
-        <h5 class="mb-0">Required skills</h5>
-        <span class="fs-12 text-muted d-block mt-1">Skills needed to deliver this project.</span>
-      </div>
-      <div class="card-body pt-0">
-        @if (selectedSkillsForDisplay.length > 0) {
-          <div class="skill-picker skill-picker--selected">
-            @for (skill of selectedSkillsForDisplay; track skill.id) {
-              <span class="skill-picker__chip skill-picker__chip--on">{{ skill.name }}</span>
+<div class="card custom-card project-detail-tabs-card">
+  <div class="card-header border-bottom-0 pb-0">
+    <nav ngbNav #detailNav="ngbNav" [(activeId)]="activeTab" class="nav-tabs nav-tabs-custom project-detail-tabs" role="tablist">
+      @if (usesMilestones) {
+        <ng-container ngbNavItem="milestones">
+          <button type="button" class="nav-link" ngbNavLink>
+            <i class="fe fe-layers me-1"></i>
+            Milestones
+            @if (milestoneCountLabel) {
+              <span class="badge bg-primary-transparent ms-1">{{ milestoneCountLabel }}</span>
             }
-          </div>
-        } @else {
-          <p class="text-muted small mb-0">No required skills listed for this project.</p>
-        }
-      </div>
-    </div>
-
-    <div class="card custom-card project-tracks-card">
-      <div class="card-header border-bottom-0">
-        <h5 class="mb-0">Team by skill</h5>
-        <span class="fs-12 text-muted d-block mt-1">Who is assigned for each required skill.</span>
-      </div>
-      <div class="card-body pt-0">
-        @if (!hasRequiredSkills) {
-          <div class="text-muted small py-3 text-center">No skill tracks defined yet.</div>
-        }
-        @for (slot of skillSlots; track slot.skill.id) {
-          <div class="track-row" [class.track-row--pending]="slot.pending">
-            <div class="track-row__head">
-              <div class="track-row__icon">{{ slot.skill.name.charAt(0) }}</div>
-              <div class="track-row__title">
-                <h6 class="mb-0">{{ slot.skill.name }}</h6>
-                @if (slot.assignments.length > 0) {
-                  <span class="track-row__status text-success">{{ slot.assignments.length }} assigned</span>
-                } @else {
-                  <span class="track-row__status text-muted">Not yet assigned · {{ slot.skill.skillCategoryName }}</span>
-                }
-              </div>
+          </button>
+          <ng-template ngbNavContent>
+            <div class="project-detail-tab-pane">
+              <app-project-milestones-readonly [project]="project" />
             </div>
+          </ng-template>
+        </ng-container>
+      }
 
-            @if (slot.assignments.length > 0) {
-              <ul class="track-members">
-                @for (a of slot.assignments; track a.id) {
-                  <li class="track-member" [class.track-member--self]="isSelf(a)">
-                    <div class="track-member__avatar">{{ memberInitials(a.teamMemberName) }}</div>
-                    <div class="track-member__info">
-                      <span class="track-member__name">
-                        {{ a.teamMemberName }}
-                        @if (isSelf(a)) {
-                          <span class="badge bg-primary-transparent text-primary ms-1">You</span>
-                        }
-                      </span>
-                      <span class="track-member__role">{{ roleLabel(a.role) }}</span>
-                      @if (showAssignmentCost() && a.hourlyRate && a.allocatedHours) {
-                        <span class="track-member__title">
-                          {{ a.hourlyRate | number: '1.0-2' }}/hr × {{ a.allocatedHours }}h
-                        </span>
+      <ng-container ngbNavItem="overview">
+        <button type="button" class="nav-link" ngbNavLink>
+          <i class="fe fe-info me-1"></i>
+          Overview
+        </button>
+        <ng-template ngbNavContent>
+            <div class="project-detail-tab-pane">
+              @if (project.budget != null) {
+                <div class="finance-summary finance-summary--single mb-3">
+                  <div class="finance-summary__tile finance-summary__tile--revenue">
+                    <span class="finance-summary__label">{{ isClient ? 'Budget' : 'Revenue' }}</span>
+                    <span class="finance-summary__value">{{ project.budget | number: '1.0-0' }}</span>
+                    <span class="finance-summary__hint">{{ isClient ? 'Agreed project budget' : 'Project budget' }}</span>
+                  </div>
+                </div>
+              }
+
+              <div class="row g-3">
+              <div class="col-lg-7">
+                <div class="card custom-card mb-0 h-100">
+                  <div class="card-header border-bottom-0">
+                    <h5 class="mb-0">Project details</h5>
+                  </div>
+                  <div class="card-body">
+                    <dl class="project-info-dl mb-0">
+                      @if (!isClient) {
+                        <dt>Client</dt>
+                        <dd>{{ project.clientName }}</dd>
                       }
+                      <dt>Service</dt>
+                      <dd>{{ project.serviceName }}</dd>
+                      @if (isClient && project.serviceRequestTitle) {
+                        <dt>Request</dt>
+                        <dd>{{ project.serviceRequestTitle }}</dd>
+                      }
+                      <dt>Start</dt>
+                      <dd>{{ project.startDate ? (project.startDate | date: 'mediumDate') : '—' }}</dd>
+                      <dt>Deadline</dt>
+                      <dd>{{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}</dd>
+                      <dt>Status</dt>
+                      <dd>
+                        <span class="badge {{ statusBadgeClassFn(project.status) }}">{{ statusLabelFn(project.status) }}</span>
+                      </dd>
+                    </dl>
+
+                    <div class="project-delivery-section">
+                      <div class="project-delivery-block">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <label class="form-label fw-semibold mb-0">Progress</label>
+                          <span class="project-delivery-value">{{ progressPercent }}%</span>
+                        </div>
+                        <div
+                          class="delivery-progress-slider delivery-progress-slider--readonly"
+                          [style.--progress]="progressPercent + '%'">
+                          <div class="delivery-progress-slider__track">
+                            <div class="delivery-progress-slider__fill" [style.width.%]="progressPercent"></div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </li>
-                }
-              </ul>
-            } @else {
-              <p class="track-row__empty text-muted small mb-0 mt-2">Waiting for team assignment.</p>
-            }
-          </div>
-        }
-      </div>
-    </div>
-  </div>
+                  </div>
+                </div>
+              </div>
 
-  <div class="col-xl-4">
-    <div class="card custom-card project-sidebar-card">
-      <div class="card-header border-bottom-0">
-        <h5 class="mb-0">Project info & delivery</h5>
-      </div>
-      <div class="card-body">
-        <dl class="project-info-dl">
-          @if (!isClient) {
-            <dt>Client</dt>
-            <dd>{{ project.clientName }}</dd>
-          }
-          <dt>Service</dt>
-          <dd>{{ project.serviceName }}</dd>
-          @if (isClient && project.serviceRequestTitle) {
-            <dt>Request</dt>
-            <dd>{{ project.serviceRequestTitle }}</dd>
-          }
-          <dt>Start</dt>
-          <dd>{{ project.startDate ? (project.startDate | date: 'mediumDate') : '—' }}</dd>
-          <dt>Deadline</dt>
-          <dd>{{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}</dd>
-          @if (isClient) {
-            <dt>Budget</dt>
-            <dd>{{ project.budget != null ? (project.budget | number: '1.0-2') : '—' }}</dd>
-          }
-          <dt>Status</dt>
-          <dd>
-            <span class="badge {{ statusBadgeClassFn(project.status) }}">{{ statusLabelFn(project.status) }}</span>
-          </dd>
-        </dl>
+              <div class="col-lg-5">
+                <div class="card custom-card mb-3">
+                  <div class="card-header"><h5 class="mb-0">Assigned team</h5></div>
+                  <ul class="list-group list-group-flush project-team-summary">
+                    @if ((project.teamMembers?.length ?? 0) === 0) {
+                      <li class="list-group-item text-muted">No members yet.</li>
+                    }
+                    @for (m of project.teamMembers; track m.id) {
+                      <li class="list-group-item d-flex align-items-center gap-2">
+                        <span class="project-team-avatar">{{ memberInitials(m.teamMemberName) }}</span>
+                        <div class="flex-grow-1 min-width-0">
+                          <div class="fw-semibold text-truncate">
+                            {{ m.teamMemberName }}
+                            @if (highlightMemberId === m.teamMemberId) {
+                              <span class="badge bg-primary-transparent text-primary ms-1">You</span>
+                            }
+                          </div>
+                          <small class="text-muted">{{ roleLabel(m.role) }}</small>
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                </div>
 
-        <div class="project-delivery-section">
-          <div class="project-delivery-block">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <label class="form-label fw-semibold mb-0">Progress</label>
-              <span class="project-delivery-value">{{ progressPercent }}%</span>
-            </div>
-            <div
-              class="delivery-progress-slider delivery-progress-slider--readonly"
-              [style.--progress]="progressPercent + '%'">
-              <div class="delivery-progress-slider__track">
-                <div class="delivery-progress-slider__fill" [style.width.%]="progressPercent"></div>
+                <div class="card custom-card mb-0">
+                  <div class="card-header"><h5 class="mb-0">Description</h5></div>
+                  <div class="card-body">
+                    <p class="text-muted mb-0 small">{{ project.description || 'No description.' }}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </ng-template>
+      </ng-container>
 
-    <div class="card custom-card mt-3">
-      <div class="card-header"><h5 class="mb-0">Assigned team</h5></div>
-      <ul class="list-group list-group-flush project-team-summary">
-        @if ((project.teamMembers?.length ?? 0) === 0) {
-          <li class="list-group-item text-muted">No members yet.</li>
-        }
-        @for (m of project.teamMembers; track m.id) {
-          <li class="list-group-item d-flex align-items-center gap-2">
-            <span class="project-team-avatar">{{ memberInitials(m.teamMemberName) }}</span>
-            <div class="flex-grow-1 min-width-0">
-              <div class="fw-semibold text-truncate">
-                {{ m.teamMemberName }}
-                @if (highlightMemberId === m.teamMemberId) {
-                  <span class="badge bg-primary-transparent text-primary ms-1">You</span>
+      <ng-container ngbNavItem="team">
+        <button type="button" class="nav-link" ngbNavLink>
+          <i class="fe fe-users me-1"></i>
+          Team
+        </button>
+        <ng-template ngbNavContent>
+          <div class="project-detail-tab-pane">
+            <div class="card custom-card mb-3">
+              <div class="card-header border-bottom-0">
+                <h5 class="mb-0">Required skills</h5>
+                <span class="fs-12 text-muted d-block mt-1">Skills needed to deliver this project.</span>
+              </div>
+              <div class="card-body pt-0">
+                @if (selectedSkillsForDisplay.length > 0) {
+                  <div class="skill-picker skill-picker--selected">
+                    @for (skill of selectedSkillsForDisplay; track skill.id) {
+                      <span class="skill-picker__chip skill-picker__chip--on">{{ skill.name }}</span>
+                    }
+                  </div>
+                } @else {
+                  <p class="text-muted small mb-0">No required skills listed for this project.</p>
                 }
               </div>
-              <small class="text-muted">{{ roleLabel(m.role) }}</small>
             </div>
-          </li>
-        }
-      </ul>
-    </div>
 
-    <div class="card custom-card mt-3">
-      <div class="card-header"><h5 class="mb-0">Description</h5></div>
-      <div class="card-body">
-        <p class="text-muted mb-0 small">{{ project.description || 'No description.' }}</p>
-      </div>
-    </div>
+            <div class="card custom-card project-tracks-card mb-0">
+              <div class="card-header border-bottom-0">
+                <h5 class="mb-0">Team by skill</h5>
+                <span class="fs-12 text-muted d-block mt-1">Who is assigned for each required skill.</span>
+              </div>
+              <div class="card-body pt-0">
+                @if (!hasRequiredSkills) {
+                  <div class="text-muted small py-3 text-center">No skill tracks defined yet.</div>
+                }
+                @for (slot of skillSlots; track slot.skill.id) {
+                  <div class="track-row" [class.track-row--pending]="slot.pending">
+                    <div class="track-row__head">
+                      <div class="track-row__icon">{{ slot.skill.name.charAt(0) }}</div>
+                      <div class="track-row__title">
+                        <h6 class="mb-0">{{ slot.skill.name }}</h6>
+                        @if (slot.assignments.length > 0) {
+                          <span class="track-row__status text-success">{{ slot.assignments.length }} assigned</span>
+                        } @else {
+                          <span class="track-row__status text-muted">Not yet assigned · {{ slot.skill.skillCategoryName }}</span>
+                        }
+                      </div>
+                    </div>
+
+                    @if (slot.assignments.length > 0) {
+                      <ul class="track-members">
+                        @for (a of slot.assignments; track a.id) {
+                          <li class="track-member" [class.track-member--self]="isSelf(a)">
+                            <div class="track-member__avatar">{{ memberInitials(a.teamMemberName) }}</div>
+                            <div class="track-member__info">
+                              <span class="track-member__name">
+                                {{ a.teamMemberName }}
+                                @if (isSelf(a)) {
+                                  <span class="badge bg-primary-transparent text-primary ms-1">You</span>
+                                }
+                              </span>
+                              <span class="track-member__role">{{ roleLabel(a.role) }}</span>
+                              @if (showAssignmentCost() && a.hourlyRate && a.allocatedHours) {
+                                <span class="track-member__title">
+                                  {{ a.hourlyRate | number: '1.0-2' }}/hr × {{ a.allocatedHours }}h
+                                </span>
+                              }
+                            </div>
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="track-row__empty text-muted small mb-0 mt-2">Waiting for team assignment.</p>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </ng-container>
+    </nav>
   </div>
+  <div class="card-body pt-3" [ngbNavOutlet]="detailNav"></div>
 </div>

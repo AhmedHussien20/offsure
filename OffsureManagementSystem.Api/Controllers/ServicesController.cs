@@ -9,7 +9,7 @@ namespace OffsureManagementSystem.API.Controllers
 {
     [Route("api/services")]
     [ApiController]
-    [Authorize(Roles = "Administrator")]
+    [Authorize(Roles = "Administrator,ResourceManager")]
     public class ServicesController : BaseController
     {
         private readonly IServiceManagementService _serviceManagementService;

@@ -264,6 +264,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("MilestoneCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -293,6 +296,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     b.Property<int?>("UpdatedBy")
                         .HasColumnType("int");
+
+                    b.Property<bool>("UsesMilestones")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -373,6 +379,122 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.HasIndex("ProjectId", "TeamMemberId", "SkillId", "IsActive");
 
                     b.ToTable("ProjectAssignments");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectMilestone", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PaymentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PaymentPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "Order");
+
+                    b.ToTable("ProjectMilestones");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectResourceManager", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ResourceManagerUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceManagerUserId");
+
+                    b.HasIndex("ProjectId", "ResourceManagerUserId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("ProjectResourceManagers");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectSkill", b =>
@@ -644,13 +766,13 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("LeaderId")
-                        .HasColumnType("int");
-
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("ResourceManagerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -673,7 +795,7 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LeaderId");
+                    b.HasIndex("ResourceManagerId");
 
                     b.HasIndex("UserId");
 
@@ -919,6 +1041,15 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             Name = "TeamMember"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Manages assigned team members, skills, allocations, and project delivery without financial access.",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "ResourceManager"
                         });
                 });
 
@@ -1095,6 +1226,36 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Navigation("TeamMember");
                 });
 
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectMilestone", b =>
+                {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectMilestones")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectResourceManager", b =>
+                {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectResourceManagers")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "ResourceManager")
+                        .WithMany()
+                        .HasForeignKey("ResourceManagerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("ResourceManager");
+                });
+
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectSkill", b =>
                 {
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.Project", "Project")
@@ -1157,9 +1318,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.TeamMember", b =>
                 {
-                    b.HasOne("OffshoreManagementSystem.Domain.Entities.TeamMember", "Leader")
-                        .WithMany("TeamMembers")
-                        .HasForeignKey("LeaderId")
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "ResourceManager")
+                        .WithMany("ManagedTeamMembers")
+                        .HasForeignKey("ResourceManagerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "User")
@@ -1168,7 +1329,7 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Leader");
+                    b.Navigation("ResourceManager");
 
                     b.Navigation("User");
                 });
@@ -1217,6 +1378,10 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                 {
                     b.Navigation("ProjectAssignments");
 
+                    b.Navigation("ProjectMilestones");
+
+                    b.Navigation("ProjectResourceManagers");
+
                     b.Navigation("ProjectSkills");
                 });
 
@@ -1245,14 +1410,14 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Navigation("ProjectAssignments");
 
                     b.Navigation("TeamMemberSkills");
-
-                    b.Navigation("TeamMembers");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.User", b =>
                 {
                     b.Navigation("Client")
                         .IsRequired();
+
+                    b.Navigation("ManagedTeamMembers");
 
                     b.Navigation("TeamMembers");
                 });

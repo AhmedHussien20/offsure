@@ -19,10 +19,14 @@ namespace OffshoreManagementSystem.Domain.Entities
         /// <summary>When <see cref="BudgetType"/> is Hourly, minimum expected hours for the project.</summary>
         public int? ExpectedHours { get; set; }
         public int? Progress { get; set; } // 0-100
+        public bool UsesMilestones { get; set; }
+        public int? MilestoneCount { get; set; }
 
         // Navigation Properties
         public virtual ServiceRequest ServiceRequest { get; set; }
         public virtual ICollection<ProjectAssignment> ProjectAssignments { get; set; } = new List<ProjectAssignment>();
         public virtual ICollection<ProjectSkill> ProjectSkills { get; set; } = new List<ProjectSkill>();
+        public virtual ICollection<ProjectResourceManager> ProjectResourceManagers { get; set; } = new List<ProjectResourceManager>();
+        public virtual ICollection<ProjectMilestone> ProjectMilestones { get; set; } = new List<ProjectMilestone>();
     }
 }

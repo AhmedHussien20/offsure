@@ -129,6 +129,35 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Project status updated successfully."));
         }
 
+        [HttpPut("{id:int}/resource-managers")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> SetResourceManagers(
+            int id,
+            SetProjectResourceManagersDto dto)
+        {
+            var project = await _projectManagementService.SetProjectResourceManagersAsync(id, dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Project resource managers updated successfully."));
+        }
+
+        [HttpPut("{id:int}/milestones")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpsertMilestones(
+            int id,
+            UpsertProjectMilestonesDto dto)
+        {
+            var project = await _projectManagementService.UpsertProjectMilestonesAsync(id, dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Project milestones saved successfully."));
+        }
+
+        [HttpPatch("{id:int}/milestones/{milestoneId:int}/status")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateMilestoneStatus(
+            int id,
+            int milestoneId,
+            UpdateProjectMilestoneStatusDto dto)
+        {
+            var project = await _projectManagementService.UpdateProjectMilestoneStatusAsync(id, milestoneId, dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Milestone status updated successfully."));
+        }
+
         private int GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

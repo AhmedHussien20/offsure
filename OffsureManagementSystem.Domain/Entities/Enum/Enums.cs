@@ -37,4 +37,20 @@ namespace OffsureManagementSystem.Domain.Entities.Enum
         Total = 0,
         Hourly = 1
     }
+
+    public enum MilestoneStatus
+    {
+        NotStarted = 1,
+        InProgress = 2,
+        Completed = 3
+    }
+
+    /// <summary>Application user roles (matches seeded <see cref="Role.Name"/> values).</summary>
+    public enum UserRole
+    {
+        Administrator = 1,
+        Client = 2,
+        TeamMember = 3,
+        ResourceManager = 4
+    }
 }

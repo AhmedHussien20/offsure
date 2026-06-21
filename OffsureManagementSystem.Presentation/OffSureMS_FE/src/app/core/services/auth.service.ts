@@ -137,6 +137,10 @@ export class AuthService {
     return this.getUserRole() === 'TeamMember';
   }
 
+  isResourceManager(): boolean {
+    return this.getUserRole() === 'ResourceManager';
+  }
+
   hasPermission(permission: string): boolean {
     return this.getUser()?.permissions?.includes(permission) ?? false;
   }

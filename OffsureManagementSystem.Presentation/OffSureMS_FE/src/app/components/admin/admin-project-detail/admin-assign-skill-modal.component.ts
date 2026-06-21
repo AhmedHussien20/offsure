@@ -5,7 +5,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { AssignProjectTeamMemberDto, ProjectDto } from 'app/core/models/projects/project.models';
 import { SkillDto } from 'app/core/models/skills/skill.models';
 import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
-import { resolveAssignmentDefaults } from 'app/core/utils/project-budget-form.util';
+import { resolveAssignmentDefaults, isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
 import { isNearScrollEnd } from 'app/core/utils/scroll-pagination.util';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
@@ -74,6 +74,10 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
     return this.selectedMemberIds.size;
   }
 
+  get isHourlyBudget(): boolean {
+    return isHourlyBudgetProject(this.project);
+  }
+
   get totalTrackCost(): number {
     return this.memberDetails.reduce((sum, d) => sum + this.detailLineCost(d), 0);
   }
@@ -130,7 +134,9 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
       .map(id => this.membersById.get(id))
       .filter((m): m is TeamMemberDto => !!m)
       .map(member => {
-        const defaults = resolveAssignmentDefaults(this.project, member);
+        const defaults = this.isHourlyBudget
+          ? resolveAssignmentDefaults(this.project, member)
+          : { hourlyRate: null, allocatedHours: null };
         return {
           member,
           role: member.title?.trim() || `${this.skill.name} specialist`,
@@ -152,27 +158,39 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
   }
 
   canSubmit(): boolean {
-    return this.memberDetails.every(
-      d =>
-        d.role.trim().length > 0 &&
-        (Number(d.hourlyRate) || 0) > 0 &&
-        (Number(d.allocatedHours) || 0) > 0
-    );
+    return this.memberDetails.every(d => {
+      if (!d.role.trim().length) {
+        return false;
+      }
+      if (!this.isHourlyBudget) {
+        return true;
+      }
+      return (Number(d.hourlyRate) || 0) > 0 && (Number(d.allocatedHours) || 0) > 0;
+    });
   }
 
   submit(): void {
     if (!this.projectId || !this.canSubmit()) {
-      this.toastr.warning('Set role, hourly rate, and allocated hours for each member.');
+      this.toastr.warning(
+        this.isHourlyBudget
+          ? 'Set role, hourly rate, and allocated hours for each member.'
+          : 'Set a role for each member.'
+      );
       return;
     }
 
-    const dtos: AssignProjectTeamMemberDto[] = this.memberDetails.map(d => ({
-      teamMemberId: d.member.id,
-      skillId: this.skill.id,
-      role: d.role.trim(),
-      hourlyRate: Number(d.hourlyRate),
-      allocatedHours: Number(d.allocatedHours),
-    }));
+    const dtos: AssignProjectTeamMemberDto[] = this.memberDetails.map(d => {
+      const dto: AssignProjectTeamMemberDto = {
+        teamMemberId: d.member.id,
+        skillId: this.skill.id,
+        role: d.role.trim(),
+      };
+      if (this.isHourlyBudget) {
+        dto.hourlyRate = Number(d.hourlyRate);
+        dto.allocatedHours = Number(d.allocatedHours);
+      }
+      return dto;
+    });
 
     this.saving = true;
     from(dtos)

@@ -22,5 +22,17 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<TeamMemberDto> RemoveSkillForUserAsync(int userId, int skillId);
         Task<CvStorageResultDto> GenerateCvForUserAsync(int userId);
         Task<CvStorageResultDto> StoreCvForUserAsync(int userId, Stream content, string fileName);
+        Task<PagedResponse<ResourceManagerUserDto>> GetResourceManagersAsync(ResourceManagerRequest request);
+        Task<ResourceManagerUserDto> CreateResourceManagerAsync(CreateResourceManagerDto dto);
+        Task<PagedResponse<TeamMemberDto>> GetManagedTeamMembersAsync(int resourceManagerUserId, TeamMemberRequest request);
+        Task<TeamMemberDto> GetManagedTeamMemberByIdAsync(int resourceManagerUserId, int teamMemberId);
+        Task<TeamMemberDto> CreateManagedTeamMemberAsync(int resourceManagerUserId, CreateTeamMemberDto dto);
+        Task<TeamMemberDto> UpdateManagedTeamMemberAsync(int resourceManagerUserId, int teamMemberId, UpdateTeamMemberDto dto);
+        Task DeleteManagedTeamMemberAsync(int resourceManagerUserId, int teamMemberId);
+        Task<TeamMemberDto> AssignSkillForResourceManagerAsync(int resourceManagerUserId, int teamMemberId, UpsertTeamMemberSkillDto dto);
+        Task<TeamMemberDto> RemoveSkillForResourceManagerAsync(int resourceManagerUserId, int teamMemberId, int skillId);
+        Task EnsureTeamMemberManagedByAsync(int resourceManagerUserId, int teamMemberId);
+        Task ResetTeamMemberPasswordAsync(int teamMemberId, ResetTeamMemberPasswordDto dto);
+        Task ResetManagedTeamMemberPasswordAsync(int resourceManagerUserId, int teamMemberId, ResetTeamMemberPasswordDto dto);
     }
 }

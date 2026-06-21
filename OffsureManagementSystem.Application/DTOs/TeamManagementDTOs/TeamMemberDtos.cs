@@ -7,9 +7,30 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
     public class TeamMemberRequest : BaseApiRequest
     {
         public int? UserId { get; set; }
-        public int? LeaderId { get; set; }
+        public int? ResourceManagerId { get; set; }
         public bool? IsAvailable { get; set; }
         public int? SkillId { get; set; }
+    }
+
+    public class ResourceManagerRequest : BaseApiRequest
+    {
+    }
+
+    public class CreateResourceManagerDto
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class ResourceManagerUserDto
+    {
+        public int Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
     }
 
     public class CreateTeamMemberDto
@@ -21,7 +42,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string Title { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
         public string? PhoneNumber { get; set; }
-        public int? LeaderId { get; set; }
+        public int? ResourceManagerId { get; set; }
         public bool IsAvailable { get; set; } = true;
         public decimal? HourlySalary { get; set; }
         public List<UpsertTeamMemberSkillDto> SkillAssignments { get; set; } = new();
@@ -35,7 +56,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string Title { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
         public string? PhoneNumber { get; set; }
-        public int? LeaderId { get; set; }
+        public int? ResourceManagerId { get; set; }
         public bool IsAvailable { get; set; } = true;
         public decimal? HourlySalary { get; set; }
         public List<UpsertTeamMemberSkillDto> SkillAssignments { get; set; } = new();
@@ -51,6 +72,11 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
     public class UpdateTeamMemberAvailabilityDto
     {
         public bool IsAvailable { get; set; }
+    }
+
+    public class ResetTeamMemberPasswordDto
+    {
+        public string NewPassword { get; set; } = string.Empty;
     }
 
     public class UpsertTeamMemberSkillDto
@@ -75,8 +101,8 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public int YearsOfExperience { get; set; }
         public string CV { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
-        public int? LeaderId { get; set; }
-        public string? LeaderName { get; set; }
+        public int? ResourceManagerId { get; set; }
+        public string? ResourceManagerName { get; set; }
         public bool IsAvailable { get; set; }
         public decimal? HourlySalary { get; set; }
         public List<TeamMemberSkillDto> SkillAssignments { get; set; } = new();

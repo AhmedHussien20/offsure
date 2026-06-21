@@ -44,6 +44,13 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     requiredRole: 'Administrator',
   },
   {
+    title: 'Resource Managers',
+    path: '/admin/resource-managers',
+    type: 'link',
+    icon: 'ti-id-badge',
+    requiredRole: 'Administrator',
+  },
+  {
     title: 'Services',
     path: '/admin/services',
     type: 'link',
@@ -96,6 +103,31 @@ private TEAM_MENUITEMS: MenuItem[] = [
   //   icon: 'ti-user',
   //   requiredRole: 'TeamMember',
   // },
+];
+
+private RESOURCE_MANAGER_MENUITEMS: MenuItem[] = [
+  { headTitle: 'Resource Manager Portal' },
+  {
+    title: 'Dashboard',
+    path: '/resource-manager/dashboard',
+    type: 'link',
+    icon: 'ti-home',
+    requiredRole: 'ResourceManager',
+  },
+  {
+    title: 'My Team',
+    path: '/resource-manager/team',
+    type: 'link',
+    icon: 'ti-user',
+    requiredRole: 'ResourceManager',
+  },
+  {
+    title: 'Projects',
+    path: '/resource-manager/projects',
+    type: 'link',
+    icon: 'ti-folder',
+    requiredRole: 'ResourceManager',
+  },
 ];
 
 private CLIENT_MENUITEMS: MenuItem[] = [
@@ -391,6 +423,9 @@ private MENUITEMS: MenuItem[] = [
     }
     if (this.auth.isTeamMember()) {
       return this.TEAM_MENUITEMS;
+    }
+    if (this.auth.isResourceManager()) {
+      return this.RESOURCE_MANAGER_MENUITEMS;
     }
     if (this.auth.isAdministrator()) {
       return this.ADMIN_MENUITEMS;

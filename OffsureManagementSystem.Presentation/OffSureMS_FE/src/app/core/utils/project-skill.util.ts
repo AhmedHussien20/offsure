@@ -80,6 +80,25 @@ export function assignmentLineCost(assignment: ProjectAssignmentDto): number {
   return rate * hours;
 }
 
+export function assignmentCostIsComplete(assignment: ProjectAssignmentDto): boolean {
+  return (assignment.hourlyRate ?? 0) > 0 && (assignment.allocatedHours ?? 0) > 0;
+}
+
+export function assignmentCostIssue(assignment: ProjectAssignmentDto): string | null {
+  const missingRate = (assignment.hourlyRate ?? 0) <= 0;
+  const missingHours = (assignment.allocatedHours ?? 0) <= 0;
+  if (!missingRate && !missingHours) {
+    return null;
+  }
+  if (missingRate && missingHours) {
+    return 'Missing hourly rate and allocated hours';
+  }
+  if (missingRate) {
+    return 'Missing hourly rate (member salary not set)';
+  }
+  return 'Missing allocated hours';
+}
+
 export interface ProjectFinancials {
   revenue: number;
   cost: number;

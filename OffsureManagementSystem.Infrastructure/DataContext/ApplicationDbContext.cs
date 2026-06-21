@@ -25,6 +25,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
         public DbSet<ProjectSkill> ProjectSkills { get; set; }
+        public DbSet<ProjectResourceManager> ProjectResourceManagers { get; set; }
+        public DbSet<ProjectMilestone> ProjectMilestones { get; set; }
         public DbSet<PortfolioProject> PortfolioProjects { get; set; }
         public DbSet<PortfolioProjectImage> PortfolioProjectImages { get; set; }
 
@@ -145,6 +147,15 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                         IsActive = true,
                         CreatedAt = rolesSeededAt,
                         IsDeleted = false
+                    },
+                    new Role
+                    {
+                        Id = 4,
+                        Name = "ResourceManager",
+                        Description = "Manages assigned team members, skills, allocations, and project delivery without financial access.",
+                        IsActive = true,
+                        CreatedAt = rolesSeededAt,
+                        IsDeleted = false
                     });
             });
 
@@ -177,9 +188,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(e => e.Leader)
-                    .WithMany(e => e.TeamMembers)
-                    .HasForeignKey(e => e.LeaderId)
+                entity.HasOne(e => e.ResourceManager)
+                    .WithMany(u => u.ManagedTeamMembers)
+                    .HasForeignKey(e => e.ResourceManagerId)
                     .OnDelete(DeleteBehavior.Restrict)
                     .IsRequired(false);
 
@@ -459,6 +470,60 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .WithOne(ps => ps.Project)
                     .HasForeignKey(ps => ps.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.ProjectResourceManagers)
+                    .WithOne(rm => rm.Project)
+                    .HasForeignKey(rm => rm.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.ProjectMilestones)
+                    .WithOne(m => m.Project)
+                    .HasForeignKey(m => m.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ProjectMilestone>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.PaymentPercentage)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.PaymentAmount)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(30)
+                    .IsRequired();
+
+                entity.HasIndex(e => new { e.ProjectId, e.Order });
+            });
+
+            modelBuilder.Entity<ProjectResourceManager>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Project)
+                    .WithMany(p => p.ProjectResourceManagers)
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.ResourceManager)
+                    .WithMany()
+                    .HasForeignKey(e => e.ResourceManagerUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.ProjectId, e.ResourceManagerUserId })
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
             });
 
             // PROJECT SKILL ENTITY CONFIGURATION
