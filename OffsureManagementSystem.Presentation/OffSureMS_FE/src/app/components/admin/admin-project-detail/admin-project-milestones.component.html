@@ -3,15 +3,37 @@
     <div>
       <h5 class="mb-0">Payment milestones</h5>
       <span class="fs-12 text-muted d-block mt-1">
-        {{ milestones.length }} of {{ maxMilestones }} phases · must total 100%
+        @if (milestones.length > 0) {
+          {{ phasesSummaryLabel }} · {{ allocatedPercent | number: '1.0-0' }}% allocated
+        } @else {
+          {{ milestones.length }} of {{ maxMilestones }} phases · must total 100%
+        }
       </span>
     </div>
-    @if (canEditPhases && !editing) {
-      <button type="button" class="btn btn-sm btn-primary" (click)="startEditing()">
-        <i class="fe fe-{{ milestones.length ? 'edit-2' : 'plus' }} me-1"></i>
-        {{ milestones.length ? 'Edit phases' : 'Define phases' }}
-      </button>
-    }
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      @if (!editing && milestones.length > 0) {
+        <button
+          type="button"
+          class="btn btn-sm btn-light milestone-panel__toggle"
+          [attr.aria-expanded]="listExpanded"
+          (click)="toggleListExpanded()">
+          <i class="fe fe-chevron-{{ listExpanded ? 'up' : 'down' }} me-1"></i>
+          {{ listExpanded ? 'Hide phases' : 'Show phases' }}
+        </button>
+      }
+      @if (canEditPhases && !editing) {
+        <button type="button" class="btn btn-sm btn-primary" (click)="startEditing()">
+          <i class="fe fe-{{ milestones.length ? 'edit-2' : 'plus' }} me-1"></i>
+          {{ milestones.length ? 'Edit phases' : 'Define phases' }}
+        </button>
+      }
+      @if (canMarkComplete && !editing) {
+        <button type="button" class="btn btn-sm btn-success" (click)="markComplete.emit()">
+          <i class="fe fe-check me-1"></i>
+          Mark complete
+        </button>
+      }
+    </div>
   </div>
 
   <div class="card-body pt-0">
@@ -138,49 +160,58 @@
           <button type="button" class="btn btn-sm btn-outline-primary" (click)="startEditing()">Define phases</button>
         }
       </div>
-    } @else {
+    } @else if (listExpanded) {
       <div class="milestone-list">
         @for (m of milestones; track m.id) {
           <article
             class="milestone-item"
+            [class.milestone-item--expanded]="isMilestoneExpanded(m.id)"
             [class.milestone-item--completed]="m.status === milestoneStatus.Completed"
             [class.milestone-item--in-progress]="m.status === milestoneStatus.InProgress">
-            <div class="milestone-item__head">
+            <button
+              type="button"
+              class="milestone-item__trigger"
+              [attr.aria-expanded]="isMilestoneExpanded(m.id)"
+              (click)="toggleMilestoneExpanded(m.id)">
               <span class="milestone-item__order">{{ m.order }}</span>
               <div class="milestone-item__title min-width-0">
                 <h6 class="mb-0 text-truncate">{{ m.name }}</h6>
                 <span class="milestone-item__share">{{ m.paymentPercentage | number: '1.0-2' }}% of budget</span>
+              </div>
+              <span class="milestone-item__badge" [ngClass]="statusBadgeClass(m.status)">
+                {{ statusLabel(m.status) }}
+              </span>
+              <div class="milestone-item__amount">{{ m.paymentAmount | number: '1.0-0' }}</div>
+              <i class="fe fe-chevron-down milestone-item__chevron" aria-hidden="true"></i>
+            </button>
+
+            @if (isMilestoneExpanded(m.id)) {
+              <div class="milestone-item__body">
                 @if (m.description) {
-                  <p class="milestone-item__description mb-0">{{ m.description }}</p>
+                  <p class="milestone-item__description mb-2">{{ m.description }}</p>
                 }
                 @if (m.startDate || m.endDate) {
-                  <span class="milestone-item__dates">
+                  <span class="milestone-item__dates d-block mb-2">
                     <i class="fe fe-calendar me-1"></i>
                     {{ m.startDate ? (m.startDate | date: 'mediumDate') : '—' }}
                     –
                     {{ m.endDate ? (m.endDate | date: 'mediumDate') : '—' }}
                   </span>
                 }
+                @if (!locked && !isMilestoneCompleted(m)) {
+                  <select
+                    class="form-select form-select-sm milestone-item__status"
+                    [ngModel]="m.status"
+                    [disabled]="statusUpdatingId === m.id"
+                    (ngModelChange)="updateStatus(m, $event)"
+                    (click)="$event.stopPropagation()">
+                    @for (opt of milestoneStatusOptions; track opt.value) {
+                      <option [ngValue]="opt.value">Mark {{ opt.label | lowercase }}</option>
+                    }
+                  </select>
+                }
               </div>
-              <div class="milestone-item__amount">{{ m.paymentAmount | number: '1.0-0' }}</div>
-            </div>
-
-            <div class="milestone-item__foot">
-              <span class="milestone-item__badge" [ngClass]="statusBadgeClass(m.status)">
-                {{ statusLabel(m.status) }}
-              </span>
-              @if (!locked && !isMilestoneCompleted(m)) {
-                <select
-                  class="form-select form-select-sm milestone-item__status"
-                  [ngModel]="m.status"
-                  [disabled]="statusUpdatingId === m.id"
-                  (ngModelChange)="updateStatus(m, $event)">
-                  @for (opt of milestoneStatusOptions; track opt.value) {
-                    <option [ngValue]="opt.value">Mark {{ opt.label | lowercase }}</option>
-                  }
-                </select>
-              }
-            </div>
+            }
           </article>
         }
       </div>

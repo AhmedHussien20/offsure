@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
+  MilestoneStatus,
   ProjectAssignmentDto,
   ProjectDto,
   ProjectStatus,
@@ -14,15 +15,20 @@ import { SkillsService } from 'app/core/services/skills.service';
 import { AuthService } from 'app/core/services/auth.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
-import { NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { normalizeProjectStatus, projectStatusKey } from 'app/core/utils/enum-status.util';
 import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
-import { assignmentsForSkill, displayRole } from 'app/core/utils/project-skill.util';
+import { assignmentsForSkill, displayRole, directProjectAssignments, summaryProjectAssignments } from 'app/core/utils/project-skill.util';
+import { isNearScrollEnd } from 'app/core/utils/scroll-pagination.util';
 import { ProjectMilestonesReadonlyComponent } from 'app/shared/components/project-milestones-readonly/project-milestones-readonly.component';
 import { PROJECT_STATUS_BADGES } from '../../admin/admin.constants';
 import { RmAssignSkillModalComponent } from './rm-assign-skill-modal.component';
 import { Subject, forkJoin } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { debounceTime, takeUntil } from 'rxjs/operators';
+
+const SKILLS_PAGE_SIZE = 10;
+const SKILLS_SEARCH_DEBOUNCE_MS = 300;
+const SKILLS_SAVE_DEBOUNCE_MS = 450;
 
 export interface RmProjectSkillSlot {
   skill: SkillDto;
@@ -33,7 +39,7 @@ export interface RmProjectSkillSlot {
 @Component({
   selector: 'app-rm-project-detail',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, NgbNavModule, ProjectMilestonesReadonlyComponent],
+  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, ProjectMilestonesReadonlyComponent],
   templateUrl: './rm-project-detail.component.html',
   styleUrl: '../../admin/admin-project-detail/admin-project-detail.component.scss',
 })
@@ -47,7 +53,18 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   deliveryForm!: FormGroup;
   skillCatalogById = new Map<number, SkillDto>();
   expandedSkillIds = new Set<number>();
-  activeTab: 'overview' | 'milestones' | 'staffing' = 'overview';
+  assignBySkill = true;
+  pendingAssignmentMode: boolean | null = null;
+  directMembersExpanded = false;
+  savingStaffingMode = false;
+  savingSkills = false;
+  skillSearchQuery = '';
+  skillsList: SkillDto[] = [];
+  skillsPageIndex = 1;
+  skillsHasMore = true;
+  skillsLoading = false;
+  selectedSkillIds = new Set<number>();
+  private skillsCatalogLoaded = false;
 
   readonly trackMembersPreview = 5;
 
@@ -61,6 +78,8 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
 
   private projectId = 0;
   private readonly destroy$ = new Subject<void>();
+  private readonly skillSearch$ = new Subject<string>();
+  private skillsSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -79,6 +98,10 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
       status: [ProjectStatus.InProgress, Validators.required],
     });
 
+    this.skillSearch$.pipe(debounceTime(SKILLS_SEARCH_DEBOUNCE_MS), takeUntil(this.destroy$)).subscribe(() => {
+      this.loadSkillsPage(false);
+    });
+
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
     if (!this.projectId) {
       this.loading = false;
@@ -89,6 +112,9 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.skillsSaveTimer) {
+      clearTimeout(this.skillsSaveTimer);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -104,37 +130,185 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   get hasRequiredSkills(): boolean {
-    return (this.project?.requiredSkillIds?.length ?? 0) > 0;
+    return this.selectedSkillIds.size > 0;
   }
 
   get usesMilestones(): boolean {
     return !!this.project?.usesMilestones && !isHourlyBudgetProject(this.project);
   }
 
-  get revenue(): number {
-    return this.project?.budget ?? 0;
+  get progressPercent(): number {
+    return Math.min(100, Math.max(0, this.project?.progress ?? 0));
   }
 
-  get milestoneCountLabel(): string | null {
-    if (!this.usesMilestones) {
-      return null;
+  get teamMemberCount(): number {
+    return this.project?.teamMembers?.length ?? 0;
+  }
+
+  get completedMilestonesCount(): number {
+    return (this.project?.milestones ?? []).filter(m => m.status === MilestoneStatus.Completed).length;
+  }
+
+  get milestonesPaidLabel(): string {
+    const total = this.project?.milestones?.length ?? 0;
+    if (!total) {
+      return '—';
     }
-    const defined = this.project?.milestones?.length ?? 0;
-    const max = this.project?.milestoneCount ?? 0;
-    return max > 0 ? `${defined}/${max}` : null;
+    return `${this.completedMilestonesCount} of ${total}`;
   }
 
   get selectedSkillsForDisplay(): SkillDto[] {
-    return (this.project?.requiredSkillIds ?? [])
+    return [...this.selectedSkillIds]
+      .sort((a, b) => a - b)
       .map(id => this.skillCatalogById.get(id))
       .filter((s): s is SkillDto => !!s);
   }
 
   get pendingSkillNames(): string {
+    if (!this.assignBySkill) {
+      return '';
+    }
     return this.skillSlots
       .filter(s => s.pending)
       .map(s => s.skill.name)
       .join(', ');
+  }
+
+  get projectAssignments(): ProjectAssignmentDto[] {
+    return summaryProjectAssignments(this.project?.teamMembers, this.assignBySkill);
+  }
+
+  get unassignedDirectMembers(): ProjectAssignmentDto[] {
+    return directProjectAssignments(this.project?.teamMembers);
+  }
+
+  get sidebarTeamMembers(): ProjectAssignmentDto[] {
+    return summaryProjectAssignments(this.project?.teamMembers, this.assignBySkill);
+  }
+
+  get visibleDirectAssignments(): ProjectAssignmentDto[] {
+    const assignments = this.projectAssignments;
+    if (assignments.length <= this.trackMembersPreview || this.directMembersExpanded) {
+      return assignments;
+    }
+    return assignments.slice(0, this.trackMembersPreview);
+  }
+
+  get hiddenDirectAssignmentCount(): number {
+    return Math.max(0, this.projectAssignments.length - this.trackMembersPreview);
+  }
+
+  get excludedDirectMemberIds(): number[] {
+    return this.sidebarTeamMembers.map(a => a.teamMemberId);
+  }
+
+  get staffingSubtitle(): string {
+    if (this.assignBySkill) {
+      return 'Select required skills, then assign members from your team to each skill track.';
+    }
+    return 'Assign members directly from your team roster — no skill tracks needed.';
+  }
+
+  isSkillSelected(skillId: number): boolean {
+    return this.selectedSkillIds.has(skillId);
+  }
+
+  onSkillSearchInput(value: string): void {
+    this.skillSearchQuery = value;
+    this.skillSearch$.next(value);
+  }
+
+  onSkillPickerScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (!isNearScrollEnd(el) || this.skillsLoading || !this.skillsHasMore) {
+      return;
+    }
+    this.loadSkillsPage(true);
+  }
+
+  toggleSkill(skill: SkillDto): void {
+    if (this.isDeliveryLocked || !this.assignBySkill) return;
+
+    this.skillCatalogById.set(skill.id, skill);
+    if (this.selectedSkillIds.has(skill.id)) {
+      this.selectedSkillIds.delete(skill.id);
+    } else {
+      this.selectedSkillIds.add(skill.id);
+    }
+    this.buildSkillSlots();
+    this.scheduleSaveRequiredSkills();
+  }
+
+  get totalAssignedCount(): number {
+    return this.projectAssignments.length;
+  }
+
+  get staffedSkillCount(): number {
+    return this.skillSlots.filter(s => s.assignments.length > 0).length;
+  }
+
+  get totalSkillCount(): number {
+    return this.skillSlots.length;
+  }
+
+  get pendingSkillSlotCount(): number {
+    return this.skillSlots.filter(s => s.pending).length;
+  }
+
+  get skillCoveragePercent(): number {
+    if (!this.totalSkillCount) {
+      return 0;
+    }
+    return Math.round((this.staffedSkillCount / this.totalSkillCount) * 100);
+  }
+
+  get staffingNeedsAttention(): boolean {
+    if (this.isDeliveryLocked) {
+      return false;
+    }
+    if (!this.assignBySkill) {
+      return this.totalAssignedCount === 0;
+    }
+    return this.pendingSkillSlotCount > 0 || this.unassignedDirectMembers.length > 0;
+  }
+
+  get showStaffingGuide(): boolean {
+    return this.staffingNeedsAttention && !this.isDeliveryLocked;
+  }
+
+  selectAssignmentMode(bySkill: boolean): void {
+    if (this.isDeliveryLocked || this.savingStaffingMode) {
+      return;
+    }
+
+    if (this.assignBySkill === bySkill) {
+      this.pendingAssignmentMode = null;
+      return;
+    }
+
+    if (this.pendingAssignmentMode === bySkill) {
+      this.pendingAssignmentMode = null;
+      this.onAssignBySkillChange(bySkill);
+      return;
+    }
+
+    this.pendingAssignmentMode = bySkill;
+  }
+
+  private ensureSkillsCatalogLoaded(): void {
+    if (!this.assignBySkill || this.skillsCatalogLoaded) {
+      return;
+    }
+    this.skillsCatalogLoaded = true;
+    this.loadSkillsPage(false);
+  }
+
+  private resetSkillsCatalog(): void {
+    this.skillsCatalogLoaded = false;
+    this.skillsList = [];
+    this.skillsPageIndex = 1;
+    this.skillsHasMore = true;
+    this.skillSearchQuery = '';
   }
 
   statusBadgeClass(status: unknown): string {
@@ -186,6 +360,48 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  toggleDirectMembersExpanded(): void {
+    this.directMembersExpanded = !this.directMembersExpanded;
+  }
+
+  onAssignBySkillChange(enabled: boolean): void {
+    if (!this.project || this.isDeliveryLocked || this.savingStaffingMode) {
+      return;
+    }
+
+    const previous = this.assignBySkill;
+    this.assignBySkill = enabled;
+    this.savingStaffingMode = true;
+
+    this.portal.updateStaffingMode(this.project.id, { assignTeamBySkill: enabled }).subscribe({
+      next: res => {
+        this.project = res.data ?? this.project;
+        this.assignBySkill = this.project?.assignTeamBySkill ?? enabled;
+        if (this.assignBySkill) {
+          this.ensureSkillsCatalogLoaded();
+          this.ensureRequiredSkillsInCatalog();
+        } else {
+          this.resetSkillsCatalog();
+        }
+        this.buildSkillSlots();
+        this.pendingAssignmentMode = null;
+        this.savingStaffingMode = false;
+        this.toastr.success('Assignment mode saved.');
+      },
+      error: err => {
+        this.assignBySkill = previous;
+        this.pendingAssignmentMode = null;
+        this.savingStaffingMode = false;
+        this.toastr.error(err?.error?.message || 'Failed to save assignment mode.');
+      },
+    });
+  }
+
+  onMilestonesProjectChange(project: ProjectDto): void {
+    this.project = project;
+    this.patchDeliveryForm();
+  }
+
   removeAssignment(assignment: ProjectAssignmentDto): void {
     if (!this.project || this.isDeliveryLocked || !this.canManageAssignment(assignment)) return;
 
@@ -203,6 +419,30 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   openAssignModal(slot: RmProjectSkillSlot): void {
     if (!this.project || this.isDeliveryLocked) return;
 
+    this.openAssignMembersModal({
+      assignBySkill: true,
+      skill: slot.skill,
+      excludedMemberIds: slot.assignments.map(a => a.teamMemberId),
+    });
+  }
+
+  openDirectAssignModal(): void {
+    if (!this.project || this.isDeliveryLocked) return;
+
+    this.openAssignMembersModal({
+      assignBySkill: false,
+      skill: null,
+      excludedMemberIds: this.excludedDirectMemberIds,
+    });
+  }
+
+  private openAssignMembersModal(options: {
+    assignBySkill: boolean;
+    skill: SkillDto | null;
+    excludedMemberIds: number[];
+  }): void {
+    if (!this.project) return;
+
     const modalRef = this.modalService.open(RmAssignSkillModalComponent, {
       centered: true,
       size: 'lg',
@@ -210,8 +450,9 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     });
     modalRef.componentInstance.projectId = this.project.id;
     modalRef.componentInstance.project = this.project;
-    modalRef.componentInstance.skill = slot.skill;
-    modalRef.componentInstance.excludedMemberIds = slot.assignments.map(a => a.teamMemberId);
+    modalRef.componentInstance.assignBySkill = options.assignBySkill;
+    modalRef.componentInstance.skill = options.skill;
+    modalRef.componentInstance.excludedMemberIds = options.excludedMemberIds;
 
     modalRef.closed.subscribe(project => {
       if (project) {
@@ -251,10 +492,6 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  private applyInitialTab(): void {
-    this.activeTab = this.usesMilestones ? 'milestones' : 'overview';
-  }
-
   private loadProject(): void {
     this.loading = true;
     this.portal.getProjectById(this.projectId).subscribe({
@@ -263,16 +500,96 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
         if (this.project?.name) {
           this.breadcrumbService.setDynamicLabel(this.project.name);
         }
-        this.ensureRequiredSkillsInCatalog();
-        this.buildSkillSlots();
+        this.syncSkillSelection();
+        this.assignBySkill = this.project?.assignTeamBySkill ?? false;
+        if (this.assignBySkill) {
+          this.ensureSkillsCatalogLoaded();
+          this.ensureRequiredSkillsInCatalog();
+        } else {
+          this.resetSkillsCatalog();
+          this.buildSkillSlots();
+        }
         this.patchDeliveryForm();
-        this.applyInitialTab();
         this.loading = false;
       },
       error: () => {
         this.loading = false;
       },
     });
+  }
+
+  private scheduleSaveRequiredSkills(): void {
+    if (this.skillsSaveTimer) {
+      clearTimeout(this.skillsSaveTimer);
+    }
+    this.skillsSaveTimer = setTimeout(() => this.persistRequiredSkills(), SKILLS_SAVE_DEBOUNCE_MS);
+  }
+
+  private persistRequiredSkills(): void {
+    if (!this.project || this.isDeliveryLocked || !this.assignBySkill) return;
+
+    const ids = [...this.selectedSkillIds].sort((a, b) => a - b);
+    this.savingSkills = true;
+    this.portal.updateRequiredSkills(this.project.id, { requiredSkillIds: ids }).subscribe({
+      next: res => {
+        this.project = res.data ?? this.project;
+        this.syncSkillSelection();
+        this.assignBySkill = this.hasRequiredSkills ? (this.project?.assignTeamBySkill ?? this.assignBySkill) : false;
+        this.ensureRequiredSkillsInCatalog();
+        this.buildSkillSlots();
+        this.savingSkills = false;
+      },
+      error: err => {
+        this.savingSkills = false;
+        this.toastr.error(err?.error?.message || 'Failed to update required skills.');
+        this.syncSkillSelection();
+        this.buildSkillSlots();
+      },
+    });
+  }
+
+  private loadSkillsPage(append: boolean): void {
+    if (!this.assignBySkill) return;
+    if (this.skillsLoading) return;
+    if (append && !this.skillsHasMore) return;
+
+    const pageIndex = append ? this.skillsPageIndex + 1 : 1;
+    this.skillsLoading = true;
+
+    this.skillsService
+      .getAll({
+        pageIndex,
+        pageSize: SKILLS_PAGE_SIZE,
+        isActive: true,
+        searchKey: this.skillSearchQuery.trim() || undefined,
+      })
+      .subscribe({
+        next: res => {
+          const paged = res.data;
+          const batch = (paged?.data ?? []).filter(s => s.isActive);
+          batch.forEach(s => this.skillCatalogById.set(s.id, s));
+
+          if (append) {
+            const existing = new Set(this.skillsList.map(s => s.id));
+            this.skillsList = [...this.skillsList, ...batch.filter(s => !existing.has(s.id))];
+          } else {
+            this.skillsList = batch;
+          }
+
+          this.skillsPageIndex = pageIndex;
+          const total = paged?.totalCount ?? 0;
+          this.skillsHasMore = this.skillsList.length < total;
+          this.skillsLoading = false;
+        },
+        error: () => {
+          this.skillsLoading = false;
+        },
+      });
+  }
+
+  private syncSkillSelection(): void {
+    const ids = this.project?.requiredSkillIds ?? [];
+    this.selectedSkillIds = new Set(ids);
   }
 
   private ensureRequiredSkillsInCatalog(): void {
@@ -303,7 +620,7 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const ids = this.project.requiredSkillIds ?? [];
+    const ids = [...this.selectedSkillIds].sort((a, b) => a - b);
     this.skillSlots = ids
       .map(id => this.skillCatalogById.get(id))
       .filter((s): s is SkillDto => !!s)

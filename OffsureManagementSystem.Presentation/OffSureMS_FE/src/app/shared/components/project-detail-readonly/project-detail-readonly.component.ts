@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
-import { ProjectAssignmentDto, ProjectDto } from 'app/core/models/projects/project.models';
+import { MilestoneStatus, ProjectAssignmentDto, ProjectDto } from 'app/core/models/projects/project.models';
 import { SkillDto } from 'app/core/models/skills/skill.models';
 import { SkillsService } from 'app/core/services/skills.service';
 import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
-import { buildProjectSkillSlots, displayRole, ProjectSkillSlotView } from 'app/core/utils/project-skill.util';
+import { buildProjectSkillSlots, directProjectAssignments, displayRole, ProjectSkillSlotView, summaryProjectAssignments, usesSkillBasedStaffing } from 'app/core/utils/project-skill.util';
 import { ProjectMilestonesReadonlyComponent } from '../project-milestones-readonly/project-milestones-readonly.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -16,7 +15,7 @@ export type ProjectDetailAudience = 'client' | 'team';
 @Component({
   selector: 'app-project-detail-readonly',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgbNavModule, ProjectMilestonesReadonlyComponent],
+  imports: [CommonModule, RouterModule, ProjectMilestonesReadonlyComponent],
   templateUrl: './project-detail-readonly.component.html',
   styleUrl: './project-detail-readonly.component.scss',
 })
@@ -32,7 +31,6 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
 
   skillSlots: ProjectSkillSlotView[] = [];
   selectedSkillsForDisplay: SkillDto[] = [];
-  activeTab: 'overview' | 'milestones' | 'team' = 'overview';
 
   private skillCatalogById = new Map<number, SkillDto>();
 
@@ -41,7 +39,6 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['project'] && this.project) {
       this.refreshSkillCatalog();
-      this.applyInitialTab();
     }
   }
 
@@ -55,19 +52,6 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
 
   get usesMilestones(): boolean {
     return this.isTeam && !!this.project.usesMilestones && !isHourlyBudgetProject(this.project);
-  }
-
-  get revenue(): number {
-    return this.project.budget ?? 0;
-  }
-
-  get milestoneCountLabel(): string | null {
-    if (!this.usesMilestones) {
-      return null;
-    }
-    const defined = this.project.milestones?.length ?? 0;
-    const max = this.project.milestoneCount ?? 0;
-    return max > 0 ? `${defined}/${max}` : null;
   }
 
   get headerSubtitle(): string {
@@ -85,6 +69,34 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     return (this.project.requiredSkillIds?.length ?? 0) > 0;
   }
 
+  get usesSkillStaffing(): boolean {
+    return usesSkillBasedStaffing(this.project);
+  }
+
+  get summaryTeamMembers(): ProjectAssignmentDto[] {
+    return summaryProjectAssignments(this.project.teamMembers, this.usesSkillStaffing);
+  }
+
+  get unassignedDirectMembers(): ProjectAssignmentDto[] {
+    return directProjectAssignments(this.project.teamMembers);
+  }
+
+  get teamMemberCount(): number {
+    return this.summaryTeamMembers.length;
+  }
+
+  get completedMilestonesCount(): number {
+    return (this.project.milestones ?? []).filter(m => m.status === MilestoneStatus.Completed).length;
+  }
+
+  get milestonesPaidLabel(): string {
+    const total = this.project.milestones?.length ?? 0;
+    if (!total) {
+      return '—';
+    }
+    return `${this.completedMilestonesCount} of ${total}`;
+  }
+
   memberInitials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
@@ -98,15 +110,11 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
   }
 
   showAssignmentCost(): boolean {
-    return this.isTeam && isHourlyBudgetProject(this.project);
+    return false;
   }
 
   isSelf(assignment: ProjectAssignmentDto): boolean {
     return this.highlightMemberId != null && assignment.teamMemberId === this.highlightMemberId;
-  }
-
-  private applyInitialTab(): void {
-    this.activeTab = this.usesMilestones ? 'milestones' : 'overview';
   }
 
   private refreshSkillCatalog(): void {

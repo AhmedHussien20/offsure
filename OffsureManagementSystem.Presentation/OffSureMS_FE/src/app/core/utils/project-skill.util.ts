@@ -121,6 +121,75 @@ export function buildProjectSkillSlots(
     });
 }
 
+/** True when team should be shown and assigned via required skill tracks. */
+export function usesSkillBasedStaffing(project: {
+  assignTeamBySkill?: boolean;
+  requiredSkillIds?: number[];
+}): boolean {
+  if (project.assignTeamBySkill === false) {
+    return false;
+  }
+  return (project.requiredSkillIds?.length ?? 0) > 0;
+}
+
+/** Whether an assignment is tied to a required skill track. */
+export function hasSkillTrack(assignment: ProjectAssignmentDto): boolean {
+  return assignmentSkillId(assignment) != null;
+}
+
+/** Assignments made without a skill track (direct roster staffing). */
+export function directProjectAssignments(
+  assignments: ProjectAssignmentDto[] | undefined
+): ProjectAssignmentDto[] {
+  const onSkillTrack = new Set(
+    (assignments ?? []).filter(hasSkillTrack).map(a => a.teamMemberId)
+  );
+  return (assignments ?? []).filter(
+    a => !hasSkillTrack(a) && !onSkillTrack.has(a.teamMemberId)
+  );
+}
+
+/** One row per team member for flat lists; resolves direct vs skill duplicates. */
+export function uniqueProjectAssignments(
+  assignments: ProjectAssignmentDto[] | undefined,
+  preferDirect = true
+): ProjectAssignmentDto[] {
+  const byMember = new Map<number, ProjectAssignmentDto>();
+
+  for (const assignment of assignments ?? []) {
+    const existing = byMember.get(assignment.teamMemberId);
+    if (!existing) {
+      byMember.set(assignment.teamMemberId, assignment);
+      continue;
+    }
+
+    const assignmentIsDirect = !hasSkillTrack(assignment);
+    const existingIsDirect = !hasSkillTrack(existing);
+
+    if (preferDirect) {
+      if (assignmentIsDirect && !existingIsDirect) {
+        byMember.set(assignment.teamMemberId, assignment);
+      } else if (assignmentIsDirect === existingIsDirect && assignment.id > existing.id) {
+        byMember.set(assignment.teamMemberId, assignment);
+      }
+    } else if (!assignmentIsDirect && existingIsDirect) {
+      byMember.set(assignment.teamMemberId, assignment);
+    } else if (assignmentIsDirect === existingIsDirect && assignment.id > existing.id) {
+      byMember.set(assignment.teamMemberId, assignment);
+    }
+  }
+
+  return [...byMember.values()];
+}
+
+/** Flat team list for sidebars and direct staffing views. */
+export function summaryProjectAssignments(
+  assignments: ProjectAssignmentDto[] | undefined,
+  useSkillStaffing: boolean
+): ProjectAssignmentDto[] {
+  return uniqueProjectAssignments(assignments, !useSkillStaffing);
+}
+
 export function computeProjectFinancials(
   budget: number | null | undefined,
   assignments: ProjectAssignmentDto[] | undefined

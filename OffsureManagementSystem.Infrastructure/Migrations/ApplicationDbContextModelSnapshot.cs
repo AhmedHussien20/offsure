@@ -223,6 +223,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("AssignTeamBySkill")
+                        .HasColumnType("bit");
+
                     b.Property<decimal?>("Budget")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");

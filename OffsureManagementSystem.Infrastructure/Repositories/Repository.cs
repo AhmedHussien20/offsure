@@ -49,9 +49,12 @@ namespace OffsureManagementSystem.Infrastructure.Repositories
 
         public void SaveInclude(TEntity entity, params string[] properties)
         {
-            _dbSet.Attach(entity);
+            var entry = _context.Entry(entity);
+            if (entry.State == EntityState.Detached)
+                _dbSet.Attach(entity);
+
             foreach (var prop in properties)
-                _context.Entry(entity).Property(prop).IsModified = true;
+                entry.Property(prop).IsModified = true;
         }
 
         public void SoftDelete(TEntity entity)

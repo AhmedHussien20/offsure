@@ -21,6 +21,8 @@ namespace OffshoreManagementSystem.Domain.Entities
         public int? Progress { get; set; } // 0-100
         public bool UsesMilestones { get; set; }
         public int? MilestoneCount { get; set; }
+        /// <summary>When true, team is assigned via required skill tracks; when false, RMs pick from their full roster.</summary>
+        public bool AssignTeamBySkill { get; set; } = true;
 
         // Navigation Properties
         public virtual ServiceRequest ServiceRequest { get; set; }

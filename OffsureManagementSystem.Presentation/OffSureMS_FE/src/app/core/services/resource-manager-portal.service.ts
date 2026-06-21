@@ -8,6 +8,9 @@ import {
   ProjectDto,
   ProjectFilterRequest,
   UpdateProjectDeliveryDto,
+  UpdateProjectMilestoneStatusDto,
+  UpdateProjectRequiredSkillsDto,
+  UpdateProjectStaffingModeDto,
 } from '../models/projects/project.models';
 import {
   CreateTeamMemberDto,
@@ -73,6 +76,26 @@ export class ResourceManagerPortalService {
 
   updateDelivery(projectId: number, dto: UpdateProjectDeliveryDto): Observable<BaseResponse<ProjectDto>> {
     return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/delivery`, dto);
+  }
+
+  updateStaffingMode(projectId: number, dto: UpdateProjectStaffingModeDto): Observable<BaseResponse<ProjectDto>> {
+    return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/staffing-mode`, dto);
+  }
+
+  updateRequiredSkills(projectId: number, dto: UpdateProjectRequiredSkillsDto): Observable<BaseResponse<ProjectDto>> {
+    return this.api.put<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/required-skills`, dto);
+  }
+
+  updateMilestoneStatus(
+    projectId: number,
+    milestoneId: number,
+    dto: UpdateProjectMilestoneStatusDto
+  ): Observable<BaseResponse<ProjectDto>> {
+    return this.api.patch<BaseResponse<ProjectDto>>(
+      this.service,
+      `projects/${projectId}/milestones/${milestoneId}/status`,
+      dto
+    );
   }
 
   resetTeamMemberPassword(id: number, dto: { newPassword: string }): Observable<BaseResponse<object>> {

@@ -32,12 +32,16 @@ export class AdminProjectMilestonesComponent implements OnChanges {
   @Input({ required: true }) project!: ProjectDto;
   @Input() locked = false;
   @Input() autoEdit = false;
+  @Input() canMarkComplete = false;
   @Output() projectChange = new EventEmitter<ProjectDto>();
+  @Output() markComplete = new EventEmitter<void>();
 
   editing = false;
   saving = false;
+  listExpanded = false;
   statusUpdatingId: number | null = null;
   drafts: MilestoneDraft[] = [];
+  expandedMilestoneIds = new Set<number>();
   private autoEditHandled = false;
   readonly milestonesPercentagesValid = milestonesPercentagesValid;
   readonly milestoneStatus = MilestoneStatus;
@@ -121,6 +125,40 @@ export class AdminProjectMilestonesComponent implements OnChanges {
     return milestonePercentageTotal(this.milestones);
   }
 
+  get completedMilestonesCount(): number {
+    return this.milestones.filter(m => m.status === MilestoneStatus.Completed).length;
+  }
+
+  get phasesSummaryLabel(): string {
+    const total = this.milestones.length;
+    if (!total) {
+      return '';
+    }
+    const completed = this.completedMilestonesCount;
+    return completed === total
+      ? `${total} phase${total === 1 ? '' : 's'} · all complete`
+      : `${completed} of ${total} complete`;
+  }
+
+  isMilestoneExpanded(id: number): boolean {
+    return this.expandedMilestoneIds.has(id);
+  }
+
+  toggleListExpanded(): void {
+    this.listExpanded = !this.listExpanded;
+    if (this.listExpanded) {
+      this.expandActiveMilestones();
+    }
+  }
+
+  toggleMilestoneExpanded(id: number): void {
+    if (this.expandedMilestoneIds.has(id)) {
+      this.expandedMilestoneIds.delete(id);
+    } else {
+      this.expandedMilestoneIds.add(id);
+    }
+  }
+
   amountFor(percentage: number): number {
     return milestonePaymentAmount(this.project.budget, percentage);
   }
@@ -142,6 +180,7 @@ export class AdminProjectMilestonesComponent implements OnChanges {
 
   startEditing(): void {
     if (this.locked || !this.canEditPhases) return;
+    this.listExpanded = true;
     this.resetDraftsFromProject();
     if (!this.drafts.length && this.maxMilestones > 0) {
       this.drafts = Array.from({ length: this.maxMilestones }, (_, index) => this.createEmptyDraft(index + 1));
@@ -270,5 +309,13 @@ export class AdminProjectMilestonesComponent implements OnChanges {
       startDate: '',
       endDate: '',
     };
+  }
+
+  private expandActiveMilestones(): void {
+    const active = this.milestones.filter(
+      m => m.status === MilestoneStatus.InProgress || m.status === MilestoneStatus.NotStarted
+    );
+    const toExpand = active.length ? active : this.milestones.slice(0, 1);
+    toExpand.forEach(m => this.expandedMilestoneIds.add(m.id));
   }
 }

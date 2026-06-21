@@ -1,18 +1,5 @@
 @use '../../../shared/styles/project-detail';
 
-.project-detail-tabs-card .card-body {
-  padding-top: 1rem;
-}
-
-.project-detail-tab-pane {
-  min-height: 12rem;
-}
-
-.project-detail-tabs .nav-link {
-  display: inline-flex;
-  align-items: center;
-}
-
 .track-row {
   transition: border-color 0.2s, box-shadow 0.2s;
 }

@@ -140,6 +140,44 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Project delivery updated successfully."));
         }
 
+        [HttpPatch("projects/{id:int}/staffing-mode")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateStaffingMode(
+            int id,
+            UpdateProjectStaffingModeDto dto)
+        {
+            var project = await _projectManagementService.UpdateProjectStaffingModeForResourceManagerAsync(
+                GetCurrentUserId(),
+                id,
+                dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Staffing mode updated successfully."));
+        }
+
+        [HttpPut("projects/{id:int}/required-skills")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateRequiredSkills(
+            int id,
+            UpdateProjectRequiredSkillsDto dto)
+        {
+            var project = await _projectManagementService.UpdateProjectRequiredSkillsForResourceManagerAsync(
+                GetCurrentUserId(),
+                id,
+                dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Required skills updated successfully."));
+        }
+
+        [HttpPatch("projects/{id:int}/milestones/{milestoneId:int}/status")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateMilestoneStatus(
+            int id,
+            int milestoneId,
+            UpdateProjectMilestoneStatusDto dto)
+        {
+            var project = await _projectManagementService.UpdateProjectMilestoneStatusForResourceManagerAsync(
+                GetCurrentUserId(),
+                id,
+                milestoneId,
+                dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Milestone status updated successfully."));
+        }
+
         private int GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

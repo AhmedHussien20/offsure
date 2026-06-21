@@ -1,11 +1,25 @@
 <div class="card custom-card milestone-panel">
   <div class="card-header border-bottom-0 milestone-panel__header">
     <div>
-      <h5 class="mb-0">Payment milestones</h5>
+      <h5 class="mb-0">{{ showFinancials ? 'Payment milestones' : 'Project phases' }}</h5>
       <span class="fs-12 text-muted d-block mt-1">
-        {{ milestones.length }} of {{ maxMilestones }} phases
+        @if (milestones.length > 0) {
+          {{ phasesSummaryLabel }}@if (showFinancials) { · {{ allocatedPercent | number: '1.0-0' }}% allocated }
+        } @else {
+          {{ milestones.length }} of {{ maxMilestones }} phases
+        }
       </span>
     </div>
+    @if (milestones.length > 0) {
+      <button
+        type="button"
+        class="btn btn-sm btn-light milestone-panel__toggle"
+        [attr.aria-expanded]="listExpanded"
+        (click)="toggleListExpanded()">
+        <i class="fe fe-chevron-{{ listExpanded ? 'up' : 'down' }} me-1"></i>
+        {{ listExpanded ? 'Hide phases' : 'Show phases' }}
+      </button>
+    }
   </div>
 
   <div class="card-body pt-0">
@@ -13,64 +27,99 @@
       <div class="milestone-empty">
         <i class="fe fe-layers milestone-empty__icon" aria-hidden="true"></i>
         <p class="milestone-empty__title">Phases not defined yet</p>
-        <p class="milestone-empty__hint">Payment phases will appear here once configured.</p>
+        <p class="milestone-empty__hint">Project phases will appear here once configured.</p>
       </div>
     } @else {
       <div class="milestone-panel__overview">
-        <div class="milestone-panel__segments" role="img" [attr.aria-label]="allocatedPercent + '% allocated across phases'">
+        <div
+          class="milestone-panel__segments"
+          role="img"
+          [attr.aria-label]="showFinancials ? allocatedPercent + '% allocated across phases' : phasesSummaryLabel">
           @for (m of milestones; track m.id) {
             <span
               class="milestone-panel__segment"
               [class.milestone-panel__segment--completed]="m.status === milestoneStatus.Completed"
               [class.milestone-panel__segment--in-progress]="m.status === milestoneStatus.InProgress"
-              [style.flex-grow]="m.paymentPercentage"
-              [title]="m.name + ': ' + (m.paymentPercentage | number: '1.0-2') + '%'"></span>
+              [style.flex-grow]="showFinancials ? m.paymentPercentage : 1"
+              [title]="showFinancials ? m.name + ': ' + (m.paymentPercentage | number: '1.0-2') + '%' : m.name"></span>
           }
         </div>
         <div class="milestone-panel__overview-meta">
-          <span class="milestone-panel__overview-label">Allocation</span>
+          <span class="milestone-panel__overview-label">{{ showFinancials ? 'Allocation' : 'Progress' }}</span>
           <span
             class="milestone-panel__overview-value"
-            [class.milestone-panel__overview-value--valid]="allocatedPercent === 100">
-            {{ allocatedPercent | number: '1.0-0' }}%
+            [class.milestone-panel__overview-value--valid]="showFinancials ? allocatedPercent === 100 : completedMilestonesCount === milestones.length">
+            @if (showFinancials) {
+              {{ allocatedPercent | number: '1.0-0' }}%
+            } @else {
+              {{ completedMilestonesCount }} / {{ milestones.length }}
+            }
           </span>
         </div>
       </div>
 
-      <div class="milestone-list">
-        @for (m of milestones; track m.id) {
-          <article
-            class="milestone-item"
-            [class.milestone-item--completed]="m.status === milestoneStatus.Completed"
-            [class.milestone-item--in-progress]="m.status === milestoneStatus.InProgress">
-            <div class="milestone-item__head">
-              <span class="milestone-item__order">{{ m.order }}</span>
-              <div class="milestone-item__title min-width-0">
-                <h6 class="mb-0 text-truncate">{{ m.name }}</h6>
-                <span class="milestone-item__share">{{ m.paymentPercentage | number: '1.0-2' }}% of budget</span>
-                @if (m.description) {
-                  <p class="milestone-item__description mb-0">{{ m.description }}</p>
+      @if (listExpanded) {
+        <div class="milestone-list">
+          @for (m of milestones; track m.id) {
+            <article
+              class="milestone-item"
+              [class.milestone-item--expanded]="isMilestoneExpanded(m.id)"
+              [class.milestone-item--completed]="m.status === milestoneStatus.Completed"
+              [class.milestone-item--in-progress]="m.status === milestoneStatus.InProgress">
+              <button
+                type="button"
+                class="milestone-item__trigger"
+                [attr.aria-expanded]="isMilestoneExpanded(m.id)"
+                (click)="toggleMilestoneExpanded(m.id)">
+                <span class="milestone-item__order">{{ m.order }}</span>
+                <div class="milestone-item__title min-width-0">
+                  <h6 class="mb-0 text-truncate">{{ m.name }}</h6>
+                  @if (showFinancials) {
+                    <span class="milestone-item__share">{{ m.paymentPercentage | number: '1.0-2' }}% of budget</span>
+                  }
+                </div>
+                <span class="milestone-item__badge" [ngClass]="statusBadgeClass(m.status)">
+                  {{ statusLabel(m.status) }}
+                </span>
+                @if (showFinancials) {
+                  <div class="milestone-item__amount">{{ m.paymentAmount | number: '1.0-0' }}</div>
                 }
-                @if (m.startDate || m.endDate) {
-                  <span class="milestone-item__dates">
-                    <i class="fe fe-calendar me-1"></i>
-                    {{ m.startDate ? (m.startDate | date: 'mediumDate') : '—' }}
-                    –
-                    {{ m.endDate ? (m.endDate | date: 'mediumDate') : '—' }}
-                  </span>
-                }
-              </div>
-              <div class="milestone-item__amount">{{ m.paymentAmount | number: '1.0-0' }}</div>
-            </div>
+                <i class="fe fe-chevron-down milestone-item__chevron" aria-hidden="true"></i>
+              </button>
 
-            <div class="milestone-item__foot">
-              <span class="milestone-item__badge" [ngClass]="statusBadgeClass(m.status)">
-                {{ statusLabel(m.status) }}
-              </span>
-            </div>
-          </article>
-        }
-      </div>
+              @if (isMilestoneExpanded(m.id)) {
+                <div class="milestone-item__body">
+                  @if (m.description) {
+                    <p class="milestone-item__description mb-2">{{ m.description }}</p>
+                  } @else {
+                    <p class="milestone-item__description mb-2 text-muted">No description.</p>
+                  }
+                  @if (m.startDate || m.endDate) {
+                    <span class="milestone-item__dates d-block">
+                      <i class="fe fe-calendar me-1"></i>
+                      {{ m.startDate ? (m.startDate | date: 'mediumDate') : '—' }}
+                      –
+                      {{ m.endDate ? (m.endDate | date: 'mediumDate') : '—' }}
+                    </span>
+                  }
+                  @if (allowStatusEdit && !locked && !isMilestoneCompleted(m)) {
+                    <select
+                      class="form-select form-select-sm milestone-item__status mt-2"
+                      [ngModel]="m.status"
+                      [disabled]="statusUpdatingId === m.id"
+                      (ngModelChange)="updateStatus(m, $event)"
+                      (click)="$event.stopPropagation()">
+                      @for (opt of milestoneStatusOptions; track opt.value) {
+                        <option [ngValue]="opt.value">Mark {{ opt.label | lowercase }}</option>
+                      }
+                    </select>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
     }
   </div>
 </div>

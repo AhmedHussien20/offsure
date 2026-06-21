@@ -53,6 +53,7 @@ export interface UpdateProjectDto {
   expectedHours?: number;
   progress?: number;
   requiredSkillIds?: number[];
+  assignTeamBySkill?: boolean;
 }
 
 export interface AssignProjectTeamMemberDto {
@@ -83,6 +84,10 @@ export interface ProjectAssignmentDto {
 export interface UpdateProjectDeliveryDto {
   status: ProjectStatus;
   progress: number;
+}
+
+export interface UpdateProjectStaffingModeDto {
+  assignTeamBySkill: boolean;
 }
 
 export interface ProjectResourceManagerDto {
@@ -126,6 +131,10 @@ export interface UpdateProjectMilestoneStatusDto {
   status: MilestoneStatus;
 }
 
+export interface UpdateProjectRequiredSkillsDto {
+  requiredSkillIds: number[];
+}
+
 export interface ProjectDto {
   id: number;
   name: string;
@@ -150,5 +159,6 @@ export interface ProjectDto {
   teamMembers: ProjectAssignmentDto[];
   usesMilestones?: boolean;
   milestoneCount?: number | null;
+  assignTeamBySkill?: boolean;
   milestones?: ProjectMilestoneDto[];
 }

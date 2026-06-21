@@ -32,7 +32,8 @@ const MEMBER_SEARCH_DEBOUNCE_MS = 300;
 export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
   @Input() projectId = 0;
   @Input() project: ProjectDto | null = null;
-  @Input() skill!: SkillDto;
+  @Input() skill: SkillDto | null = null;
+  @Input() assignBySkill = true;
   @Input() excludedMemberIds: number[] = [];
 
   step: 1 | 2 = 1;
@@ -74,6 +75,21 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
 
   get isHourlyBudget(): boolean {
     return isHourlyBudgetProject(this.project);
+  }
+
+  get modalTitle(): string {
+    return this.assignBySkill && this.skill ? `Assign to ${this.skill.name}` : 'Assign team members';
+  }
+
+  get step1Hint(): string {
+    if (this.assignBySkill && this.skill) {
+      return 'Select team members from your roster who have this skill';
+    }
+    return 'Select team members from your full roster';
+  }
+
+  get submitLabel(): string {
+    return this.assignBySkill && this.skill ? `Assign to ${this.skill.name}` : 'Assign to project';
   }
 
   displayName(m: TeamMemberDto): string {
@@ -133,7 +149,7 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
           : { hourlyRate: null, allocatedHours: null };
         return {
           member,
-          role: member.title?.trim() || `${this.skill.name} specialist`,
+          role: member.title?.trim() || (this.assignBySkill && this.skill ? `${this.skill.name} specialist` : 'Team member'),
           hourlyRate: defaults.hourlyRate,
           allocatedHours: defaults.allocatedHours,
         };
@@ -174,9 +190,11 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
     const dtos: AssignProjectTeamMemberDto[] = this.memberDetails.map(d => {
       const dto: AssignProjectTeamMemberDto = {
         teamMemberId: d.member.id,
-        skillId: this.skill.id,
         role: d.role.trim(),
       };
+      if (this.assignBySkill && this.skill) {
+        dto.skillId = this.skill.id;
+      }
       if (this.isHourlyBudget) {
         dto.hourlyRate = Number(d.hourlyRate) || 0;
         dto.allocatedHours = Number(d.allocatedHours);
@@ -215,7 +233,7 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
       .getTeamMembers({
         pageIndex,
         pageSize: MEMBERS_PAGE_SIZE,
-        skillId: this.skill.id,
+        skillId: this.assignBySkill && this.skill ? this.skill.id : undefined,
         isAvailable: true,
         searchKey: this.memberSearch.trim() || undefined,
       })

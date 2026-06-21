@@ -5,481 +5,631 @@
 } @else if (!project) {
   <div class="alert alert-warning">Project not found.</div>
 } @else {
-  <div class="project-detail-header mb-3">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-      <div>
-        <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
-        <p class="text-muted small mb-0 mt-1">{{ project.clientName }} · {{ project.serviceName }}</p>
+  <div class="project-detail-stats">
+    <div class="project-detail-stat">
+      <span class="project-detail-stat__label">Budget</span>
+      <span class="project-detail-stat__value">{{ project.budget != null ? (project.budget | number: '1.0-0') : '—' }}</span>
+      <span class="project-detail-stat__hint">{{ budgetTypeLabel }}</span>
+    </div>
+    <div class="project-detail-stat">
+      <span class="project-detail-stat__label">Deadline</span>
+      <span class="project-detail-stat__value">
+        {{ project.targetEndDate ? (project.targetEndDate | date: 'MMM d, y') : '—' }}
+      </span>
+      <span class="project-detail-stat__hint">Target end date</span>
+    </div>
+    @if (usesMilestones) {
+      <div class="project-detail-stat">
+        <span class="project-detail-stat__label">Milestones paid</span>
+        <span class="project-detail-stat__value">{{ milestonesPaidLabel }}</span>
+        <span class="project-detail-stat__hint">Completed phases</span>
       </div>
-      @if (!isDeliveryLocked) {
-        <button type="button" class="btn btn-sm btn-success" (click)="markComplete()">Mark complete</button>
-      }
+    } @else if (isHourlyBudget) {
+      <div class="project-detail-stat">
+        <span class="project-detail-stat__label">Cost</span>
+        <span class="project-detail-stat__value">{{ costSummary.cost | number: '1.0-0' }}</span>
+        <span class="project-detail-stat__hint">Team (rate × hours)</span>
+      </div>
+    } @else {
+      <div class="project-detail-stat">
+        <span class="project-detail-stat__label">Team</span>
+        <span class="project-detail-stat__value">{{ teamMemberCount }}</span>
+        <span class="project-detail-stat__hint">Assigned members</span>
+      </div>
+    }
+    <div class="project-detail-stat">
+      <span class="project-detail-stat__label">Progress</span>
+      <span class="project-detail-stat__value">{{ progressPercent }}%</span>
+      <div class="project-detail-stat__progress">
+        <div class="project-detail-stat__progress-track">
+          <div class="project-detail-stat__progress-fill" [style.width.%]="progressPercent"></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card custom-card project-detail-tabs-card">
-    <div class="card-header border-bottom-0 pb-0">
-      <nav ngbNav #detailNav="ngbNav" [(activeId)]="activeTab" class="nav-tabs nav-tabs-custom project-detail-tabs" role="tablist">
-        @if (usesMilestones) {
-          <ng-container ngbNavItem="milestones">
-            <button type="button" class="nav-link" ngbNavLink>
-              <i class="fe fe-layers me-1"></i>
-              Milestones
-              @if (milestoneCountLabel) {
-                <span class="badge bg-primary-transparent ms-1">{{ milestoneCountLabel }}</span>
-              }
-            </button>
-            <ng-template ngbNavContent>
-              <div class="project-detail-tab-pane">
-                <app-admin-project-milestones
-                  [project]="project"
-                  [locked]="isDeliveryLocked"
-                  [autoEdit]="milestoneAutoEdit"
-                  (projectChange)="onProjectUpdated($event)" />
-              </div>
-            </ng-template>
-          </ng-container>
+  @if (isHourlyBudget) {
+    <div class="finance-summary mb-3">
+      <div class="finance-summary__tile finance-summary__tile--revenue">
+        <span class="finance-summary__label">Revenue</span>
+        <span class="finance-summary__value">{{ revenue | number: '1.0-0' }}</span>
+        <span class="finance-summary__hint">Project budget</span>
+      </div>
+      <div
+        class="finance-summary__tile finance-summary__tile--cost"
+        [class.finance-summary__tile--incomplete]="incompleteCostAssignments.length > 0">
+        <span class="finance-summary__label">Cost</span>
+        <span class="finance-summary__value">{{ costSummary.cost | number: '1.0-0' }}</span>
+        <span class="finance-summary__hint">
+          @if (incompleteCostAssignments.length > 0) {
+            Partial — {{ incompleteCostAssignments.length }} missing data
+          } @else {
+            Team (rate × hours)
+          }
+        </span>
+      </div>
+      <div class="finance-summary__tile finance-summary__tile--profit" [class.finance-summary__tile--negative]="costSummary.profit < 0">
+        <span class="finance-summary__label">Profit</span>
+        <span class="finance-summary__value">{{ costSummary.profit | number: '1.0-0' }}</span>
+        @if (costSummary.marginPercent != null) {
+          <span class="finance-summary__hint">{{ costSummary.marginPercent }}% margin</span>
         }
+      </div>
+    </div>
+    @if (incompleteCostAssignments.length > 0) {
+      <div class="alert alert-warning border small py-2 mb-3 finance-cost-warning">
+        <strong class="d-block mb-1">Incomplete cost data</strong>
+        The following assignments are excluded from cost and profit until resolved:
+        <ul class="mb-0 mt-1 finance-cost-warning__list">
+          @for (a of incompleteCostAssignments; track a.id) {
+            <li>
+              <span class="finance-cost-warning__name">{{ a.teamMemberName }}</span>
+              <span class="text-muted"> — {{ assignmentCostIssueLabel(a) }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  }
 
-        <ng-container ngbNavItem="overview">
-          <button type="button" class="nav-link" ngbNavLink>
-            <i class="fe fe-info me-1"></i>
-            Overview
-          </button>
-          <ng-template ngbNavContent>
-            <div class="project-detail-tab-pane">
-              <div class="finance-summary mb-3" [class.finance-summary--single]="!isHourlyBudget">
-                <div class="finance-summary__tile finance-summary__tile--revenue">
-                  <span class="finance-summary__label">Revenue</span>
-                  <span class="finance-summary__value">{{ revenue | number: '1.0-0' }}</span>
-                  <span class="finance-summary__hint">Project budget</span>
+  @if (usesMilestones) {
+    <div class="project-detail-section">
+      <app-admin-project-milestones
+        [project]="project"
+        [locked]="isDeliveryLocked"
+        [autoEdit]="milestoneAutoEdit"
+        [canMarkComplete]="!isDeliveryLocked"
+        (projectChange)="onProjectUpdated($event)"
+        (markComplete)="markComplete()" />
+    </div>
+  }
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-7">
+      <div class="card custom-card h-100 mb-0">
+        <div class="card-header border-bottom-0">
+          <h5 class="mb-0">Project details</h5>
+        </div>
+        <div class="card-body">
+          <dl class="project-detail-info-grid">
+            <div class="project-detail-info-grid__item">
+              <dt>Client</dt>
+              <dd>{{ project.clientName }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Status</dt>
+              <dd>
+                <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
+              </dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Start</dt>
+              <dd>{{ project.startDate ? (project.startDate | date: 'mediumDate') : '—' }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Deadline</dt>
+              <dd>{{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Budget</dt>
+              <dd>{{ project.budget != null ? (project.budget | number: '1.0-2') : '—' }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Budget type</dt>
+              <dd>{{ budgetTypeLabel }}</dd>
+            </div>
+          </dl>
+
+          <div class="project-detail-description">
+            <div class="project-detail-description__label">Description</div>
+            <p class="text-muted mb-0 small">{{ project.description || 'No description.' }}</p>
+          </div>
+
+          <div class="project-delivery-section">
+            <form [formGroup]="deliveryForm">
+              <div class="project-delivery-block">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label fw-semibold mb-0">Progress</label>
+                  <span class="project-delivery-value">{{ progressPreview }}%</span>
                 </div>
-                @if (isHourlyBudget) {
-                  <div
-                    class="finance-summary__tile finance-summary__tile--cost"
-                    [class.finance-summary__tile--incomplete]="incompleteCostAssignments.length > 0">
-                    <span class="finance-summary__label">Cost</span>
-                    <span class="finance-summary__value">{{ costSummary.cost | number: '1.0-0' }}</span>
-                    <span class="finance-summary__hint">
-                      @if (incompleteCostAssignments.length > 0) {
-                        Partial — {{ incompleteCostAssignments.length }} assignment{{ incompleteCostAssignments.length === 1 ? '' : 's' }} missing data
-                      } @else {
-                        Team (rate × hours)
-                      }
-                    </span>
+                @if (isDeliveryLocked) {
+                  <div class="delivery-progress-slider delivery-progress-slider--readonly" [style.--progress]="(project.progress ?? 0) + '%'">
+                    <div class="delivery-progress-slider__track">
+                      <div class="delivery-progress-slider__fill" [style.width.%]="project.progress ?? 0"></div>
+                    </div>
                   </div>
-                  <div class="finance-summary__tile finance-summary__tile--profit" [class.finance-summary__tile--negative]="costSummary.profit < 0">
-                    <span class="finance-summary__label">Profit</span>
-                    <span class="finance-summary__value">{{ costSummary.profit | number: '1.0-0' }}</span>
-                    @if (costSummary.marginPercent != null) {
-                      <span class="finance-summary__hint">{{ costSummary.marginPercent }}% margin</span>
-                    }
+                } @else {
+                  <div class="delivery-progress-slider" [style.--progress]="progressPreview + '%'">
+                    <input
+                      type="range"
+                      class="delivery-progress-slider__input"
+                      min="0"
+                      max="100"
+                      step="1"
+                      [formControl]="progressControl"
+                      (input)="onProgressSliderInput($event)" />
                   </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-primary w-100 mt-2"
+                    [disabled]="savingProgress"
+                    (click)="saveProgress()">
+                    Save progress
+                  </button>
                 }
               </div>
 
-              @if (isHourlyBudget && incompleteCostAssignments.length > 0) {
-                <div class="alert alert-warning border small py-2 mb-3 finance-cost-warning">
-                  <strong class="d-block mb-1">Incomplete cost data</strong>
-                  The following assignments are excluded from cost and profit until resolved:
-                  <ul class="mb-0 mt-1 finance-cost-warning__list">
-                    @for (a of incompleteCostAssignments; track a.id) {
-                      <li>
-                        <span class="finance-cost-warning__name">{{ a.teamMemberName }}</span>
-                        <span class="text-muted"> — {{ assignmentCostIssueLabel(a) }}</span>
-                      </li>
+              <div class="project-delivery-block project-delivery-block--status">
+                <label class="form-label fw-semibold mb-2">Status</label>
+                @if (isDeliveryLocked) {
+                  <p class="text-muted small mb-0">Delivery settings are locked for this project.</p>
+                } @else {
+                  <select class="form-select form-select-sm mb-2" formControlName="status">
+                    @for (opt of statusOptions; track opt.value) {
+                      <option [ngValue]="opt.value">{{ opt.label }}</option>
                     }
-                  </ul>
-                </div>
-              }
-
-              <div class="row g-3">
-                <div class="col-lg-7">
-                  <div class="card custom-card mb-0 h-100">
-                    <div class="card-header border-bottom-0">
-                      <h5 class="mb-0">Project details</h5>
-                    </div>
-                    <div class="card-body">
-                      <dl class="project-info-dl mb-0">
-                        <dt>Client</dt>
-                        <dd>{{ project.clientName }}</dd>
-                        <dt>Start</dt>
-                        <dd>{{ project.startDate ? (project.startDate | date: 'mediumDate') : '—' }}</dd>
-                        <dt>Deadline</dt>
-                        <dd>{{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}</dd>
-                        <dt>Budget</dt>
-                        <dd>{{ project.budget != null ? (project.budget | number: '1.0-2') : '—' }}</dd>
-                        <dt>Status</dt>
-                        <dd>
-                          <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
-                        </dd>
-                      </dl>
-
-                      <div class="project-delivery-section">
-                        <form [formGroup]="deliveryForm">
-                          <div class="project-delivery-block">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                              <label class="form-label fw-semibold mb-0">Progress</label>
-                              <span class="project-delivery-value">{{ progressPreview }}%</span>
-                            </div>
-                            @if (isDeliveryLocked) {
-                              <div class="delivery-progress-slider delivery-progress-slider--readonly" [style.--progress]="(project.progress ?? 0) + '%'">
-                                <div class="delivery-progress-slider__track">
-                                  <div class="delivery-progress-slider__fill" [style.width.%]="project.progress ?? 0"></div>
-                                </div>
-                              </div>
-                            } @else {
-                              <div class="delivery-progress-slider" [style.--progress]="progressPreview + '%'">
-                                <input
-                                  type="range"
-                                  class="delivery-progress-slider__input"
-                                  min="0"
-                                  max="100"
-                                  step="1"
-                                  [formControl]="progressControl"
-                                  (input)="onProgressSliderInput($event)" />
-                              </div>
-                              <button
-                                type="button"
-                                class="btn btn-sm btn-primary w-100 mt-2"
-                                [disabled]="savingProgress"
-                                (click)="saveProgress()">
-                                Save progress
-                              </button>
-                            }
-                          </div>
-
-                          <div class="project-delivery-block project-delivery-block--status">
-                            <label class="form-label fw-semibold mb-2">Status</label>
-                            @if (isDeliveryLocked) {
-                              <p class="text-muted small mb-0">Delivery settings are locked for this project.</p>
-                            } @else {
-                              <select class="form-select form-select-sm mb-2" formControlName="status">
-                                @for (opt of statusOptions; track opt.value) {
-                                  <option [ngValue]="opt.value">{{ opt.label }}</option>
-                                }
-                              </select>
-                              <button
-                                type="button"
-                                class="btn btn-sm btn-outline-primary w-100"
-                                [disabled]="savingStatus"
-                                (click)="saveStatus()">
-                                Update status
-                              </button>
-                            }
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-lg-5">
-                  <div class="card custom-card mb-3">
-                    <div class="card-header"><h5 class="mb-0">Assigned team</h5></div>
-                    <ul class="list-group list-group-flush project-team-summary">
-                      @if ((project.teamMembers?.length ?? 0) === 0) {
-                        <li class="list-group-item text-muted">No members yet.</li>
-                      }
-                      @for (m of project.teamMembers; track m.id) {
-                        <li class="list-group-item d-flex align-items-center gap-2">
-                          <span class="project-team-avatar">{{ memberInitials(m.teamMemberName) }}</span>
-                          <div class="flex-grow-1 min-width-0">
-                            <div class="fw-semibold text-truncate">{{ m.teamMemberName }}</div>
-                            <small class="text-muted">{{ roleLabel(m.role) }}</small>
-                          </div>
-                        </li>
-                      }
-                    </ul>
-                    @if (pendingSkillNames) {
-                      <div class="card-footer small text-warning">Unassigned skills: {{ pendingSkillNames }}</div>
-                    }
-                  </div>
-
-                  <div class="card custom-card mb-0">
-                    <div class="card-header"><h5 class="mb-0">Description</h5></div>
-                    <div class="card-body">
-                      <p class="text-muted mb-0 small">{{ project.description || 'No description.' }}</p>
-                    </div>
-                  </div>
-                </div>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary w-100"
+                    [disabled]="savingStatus"
+                    (click)="saveStatus()">
+                    Update status
+                  </button>
+                  @if (!usesMilestones) {
+                    <button type="button" class="btn btn-sm btn-success w-100 mt-2" (click)="markComplete()">
+                      Mark complete
+                    </button>
+                  }
+                }
               </div>
-            </div>
-          </ng-template>
-        </ng-container>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <ng-container ngbNavItem="staffing">
-          <button type="button" class="nav-link" ngbNavLink>
-            <i class="fe fe-users me-1"></i>
-            Staffing
-            @if (pendingSkillNames) {
-              <span class="badge bg-warning-transparent ms-1">Needs team</span>
+    <div class="col-lg-5">
+      <div class="card custom-card h-100 mb-0">
+        <div class="card-header border-bottom-0 d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">Assigned team</h5>
+          <a href="#project-staffing" class="btn btn-sm btn-light">Manage</a>
+        </div>
+        <ul class="list-group list-group-flush project-team-summary">
+          @if (summaryTeamMembers.length === 0) {
+            <li class="list-group-item text-muted">No members yet.</li>
+          }
+          @for (m of summaryTeamMembers; track m.id) {
+            <li class="list-group-item d-flex align-items-center gap-2">
+              <span class="project-team-avatar">{{ memberInitials(m.teamMemberName) }}</span>
+              <div class="flex-grow-1 min-width-0">
+                <div class="fw-semibold text-truncate">{{ m.teamMemberName }}</div>
+                <small class="text-muted">{{ roleLabel(m.role) }}</small>
+              </div>
+            </li>
+          }
+        </ul>
+        @if (pendingSkillNames) {
+          <div class="project-detail-alert-box mx-3 mb-3">
+            Unassigned skill{{ pendingSkillNames.includes(',') ? 's' : '' }}: {{ pendingSkillNames }}
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div id="project-staffing" class="card custom-card project-tracks-card">
+    <div class="card-header border-bottom-0">
+      <div class="project-detail-section__head w-100 mb-0">
+        <div>
+          <h5 class="mb-0">Team staffing</h5>
+          <span class="fs-12 text-muted d-block mt-1">{{ staffingSubtitle }}</span>
+        </div>
+        @if (assignBySkill && pendingSkillNames) {
+          <span class="badge bg-warning-transparent">Needs team</span>
+        }
+      </div>
+    </div>
+    <div class="card-body pt-0">
+      <section class="staffing-section">
+        <header class="staffing-section__head">
+          <span class="staffing-section__step">1</span>
+          <div>
+            <h6 class="staffing-section__title mb-0">How do you want to assign?</h6>
+            <p class="staffing-section__hint mb-0">Skill tracks with required skills, or a flat team roster.</p>
+          </div>
+        </header>
+
+        <div class="staffing-mode-picker">
+          <button
+            type="button"
+            class="staffing-mode-option"
+            [class.staffing-mode-option--active]="assignBySkill"
+            [class.staffing-mode-option--pending]="pendingAssignmentMode === true"
+            [disabled]="isDeliveryLocked || savingStaffingMode"
+            (click)="selectAssignmentMode(true)">
+            <span class="staffing-mode-option__icon"><i class="fe fe-layers" aria-hidden="true"></i></span>
+            <span class="staffing-mode-option__title">By skill track</span>
+            <span class="staffing-mode-option__desc">Define required skills and assign team members under each skill.</span>
+            @if (assignBySkill) {
+              <span class="staffing-mode-option__badge">Current</span>
+            } @else if (pendingAssignmentMode === true) {
+              <span class="staffing-mode-option__badge staffing-mode-option__badge--confirm">Click again to confirm</span>
             }
           </button>
-          <ng-template ngbNavContent>
-            <div class="project-detail-tab-pane">
-              <div class="card custom-card mb-3">
-                <div class="card-header border-bottom-0">
-                  <h5 class="mb-0">1. Required skills</h5>
-                  <span class="fs-12 text-muted d-block mt-1">Select which skills this project needs. Only those appear for assignment below.</span>
-                </div>
-                <div class="card-body pt-0">
-                  @if (isDeliveryLocked) {
-                    @if (selectedSkillsForDisplay.length > 0) {
-                      <div class="skill-picker skill-picker--selected">
-                        @for (skill of selectedSkillsForDisplay; track skill.id) {
-                          <span class="skill-picker__chip skill-picker__chip--on">{{ skill.name }}</span>
-                        }
-                      </div>
-                    } @else {
-                      <p class="text-muted small mb-0">No required skills on this project.</p>
-                    }
-                  } @else {
-                    <div class="skill-search">
-                      <i class="fe fe-search skill-search__icon"></i>
-                      <input
-                        type="search"
-                        class="form-control skill-search__input"
-                        placeholder="Search by name, category, or role..."
-                        [ngModel]="skillSearchQuery"
-                        (ngModelChange)="onSkillSearchInput($event)"
-                        autocomplete="off" />
-                    </div>
-                    @if (selectedSkillsForDisplay.length > 0) {
-                      <div class="skill-selected-group mb-2">
-                        <span class="skill-selection-bar">
-                          {{ selectedSkillIds.size }} selected
-                          @if (savingSkills) {
-                            <span class="text-muted fw-normal"> · saving…</span>
-                          }
-                        </span>
-                        <div class="skill-picker skill-picker--selected">
-                          @for (skill of selectedSkillsForDisplay; track skill.id) {
-                            <button
-                              type="button"
-                              class="skill-picker__chip skill-picker__chip--on"
-                              (click)="toggleSkill(skill)">
-                              {{ skill.name }}
-                              <small>({{ skill.skillCategoryName }})</small>
-                              <i class="fe fe-x ms-1"></i>
-                            </button>
-                          }
-                        </div>
-                      </div>
-                    }
-                    <div class="skill-picker" (scroll)="onSkillPickerScroll($event)">
-                      @if (skillsLoading && skillsList.length === 0) {
-                        <p class="text-muted small mb-0 py-2">Loading skills…</p>
-                      }
-                      @for (skill of skillsList; track skill.id) {
-                        <label class="skill-picker__chip" [class.skill-picker__chip--on]="isSkillSelected(skill.id)">
-                          <input
-                            type="checkbox"
-                            class="d-none"
-                            [checked]="isSkillSelected(skill.id)"
-                            (change)="toggleSkill(skill)" />
-                          {{ skill.name }}
-                          <small class="text-muted">({{ skill.skillCategoryName }})</small>
-                        </label>
-                      }
-                      @if (!skillsLoading && skillsList.length === 0) {
-                        <p class="text-muted small mb-0 py-2">
-                          @if (skillSearchQuery) {
-                            No skills match "{{ skillSearchQuery }}".
-                          } @else {
-                            No skills found. Add skills under Admin → Skills.
-                          }
-                        </p>
-                      }
-                      @if (skillsLoading && skillsList.length > 0) {
-                        <p class="text-muted small mb-0 py-1">Loading more…</p>
-                      }
-                      @if (skillsHasMore && !skillsLoading && skillsList.length > 0) {
-                        <p class="text-muted small mb-0 py-1">Search for more skills</p>
-                      }
-                    </div>
-                  }
-                </div>
-              </div>
+          <button
+            type="button"
+            class="staffing-mode-option"
+            [class.staffing-mode-option--active]="!assignBySkill"
+            [class.staffing-mode-option--pending]="pendingAssignmentMode === false"
+            [disabled]="isDeliveryLocked || savingStaffingMode"
+            (click)="selectAssignmentMode(false)">
+            <span class="staffing-mode-option__icon"><i class="fe fe-users" aria-hidden="true"></i></span>
+            <span class="staffing-mode-option__title">Full team roster</span>
+            <span class="staffing-mode-option__desc">Assign anyone from the organization without skill tracks.</span>
+            @if (!assignBySkill) {
+              <span class="staffing-mode-option__badge">Current</span>
+            } @else if (pendingAssignmentMode === false) {
+              <span class="staffing-mode-option__badge staffing-mode-option__badge--confirm">Click again to confirm</span>
+            }
+          </button>
+        </div>
+        @if (pendingAssignmentMode != null) {
+          <p class="staffing-mode-picker__hint mb-0 mt-2">
+            <i class="fe fe-info me-1"></i>
+            Click the highlighted option again to confirm, or click the current mode to cancel.
+          </p>
+        }
+        @if (savingStaffingMode) {
+          <p class="text-muted small mb-0 mt-2"><i class="fe fe-loader me-1"></i> Saving assignment mode…</p>
+        }
+      </section>
 
-              <div class="card custom-card mb-3">
-                <div class="card-header border-bottom-0">
-                  <h5 class="mb-0">2. Resource managers</h5>
-                  <span class="fs-12 text-muted d-block mt-1">
-                    Assign managers who can staff this project with their team. Each manager only manages their own members.
-                  </span>
-                </div>
-                <div class="card-body pt-0">
-                  @if (isDeliveryLocked) {
-                    @if ((project.resourceManagers?.length ?? 0) > 0) {
-                      <div class="skill-picker skill-picker--selected">
-                        @for (rm of project.resourceManagers; track rm.userId) {
-                          <span class="skill-picker__chip skill-picker__chip--on">{{ rm.fullName }}</span>
-                        }
-                      </div>
-                    } @else {
-                      <p class="text-muted small mb-0">No resource managers assigned.</p>
-                    }
-                  } @else if (resourceManagersLoading && resourceManagersList.length === 0) {
-                    <p class="text-muted small mb-0">Loading resource managers…</p>
-                  } @else if (resourceManagersTotalCount === 0 && !resourceManagerSearchQuery) {
-                    <p class="text-muted small mb-0">No resource managers available. Add them under Admin → Resource managers.</p>
-                  } @else {
-                    <div class="skill-search">
-                      <i class="fe fe-search skill-search__icon"></i>
-                      <input
-                        type="search"
-                        class="form-control skill-search__input"
-                        placeholder="Search by name or email..."
-                        [ngModel]="resourceManagerSearchQuery"
-                        (ngModelChange)="onResourceManagerSearchInput($event)"
-                        autocomplete="off" />
-                    </div>
-                    @if (selectedResourceManagersForDisplay.length > 0) {
-                      <div class="skill-selected-group mb-2">
-                        <span class="skill-selection-bar">{{ selectedResourceManagerIds.size }} selected</span>
-                        <div class="skill-picker skill-picker--selected">
-                          @for (rm of selectedResourceManagersForDisplay; track rm.id) {
-                            <button
-                              type="button"
-                              class="skill-picker__chip skill-picker__chip--on"
-                              (click)="toggleResourceManager(rm)">
-                              {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
-                              <i class="fe fe-x ms-1"></i>
-                            </button>
-                          }
-                        </div>
-                      </div>
-                    }
-                    <div class="skill-picker skill-picker--resource-managers" (scroll)="onResourceManagerPickerScroll($event)">
-                      @if (resourceManagersLoading && resourceManagersList.length === 0) {
-                        <p class="text-muted small mb-0 py-2">Loading resource managers…</p>
-                      }
-                      @for (rm of resourceManagersList; track rm.id) {
-                        <label class="skill-picker__chip" [class.skill-picker__chip--on]="isResourceManagerSelected(rm.id)">
-                          <input
-                            type="checkbox"
-                            class="d-none"
-                            [checked]="isResourceManagerSelected(rm.id)"
-                            (change)="toggleResourceManager(rm)" />
-                          {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
-                          <small class="text-muted">({{ rm.email }})</small>
-                        </label>
-                      }
-                      @if (!resourceManagersLoading && resourceManagersList.length === 0) {
-                        <p class="text-muted small mb-0 py-2">
-                          @if (resourceManagerSearchQuery) {
-                            No resource managers match "{{ resourceManagerSearchQuery }}".
-                          } @else {
-                            No resource managers found.
-                          }
-                        </p>
-                      }
-                      @if (resourceManagersLoading && resourceManagersList.length > 0) {
-                        <p class="text-muted small mb-0 py-1">Loading more…</p>
-                      }
-                      @if (resourceManagersHasMore && !resourceManagersLoading && resourceManagersList.length > 0) {
-                        <p class="text-muted small mb-0 py-1">Scroll or search for more resource managers</p>
-                      }
-                    </div>
-                    @if (resourceManagersTotalCount > 0) {
-                      <p class="text-muted small mb-0 mt-2">{{ resourceManagersTotalCount }} resource managers available</p>
-                    }
-                    @if (savingResourceManagers) {
-                      <p class="text-muted small mb-0">Saving resource managers…</p>
-                    }
-                  }
-                </div>
-              </div>
-
-              <div class="card custom-card project-tracks-card mb-0">
-                <div class="card-header border-bottom-0">
-                  <h5 class="mb-0">3. Assign team by skill</h5>
-                  <span class="fs-12 text-muted d-block mt-1">For each required skill, pick a team member who has that skill on their profile.</span>
-                </div>
-                <div class="card-body pt-0">
-                  @if (!hasRequiredSkills) {
-                    <div class="text-muted small py-3 text-center">Save required skills above to start assigning your team.</div>
-                  }
-                  @for (slot of skillSlots; track slot.skill.id) {
-                    <div class="track-row" [class.track-row--pending]="slot.pending">
-                      <div class="track-row__head">
-                        <div class="track-row__icon">{{ slot.skill.name.charAt(0) }}</div>
-                        <div class="track-row__title">
-                          <h6 class="mb-0">{{ slot.skill.name }}</h6>
-                          @if (slot.assignments.length > 0) {
-                            <span class="track-row__status text-success">{{ slot.assignments.length }} assigned</span>
-                          } @else {
-                            <span class="track-row__status text-muted">No one assigned · {{ slot.skill.skillCategoryName }}</span>
-                          }
-                        </div>
-                        @if (!isDeliveryLocked) {
-                          <button type="button" class="btn btn-sm btn-outline-primary track-row__add" (click)="openAssignModal(slot)">
-                            + {{ slot.assignments.length ? 'Add more' : 'Assign' }}
-                          </button>
-                        }
-                      </div>
-
-                      @if (slot.assignments.length > 0) {
-                        <ul class="track-members">
-                          @for (a of visibleAssignments(slot); track a.id) {
-                            <li class="track-member" [class.track-member--incomplete-cost]="isHourlyBudget && !isAssignmentCostComplete(a)">
-                              <div class="track-member__avatar">{{ memberInitials(a.teamMemberName) }}</div>
-                              <div class="track-member__info">
-                                <span class="track-member__name">{{ a.teamMemberName }}</span>
-                                <span class="track-member__role">{{ roleLabel(a.role) }}</span>
-                                @if (isHourlyBudget) {
-                                  @if (isAssignmentCostComplete(a)) {
-                                    <span class="track-member__title">
-                                      {{ a.hourlyRate | number: '1.0-2' }}/hr × {{ a.allocatedHours }}h
-                                      = {{ lineCost(a) | number: '1.0-2' }}
-                                    </span>
-                                  } @else {
-                                    <span class="track-member__cost-warning">{{ assignmentCostIssueLabel(a) }}</span>
-                                  }
-                                }
-                              </div>
-                              @if (!isDeliveryLocked) {
-                                <button type="button" class="btn btn-sm btn-link text-danger track-member__remove" (click)="removeAssignment(a)">
-                                  Unassign
-                                </button>
-                              }
-                            </li>
-                          }
-                        </ul>
-                        @if (hiddenAssignmentCount(slot) > 0) {
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-link track-members__toggle px-0"
-                            (click)="toggleSkillMembersExpanded(slot.skill.id)">
-                            @if (isSkillMembersExpanded(slot.skill.id)) {
-                              Show less
-                            } @else {
-                              Show {{ hiddenAssignmentCount(slot) }} more member{{ hiddenAssignmentCount(slot) === 1 ? '' : 's' }}
-                            }
-                          </button>
-                        }
-                        @if (isHourlyBudget) {
-                          <div class="track-row__subtotal small" [class.text-warning]="slotHasIncompleteCost(slot)">
-                            Skill cost:
-                            <strong>{{ skillSlotCost(slot) | number: '1.0-0' }}</strong>
-                            @if (slotHasIncompleteCost(slot)) {
-                              <span class="ms-1">(excludes members with incomplete data)</span>
-                            }
-                          </div>
-                        }
-                      } @else {
-                        <p class="track-row__empty text-muted small mb-0 mt-2">No one assigned for this skill yet.</p>
-                      }
-                    </div>
-                  }
-                </div>
-              </div>
+      <section class="staffing-section">
+        <header class="staffing-section__head">
+          <span class="staffing-section__step">2</span>
+          <div>
+            <h6 class="staffing-section__title mb-0">Resource managers</h6>
+            <p class="staffing-section__hint mb-0">Who can staff this project (max {{ maxResourceManagers }}).</p>
+          </div>
+        </header>
+        @if (isDeliveryLocked) {
+          @if ((project.resourceManagers?.length ?? 0) > 0) {
+            <div class="project-detail-rm-list">
+              @for (rm of project.resourceManagers; track rm.userId) {
+                <span class="project-detail-rm-chip">
+                  <span class="project-detail-rm-chip__avatar">{{ memberInitials(rm.fullName) }}</span>
+                  {{ rm.fullName }}
+                </span>
+              }
             </div>
-          </ng-template>
-        </ng-container>
-      </nav>
+          } @else {
+            <p class="text-muted small mb-0">No resource managers assigned.</p>
+          }
+        } @else if (resourceManagersLoading && resourceManagersList.length === 0) {
+          <p class="text-muted small mb-0">Loading resource managers…</p>
+        } @else if (resourceManagersTotalCount === 0 && !resourceManagerSearchQuery) {
+          <p class="text-muted small mb-0">No resource managers available.</p>
+        } @else {
+          @if (selectedResourceManagersForDisplay.length > 0) {
+            <div class="project-detail-rm-list mb-2">
+              @for (rm of selectedResourceManagersForDisplay; track rm.id) {
+                <button type="button" class="project-detail-rm-chip border-0" (click)="toggleResourceManager(rm)">
+                  <span class="project-detail-rm-chip__avatar">{{ memberInitials(rm.fullName || rm.firstName) }}</span>
+                  {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
+                  <i class="fe fe-x ms-1 text-muted"></i>
+                </button>
+              }
+            </div>
+          }
+          <div class="skill-search">
+            <i class="fe fe-search skill-search__icon"></i>
+            <input
+              type="search"
+              class="form-control skill-search__input"
+              placeholder="Search by name or email..."
+              [ngModel]="resourceManagerSearchQuery"
+              (ngModelChange)="onResourceManagerSearchInput($event)"
+              autocomplete="off" />
+          </div>
+          <div class="skill-picker skill-picker--resource-managers mt-2" (scroll)="onResourceManagerPickerScroll($event)">
+            @for (rm of resourceManagersList; track rm.id) {
+              <label
+                class="skill-picker__chip"
+                [class.skill-picker__chip--on]="isResourceManagerSelected(rm.id)"
+                [class.pe-none]="isResourceManagerDisabled(rm.id)"
+                [class.opacity-50]="isResourceManagerDisabled(rm.id)">
+                <input
+                  type="checkbox"
+                  class="d-none"
+                  [checked]="isResourceManagerSelected(rm.id)"
+                  [disabled]="isResourceManagerDisabled(rm.id)"
+                  (change)="toggleResourceManager(rm)" />
+                {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
+                <small class="text-muted">({{ rm.email }})</small>
+              </label>
+            }
+          </div>
+          @if (!canAddResourceManager) {
+            <p class="text-muted small mb-0 mt-2">Maximum of {{ maxResourceManagers }} resource managers reached.</p>
+          }
+          @if (savingResourceManagers) {
+            <p class="text-muted small mb-0 mt-1">Saving resource managers…</p>
+          }
+        }
+      </section>
+
+      @if (assignBySkill) {
+        <section class="staffing-section">
+          <header class="staffing-section__head">
+            <span class="staffing-section__step">3</span>
+            <div>
+              <h6 class="staffing-section__title mb-0">Required skills</h6>
+              <p class="staffing-section__hint mb-0">Search and select skills for this project.</p>
+            </div>
+          </header>
+          @if (isDeliveryLocked) {
+            @if (selectedSkillsForDisplay.length > 0) {
+              <div class="skill-picker skill-picker--selected">
+                @for (skill of selectedSkillsForDisplay; track skill.id) {
+                  <span class="skill-picker__chip skill-picker__chip--on">{{ skill.name }}</span>
+                }
+              </div>
+            } @else {
+              <p class="text-muted small mb-0">No required skills on this project.</p>
+            }
+          } @else {
+            <div class="skill-search">
+              <i class="fe fe-search skill-search__icon"></i>
+              <input
+                type="search"
+                class="form-control skill-search__input"
+                placeholder="Search by name, category, or role..."
+                [ngModel]="skillSearchQuery"
+                (ngModelChange)="onSkillSearchInput($event)"
+                autocomplete="off" />
+            </div>
+            @if (selectedSkillsForDisplay.length > 0) {
+              <div class="skill-selected-group mb-2 mt-2">
+                <span class="skill-selection-bar">
+                  {{ selectedSkillIds.size }} selected
+                  @if (savingSkills) {
+                    <span class="text-muted fw-normal"> · saving…</span>
+                  }
+                </span>
+                <div class="skill-picker skill-picker--selected">
+                  @for (skill of selectedSkillsForDisplay; track skill.id) {
+                    <button type="button" class="skill-picker__chip skill-picker__chip--on" (click)="toggleSkill(skill)">
+                      {{ skill.name }}
+                      <small>({{ skill.skillCategoryName }})</small>
+                      <i class="fe fe-x ms-1"></i>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            <div class="skill-picker" (scroll)="onSkillPickerScroll($event)">
+              @if (skillsLoading && skillsList.length === 0) {
+                <p class="text-muted small mb-0 py-2">Loading skills…</p>
+              }
+              @for (skill of skillsList; track skill.id) {
+                <label class="skill-picker__chip" [class.skill-picker__chip--on]="isSkillSelected(skill.id)">
+                  <input type="checkbox" class="d-none" [checked]="isSkillSelected(skill.id)" (change)="toggleSkill(skill)" />
+                  {{ skill.name }}
+                  <small class="text-muted">({{ skill.skillCategoryName }})</small>
+                </label>
+              }
+              @if (!skillsLoading && skillsList.length === 0) {
+                <p class="text-muted small mb-0 py-2">
+                  @if (skillSearchQuery) {
+                    No skills match "{{ skillSearchQuery }}".
+                  } @else {
+                    No skills found. Add skills under Admin → Skills.
+                  }
+                </p>
+              }
+              @if (skillsLoading && skillsList.length > 0) {
+                <p class="text-muted small mb-0 py-1">Loading more…</p>
+              }
+              @if (skillsHasMore && !skillsLoading && skillsList.length > 0) {
+                <p class="text-muted small mb-0 py-1">Scroll for more skills</p>
+              }
+            </div>
+          }
+        </section>
+
+        @if (unassignedDirectMembers.length > 0) {
+          <section class="staffing-section staffing-section--attention">
+            <header class="staffing-section__head">
+              <span class="staffing-section__step staffing-section__step--warn"><i class="fe fe-alert-circle"></i></span>
+              <div>
+                <h6 class="staffing-section__title mb-0">Not yet assigned to a skill</h6>
+                <p class="staffing-section__hint mb-0">Assign to a skill track below or unassign.</p>
+              </div>
+            </header>
+            <ul class="track-members track-members--flush">
+              @for (a of unassignedDirectMembers; track a.id) {
+                <li class="track-member" [class.track-member--incomplete-cost]="isHourlyBudget && !isAssignmentCostComplete(a)">
+                  <div class="track-member__avatar">{{ memberInitials(a.teamMemberName) }}</div>
+                  <div class="track-member__info">
+                    <span class="track-member__name">{{ a.teamMemberName }}</span>
+                    <span class="track-member__role">{{ roleLabel(a.role) }}</span>
+                  </div>
+                  @if (!isDeliveryLocked) {
+                    <button type="button" class="btn btn-sm btn-link text-danger track-member__remove" (click)="removeAssignment(a)">
+                      Unassign
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        <section class="staffing-section">
+          <header class="staffing-section__head">
+            <span class="staffing-section__step">4</span>
+            <div>
+              <h6 class="staffing-section__title mb-0">Assign team by skill</h6>
+              <p class="staffing-section__hint mb-0">Assign any team member from the organization to each skill.</p>
+            </div>
+          </header>
+          @if (!hasRequiredSkills) {
+            <p class="text-muted small py-3 text-center mb-0">Select required skills above to start assigning the team.</p>
+          }
+          @for (slot of skillSlots; track slot.skill.id) {
+            <div class="track-row" [class.track-row--pending]="slot.pending">
+              <div class="track-row__head">
+                <div class="track-row__icon">{{ slot.skill.name.charAt(0) }}</div>
+                <div class="track-row__title">
+                  <h6 class="mb-0">{{ slot.skill.name }}</h6>
+                  @if (slot.assignments.length > 0) {
+                    <span class="track-row__status text-success">{{ slot.assignments.length }} assigned</span>
+                  } @else {
+                    <span class="track-row__status text-muted">No one assigned · {{ slot.skill.skillCategoryName }}</span>
+                  }
+                </div>
+                @if (!isDeliveryLocked) {
+                  <button type="button" class="btn btn-sm btn-outline-primary track-row__add" (click)="openAssignModal(slot)">
+                    + {{ slot.assignments.length ? 'Add more' : 'Assign' }}
+                  </button>
+                }
+              </div>
+
+              @if (slot.assignments.length > 0) {
+                <ul class="track-members">
+                  @for (a of visibleAssignments(slot); track a.id) {
+                    <li class="track-member" [class.track-member--incomplete-cost]="isHourlyBudget && !isAssignmentCostComplete(a)">
+                      <div class="track-member__avatar">{{ memberInitials(a.teamMemberName) }}</div>
+                      <div class="track-member__info">
+                        <span class="track-member__name">{{ a.teamMemberName }}</span>
+                        <span class="track-member__role">{{ roleLabel(a.role) }}</span>
+                        @if (isHourlyBudget) {
+                          @if (isAssignmentCostComplete(a)) {
+                            <span class="track-member__title">
+                              {{ a.hourlyRate | number: '1.0-2' }}/hr × {{ a.allocatedHours }}h
+                              = {{ lineCost(a) | number: '1.0-2' }}
+                            </span>
+                          } @else {
+                            <span class="track-member__cost-warning">{{ assignmentCostIssueLabel(a) }}</span>
+                          }
+                        }
+                      </div>
+                      @if (!isDeliveryLocked) {
+                        <button type="button" class="btn btn-sm btn-link text-danger track-member__remove" (click)="removeAssignment(a)">
+                          Unassign
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+                @if (hiddenAssignmentCount(slot) > 0) {
+                  <button type="button" class="btn btn-sm btn-link track-members__toggle px-0" (click)="toggleSkillMembersExpanded(slot.skill.id)">
+                    @if (isSkillMembersExpanded(slot.skill.id)) {
+                      Show less
+                    } @else {
+                      Show {{ hiddenAssignmentCount(slot) }} more member{{ hiddenAssignmentCount(slot) === 1 ? '' : 's' }}
+                    }
+                  </button>
+                }
+                @if (isHourlyBudget) {
+                  <div class="track-row__subtotal small" [class.text-warning]="slotHasIncompleteCost(slot)">
+                    Skill cost: <strong>{{ skillSlotCost(slot) | number: '1.0-0' }}</strong>
+                    @if (slotHasIncompleteCost(slot)) {
+                      <span class="ms-1">(excludes members with incomplete data)</span>
+                    }
+                  </div>
+                }
+              } @else {
+                <p class="track-row__empty text-muted small mb-0 mt-2">No one assigned for this skill yet.</p>
+              }
+            </div>
+          }
+        </section>
+      } @else {
+        <section class="staffing-section">
+          <header class="staffing-section__head">
+            <span class="staffing-section__step">3</span>
+            <div class="flex-grow-1 min-width-0">
+              <h6 class="staffing-section__title mb-0">Project team</h6>
+              <p class="staffing-section__hint mb-0">Assign anyone from the organization — search and scroll to browse all members.</p>
+            </div>
+            @if (!isDeliveryLocked) {
+              <button type="button" class="btn btn-sm btn-primary" (click)="openDirectAssignModal()">
+                <i class="fe fe-user-plus me-1"></i>Add team members
+              </button>
+            }
+          </header>
+
+          @if (summaryTeamMembers.length === 0) {
+            <div class="staffing-empty">
+              <i class="fe fe-user-plus staffing-empty__icon" aria-hidden="true"></i>
+              <p class="staffing-empty__title">No team members yet</p>
+              @if (!isDeliveryLocked) {
+                <button type="button" class="btn btn-sm btn-primary" (click)="openDirectAssignModal()">
+                  Add your first member
+                </button>
+              }
+            </div>
+          } @else {
+            <ul class="track-members track-members--flush">
+              @for (a of visibleDirectAssignments; track a.id) {
+                <li class="track-member" [class.track-member--incomplete-cost]="isHourlyBudget && !isAssignmentCostComplete(a)">
+                  <div class="track-member__avatar">{{ memberInitials(a.teamMemberName) }}</div>
+                  <div class="track-member__info">
+                    <span class="track-member__name">{{ a.teamMemberName }}</span>
+                    <span class="track-member__role">{{ roleLabel(a.role) }}</span>
+                    @if (isHourlyBudget) {
+                      @if (isAssignmentCostComplete(a)) {
+                        <span class="track-member__title">
+                          {{ a.hourlyRate | number: '1.0-2' }}/hr × {{ a.allocatedHours }}h
+                          = {{ lineCost(a) | number: '1.0-2' }}
+                        </span>
+                      } @else {
+                        <span class="track-member__cost-warning">{{ assignmentCostIssueLabel(a) }}</span>
+                      }
+                    }
+                  </div>
+                  @if (!isDeliveryLocked) {
+                    <button type="button" class="btn btn-sm btn-link text-danger track-member__remove" (click)="removeAssignment(a)">
+                      Unassign
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+            @if (hiddenDirectAssignmentCount > 0) {
+              <button type="button" class="btn btn-sm btn-link track-members__toggle px-0" (click)="toggleDirectMembersExpanded()">
+                @if (directMembersExpanded) {
+                  Show less
+                } @else {
+                  Show {{ hiddenDirectAssignmentCount }} more member{{ hiddenDirectAssignmentCount === 1 ? '' : 's' }}
+                }
+              </button>
+            }
+          }
+        </section>
+      }
     </div>
-    <div class="card-body pt-3" [ngbNavOutlet]="detailNav"></div>
   </div>
 }

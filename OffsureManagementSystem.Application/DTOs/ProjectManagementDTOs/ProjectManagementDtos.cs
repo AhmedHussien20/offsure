@@ -44,6 +44,17 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public int? Progress { get; set; }
         /// <summary>When set, syncs selected skills on the project (ProjectSkills table).</summary>
         public List<int>? RequiredSkillIds { get; set; }
+        public bool? AssignTeamBySkill { get; set; }
+    }
+
+    public class UpdateProjectStaffingModeDto
+    {
+        public bool AssignTeamBySkill { get; set; }
+    }
+
+    public class UpdateProjectRequiredSkillsDto
+    {
+        public List<int> RequiredSkillIds { get; set; } = new();
     }
 
     public class AssignProjectTeamMemberDto
@@ -103,6 +114,7 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public List<ProjectAssignmentDto> TeamMembers { get; set; } = new();
         public bool UsesMilestones { get; set; }
         public int? MilestoneCount { get; set; }
+        public bool AssignTeamBySkill { get; set; }
         public List<ProjectMilestoneDto> Milestones { get; set; } = new();
     }
 

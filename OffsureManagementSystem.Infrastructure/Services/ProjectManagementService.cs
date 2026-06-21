@@ -105,7 +105,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var clientId = await GetClientIdForUserAsync(userId);
             request.ClientId = clientId;
-            return await GetAllProjectsAsync(request);
+            var response = await GetAllProjectsAsync(request);
+            return new PagedResponse<ProjectDto>(
+                response.Data.Select(StripClientPortalFinancials).ToList(),
+                response.TotalCount,
+                response.PageIndex,
+                response.PageSize);
         }
 
         public async Task<ProjectDto> GetClientProjectByIdAsync(int userId, int projectId)
@@ -121,7 +126,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (project.ServiceRequest?.ClientId != clientId)
                 throw new AppException("You do not have access to this project.", 403);
 
-            return await GetProjectDtoByIdAsync(projectId);
+            return StripClientPortalFinancials(await GetProjectDtoByIdAsync(projectId));
         }
 
         public async Task<PagedResponse<ProjectDto>> GetTeamMemberProjectsByUserIdAsync(
@@ -130,7 +135,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var teamMemberId = await GetTeamMemberIdForUserAsync(userId);
             request.TeamMemberId = teamMemberId;
-            return await GetAllProjectsAsync(request);
+            var response = await GetAllProjectsAsync(request);
+            return new PagedResponse<ProjectDto>(
+                response.Data.Select(StripTeamMemberFinancials).ToList(),
+                response.TotalCount,
+                response.PageIndex,
+                response.PageSize);
         }
 
         public async Task<ProjectDto> GetTeamMemberProjectByIdAsync(int userId, int projectId)
@@ -140,7 +150,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (!await HasActiveAssignmentAsync(projectId, teamMemberId))
                 throw new AppException("You do not have access to this project.", 403);
 
-            return await GetProjectDtoByIdAsync(projectId);
+            return StripTeamMemberFinancials(await GetProjectDtoByIdAsync(projectId));
         }
 
         public async Task<PagedResponse<ProjectDto>> GetResourceManagerProjectsByUserIdAsync(
@@ -199,8 +209,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var assignment = await _projectAssignmentRepo
                 .Query()
+                .IgnoreQueryFilters()
                 .Include(a => a.TeamMember)
-                .FirstOrDefaultAsync(a => a.ProjectId == projectId && a.Id == assignmentId && a.IsActive);
+                .FirstOrDefaultAsync(a =>
+                    a.ProjectId == projectId
+                    && a.Id == assignmentId
+                    && a.IsActive
+                    && !a.IsDeleted);
 
             if (assignment is null)
                 throw new AppException("Resource not found.", 404);
@@ -242,6 +257,79 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetResourceManagerProjectByIdAsync(userId, projectId);
         }
 
+        public async Task<ProjectDto> UpdateProjectStaffingModeForResourceManagerAsync(
+            int userId,
+            int projectId,
+            UpdateProjectStaffingModeDto dto)
+        {
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (project.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                throw new AppException("Staffing settings are locked for this project.", 400);
+
+            var hasRequiredSkills = await _projectSkillRepo
+                .GetAll(ps => ps.ProjectId == projectId && ps.IsSelected)
+                .AnyAsync();
+
+            project.AssignTeamBySkill = hasRequiredSkills && dto.AssignTeamBySkill;
+            project.UpdatedAt = DateTime.UtcNow;
+
+            _projectRepo.SaveInclude(
+                project,
+                nameof(project.AssignTeamBySkill),
+                nameof(project.UpdatedAt));
+            await _projectRepo.SaveChangesAsync();
+
+            await ConsolidateDuplicateActiveAssignmentsForProjectAsync(projectId);
+
+            return await GetResourceManagerProjectByIdAsync(userId, projectId);
+        }
+
+        public async Task<ProjectDto> UpdateProjectRequiredSkillsForResourceManagerAsync(
+            int userId,
+            int projectId,
+            UpdateProjectRequiredSkillsDto dto)
+        {
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (project.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                throw new AppException("Staffing settings are locked for this project.", 400);
+
+            var ids = (dto.RequiredSkillIds ?? new List<int>())
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            await SyncProjectSkillsAsync(projectId, ids);
+
+            if (ids.Count == 0)
+            {
+                project.AssignTeamBySkill = false;
+            }
+
+            project.Description = ProjectDescriptionSkills.StripSkillsMarker(project.Description);
+            project.UpdatedAt = DateTime.UtcNow;
+
+            _projectRepo.SaveInclude(
+                project,
+                nameof(project.Description),
+                nameof(project.AssignTeamBySkill),
+                nameof(project.UpdatedAt));
+            await _projectRepo.SaveChangesAsync();
+
+            await ConsolidateDuplicateActiveAssignmentsForProjectAsync(projectId);
+
+            return await GetResourceManagerProjectByIdAsync(userId, projectId);
+        }
+
         public async Task<ProjectDto> SetProjectResourceManagersAsync(int projectId, SetProjectResourceManagersDto dto)
         {
             await EnsureProjectExistsAsync(projectId);
@@ -253,11 +341,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             await ValidateResourceManagerUsersAsync(userIds);
 
+            if (userIds.Count > 2)
+                throw new AppException("A project can have at most 2 resource managers.", 400);
+
             var existing = await _projectResourceManagerRepo
                 .GetAll(r => r.ProjectId == projectId)
                 .ToListAsync();
 
             var target = userIds.ToHashSet();
+
+            var removedRmUserIds = existing
+                .Where(r => !r.IsDeleted && !target.Contains(r.ResourceManagerUserId))
+                .Select(r => r.ResourceManagerUserId)
+                .ToList();
 
             foreach (var row in existing.Where(r => !r.IsDeleted && !target.Contains(r.ResourceManagerUserId)))
             {
@@ -293,6 +389,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
             }
 
             await _projectResourceManagerRepo.SaveChangesAsync();
+
+            if (removedRmUserIds.Count > 0)
+                await DeactivateAssignmentsForResourceManagersAsync(projectId, removedRmUserIds);
+
             return await GetProjectByIdAsync(projectId);
         }
 
@@ -428,6 +528,34 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int milestoneId,
             UpdateProjectMilestoneStatusDto dto)
         {
+            await UpdateProjectMilestoneStatusCoreAsync(projectId, milestoneId, dto);
+            return await GetProjectByIdAsync(projectId);
+        }
+
+        public async Task<ProjectDto> UpdateProjectMilestoneStatusForResourceManagerAsync(
+            int userId,
+            int projectId,
+            int milestoneId,
+            UpdateProjectMilestoneStatusDto dto)
+        {
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (project.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                throw new AppException("This project is locked.", 400);
+
+            await UpdateProjectMilestoneStatusCoreAsync(projectId, milestoneId, dto);
+            return await GetResourceManagerProjectByIdAsync(userId, projectId);
+        }
+
+        private async Task UpdateProjectMilestoneStatusCoreAsync(
+            int projectId,
+            int milestoneId,
+            UpdateProjectMilestoneStatusDto dto)
+        {
             var project = await _projectRepo.GetByIDAsync(projectId);
             if (project is null)
                 throw new AppException("Resource not found.", 404);
@@ -451,8 +579,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             await SyncProjectProgressFromMilestonesAsync(projectId);
             await TryCompleteProjectFromMilestonesAsync(projectId);
-
-            return await GetProjectByIdAsync(projectId);
         }
 
         private async Task TryCompleteProjectFromMilestonesAsync(int projectId)
@@ -542,6 +668,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 MilestoneCount = dto.BudgetType != ProjectBudgetType.Hourly && dto.UsesMilestones
                     ? dto.MilestoneCount
                     : null,
+                AssignTeamBySkill = dto.RequiredSkillIds is { Count: > 0 },
                 Progress = 0,
                 CreatedAt = DateTime.UtcNow
             };
@@ -702,6 +829,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
             }
 
             project.Progress = dto.Progress;
+            if (dto.AssignTeamBySkill.HasValue)
+            {
+                project.AssignTeamBySkill = dto.AssignTeamBySkill.Value;
+            }
+
             project.UpdatedAt = DateTime.UtcNow;
 
             _projectRepo.SaveInclude(
@@ -714,6 +846,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 nameof(project.HourlyRate),
                 nameof(project.ExpectedHours),
                 nameof(project.Progress),
+                nameof(project.AssignTeamBySkill),
                 nameof(project.UpdatedAt));
             await _projectRepo.SaveChangesAsync();
 
@@ -731,17 +864,32 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (skillId.HasValue)
                 await EnsureProjectSkillIsSelectedAsync(projectId, skillId.Value);
 
-            var existing = await FindAssignmentAsync(projectId, dto.TeamMemberId, skillId);
+            var all = await GetAllAssignmentsForMemberAsync(projectId, dto.TeamMemberId);
+            await ConsolidateDuplicateActiveAssignmentsInMemoryAsync(all);
+
+            all = await GetAllAssignmentsForMemberAsync(projectId, dto.TeamMemberId);
+
+            var activeForSkill = all.FirstOrDefault(a =>
+                a.IsActive && AssignmentMatchesSkill(a, skillId));
+            if (activeForSkill is not null)
+            {
+                var message = skillId.HasValue
+                    ? "This team member is already assigned for this skill."
+                    : "Team member is already assigned to this project.";
+                throw new AppException(message, 400);
+            }
+
+            var anyActive = all.FirstOrDefault(a => a.IsActive);
+            if (anyActive is not null)
+            {
+                ReactivateAssignment(anyActive, role, skillId, dto.HourlyRate, dto.AllocatedHours);
+                await _projectAssignmentRepo.SaveChangesAsync();
+                return await GetProjectDtoByIdAsync(projectId);
+            }
+
+            var existing = PickBestAssignment(all.Where(a => !a.IsActive), skillId);
             if (existing is not null)
             {
-                if (existing.IsActive)
-                {
-                    var message = skillId.HasValue
-                        ? "This team member is already assigned for this skill."
-                        : "Team member is already assigned to this project.";
-                    throw new AppException(message, 400);
-                }
-
                 ReactivateAssignment(existing, role, skillId, dto.HourlyRate, dto.AllocatedHours);
                 await _projectAssignmentRepo.SaveChangesAsync();
                 return await GetProjectDtoByIdAsync(projectId);
@@ -771,7 +919,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await EnsureProjectExistsAsync(projectId);
 
             var assignments = await _projectAssignmentRepo
-                .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == teamMemberId)
+                .Query()
+                .IgnoreQueryFilters()
+                .Where(a =>
+                    a.ProjectId == projectId
+                    && a.TeamMemberId == teamMemberId
+                    && a.IsActive
+                    && !a.IsDeleted)
                 .ToListAsync();
 
             if (assignments.Count == 0)
@@ -790,8 +944,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await EnsureProjectExistsAsync(projectId);
 
             var assignment = await _projectAssignmentRepo
-                .GetAll(a => a.ProjectId == projectId && a.Id == assignmentId)
-                .FirstOrDefaultAsync();
+                .Query()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(a =>
+                    a.ProjectId == projectId
+                    && a.Id == assignmentId
+                    && a.IsActive
+                    && !a.IsDeleted);
 
             if (assignment is null)
                 throw new AppException("Resource not found.", 404);
@@ -1149,6 +1308,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     .ToList(),
                 UsesMilestones = project.UsesMilestones,
                 MilestoneCount = project.MilestoneCount,
+                AssignTeamBySkill = project.AssignTeamBySkill,
                 Milestones = project.ProjectMilestones?
                     .Where(m => !m.IsDeleted)
                     .OrderBy(m => m.Order)
@@ -1175,6 +1335,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private async Task<ProjectDto> GetProjectDtoByIdAsync(int id)
         {
+            await ConsolidateDuplicateActiveAssignmentsForProjectAsync(id);
+
             var project = await BuildProjectQuery()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -1220,13 +1382,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Distinct()
                 .ToList() ?? new List<int>();
 
+            var selectedIdSet = selectedIds.ToHashSet();
+
             var existing = await _projectSkillRepo
                 .GetAll(ps => ps.ProjectId == projectId)
                 .ToListAsync();
 
+            var removedSkillIds = existing
+                .Where(row => row.IsSelected && !selectedIdSet.Contains(row.SkillId))
+                .Select(row => row.SkillId)
+                .ToList();
+
             foreach (var row in existing)
             {
-                var shouldSelect = selectedIds.Contains(row.SkillId);
+                var shouldSelect = selectedIdSet.Contains(row.SkillId);
                 if (row.IsSelected == shouldSelect)
                     continue;
 
@@ -1256,6 +1425,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             }
 
             await _projectSkillRepo.SaveChangesAsync();
+
+            if (removedSkillIds.Count > 0)
+                await DeactivateAssignmentsForSkillsAsync(projectId, removedSkillIds);
         }
 
         private async Task EnsureSkillActiveAsync(int skillId)
@@ -1350,14 +1522,45 @@ namespace OffsureManagementSystem.Infrastructure.Services
             project.Budget = null;
             project.HourlyRate = null;
             project.ExpectedHours = null;
+            StripAssignmentFinancials(project);
+            StripMilestoneFinancials(project);
+            return project;
+        }
 
+        private static ProjectDto StripTeamMemberFinancials(ProjectDto project)
+        {
+            project.Budget = null;
+            project.HourlyRate = null;
+            project.ExpectedHours = null;
+            StripAssignmentFinancials(project);
+            StripMilestoneFinancials(project);
+            return project;
+        }
+
+        private static ProjectDto StripClientPortalFinancials(ProjectDto project)
+        {
+            StripAssignmentFinancials(project);
+            StripMilestoneFinancials(project);
+            project.Milestones = new List<ProjectMilestoneDto>();
+            return project;
+        }
+
+        private static void StripAssignmentFinancials(ProjectDto project)
+        {
             foreach (var assignment in project.TeamMembers)
             {
                 assignment.HourlyRate = null;
                 assignment.AllocatedHours = null;
             }
+        }
 
-            return project;
+        private static void StripMilestoneFinancials(ProjectDto project)
+        {
+            foreach (var milestone in project.Milestones)
+            {
+                milestone.PaymentAmount = 0;
+                milestone.PaymentPercentage = 0;
+            }
         }
 
         private static ProjectAssignmentDto MapAssignment(ProjectAssignment assignment)
@@ -1378,30 +1581,140 @@ namespace OffsureManagementSystem.Infrastructure.Services
             };
         }
 
+        private static int? ResolveAssignmentSkillId(ProjectAssignment assignment)
+            => assignment.SkillId ?? ProjectDescriptionSkills.SkillIdFromRole(assignment.Role);
+
+        private static bool AssignmentMatchesSkill(ProjectAssignment assignment, int? skillId)
+        {
+            var resolved = ResolveAssignmentSkillId(assignment);
+            if (skillId is > 0)
+                return resolved == skillId;
+
+            return resolved is null;
+        }
+
+        private async Task<List<ProjectAssignment>> GetAllAssignmentsForMemberAsync(
+            int projectId,
+            int teamMemberId)
+        {
+            return await _projectAssignmentRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .Where(a =>
+                    a.ProjectId == projectId
+                    && a.TeamMemberId == teamMemberId
+                    && !a.IsDeleted)
+                .ToListAsync();
+        }
+
+        private static ProjectAssignment? PickBestAssignment(
+            IEnumerable<ProjectAssignment> assignments,
+            int? skillId)
+        {
+            var candidates = assignments.ToList();
+            if (candidates.Count == 0)
+                return null;
+
+            var matched = candidates
+                .Where(a => AssignmentMatchesSkill(a, skillId))
+                .OrderByDescending(a => a.AssignedDate)
+                .ThenByDescending(a => a.Id)
+                .FirstOrDefault();
+
+            if (matched is not null)
+                return matched;
+
+            if (skillId is > 0)
+            {
+                return candidates
+                    .Where(a => ResolveAssignmentSkillId(a) is null)
+                    .OrderByDescending(a => a.AssignedDate)
+                    .ThenByDescending(a => a.Id)
+                    .FirstOrDefault();
+            }
+
+            return candidates
+                .OrderByDescending(a => a.AssignedDate)
+                .ThenByDescending(a => a.Id)
+                .FirstOrDefault();
+        }
+
+        private async Task ConsolidateDuplicateActiveAssignmentsInMemoryAsync(List<ProjectAssignment> assignments)
+        {
+            var actives = assignments.Where(a => a.IsActive).ToList();
+            if (actives.Count <= 1)
+                return;
+
+            var keeper = actives
+                .OrderByDescending(a => a.SkillId.HasValue ? 1 : 0)
+                .ThenByDescending(a => a.AssignedDate)
+                .ThenByDescending(a => a.Id)
+                .First();
+
+            var changed = false;
+            foreach (var extra in actives.Where(a => a.Id != keeper.Id))
+            {
+                DeactivateAssignment(extra);
+                changed = true;
+            }
+
+            if (changed)
+                await _projectAssignmentRepo.SaveChangesAsync();
+        }
+
         private async Task<ProjectAssignment?> FindAssignmentAsync(
             int projectId,
             int teamMemberId,
             int? skillId)
         {
-            var assignments = await _projectAssignmentRepo
-                .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == teamMemberId)
-                .IgnoreQueryFilters()
-                .Where(a => !a.IsDeleted)
-                .ToListAsync();
-
-            if (skillId is > 0)
-            {
-                return assignments.FirstOrDefault(a =>
-                    a.SkillId == skillId
-                    || (a.SkillId == null && ProjectDescriptionSkills.SkillIdFromRole(a.Role) == skillId));
-            }
-
-            return assignments.FirstOrDefault(a =>
-                       a.SkillId == null && ProjectDescriptionSkills.SkillIdFromRole(a.Role) is null)
-                   ?? assignments.FirstOrDefault(a => a.SkillId == null);
+            var assignments = await GetAllAssignmentsForMemberAsync(projectId, teamMemberId);
+            return PickBestAssignment(assignments, skillId);
         }
 
-        private static void ReactivateAssignment(
+        private async Task<List<ProjectAssignment>> GetActiveAssignmentsForMemberAsync(
+            int projectId,
+            int teamMemberId)
+        {
+            return await _projectAssignmentRepo
+                .GetAll(a => a.ProjectId == projectId && a.TeamMemberId == teamMemberId && a.IsActive)
+                .ToListAsync();
+        }
+
+        private async Task ConsolidateDuplicateActiveAssignmentsForMemberAsync(int projectId, int teamMemberId)
+        {
+            var all = await GetAllAssignmentsForMemberAsync(projectId, teamMemberId);
+            await ConsolidateDuplicateActiveAssignmentsInMemoryAsync(all);
+        }
+
+        private async Task ConsolidateDuplicateActiveAssignmentsForProjectAsync(int projectId)
+        {
+            var actives = await _projectAssignmentRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .Where(a => a.ProjectId == projectId && a.IsActive && !a.IsDeleted)
+                .ToListAsync();
+
+            var changed = false;
+            foreach (var group in actives.GroupBy(a => a.TeamMemberId).Where(g => g.Count() > 1))
+            {
+                var keeper = group
+                    .OrderByDescending(a => a.SkillId.HasValue ? 1 : 0)
+                    .ThenByDescending(a => a.AssignedDate)
+                    .ThenByDescending(a => a.Id)
+                    .First();
+
+                foreach (var extra in group.Where(a => a.Id != keeper.Id))
+                {
+                    DeactivateAssignment(extra);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+                await _projectAssignmentRepo.SaveChangesAsync();
+        }
+
+        private void ReactivateAssignment(
             ProjectAssignment assignment,
             string role,
             int? skillId,
@@ -1416,6 +1729,73 @@ namespace OffsureManagementSystem.Infrastructure.Services
             assignment.HourlyRate = hourlyRate;
             assignment.AllocatedHours = allocatedHours;
             assignment.UpdatedAt = DateTime.UtcNow;
+            _projectAssignmentRepo.SaveInclude(
+                assignment,
+                nameof(assignment.IsActive),
+                nameof(assignment.UnassignedDate),
+                nameof(assignment.AssignedDate),
+                nameof(assignment.SkillId),
+                nameof(assignment.Role),
+                nameof(assignment.HourlyRate),
+                nameof(assignment.AllocatedHours),
+                nameof(assignment.UpdatedAt));
+        }
+
+        private async Task DeactivateAssignmentsForSkillsAsync(int projectId, IReadOnlyList<int> skillIds)
+        {
+            if (skillIds.Count == 0)
+                return;
+
+            var skillIdSet = skillIds.ToHashSet();
+            var assignments = await _projectAssignmentRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .Where(a => a.ProjectId == projectId && a.IsActive && !a.IsDeleted)
+                .ToListAsync();
+
+            var changed = false;
+            foreach (var assignment in assignments)
+            {
+                var resolvedSkillId = assignment.SkillId ?? ProjectDescriptionSkills.SkillIdFromRole(assignment.Role);
+                if (resolvedSkillId.HasValue && skillIdSet.Contains(resolvedSkillId.Value))
+                {
+                    DeactivateAssignment(assignment);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+                await _projectAssignmentRepo.SaveChangesAsync();
+        }
+
+        private async Task DeactivateAssignmentsForResourceManagersAsync(
+            int projectId,
+            IReadOnlyList<int> resourceManagerUserIds)
+        {
+            if (resourceManagerUserIds.Count == 0)
+                return;
+
+            var rmSet = resourceManagerUserIds.ToHashSet();
+            var assignments = await _projectAssignmentRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .Include(a => a.TeamMember)
+                .Where(a =>
+                    a.ProjectId == projectId
+                    && a.IsActive
+                    && !a.IsDeleted
+                    && a.TeamMember != null
+                    && a.TeamMember.ResourceManagerId.HasValue
+                    && rmSet.Contains(a.TeamMember.ResourceManagerId.Value))
+                .ToListAsync();
+
+            if (assignments.Count == 0)
+                return;
+
+            foreach (var assignment in assignments)
+                DeactivateAssignment(assignment);
+
+            await _projectAssignmentRepo.SaveChangesAsync();
         }
 
         private void DeactivateAssignment(ProjectAssignment assignment)
