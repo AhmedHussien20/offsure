@@ -79,6 +79,19 @@ button.skill-picker__chip {
   font-weight: 600;
 }
 
+.skill-picker__chip .project-detail-rm-chip__avatar {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  background: rgba(var(--primary-rgb, 98, 89, 202), 0.18);
+  color: var(--primary-color, #6259ca);
+}
+
 .skill-detail-list {
   display: flex;
   flex-direction: column;

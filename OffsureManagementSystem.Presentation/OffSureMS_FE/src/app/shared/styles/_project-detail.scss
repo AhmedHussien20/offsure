@@ -18,15 +18,9 @@
 
 .project-detail-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 0.75rem;
   margin-bottom: 1rem;
-}
-
-@media (max-width: 992px) {
-  .project-detail-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 576px) {
@@ -44,6 +38,74 @@
   flex-direction: column;
   gap: 0.15rem;
   min-height: 5.5rem;
+  position: relative;
+}
+
+.project-detail-stat--action {
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+    color: inherit;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #cbd5e1;
+    outline-offset: 2px;
+  }
+}
+
+.project-detail-stat--history {
+  text-decoration: none;
+}
+
+.project-detail-stat--loading {
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.project-detail-stat__dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.project-detail-stat__dual-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.project-detail-stat__dual-item .project-detail-stat__label,
+.project-detail-stat__dual-item .project-detail-stat__value {
+  display: block;
+}
+
+.project-detail-stat__arrow {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  font-size: 0.85rem;
+  opacity: 0.22;
+  color: currentColor;
+}
+
+.project-detail-stat__hint--action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: #64748b;
 }
 
 .project-detail-stat__label {
@@ -80,7 +142,7 @@
 .project-detail-stat__progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--primary-color, #6259ca), #667eea);
+  background: var(--primary-color, #6259ca);
 }
 
 .project-detail-section {

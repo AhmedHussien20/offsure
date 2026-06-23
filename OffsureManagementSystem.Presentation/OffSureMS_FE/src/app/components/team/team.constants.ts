@@ -1,6 +1,13 @@
 import { TableColumn } from 'app/shared/components/generic-table/generic-table.component';
 import { PROJECT_STATUS_BADGES } from '../client/client.constants';
 
+export const TEAM_TIMESHEET_ENTRY_COLUMNS: TableColumn[] = [
+  { key: 'workDate', label: 'Date', type: 'date' },
+  { key: 'timeRange', label: 'Time', type: 'text' },
+  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'hoursDisplay', label: 'Hours', type: 'text' },
+];
+
 export const TEAM_PROJECT_COLUMNS: TableColumn[] = [
   { key: 'name', label: 'Project', type: 'text' },
   { key: 'clientName', label: 'Client', type: 'text' },

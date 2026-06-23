@@ -4,6 +4,8 @@
     <p class="text-muted small mb-0">
       @if (step === 1) {
         {{ step1Hint }}
+      } @else if (isHourlyTimesheetProject) {
+        Confirm the role for each member
       } @else if (isHourlyBudget) {
         Confirm the role and allocated hours for each member
       } @else {
@@ -21,7 +23,7 @@
       </span>
       <span class="assign-stepper__line"></span>
       <span class="assign-stepper__item" [class.assign-stepper__item--active]="step === 2">
-        2 {{ isHourlyBudget ? 'Set role & hours' : 'Set roles' }}
+        2 {{ isHourlyTimesheetProject ? 'Set roles' : isHourlyBudget ? 'Set role & hours' : 'Set roles' }}
       </span>
     </div>
   </div>
@@ -93,7 +95,7 @@
     <div class="d-flex gap-2">
       <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Cancel</button>
       <button type="button" class="btn btn-primary" [disabled]="selectedCount === 0" (click)="goToStep2()">
-        Next — {{ isHourlyBudget ? 'set role & hours' : 'set roles' }} <i class="fe fe-arrow-right ms-1"></i>
+        Next — {{ isHourlyTimesheetProject ? 'set roles' : isHourlyBudget ? 'set role & hours' : 'set roles' }} <i class="fe fe-arrow-right ms-1"></i>
       </button>
     </div>
   </div>
@@ -111,7 +113,13 @@
         <label class="form-label small fw-semibold mt-2">Role on this project</label>
         <input type="text" class="form-control form-control-sm" [(ngModel)]="d.role" />
 
-        @if (isHourlyBudget) {
+        @if (isHourlyTimesheetProject) {
+          @if (rmProjectCostRate != null) {
+            <p class="text-muted small mb-0 mt-2">
+              Cost rate: <strong>${{ rmProjectCostRate }}/hr</strong> (your project rate — applied automatically).
+            </p>
+          }
+        } @else if (isHourlyBudget) {
           <p class="text-muted small mb-2 mt-2">
             Allocated hours are pre-filled from the project budget. Adjust if needed.
           </p>
@@ -122,12 +130,6 @@
             [(ngModel)]="d.allocatedHours"
             min="1"
             step="1" />
-
-          @if (memberMissingSalary(d.member)) {
-            <p class="text-warning small mb-0 mt-2">
-              This member does not have an hourly salary on file. An admin must set it before project cost can be calculated.
-            </p>
-          }
         }
       </div>
     }

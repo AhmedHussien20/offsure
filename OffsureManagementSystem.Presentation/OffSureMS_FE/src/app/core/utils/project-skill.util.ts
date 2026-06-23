@@ -1,5 +1,6 @@
-import { ProjectAssignmentDto } from '../models/projects/project.models';
+import { ProjectAssignmentDto, ProjectBudgetType } from '../models/projects/project.models';
 import { SkillDto } from '../models/skills/skill.models';
+import { isHourlyBudgetProject } from './project-budget-form.util';
 
 export interface ProjectSkillSlotView {
   skill: SkillDto;
@@ -73,22 +74,42 @@ export function matchesSearch(query: string, ...parts: (string | null | undefine
   return parts.some(p => (p ?? '').toLowerCase().includes(q));
 }
 
-export function assignmentLineCost(assignment: ProjectAssignmentDto): number {
+export function assignmentLineCost(
+  assignment: ProjectAssignmentDto,
+  project?: { budgetType?: ProjectBudgetType } | null
+): number {
   const rate = assignment.hourlyRate ?? 0;
+  if (isHourlyBudgetProject(project)) {
+    return 0;
+  }
   const hours = assignment.allocatedHours ?? 0;
   if (rate <= 0 || hours <= 0) return 0;
   return rate * hours;
 }
 
-export function assignmentCostIsComplete(assignment: ProjectAssignmentDto): boolean {
-  return (assignment.hourlyRate ?? 0) > 0 && (assignment.allocatedHours ?? 0) > 0;
+export function assignmentCostIsComplete(
+  assignment: ProjectAssignmentDto,
+  project?: { budgetType?: ProjectBudgetType } | null
+): boolean {
+  const hasRate = (assignment.hourlyRate ?? 0) > 0;
+  if (isHourlyBudgetProject(project)) {
+    return hasRate;
+  }
+  return hasRate && (assignment.allocatedHours ?? 0) > 0;
 }
 
-export function assignmentCostIssue(assignment: ProjectAssignmentDto): string | null {
+export function assignmentCostIssue(
+  assignment: ProjectAssignmentDto,
+  project?: { budgetType?: ProjectBudgetType } | null
+): string | null {
+  const timesheetHourly = isHourlyBudgetProject(project);
   const missingRate = (assignment.hourlyRate ?? 0) <= 0;
-  const missingHours = (assignment.allocatedHours ?? 0) <= 0;
+  const missingHours = !timesheetHourly && (assignment.allocatedHours ?? 0) <= 0;
   if (!missingRate && !missingHours) {
     return null;
+  }
+  if (timesheetHourly) {
+    return 'Missing cost rate';
   }
   if (missingRate && missingHours) {
     return 'Missing hourly rate and allocated hours';
@@ -192,13 +213,18 @@ export function summaryProjectAssignments(
 
 export function computeProjectFinancials(
   budget: number | null | undefined,
-  assignments: ProjectAssignmentDto[] | undefined
+  assignments: ProjectAssignmentDto[] | undefined,
+  project?: { budgetType?: ProjectBudgetType } | null
 ): ProjectFinancials {
   const revenue = budget ?? 0;
   const lines = assignments ?? [];
-  const cost = lines.reduce((sum, a) => sum + assignmentLineCost(a), 0);
-  const hasCompleteCostData =
-    lines.length > 0 && lines.every(a => (a.hourlyRate ?? 0) > 0 && (a.allocatedHours ?? 0) > 0);
+  const timesheetHourly = isHourlyBudgetProject(project);
+  const cost = timesheetHourly
+    ? 0
+    : lines.reduce((sum, a) => sum + assignmentLineCost(a, project), 0);
+  const hasCompleteCostData = timesheetHourly
+    ? lines.length > 0 && lines.every(a => (a.hourlyRate ?? 0) > 0)
+    : lines.length > 0 && lines.every(a => (a.hourlyRate ?? 0) > 0 && (a.allocatedHours ?? 0) > 0);
   const profit = revenue - cost;
   const marginPercent = revenue > 0 ? Math.round((profit / revenue) * 100) : null;
   return { revenue, cost, profit, marginPercent, hasCompleteCostData };

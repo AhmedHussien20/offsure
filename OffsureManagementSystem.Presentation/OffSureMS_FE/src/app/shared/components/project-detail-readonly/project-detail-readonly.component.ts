@@ -1,12 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MilestoneStatus, ProjectAssignmentDto, ProjectDto } from 'app/core/models/projects/project.models';
 import { SkillDto } from 'app/core/models/skills/skill.models';
 import { SkillsService } from 'app/core/services/skills.service';
 import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
-import { buildProjectSkillSlots, directProjectAssignments, displayRole, ProjectSkillSlotView, summaryProjectAssignments, usesSkillBasedStaffing } from 'app/core/utils/project-skill.util';
+import {
+  buildProjectSkillSlots,
+  directProjectAssignments,
+  displayRole,
+  ProjectSkillSlotView,
+  summaryProjectAssignments,
+  usesSkillBasedStaffing,
+} from 'app/core/utils/project-skill.util';
 import { ProjectMilestonesReadonlyComponent } from '../project-milestones-readonly/project-milestones-readonly.component';
+import { ProjectTeamSummaryModalComponent } from '../project-team-summary-modal/project-team-summary-modal.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -28,13 +37,20 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
   @Input() statusLabelFn: (status: unknown) => string = s => String(s ?? '');
   @Input() backLink?: string;
   @Input() backLabel = 'Back';
+  @Input() showLogTimeButton = false;
+  @Input() timesheetHistoryLink: (string | number)[] | null = null;
+
+  @Output() logTimeClick = new EventEmitter<void>();
 
   skillSlots: ProjectSkillSlotView[] = [];
   selectedSkillsForDisplay: SkillDto[] = [];
 
   private skillCatalogById = new Map<number, SkillDto>();
 
-  constructor(private skillsService: SkillsService) {}
+  constructor(
+    private skillsService: SkillsService,
+    private modalService: NgbModal
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['project'] && this.project) {
@@ -50,8 +66,12 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     return this.audience === 'team';
   }
 
+  get isHourlyBudget(): boolean {
+    return isHourlyBudgetProject(this.project);
+  }
+
   get usesMilestones(): boolean {
-    return this.isTeam && !!this.project.usesMilestones && !isHourlyBudgetProject(this.project);
+    return !!this.project.usesMilestones && !this.isHourlyBudget;
   }
 
   get headerSubtitle(): string {
@@ -85,6 +105,13 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     return this.summaryTeamMembers.length;
   }
 
+  get pendingSkillNames(): string {
+    return this.skillSlots
+      .filter(s => s.pending)
+      .map(s => s.skill.name)
+      .join(', ');
+  }
+
   get completedMilestonesCount(): number {
     return (this.project.milestones ?? []).filter(m => m.status === MilestoneStatus.Completed).length;
   }
@@ -115,6 +142,25 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
 
   isSelf(assignment: ProjectAssignmentDto): boolean {
     return this.highlightMemberId != null && assignment.teamMemberId === this.highlightMemberId;
+  }
+
+  openTeamSummaryModal(): void {
+    const modalRef = this.modalService.open(ProjectTeamSummaryModalComponent, {
+      centered: true,
+      size: 'md',
+      scrollable: true,
+    });
+    modalRef.componentInstance.projectName = this.project.name;
+    modalRef.componentInstance.members = this.summaryTeamMembers;
+    modalRef.componentInstance.pendingSkillNames = this.pendingSkillNames;
+    modalRef.componentInstance.highlightMemberId = this.highlightMemberId;
+    modalRef.componentInstance.manageHint = this.isClient
+      ? 'Members assigned to deliver your project.'
+      : 'Your colleagues on this project.';
+  }
+
+  onLogTimeClick(): void {
+    this.logTimeClick.emit();
   }
 
   private refreshSkillCatalog(): void {

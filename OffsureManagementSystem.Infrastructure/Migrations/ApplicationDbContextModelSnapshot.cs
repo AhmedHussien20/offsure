@@ -474,6 +474,10 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<int?>("DeletedBy")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("HourlyCostRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -869,6 +873,109 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("TeamMemberSkills");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Timesheet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeamMemberId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("WorkDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamMemberId");
+
+                    b.HasIndex("ProjectId", "TeamMemberId", "WorkDate")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("Timesheets");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.TimesheetEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("EndMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Hours")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("StartMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TimesheetId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TimesheetId");
+
+                    b.ToTable("TimesheetEntries");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.User", b =>
@@ -1356,6 +1463,36 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Navigation("TeamMember");
                 });
 
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Timesheet", b =>
+                {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.TeamMember", "TeamMember")
+                        .WithMany()
+                        .HasForeignKey("TeamMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("TeamMember");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.TimesheetEntry", b =>
+                {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Timesheet", "Timesheet")
+                        .WithMany("Entries")
+                        .HasForeignKey("TimesheetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Timesheet");
+                });
+
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.User", b =>
                 {
                     b.HasOne("OffsureManagementSystem.Domain.Entities.Role", "Role")
@@ -1413,6 +1550,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Navigation("ProjectAssignments");
 
                     b.Navigation("TeamMemberSkills");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Timesheet", b =>
+                {
+                    b.Navigation("Entries");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.User", b =>

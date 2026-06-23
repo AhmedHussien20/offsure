@@ -27,6 +27,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<ProjectSkill> ProjectSkills { get; set; }
         public DbSet<ProjectResourceManager> ProjectResourceManagers { get; set; }
         public DbSet<ProjectMilestone> ProjectMilestones { get; set; }
+        public DbSet<Timesheet> Timesheets { get; set; }
+        public DbSet<TimesheetEntry> TimesheetEntries { get; set; }
         public DbSet<PortfolioProject> PortfolioProjects { get; set; }
         public DbSet<PortfolioProjectImage> PortfolioProjectImages { get; set; }
 
@@ -524,6 +526,45 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.HasIndex(e => new { e.ProjectId, e.ResourceManagerUserId })
                     .IsUnique()
                     .HasFilter("[IsDeleted] = 0");
+
+                entity.Property(e => e.HourlyCostRate)
+                    .HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<Timesheet>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Project)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.TeamMember)
+                    .WithMany()
+                    .HasForeignKey(e => e.TeamMemberId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.ProjectId, e.TeamMemberId, e.WorkDate })
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
+            });
+
+            modelBuilder.Entity<TimesheetEntry>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(e => e.Hours)
+                    .HasPrecision(8, 2);
+
+                entity.HasOne(e => e.Timesheet)
+                    .WithMany(t => t.Entries)
+                    .HasForeignKey(e => e.TimesheetId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // PROJECT SKILL ENTITY CONFIGURATION

@@ -26,6 +26,19 @@ export const resourceManagerRoutes: Routes = [
           import('./rm-projects-list/rm-projects-list.component').then(m => m.RmProjectsListComponent),
       },
       {
+        path: 'projects/:id/timesheet-report',
+        data: {
+          breadcrumb: 'Hours & costs',
+          title: 'Hours & costs',
+          breadcrumbParents: [{ key: 'Projects', route: ['resource-manager', 'projects'] }],
+          portal: 'rm',
+        },
+        loadComponent: () =>
+          import('../admin/admin-project-detail/admin-timesheet-report.component').then(
+            m => m.AdminTimesheetReportComponent
+          ),
+      },
+      {
         path: 'projects/:id',
         data: {
           breadcrumb: 'Project Details',

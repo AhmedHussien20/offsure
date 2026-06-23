@@ -109,9 +109,21 @@
           </div>
         </div>
         <label class="form-label small fw-semibold mt-2">Role on this project</label>
-        <input type="text" class="form-control form-control-sm" [class.mb-2]="isHourlyBudget" [(ngModel)]="d.role" />
+        <input type="text" class="form-control form-control-sm" [class.mb-2]="isHourlyBudget && !isHourlyTimesheetProject" [(ngModel)]="d.role" />
 
-        @if (isHourlyBudget) {
+        @if (isHourlyTimesheetProject) {
+          <label class="form-label small fw-semibold mt-2">Cost rate ($/hr)</label>
+          <input
+            type="number"
+            class="form-control form-control-sm"
+            [(ngModel)]="d.costRate"
+            min="0.01"
+            step="0.01"
+            placeholder="Required if no resource manager rate applies" />
+          <p class="text-muted small mb-0 mt-1">
+            If this member belongs to a resource manager, their project rate is used automatically.
+          </p>
+        } @else if (isHourlyBudget) {
           <p class="text-muted small mb-2">
             Rate and hours are pre-filled from the project budget. You can change them for this assignment.
           </p>

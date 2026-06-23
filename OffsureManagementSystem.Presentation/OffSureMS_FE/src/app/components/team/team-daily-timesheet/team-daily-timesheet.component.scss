@@ -1,0 +1,488 @@
+.timesheet-shell__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.timesheet-shell__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.timesheet-shell__date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  min-width: 11rem;
+}
+
+.timesheet-shell__date-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.timesheet-view-switch {
+  display: inline-flex;
+  padding: 0.2rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.timesheet-view-switch__btn {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    color: #334155;
+  }
+
+  &--active {
+    background: #fff;
+    color: #1e293b;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  }
+}
+
+.timesheet-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timesheet-month-nav__label {
+  min-width: 9rem;
+  text-align: center;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.timesheet-summary {
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  min-width: 12rem;
+}
+
+.timesheet-summary__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  margin-bottom: 0.15rem;
+}
+
+.timesheet-summary__value {
+  font-size: 1.05rem;
+  color: #1e293b;
+}
+
+.timesheet-panel {
+  overflow: hidden;
+}
+
+.timesheet-loading {
+  padding: 2rem 1.25rem;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.timesheet-day__date-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 0.88rem;
+  color: #64748b;
+
+  strong {
+    color: #1e293b;
+  }
+}
+
+.daily-timesheet {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  max-height: min(70vh, 42rem);
+  overflow: auto;
+}
+
+.daily-timesheet__hours {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  border-right: 1px solid #e2e8f0;
+}
+
+.daily-timesheet__hour-label-btn {
+  width: 100%;
+  height: var(--hour-height, 56px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0.2rem 0.55rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.12s ease;
+
+  &:hover {
+    color: #475569;
+  }
+}
+
+.daily-timesheet__track {
+  position: relative;
+  min-height: calc(var(--hour-height, 56px) * 24);
+  background: linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 0%, rgba(148, 163, 184, 0.02) 100%);
+}
+
+.daily-timesheet__hour-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(var(--primary-rgb, 98, 89, 202), 0.35);
+    outline-offset: -2px;
+  }
+}
+
+.daily-timesheet__grid-line {
+  height: var(--hour-height, 56px);
+  border-bottom: 1px solid #eef2f7;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.daily-timesheet__now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-top: 2px solid #ef4444;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+  }
+}
+
+.daily-timesheet__block {
+  position: absolute;
+  left: 0.45rem;
+  right: 0.65rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.15rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(var(--primary-rgb, 98, 89, 202), 0.45);
+    outline-offset: 1px;
+  }
+}
+
+.daily-timesheet__block--0 {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.28);
+  color: #1d4ed8;
+}
+
+.daily-timesheet__block--1 {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.28);
+  color: #047857;
+}
+
+.daily-timesheet__block--2 {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.32);
+  color: #b45309;
+}
+
+.daily-timesheet__block--3 {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(139, 92, 246, 0.28);
+  color: #6d28d9;
+}
+
+.daily-timesheet__block-range {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.daily-timesheet__block-desc {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.timesheet-month {
+  padding: 1rem;
+}
+
+.timesheet-month__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+
+  span {
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+    padding: 0.25rem 0;
+  }
+}
+
+.timesheet-month__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.timesheet-month__cell {
+  min-height: 5.5rem;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(var(--primary-rgb, 98, 89, 202), 0.45);
+    outline-offset: 1px;
+  }
+
+  &--outside {
+    background: #f8fafc;
+    opacity: 0.55;
+  }
+
+  &--today {
+    border-color: rgba(var(--primary-rgb, 98, 89, 202), 0.45);
+  }
+
+  &--selected {
+    box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb, 98, 89, 202), 0.35);
+  }
+
+  &--has-logs {
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, #fff 55%);
+    border-color: rgba(59, 130, 246, 0.22);
+  }
+}
+
+.timesheet-month__day {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.timesheet-month__hours {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.timesheet-month__preview {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.timesheet-month__empty-hint {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: auto;
+}
+
+.timesheet-month__hint {
+  margin-top: 0.85rem;
+  padding: 0 0.15rem;
+}
+
+.timesheet-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.timesheet-popup {
+  width: min(100%, 36rem);
+  max-height: min(90vh, 44rem);
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+}
+
+.timesheet-popup__entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.timesheet-popup__entry {
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.timesheet-popup__entry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.timesheet-popup__entry-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.timesheet-popup__entry-duration {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.timesheet-popup__add-more {
+  width: 100%;
+  margin-top: 0.85rem;
+  border-style: dashed;
+}
+
+.timesheet-popup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 576px) {
+  .daily-timesheet {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+
+  .daily-timesheet__hour-label-btn {
+    font-size: 0.66rem;
+    padding-right: 0.35rem;
+  }
+
+  .timesheet-summary {
+    width: 100%;
+  }
+
+  .timesheet-month__cell {
+    min-height: 4.5rem;
+    padding: 0.45rem;
+  }
+
+  .timesheet-month__preview,
+  .timesheet-month__empty-hint {
+    display: none;
+  }
+}

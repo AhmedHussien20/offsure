@@ -62,8 +62,11 @@ interface HasId {
 })
 export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   @Output() exportPdfClick = new EventEmitter<void>();
+  @Output() exportExcelClick = new EventEmitter<void>();
   @Input() showExportPdf: boolean = false;
   @Input() showExportExcel: boolean = true;
+  /** When true, Excel export is delegated to the parent via `exportExcelClick`. */
+  @Input() useCustomExcelExport: boolean = false;
 
   @Input() formUrl: string = '';
   @Input() breadcrumbs: string[] = [];
@@ -414,7 +417,14 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   // ---------- Export ----------
 
   exportExcel() {
-    const table = document.querySelector('.generic-table-container table');
+    if (this.useCustomExcelExport) {
+      this.exportExcelClick.emit();
+      return;
+    }
+
+    const table = this.tableAnchor?.nativeElement
+      ?.closest('.generic-table-container')
+      ?.querySelector('table');
     if (!table) return;
 
     const html = (table as HTMLElement).outerHTML.replace(/ /g, '%20');

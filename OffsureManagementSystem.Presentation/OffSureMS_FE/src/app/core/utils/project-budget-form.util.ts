@@ -42,13 +42,11 @@ export function buildProjectBudgetFields(
   const customType = form.get('customBudgetType')?.value as ProjectCustomBudgetType | undefined;
   if (customType === 'hourly') {
     const hourlyRate = Number(form.get('hourlyRate')?.value) || 0;
-    const expectedHours = Number(form.get('expectedHours')?.value) || 0;
-    const budget = hourlyRate * expectedHours;
     return {
       budgetType: 'Hourly',
       hourlyRate: hourlyRate > 0 ? hourlyRate : undefined,
-      expectedHours: expectedHours > 0 ? expectedHours : undefined,
-      budget: budget > 0 ? budget : undefined,
+      expectedHours: undefined,
+      budget: undefined,
     };
   }
 
@@ -77,7 +75,6 @@ export function updateProjectBudgetValidators(form: FormGroup, mode: 'standalone
       totalCtrl?.setValidators([Validators.required, Validators.min(0.01)]);
     } else {
       rateCtrl?.setValidators([Validators.required, Validators.min(0.01)]);
-      hoursCtrl?.setValidators([Validators.required, Validators.min(1)]);
     }
   }
 
@@ -110,16 +107,18 @@ export function resolveAssignmentDefaults(
   return { hourlyRate, allocatedHours };
 }
 
-/** RM assign modal: member salary for rate (hidden), project hours for prefill only. */
+/** RM assign modal: use RM's project cost rate; hours only when project has expected hours. */
 export function resolveRmAssignmentDefaults(
   project: {
     budgetType?: ProjectBudgetType;
     expectedHours?: number | null;
-  } | null | undefined,
-  member: { hourlySalary?: number | null }
+    myHourlyCostRate?: number | null;
+  } | null | undefined
 ): { hourlyRate: number | null; allocatedHours: number | null } {
   const hourlyRate =
-    member.hourlySalary != null && member.hourlySalary > 0 ? member.hourlySalary : null;
+    project?.myHourlyCostRate != null && project.myHourlyCostRate > 0
+      ? project.myHourlyCostRate
+      : null;
   const allocatedHours =
     project?.budgetType === 'Hourly' && project?.expectedHours != null && project.expectedHours > 0
       ? project.expectedHours

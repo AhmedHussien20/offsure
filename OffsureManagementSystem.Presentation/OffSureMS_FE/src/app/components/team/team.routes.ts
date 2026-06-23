@@ -20,6 +20,31 @@ export const teamRoutes: Routes = [
           import('./team-projects-list/team-projects-list.component').then(m => m.TeamProjectsListComponent),
       },
       {
+        path: 'projects/:id/timesheet',
+        data: {
+          breadcrumb: 'Daily timesheet',
+          title: 'Log time',
+          breadcrumbParents: [{ key: 'My Projects', route: ['team', 'projects'] }],
+        },
+        loadComponent: () =>
+          import('./team-daily-timesheet/team-daily-timesheet.component').then(
+            m => m.TeamDailyTimesheetComponent
+          ),
+      },
+      {
+        path: 'projects/:id/timesheet-report',
+        data: {
+          breadcrumb: 'My logged hours',
+          title: 'My logged hours',
+          breadcrumbParents: [{ key: 'My Projects', route: ['team', 'projects'] }],
+          portal: 'team',
+        },
+        loadComponent: () =>
+          import('../admin/admin-project-detail/admin-timesheet-report.component').then(
+            m => m.AdminTimesheetReportComponent
+          ),
+      },
+      {
         path: 'projects/:id',
         data: {
           breadcrumb: 'Project Details',

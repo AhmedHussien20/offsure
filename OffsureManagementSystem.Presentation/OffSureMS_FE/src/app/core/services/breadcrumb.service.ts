@@ -39,6 +39,17 @@ export class BreadcrumbService {
     this.pageTitleSubject.next(trimmed);
   }
 
+  /** Replace the full breadcrumb trail (e.g. nested project sub-pages). */
+  setTrail(crumbs: BreadcrumbItem[], pageTitle?: string): void {
+    if (!crumbs.length) {
+      return;
+    }
+    this.breadcrumbsSubject.next(crumbs);
+    const last = crumbs[crumbs.length - 1];
+    const title = pageTitle?.trim() || (typeof last === 'string' ? last : last.key);
+    this.pageTitleSubject.next(title);
+  }
+
   private refreshFromRouter(): void {
     const root = this.router.routerState.root;
     const crumbs = this.buildTrail(root);

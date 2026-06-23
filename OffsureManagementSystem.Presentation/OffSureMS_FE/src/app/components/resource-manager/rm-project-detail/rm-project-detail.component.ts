@@ -23,6 +23,8 @@ import { isNearScrollEnd } from 'app/core/utils/scroll-pagination.util';
 import { ProjectMilestonesReadonlyComponent } from 'app/shared/components/project-milestones-readonly/project-milestones-readonly.component';
 import { PROJECT_STATUS_BADGES } from '../../admin/admin.constants';
 import { RmAssignSkillModalComponent } from './rm-assign-skill-modal.component';
+import { ProjectTeamSummaryModalComponent } from 'app/shared/components/project-team-summary-modal/project-team-summary-modal.component';
+import { AdminHourlyProjectPanelComponent } from '../../admin/admin-project-detail/admin-hourly-project-panel.component';
 import { Subject, forkJoin } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -39,7 +41,7 @@ export interface RmProjectSkillSlot {
 @Component({
   selector: 'app-rm-project-detail',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, ProjectMilestonesReadonlyComponent],
+  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, ProjectMilestonesReadonlyComponent, AdminHourlyProjectPanelComponent],
   templateUrl: './rm-project-detail.component.html',
   styleUrl: '../../admin/admin-project-detail/admin-project-detail.component.scss',
 })
@@ -58,6 +60,8 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   directMembersExpanded = false;
   savingStaffingMode = false;
   savingSkills = false;
+  savingHourlyCostRate = false;
+  hourlyCostRateInput = '';
   skillSearchQuery = '';
   skillsList: SkillDto[] = [];
   skillsPageIndex = 1;
@@ -135,6 +139,18 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
 
   get usesMilestones(): boolean {
     return !!this.project?.usesMilestones && !isHourlyBudgetProject(this.project);
+  }
+
+  get isHourlyBudget(): boolean {
+    return isHourlyBudgetProject(this.project);
+  }
+
+  get hasHourlyCostRate(): boolean {
+    return (this.project?.myHourlyCostRate ?? 0) > 0;
+  }
+
+  get canAssignTeam(): boolean {
+    return !this.isHourlyBudget || this.hasHourlyCostRate;
   }
 
   get progressPercent(): number {
@@ -331,6 +347,20 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     return displayRole(role);
   }
 
+  openTeamSummaryModal(): void {
+    if (!this.project) return;
+
+    const modalRef = this.modalService.open(ProjectTeamSummaryModalComponent, {
+      centered: true,
+      size: 'md',
+      scrollable: true,
+    });
+    modalRef.componentInstance.projectName = this.project.name;
+    modalRef.componentInstance.members = this.sidebarTeamMembers;
+    modalRef.componentInstance.pendingSkillNames = this.pendingSkillNames;
+    modalRef.componentInstance.manageHint = 'Use Team staffing below to add or remove your team members.';
+  }
+
   canManageAssignment(assignment: ProjectAssignmentDto): boolean {
     const userId = this.auth.getCurrentUser()?.id;
     return userId != null && assignment.resourceManagerId === userId;
@@ -418,6 +448,10 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
 
   openAssignModal(slot: RmProjectSkillSlot): void {
     if (!this.project || this.isDeliveryLocked) return;
+    if (!this.canAssignTeam) {
+      this.toastr.warning('Set your cost rate on this project before assigning team members.');
+      return;
+    }
 
     this.openAssignMembersModal({
       assignBySkill: true,
@@ -428,6 +462,10 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
 
   openDirectAssignModal(): void {
     if (!this.project || this.isDeliveryLocked) return;
+    if (!this.canAssignTeam) {
+      this.toastr.warning('Set your cost rate on this project before assigning team members.');
+      return;
+    }
 
     this.openAssignMembersModal({
       assignBySkill: false,
@@ -463,6 +501,30 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  saveHourlyCostRate(): void {
+    if (!this.project || this.isDeliveryLocked || !this.isHourlyBudget) return;
+
+    const rate = Number(this.hourlyCostRateInput);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      this.toastr.warning('Enter a valid cost rate per hour.');
+      return;
+    }
+
+    this.savingHourlyCostRate = true;
+    this.portal.updateHourlyCostRate(this.project.id, { hourlyCostRate: rate }).subscribe({
+      next: res => {
+        this.project = res.data ?? this.project;
+        this.syncHourlyCostRateInput();
+        this.toastr.success('Cost rate saved.');
+        this.savingHourlyCostRate = false;
+      },
+      error: err => {
+        this.savingHourlyCostRate = false;
+        this.toastr.error(err?.error?.message || 'Failed to save cost rate.');
+      },
+    });
+  }
+
   onProgressSliderInput(event: Event): void {
     this.setProgressLive((event.target as HTMLInputElement).valueAsNumber);
   }
@@ -492,6 +554,11 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  private syncHourlyCostRateInput(): void {
+    const rate = this.project?.myHourlyCostRate;
+    this.hourlyCostRateInput = rate != null && rate > 0 ? String(rate) : '';
+  }
+
   private loadProject(): void {
     this.loading = true;
     this.portal.getProjectById(this.projectId).subscribe({
@@ -510,6 +577,7 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
           this.buildSkillSlots();
         }
         this.patchDeliveryForm();
+        this.syncHourlyCostRateInput();
         this.loading = false;
       },
       error: () => {

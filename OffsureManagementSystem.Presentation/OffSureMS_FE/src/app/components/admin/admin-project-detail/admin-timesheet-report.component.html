@@ -1,0 +1,425 @@
+<app-page-header></app-page-header>
+
+@if (loading && !overview && !report) {
+  <p class="text-muted py-4">{{ isTeamPortal ? 'Loading your logged hours…' : 'Loading hours & costs…' }}</p>
+} @else if (!project) {
+  <div class="alert alert-warning">Project not found.</div>
+} @else if (project.budgetType !== 'Hourly') {
+  <div class="alert alert-info">Hours and costs are only available for hourly projects.</div>
+} @else if (isTeamPortal) {
+  <div class="card custom-card report-toolbar mb-3">
+    <div class="card-body">
+      <div class="report-toolbar__head">
+        <div>
+          <h5 class="mb-1">My logged hours</h5>
+          <p class="text-muted small mb-0">{{ project.name }}</p>
+        </div>
+        <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
+      </div>
+
+      <div class="report-filter-panel">
+        <div class="report-filter-panel__intro">
+          <span class="report-filter-panel__icon" aria-hidden="true"><i class="fe fe-sliders"></i></span>
+          <div>
+            <div class="report-filter-panel__title">Report filters</div>
+            <div class="report-filter-panel__hint">Applies to your summary and logged hours below</div>
+          </div>
+        </div>
+
+        <div class="report-filters">
+          <div class="report-filters__field report-filters__field--period">
+            <span class="report-filters__field-label">Period</span>
+            <div class="btn-group btn-group-sm report-filters__period" role="group" aria-label="Report period">
+              @for (p of periods; track p.value) {
+                <button
+                  type="button"
+                  class="btn"
+                  [class.btn-primary]="period === p.value"
+                  [class.btn-outline-primary]="period !== p.value"
+                  (click)="onPeriodChange(p.value)">
+                  {{ p.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-sm btn-light report-filters__clear"
+            [disabled]="!hasActiveFilters"
+            (click)="clearFilters()">
+            <i class="fe fe-x" aria-hidden="true"></i>
+            Clear filters
+          </button>
+        </div>
+
+        @if (report) {
+          <div class="report-filter-panel__active">
+            <i class="fe fe-filter" aria-hidden="true"></i>
+            <span>Showing <strong>{{ activePeriodLabel }}</strong></span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="hours-costs-kpi-row mb-3">
+    <div class="hours-costs-kpi">
+      <span class="hours-costs-kpi__label">Hours this period</span>
+      <span class="hours-costs-kpi__value">{{ totalHoursLogged | number: '1.1-1' }}h</span>
+    </div>
+    <div class="hours-costs-kpi">
+      <span class="hours-costs-kpi__label">Entries</span>
+      <span class="hours-costs-kpi__value">{{ entryTableData.length }}</span>
+    </div>
+  </div>
+
+  <div class="card custom-card mb-3">
+    <div class="card-header border-bottom-0 hours-resource-card-header">
+      <div>
+        <h5 class="mb-0">Logging history</h5>
+        <p class="text-muted small mb-0 mt-1">Click a row to expand time entries</p>
+      </div>
+      @if (hasExportData) {
+        <div class="hours-resource-card-header__actions">
+          <button type="button" class="btn btn-outline-info btn-sm" (click)="exportReport('excel')">
+            <i class="fa fa-file-excel" aria-hidden="true"></i>
+            Export Excel
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="exportReport('pdf')">
+            <i class="fa fa-file-pdf" aria-hidden="true"></i>
+            Export PDF
+          </button>
+        </div>
+      }
+    </div>
+    <div class="card-body pt-0">
+      @if (loading && !report) {
+        <p class="text-muted small mb-0 py-2">Loading entries…</p>
+      } @else if (!filteredResources.length) {
+        <p class="text-muted small mb-0 py-2">No hours logged for the selected filters.</p>
+      } @else {
+        <ul class="hours-resource-list">
+          @for (r of visibleFilteredResources; track r.teamMemberId) {
+            <li class="hours-resource-group" [class.hours-resource-group--open]="isResourceEntriesExpanded(r.teamMemberId)">
+              <button
+                type="button"
+                class="hours-resource-item"
+                [attr.aria-expanded]="isResourceEntriesExpanded(r.teamMemberId)"
+                (click)="toggleResourceEntries(r.teamMemberId)">
+                <span class="hours-resource-item__chevron" aria-hidden="true">
+                  <i class="fe" [class.fe-chevron-down]="isResourceEntriesExpanded(r.teamMemberId)" [class.fe-chevron-right]="!isResourceEntriesExpanded(r.teamMemberId)"></i>
+                </span>
+                <span class="hours-resource-item__avatar">{{ memberInitials(r.teamMemberName) }}</span>
+                <div class="hours-resource-item__body">
+                  <span class="hours-resource-item__name">{{ r.teamMemberName }}</span>
+                  <span class="hours-resource-item__meta">{{ r.role }} · {{ entryCountForResource(r.teamMemberId) }} {{ entryCountForResource(r.teamMemberId) === 1 ? 'entry' : 'entries' }}</span>
+                </div>
+                <div class="hours-resource-item__stats">
+                  <span class="hours-resource-item__hours">{{ r.totalHours | number: '1.1-1' }}h logged</span>
+                </div>
+              </button>
+
+              @if (isResourceEntriesExpanded(r.teamMemberId)) {
+                <div class="hours-resource-entries">
+                  @if (!entriesForResource(r.teamMemberId).length) {
+                    <p class="text-muted small mb-0">No entries for this period.</p>
+                  } @else {
+                    <table class="table table-sm hours-resource-entries__table mb-0">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Description</th>
+                          <th class="text-end">Hours</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (entry of entriesForResource(r.teamMemberId); track entry.id) {
+                          <tr>
+                            <td>{{ entry.workDate | date: 'mediumDate' }}</td>
+                            <td>{{ entry.timeRange }}</td>
+                            <td>{{ entry.description || '—' }}</td>
+                            <td class="text-end">{{ entry.hoursDisplay }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  }
+                </div>
+              }
+            </li>
+          }
+        </ul>
+        @if (showResourceExpandToggle) {
+          <button type="button" class="btn btn-sm btn-link hours-resource-expand px-0" (click)="toggleResourcesExpanded()">
+            @if (resourcesExpanded) {
+              Show less
+            } @else {
+              Show {{ hiddenResourceCount }} more
+            }
+          </button>
+        }
+        @if (report) {
+          <div class="hours-resource-total">
+            <span>Total</span>
+            <strong>{{ report.totalHours | number: '1.1-1' }}h</strong>
+          </div>
+        }
+      }
+    </div>
+  </div>
+} @else {
+  <div class="card custom-card report-toolbar mb-3">
+    <div class="card-body">
+      <div class="report-toolbar__head">
+        <div>
+          <h5 class="mb-1">Hours &amp; costs</h5>
+          <p class="text-muted small mb-0">{{ project.name }}</p>
+        </div>
+        <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
+      </div>
+
+      <div class="report-filter-panel">
+        <div class="report-filter-panel__intro">
+          <span class="report-filter-panel__icon" aria-hidden="true"><i class="fe fe-sliders"></i></span>
+          <div>
+            <div class="report-filter-panel__title">Report filters</div>
+            <div class="report-filter-panel__hint">
+              Applies to totals, logged hours by resource, and export
+            </div>
+          </div>
+        </div>
+
+        <div class="report-filters">
+          <div class="report-filters__field report-filters__field--period">
+            <span class="report-filters__field-label">Period</span>
+            <div class="btn-group btn-group-sm report-filters__period" role="group" aria-label="Report period">
+              @for (p of periods; track p.value) {
+                <button
+                  type="button"
+                  class="btn"
+                  [class.btn-primary]="period === p.value && !rangeFrom && !rangeTo"
+                  [class.btn-outline-primary]="period !== p.value || !!rangeFrom || !!rangeTo"
+                  (click)="onPeriodChange(p.value)">
+                  {{ p.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <label class="report-filters__field">
+            <span class="report-filters__field-label">From</span>
+            <input
+              type="date"
+              class="form-control form-control-sm report-filters__control"
+              [(ngModel)]="rangeFrom"
+              [max]="rangeTo || undefined"
+              (ngModelChange)="onCustomRangeChange()" />
+          </label>
+
+          <label class="report-filters__field">
+            <span class="report-filters__field-label">To</span>
+            <input
+              type="date"
+              class="form-control form-control-sm report-filters__control"
+              [(ngModel)]="rangeTo"
+              [min]="rangeFrom || undefined"
+              (ngModelChange)="onCustomRangeChange()" />
+          </label>
+
+          @if (isRmPortal) {
+            <label class="report-filters__field report-filters__field--select">
+              <span class="report-filters__field-label">Team member</span>
+              <select
+                class="form-select form-select-sm report-filters__control"
+                [(ngModel)]="teamMemberId"
+                (ngModelChange)="onFiltersChange()">
+                <option [ngValue]="null">All team members</option>
+                @for (m of teamMemberOptions; track m.id) {
+                  <option [ngValue]="m.id">{{ m.name }}</option>
+                }
+              </select>
+            </label>
+          } @else {
+            <label class="report-filters__field report-filters__field--select">
+              <span class="report-filters__field-label">Resource manager</span>
+              <select
+                class="form-select form-select-sm report-filters__control"
+                [(ngModel)]="resourceManagerUserId"
+                (ngModelChange)="onFiltersChange()">
+                <option [ngValue]="null">All resource managers</option>
+                @for (rm of resourceManagerOptions; track rm.id) {
+                  <option [ngValue]="rm.id">{{ rm.name }}</option>
+                }
+              </select>
+            </label>
+          }
+
+          <button
+            type="button"
+            class="btn btn-sm btn-light report-filters__clear"
+            [disabled]="!hasActiveFilters"
+            (click)="clearFilters()">
+            <i class="fe fe-x" aria-hidden="true"></i>
+            Clear filters
+          </button>
+        </div>
+
+        @if (report) {
+          <div class="report-filter-panel__active">
+            <i class="fe fe-filter" aria-hidden="true"></i>
+            <span>
+              Showing <strong>{{ activePeriodLabel }}</strong>
+              @if (activeScopeLabel) {
+                <span> · <strong>{{ activeScopeLabel }}</strong></span>
+              }
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="hours-costs-kpi-row mb-3" [class.hours-costs-kpi-row--rm]="isRmPortal">
+    @if (!isRmPortal) {
+      <div class="hours-costs-kpi">
+        <span class="hours-costs-kpi__label">Billing rate</span>
+        <span class="hours-costs-kpi__value">${{ overview?.hourlyRate | number: '1.0-0' }}/hr</span>
+      </div>
+    }
+    <div class="hours-costs-kpi">
+      <span class="hours-costs-kpi__label">{{ isRmPortal ? 'Team hours logged' : 'Hours logged' }}</span>
+      <span class="hours-costs-kpi__value">{{ filteredHoursLogged | number: '1.1-1' }}h</span>
+    </div>
+    @if (!isRmPortal) {
+      <div class="hours-costs-kpi">
+        <span class="hours-costs-kpi__label">Est. revenue</span>
+        <span class="hours-costs-kpi__value">${{ filteredEstimatedRevenue | number: '1.0-0' }}</span>
+      </div>
+    }
+    <div class="hours-costs-kpi" [class.hours-costs-kpi--accent]="isRmPortal">
+      <span class="hours-costs-kpi__label">{{ isRmPortal ? 'Team est. cost' : 'Est. cost' }}</span>
+      <span class="hours-costs-kpi__value">${{ estimatedCost | number: '1.0-0' }}</span>
+    </div>
+  </div>
+
+  <div class="card custom-card mb-3">
+    <div class="card-header border-bottom-0 hours-resource-card-header">
+      <div>
+        <h5 class="mb-0">{{ isRmPortal ? 'My team — logged hours' : 'Logged hours by resource' }}</h5>
+        <p class="text-muted small mb-0 mt-1">Click a resource to expand time entries</p>
+      </div>
+      @if (hasExportData) {
+        <div class="hours-resource-card-header__actions">
+          <button type="button" class="btn btn-outline-info btn-sm" (click)="exportReport('excel')">
+            <i class="fa fa-file-excel" aria-hidden="true"></i>
+            Export Excel
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="exportReport('pdf')">
+            <i class="fa fa-file-pdf" aria-hidden="true"></i>
+            Export PDF
+          </button>
+        </div>
+      }
+    </div>
+    <div class="card-body pt-0">
+      @if (loading && !report) {
+        <p class="text-muted small mb-0 py-2">Loading resources…</p>
+      } @else if (!filteredResources.length) {
+        <p class="text-muted small mb-0 py-2">No hours logged for the selected filters.</p>
+      } @else {
+        <ul class="hours-resource-list">
+          @for (r of visibleFilteredResources; track r.teamMemberId) {
+            <li class="hours-resource-group" [class.hours-resource-group--open]="isResourceEntriesExpanded(r.teamMemberId)">
+              <button
+                type="button"
+                class="hours-resource-item"
+                [attr.aria-expanded]="isResourceEntriesExpanded(r.teamMemberId)"
+                (click)="toggleResourceEntries(r.teamMemberId)">
+                <span class="hours-resource-item__chevron" aria-hidden="true">
+                  <i class="fe" [class.fe-chevron-down]="isResourceEntriesExpanded(r.teamMemberId)" [class.fe-chevron-right]="!isResourceEntriesExpanded(r.teamMemberId)"></i>
+                </span>
+                <span class="hours-resource-item__avatar">{{ memberInitials(r.teamMemberName) }}</span>
+                <div class="hours-resource-item__body">
+                  <span class="hours-resource-item__name">{{ r.teamMemberName }}</span>
+                  <span class="hours-resource-item__meta">{{ r.role }} · {{ entryCountForResource(r.teamMemberId) }} {{ entryCountForResource(r.teamMemberId) === 1 ? 'entry' : 'entries' }}</span>
+                </div>
+                <div class="hours-resource-item__stats">
+                  @if (r.costRate != null) {
+                    <span class="hours-resource-item__rate">${{ r.costRate | number: '1.0-0' }}/hr cost</span>
+                    <span class="hours-resource-item__cost">Line cost: ${{ resourceLineCost(r.totalHours, r.costRate) | number: '1.0-0' }}</span>
+                  }
+                  <span class="hours-resource-item__hours">{{ r.totalHours | number: '1.0-0' }}h logged</span>
+                </div>
+              </button>
+
+              @if (isResourceEntriesExpanded(r.teamMemberId)) {
+                <div class="hours-resource-entries">
+                  @if (!entriesForResource(r.teamMemberId).length) {
+                    <p class="text-muted small mb-0">No entries for this period.</p>
+                  } @else {
+                    <table class="table table-sm hours-resource-entries__table mb-0">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Description</th>
+                          <th class="text-end">Hours</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (entry of entriesForResource(r.teamMemberId); track entry.id) {
+                          <tr>
+                            <td>{{ entry.workDate | date: 'mediumDate' }}</td>
+                            <td>{{ entry.description || '—' }}</td>
+                            <td class="text-end">{{ entry.hoursDisplay }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  }
+                </div>
+              }
+            </li>
+          }
+        </ul>
+        @if (showResourceExpandToggle) {
+          <button type="button" class="btn btn-sm btn-link hours-resource-expand px-0" (click)="toggleResourcesExpanded()">
+            @if (resourcesExpanded) {
+              Show less
+            } @else {
+              Show {{ hiddenResourceCount }} more
+            }
+          </button>
+        }
+        <div class="hours-resource-total">
+          <span>Total</span>
+          <strong>{{ filteredHoursLogged | number: '1.1-1' }}h</strong>
+          <strong>${{ estimatedCost | number: '1.0-0' }}</strong>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (exportDialogOpen) {
+  <div class="export-dialog-backdrop" (click)="closeExportDialog()">
+    <div class="export-dialog card custom-card shadow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="card-header border-bottom-0">
+        <h5 class="mb-1">Export report</h5>
+        <p class="text-muted small mb-0">Choose what to include in the {{ pendingExportFormat === 'excel' ? 'Excel' : 'PDF' }} file.</p>
+      </div>
+      <div class="card-body pt-0 d-grid gap-2">
+        <button type="button" class="btn btn-outline-primary" (click)="confirmExport(false)">
+          Resource summary only
+          <span class="d-block small text-muted fw-normal">Logged hours by resource with total cost</span>
+        </button>
+        <button type="button" class="btn btn-primary" (click)="confirmExport(true)">
+          Include time entries
+          <span class="d-block small opacity-75 fw-normal">Resource summary plus detailed entries (hours only)</span>
+        </button>
+        <button type="button" class="btn btn-light" (click)="closeExportDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}

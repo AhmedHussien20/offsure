@@ -178,6 +178,18 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Milestone status updated successfully."));
         }
 
+        [HttpPatch("projects/{id:int}/hourly-cost-rate")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateHourlyCostRate(
+            int id,
+            UpdateProjectRmHourlyCostRateDto dto)
+        {
+            var project = await _projectManagementService.UpdateProjectHourlyCostRateForResourceManagerAsync(
+                GetCurrentUserId(),
+                id,
+                dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Cost rate saved successfully."));
+        }
+
         private int GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

@@ -77,6 +77,15 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
     return isHourlyBudgetProject(this.project);
   }
 
+  get isHourlyTimesheetProject(): boolean {
+    return isHourlyBudgetProject(this.project);
+  }
+
+  get rmProjectCostRate(): number | null {
+    const rate = this.project?.myHourlyCostRate;
+    return rate != null && rate > 0 ? rate : null;
+  }
+
   get modalTitle(): string {
     return this.assignBySkill && this.skill ? `Assign to ${this.skill.name}` : 'Assign team members';
   }
@@ -145,13 +154,13 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
       .filter((m): m is TeamMemberDto => !!m)
       .map(member => {
         const defaults = this.isHourlyBudget
-          ? resolveRmAssignmentDefaults(this.project, member)
+          ? resolveRmAssignmentDefaults(this.project)
           : { hourlyRate: null, allocatedHours: null };
         return {
           member,
           role: member.title?.trim() || (this.assignBySkill && this.skill ? `${this.skill.name} specialist` : 'Team member'),
-          hourlyRate: defaults.hourlyRate,
-          allocatedHours: defaults.allocatedHours,
+          hourlyRate: this.isHourlyTimesheetProject ? defaults.hourlyRate : defaults.hourlyRate,
+          allocatedHours: this.isHourlyTimesheetProject ? null : defaults.allocatedHours,
         };
       });
     this.step = 2;
@@ -166,23 +175,21 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
       if (!d.role.trim().length) {
         return false;
       }
-      if (!this.isHourlyBudget) {
+      if (this.isHourlyTimesheetProject || !this.isHourlyBudget) {
         return true;
       }
       return (Number(d.allocatedHours) || 0) > 0;
     });
   }
 
-  memberMissingSalary(member: TeamMemberDto): boolean {
-    return this.isHourlyBudget && (member.hourlySalary ?? 0) <= 0;
-  }
-
   submit(): void {
     if (!this.projectId || !this.canSubmit()) {
       this.toastr.warning(
-        this.isHourlyBudget
-          ? 'Set role and allocated hours for each member.'
-          : 'Set a role for each member.'
+        this.isHourlyTimesheetProject
+          ? 'Set a role for each member.'
+          : this.isHourlyBudget
+            ? 'Set role and allocated hours for each member.'
+            : 'Set a role for each member.'
       );
       return;
     }
@@ -195,7 +202,7 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
       if (this.assignBySkill && this.skill) {
         dto.skillId = this.skill.id;
       }
-      if (this.isHourlyBudget) {
+      if (this.isHourlyBudget && !this.isHourlyTimesheetProject) {
         dto.hourlyRate = Number(d.hourlyRate) || 0;
         dto.allocatedHours = Number(d.allocatedHours);
       }

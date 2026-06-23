@@ -18,6 +18,7 @@ export interface MemberAssignDetail {
   role: string;
   hourlyRate: number | null;
   allocatedHours: number | null;
+  costRate: number | null;
 }
 
 const MEMBERS_PAGE_SIZE = 20;
@@ -94,6 +95,10 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
     return this.assignBySkill && this.skill ? `Assign to ${this.skill.name}` : 'Assign to project';
   }
 
+  get isHourlyTimesheetProject(): boolean {
+    return isHourlyBudgetProject(this.project);
+  }
+
   get totalTrackCost(): number {
     return this.memberDetails.reduce((sum, d) => sum + this.detailLineCost(d), 0);
   }
@@ -156,8 +161,9 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
         return {
           member,
           role: member.title?.trim() || (this.assignBySkill && this.skill ? `${this.skill.name} specialist` : 'Team member'),
-          hourlyRate: defaults.hourlyRate,
-          allocatedHours: defaults.allocatedHours,
+          hourlyRate: this.isHourlyTimesheetProject ? null : defaults.hourlyRate,
+          allocatedHours: this.isHourlyTimesheetProject ? null : defaults.allocatedHours,
+          costRate: null,
         };
       });
     this.step = 2;
@@ -178,6 +184,9 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
       if (!d.role.trim().length) {
         return false;
       }
+      if (this.isHourlyTimesheetProject) {
+        return true;
+      }
       if (!this.isHourlyBudget) {
         return true;
       }
@@ -188,9 +197,11 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
   submit(): void {
     if (!this.projectId || !this.canSubmit()) {
       this.toastr.warning(
-        this.isHourlyBudget
-          ? 'Set role, hourly rate, and allocated hours for each member.'
-          : 'Set a role for each member.'
+        this.isHourlyTimesheetProject
+          ? 'Set a role for each member.'
+          : this.isHourlyBudget
+            ? 'Set role, hourly rate, and allocated hours for each member.'
+            : 'Set a role for each member.'
       );
       return;
     }
@@ -203,7 +214,10 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
       if (this.assignBySkill && this.skill) {
         dto.skillId = this.skill.id;
       }
-      if (this.isHourlyBudget) {
+      if (this.isHourlyTimesheetProject && d.costRate != null && Number(d.costRate) > 0) {
+        dto.hourlyRate = Number(d.costRate);
+      }
+      if (!this.isHourlyTimesheetProject && this.isHourlyBudget) {
         dto.hourlyRate = Number(d.hourlyRate);
         dto.allocatedHours = Number(d.allocatedHours);
       }

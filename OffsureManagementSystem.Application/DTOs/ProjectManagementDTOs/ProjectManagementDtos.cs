@@ -82,11 +82,17 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public List<int> ResourceManagerUserIds { get; set; } = new();
     }
 
+    public class UpdateProjectRmHourlyCostRateDto
+    {
+        public decimal HourlyCostRate { get; set; }
+    }
+
     public class ProjectResourceManagerDto
     {
         public int UserId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public decimal? HourlyCostRate { get; set; }
     }
 
     public class ProjectDto
@@ -116,6 +122,8 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public int? MilestoneCount { get; set; }
         public bool AssignTeamBySkill { get; set; }
         public List<ProjectMilestoneDto> Milestones { get; set; } = new();
+        /// <summary>Current RM's cost rate on this hourly project (resource manager portal only).</summary>
+        public decimal? MyHourlyCostRate { get; set; }
     }
 
     public class ProjectAssignmentDto

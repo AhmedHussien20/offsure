@@ -26,6 +26,19 @@ export const adminRoutes: Routes = [
           import('./admin-projects-list/admin-projects-list.component').then(m => m.AdminProjectsListComponent),
       },
       {
+        path: 'projects/:id/timesheet-report',
+        data: {
+          breadcrumb: 'Hours & costs',
+          title: 'Hours & costs',
+          breadcrumbParents: [{ key: 'Projects', route: ['admin', 'projects'] }],
+          portal: 'admin',
+        },
+        loadComponent: () =>
+          import('./admin-project-detail/admin-timesheet-report.component').then(
+            m => m.AdminTimesheetReportComponent
+          ),
+      },
+      {
         path: 'projects/:id',
         data: {
           breadcrumb: 'Project Details',

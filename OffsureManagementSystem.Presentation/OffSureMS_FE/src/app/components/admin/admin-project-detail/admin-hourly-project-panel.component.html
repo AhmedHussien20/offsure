@@ -1,0 +1,25 @@
+@if (loading) {
+  <div class="project-detail-stat project-detail-stat--loading">Loading hours…</div>
+} @else if (overview) {
+  <a
+    class="project-detail-stat project-detail-stat--action project-detail-stat--hourly"
+    [routerLink]="timesheetReportLink">
+    <i class="fe fe-arrow-right project-detail-stat__arrow" aria-hidden="true"></i>
+    <div class="project-detail-stat__dual">
+      <div class="project-detail-stat__dual-item">
+        <span class="project-detail-stat__label">{{ isRmPortal ? 'Team hours' : 'Hours logged' }}</span>
+        <span class="project-detail-stat__value">{{ overview.totalHoursLogged | number: '1.0-0' }}h</span>
+      </div>
+      <div class="project-detail-stat__dual-item">
+        @if (isRmPortal) {
+          <span class="project-detail-stat__label">Team est. cost</span>
+          <span class="project-detail-stat__value">${{ teamEstimatedCost | number: '1.0-0' }}</span>
+        } @else {
+          <span class="project-detail-stat__label">Est. revenue</span>
+          <span class="project-detail-stat__value">${{ overview.estimatedRevenue | number: '1.0-0' }}</span>
+        }
+      </div>
+    </div>
+    <span class="project-detail-stat__hint project-detail-stat__hint--action">Hours &amp; costs</span>
+  </a>
+}

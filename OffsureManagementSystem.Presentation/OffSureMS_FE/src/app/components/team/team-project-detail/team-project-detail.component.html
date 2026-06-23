@@ -10,8 +10,9 @@
     audience="team"
     [myRole]="myRole"
     [highlightMemberId]="teamMemberId"
+    [showLogTimeButton]="isHourlyProject"
+    [timesheetHistoryLink]="isHourlyProject ? ['/team', 'projects', project.id, 'timesheet-report'] : null"
     [statusBadgeClassFn]="statusBadgeClassFn"
     [statusLabelFn]="statusLabelFn"
-    backLink="/team/projects"
-    backLabel="Back to projects" />
+    (logTimeClick)="openLogTimePage()" />
 }

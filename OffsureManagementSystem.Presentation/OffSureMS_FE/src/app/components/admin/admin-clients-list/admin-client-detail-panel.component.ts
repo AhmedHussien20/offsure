@@ -26,6 +26,8 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
   client: ClientDto | null = null;
   recentRequests: ClientServiceRequestSummaryDto[] = [];
 
+  private readonly recentRequestsLimit = 2;
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -131,7 +133,7 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
     this.requestsError = null;
 
     this.clientsService
-      .getRecentRequestsByClientId(this.clientId, 5)
+      .getRecentRequestsByClientId(this.clientId, this.recentRequestsLimit)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: res => {

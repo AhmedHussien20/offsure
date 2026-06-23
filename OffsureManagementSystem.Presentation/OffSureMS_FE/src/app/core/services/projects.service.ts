@@ -13,6 +13,7 @@ import {
   UpdateProjectStatusDto,
   UpsertProjectMilestonesDto,
   UpdateProjectMilestoneStatusDto,
+  SetProjectResourceManagersDto,
 } from '../models/projects/project.models';
 import { normalizeProjectStatus } from '../utils/enum-status.util';
 import { normalizeMilestoneStatus } from '../utils/project-milestone.util';
@@ -99,8 +100,9 @@ export class ProjectsService {
   }
 
   setResourceManagers(id: number, resourceManagerUserIds: number[]): Observable<BaseResponse<ProjectDto>> {
+    const body: SetProjectResourceManagersDto = { resourceManagerUserIds };
     return this.api
-      .put<BaseResponse<ProjectDto>>(this.service, `${id}/resource-managers`, { resourceManagerUserIds })
+      .put<BaseResponse<ProjectDto>>(this.service, `${id}/resource-managers`, body)
       .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
   }
 

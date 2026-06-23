@@ -1,0 +1,37 @@
+<div class="time-stepper" [class.time-stepper--disabled]="disabled">
+  <button type="button" class="time-stepper__btn" [disabled]="disabled" (click)="stepDown()" aria-label="Decrease time">
+    <i class="fe fe-chevron-down"></i>
+  </button>
+  <input
+    #timeInput
+    type="text"
+    class="time-stepper__input"
+    [disabled]="disabled"
+    placeholder="9:00"
+    maxlength="5"
+    inputmode="numeric"
+    (focus)="onFocus()"
+    (input)="onInput($any($event.target).value)"
+    (blur)="onBlur()" />
+  <div class="time-stepper__ampm" role="group" aria-label="AM or PM">
+    <button
+      type="button"
+      class="time-stepper__ampm-btn"
+      [class.time-stepper__ampm-btn--active]="period === 'AM'"
+      [disabled]="disabled"
+      (click)="setPeriod('AM')">
+      AM
+    </button>
+    <button
+      type="button"
+      class="time-stepper__ampm-btn"
+      [class.time-stepper__ampm-btn--active]="period === 'PM'"
+      [disabled]="disabled"
+      (click)="setPeriod('PM')">
+      PM
+    </button>
+  </div>
+  <button type="button" class="time-stepper__btn" [disabled]="disabled" (click)="stepUp()" aria-label="Increase time">
+    <i class="fe fe-chevron-up"></i>
+  </button>
+</div>

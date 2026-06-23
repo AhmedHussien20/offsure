@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProjectDto } from 'app/core/models/projects/project.models';
 import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
@@ -8,6 +8,7 @@ import { TeamContextService } from 'app/core/services/team-context.service';
 import { ProjectDetailReadonlyComponent } from 'app/shared/components/project-detail-readonly/project-detail-readonly.component';
 import { projectStatusKey } from 'app/core/utils/enum-status.util';
 import { displayRole } from 'app/core/utils/project-skill.util';
+import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
 import { SharedModule } from 'app/shared/shared.module';
 import { PROJECT_STATUS_BADGES } from '../../client/client.constants';
 
@@ -25,10 +26,20 @@ export class TeamProjectDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private projectsService: ProjectsService,
     private teamContext: TeamContextService,
     private breadcrumbService: BreadcrumbService
   ) {}
+
+  get isHourlyProject(): boolean {
+    return isHourlyBudgetProject(this.project);
+  }
+
+  openLogTimePage(): void {
+    if (!this.project) return;
+    void this.router.navigate(['/team', 'projects', this.project.id, 'timesheet']);
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -64,3 +75,4 @@ export class TeamProjectDetailComponent implements OnInit {
   readonly statusLabelFn = (status: unknown): string =>
     PROJECT_STATUS_BADGES[projectStatusKey(status)]?.text ?? String(status ?? '');
 }
+

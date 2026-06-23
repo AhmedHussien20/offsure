@@ -1,0 +1,17 @@
+.team-summary-modal__list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.team-summary-modal__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

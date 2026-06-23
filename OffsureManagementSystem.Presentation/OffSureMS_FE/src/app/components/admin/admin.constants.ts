@@ -41,6 +41,21 @@ export const ADMIN_TEAM_COLUMNS: TableColumn[] = [
   { key: 'availabilityLabel', label: 'Availability', type: 'text' },
 ];
 
+export const ADMIN_TIMESHEET_ENTRY_COLUMNS: TableColumn[] = [
+  { key: 'workDate', label: 'Date', type: 'date' },
+  { key: 'teamMemberName', label: 'Resource', type: 'text' },
+  { key: 'timeRange', label: 'Time', type: 'text' },
+  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'hoursDisplay', label: 'Hours', type: 'text' },
+];
+
+export const ADMIN_TIMESHEET_ENTRY_COLUMNS_NO_TIME: TableColumn[] = [
+  { key: 'workDate', label: 'Date', type: 'date' },
+  { key: 'teamMemberName', label: 'Resource', type: 'text' },
+  { key: 'description', label: 'Description', type: 'text' },
+  { key: 'hoursDisplay', label: 'Hours', type: 'text' },
+];
+
 export const ADMIN_CLIENT_COLUMNS: TableColumn[] = [
   { key: 'companyName', label: 'Company', type: 'text' },
   { key: 'email', label: 'Email', type: 'text' },

@@ -1,0 +1,40 @@
+<div class="modal-header">
+  <div>
+    <h5 class="modal-title mb-1">Assigned team</h5>
+    <p class="text-muted small mb-0">{{ projectName }}</p>
+  </div>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body p-0">
+  @if (members.length === 0) {
+    <p class="text-muted text-center py-4 mb-0">No members assigned yet.</p>
+  } @else {
+    <ul class="list-group list-group-flush team-summary-modal__list">
+      @for (m of members; track m.id) {
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <span class="team-summary-modal__avatar">{{ memberInitials(m.teamMemberName) }}</span>
+          <div class="flex-grow-1 min-width-0">
+            <div class="fw-semibold text-truncate">
+              {{ m.teamMemberName }}
+              @if (highlightMemberId === m.teamMemberId) {
+                <span class="badge bg-primary-transparent text-primary ms-1">You</span>
+              }
+            </div>
+            <small class="text-muted">{{ roleLabel(m.role) }}</small>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+  @if (pendingSkillNames) {
+    <div class="project-detail-alert-box m-3">
+      Unassigned skill{{ pendingSkillNames.includes(',') ? 's' : '' }}: {{ pendingSkillNames }}
+    </div>
+  }
+  <p class="text-muted small px-3 pb-3 mb-0">{{ manageHint }}</p>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-primary" (click)="activeModal.close()">Close</button>
+</div>

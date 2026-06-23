@@ -37,6 +37,8 @@ import { isNearScrollEnd } from 'app/core/utils/scroll-pagination.util';
 import { PROJECT_STATUS_BADGES } from '../admin.constants';
 import { AdminAssignSkillModalComponent } from './admin-assign-skill-modal.component';
 import { AdminProjectMilestonesComponent } from './admin-project-milestones.component';
+import { AdminHourlyProjectPanelComponent } from './admin-hourly-project-panel.component';
+import { ProjectTeamSummaryModalComponent } from 'app/shared/components/project-team-summary-modal/project-team-summary-modal.component';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
@@ -57,7 +59,7 @@ const MAX_PROJECT_RESOURCE_MANAGERS = 2;
 @Component({
   selector: 'app-admin-project-detail',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, AdminProjectMilestonesComponent],
+  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, AdminProjectMilestonesComponent, AdminHourlyProjectPanelComponent],
   templateUrl: './admin-project-detail.component.html',
   styleUrl: './admin-project-detail.component.scss',
 })
@@ -188,7 +190,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   get costSummary(): ProjectFinancials {
-    return computeProjectFinancials(this.project?.budget, this.project?.teamMembers);
+    return computeProjectFinancials(this.project?.budget, this.project?.teamMembers, this.project);
   }
 
   get selectedSkillsForDisplay(): SkillDto[] {
@@ -274,7 +276,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   get budgetTypeLabel(): string {
-    return this.isHourlyBudget ? 'Hourly' : 'Fixed total';
+    return this.isHourlyBudget ? 'Hourly project' : 'Fixed budget project';
   }
 
   get canAddResourceManager(): boolean {
@@ -293,7 +295,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     if (!this.isHourlyBudget) {
       return [];
     }
-    return (this.project?.teamMembers ?? []).filter(a => !assignmentCostIsComplete(a));
+    return (this.project?.teamMembers ?? []).filter(a => !assignmentCostIsComplete(a, this.project));
   }
 
   statusBadgeClass(status: unknown): string {
@@ -316,6 +318,20 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     return displayRole(role);
   }
 
+  openTeamSummaryModal(): void {
+    if (!this.project) return;
+
+    const modalRef = this.modalService.open(ProjectTeamSummaryModalComponent, {
+      centered: true,
+      size: 'md',
+      scrollable: true,
+    });
+    modalRef.componentInstance.projectName = this.project.name;
+    modalRef.componentInstance.members = this.summaryTeamMembers;
+    modalRef.componentInstance.pendingSkillNames = this.pendingSkillNames;
+    modalRef.componentInstance.manageHint = 'Scroll to Team staffing on this page to add or remove members.';
+  }
+
   onProjectUpdated(project: ProjectDto): void {
     this.project = project;
     this.buildSkillSlots();
@@ -323,11 +339,16 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   lineCost(assignment: ProjectAssignmentDto): number {
-    return assignmentLineCost(assignment);
+    return assignmentLineCost(assignment, this.project);
   }
 
-  readonly isAssignmentCostComplete = assignmentCostIsComplete;
-  readonly assignmentCostIssueLabel = assignmentCostIssue;
+  isAssignmentCostComplete(assignment: ProjectAssignmentDto): boolean {
+    return assignmentCostIsComplete(assignment, this.project);
+  }
+
+  assignmentCostIssueLabel(assignment: ProjectAssignmentDto): string | null {
+    return assignmentCostIssue(assignment, this.project);
+  }
 
   isSkillSelected(skillId: number): boolean {
     return this.selectedSkillIds.has(skillId);
@@ -481,6 +502,16 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     this.skillSearchQuery = '';
   }
 
+  getRmHourlyCostRateStatus(userId: number): 'set' | 'pending' {
+    const rm = (this.project?.resourceManagers ?? []).find(r => r.userId === userId);
+    return rm?.hourlyCostRate != null && rm.hourlyCostRate > 0 ? 'set' : 'pending';
+  }
+
+  getRmHourlyCostRateDisplay(userId: number): number | null {
+    const rm = (this.project?.resourceManagers ?? []).find(r => r.userId === userId);
+    return rm?.hourlyCostRate != null && rm.hourlyCostRate > 0 ? rm.hourlyCostRate : null;
+  }
+
   toggleResourceManager(manager: ResourceManagerUserDto): void {
     if (this.isDeliveryLocked || !this.project) return;
 
@@ -498,11 +529,11 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   skillSlotCost(slot: ProjectSkillSlot): number {
-    return slot.assignments.reduce((sum, a) => sum + assignmentLineCost(a), 0);
+    return slot.assignments.reduce((sum, a) => sum + assignmentLineCost(a, this.project), 0);
   }
 
   slotHasIncompleteCost(slot: ProjectSkillSlot): boolean {
-    return slot.assignments.some(a => !assignmentCostIsComplete(a));
+    return slot.assignments.some(a => !assignmentCostIsComplete(a, this.project));
   }
 
   openAssignModal(slot: ProjectSkillSlot): void {

@@ -1,0 +1,238 @@
+<app-page-header></app-page-header>
+
+@if (loadError) {
+  <div class="alert alert-warning">{{ loadError }}</div>
+} @else {
+  <div class="card custom-card timesheet-shell mb-3">
+    <div class="card-body">
+      <div class="timesheet-shell__head">
+        <div>
+          <h5 class="mb-1">{{ projectName }}</h5>
+          <p class="text-muted small mb-0">Click an hour to log time · switch day or month view below</p>
+        </div>
+        <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
+      </div>
+
+      <div class="timesheet-shell__toolbar">
+        <div class="timesheet-view-switch" role="group" aria-label="Calendar view">
+          <button
+            type="button"
+            class="timesheet-view-switch__btn"
+            [class.timesheet-view-switch__btn--active]="calendarView === 'day'"
+            (click)="setView('day')">
+            Day
+          </button>
+          <button
+            type="button"
+            class="timesheet-view-switch__btn"
+            [class.timesheet-view-switch__btn--active]="calendarView === 'month'"
+            (click)="setView('month')">
+            Month
+          </button>
+        </div>
+
+        @if (calendarView === 'day') {
+          <label class="timesheet-shell__date">
+            <span class="timesheet-shell__date-label">Date</span>
+            <input
+              type="date"
+              class="form-control form-control-sm"
+              [(ngModel)]="workDate"
+              [min]="projectStartDate"
+              [max]="maxWorkDate"
+              (ngModelChange)="onDateChange()" />
+          </label>
+        } @else {
+          <div class="timesheet-month-nav">
+            <button type="button" class="btn btn-sm btn-light" (click)="previousMonth()" aria-label="Previous month">
+              <i class="fe fe-chevron-left"></i>
+            </button>
+            <span class="timesheet-month-nav__label">{{ monthLabel }}</span>
+            <button type="button" class="btn btn-sm btn-light" (click)="nextMonth()" aria-label="Next month">
+              <i class="fe fe-chevron-right"></i>
+            </button>
+          </div>
+        }
+
+        <div class="timesheet-summary" aria-live="polite">
+          <span class="timesheet-summary__label">
+            {{ calendarView === 'day' ? 'Logged this day' : 'Selected day' }}
+          </span>
+          <strong class="timesheet-summary__value">
+            @if (calendarView === 'day') {
+              {{ totalLoggedLabel }}
+            } @else {
+              {{ selectedDateLabel }}
+            }
+          </strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card custom-card timesheet-panel">
+    <div class="card-body p-0">
+      @if (calendarView === 'day') {
+        @if (loading && !dayViewReady) {
+          <div class="timesheet-loading text-muted">Loading day…</div>
+        } @else {
+          <div class="timesheet-day">
+            <div class="timesheet-day__date-bar">
+              <span>{{ selectedDateLabel }}</span>
+              <strong>{{ totalLoggedLabel }} logged</strong>
+            </div>
+
+            <div class="daily-timesheet" [style.--hour-height.px]="hourHeightPx">
+              <div class="daily-timesheet__hours" aria-hidden="true">
+                @for (hour of hours; track hour) {
+                  <button
+                    type="button"
+                    class="daily-timesheet__hour-label-btn"
+                    (click)="openPopupAtHour(hour, $event)">
+                    {{ formatHourLabel(hour) }}
+                  </button>
+                }
+              </div>
+
+              <div class="daily-timesheet__track" role="presentation">
+                @for (hour of hours; track hour) {
+                  <button
+                    type="button"
+                    class="daily-timesheet__hour-band"
+                    [style.top.%]="(hour / 24) * 100"
+                    [style.height.%]="100 / 24"
+                    [attr.aria-label]="'Log time at ' + formatHourLabel(hour)"
+                    (click)="openPopupAtHour(hour, $event)"></button>
+                  <div class="daily-timesheet__grid-line"></div>
+                }
+
+                @if (showNowIndicator) {
+                  <div class="daily-timesheet__now" [style.top.%]="nowTopPercent"></div>
+                }
+
+                @for (block of displayBlocks; track block.trackId) {
+                  <button
+                    type="button"
+                    class="daily-timesheet__block daily-timesheet__block--{{ block.index % 4 }}"
+                    [style.top.%]="block.topPercent"
+                    [style.height.%]="block.heightPercent"
+                    (click)="openPopupFromBlock(block.index, $event)">
+                    <span class="daily-timesheet__block-range">{{ block.rangeLabel }}</span>
+                    <span class="daily-timesheet__block-desc">{{ block.description }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      } @else {
+        @if (loadingMonth && !monthViewReady) {
+          <div class="timesheet-loading text-muted">Loading month…</div>
+        } @else {
+          <div class="timesheet-month">
+            <div class="timesheet-month__weekdays">
+              @for (label of weekdayLabels; track label) {
+                <span>{{ label }}</span>
+              }
+            </div>
+            <div class="timesheet-month__grid">
+              @for (cell of monthCells; track cell.isoDate) {
+                <button
+                  type="button"
+                  class="timesheet-month__cell"
+                  [class.timesheet-month__cell--outside]="!cell.inMonth"
+                  [class.timesheet-month__cell--today]="cell.isToday"
+                  [class.timesheet-month__cell--selected]="cell.isSelected"
+                  [class.timesheet-month__cell--has-logs]="monthCellHasLogs(cell.isoDate)"
+                  (click)="openMonthCell(cell, $event)">
+                  <span class="timesheet-month__day">{{ cell.day }}</span>
+                  @if (monthCellHasLogs(cell.isoDate)) {
+                    <span class="timesheet-month__hours">{{ formatTotalLogged(monthCellHours(cell.isoDate)) }}</span>
+                    <span
+                      class="timesheet-month__preview"
+                      [title]="monthCellPreviewTitle(cell.isoDate)">
+                      {{ monthCellPreview(cell.isoDate) }}
+                    </span>
+                  } @else if (cell.inMonth) {
+                    <span class="timesheet-month__empty-hint">Click to log</span>
+                  }
+                </button>
+              }
+            </div>
+            <p class="timesheet-month__hint text-muted small mb-0">
+              Days with logged time open in day view. Empty days open the log popup.
+            </p>
+          </div>
+        }
+      }
+    </div>
+  </div>
+}
+
+@if (popupOpen) {
+  <div class="timesheet-popup-backdrop" (click)="closePopup()">
+    <div
+      class="timesheet-popup card custom-card shadow"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="timesheetPopupTitle"
+      (click)="$event.stopPropagation()">
+      <div class="card-header border-bottom-0 pb-0">
+        <h5 id="timesheetPopupTitle" class="mb-1">{{ popupTitle }}</h5>
+        <p class="text-muted small mb-0">{{ selectedDateLabel }} · 10-minute steps</p>
+      </div>
+
+      <form class="card-body pt-2" [formGroup]="popupForm" (ngSubmit)="savePopup()">
+        <div class="timesheet-popup__entries" formArrayName="entries">
+          @for (entry of popupEntries.controls; track $index; let i = $index) {
+            <div class="timesheet-popup__entry" [formGroupName]="i">
+              <div class="timesheet-popup__entry-head">
+                <span class="timesheet-popup__entry-title">Entry {{ i + 1 }}</span>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="timesheet-popup__entry-duration">{{ entryDurationLabel(i) }}</span>
+                  @if (popupEntries.length > 1) {
+                    <button type="button" class="btn btn-sm btn-link text-danger px-0" (click)="removePopupRow(i)">
+                      Remove
+                    </button>
+                  }
+                </div>
+              </div>
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <label class="form-label small">Start</label>
+                  <app-time-stepper-input formControlName="startTime" />
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small">End</label>
+                  <app-time-stepper-input formControlName="endTime" />
+                </div>
+                <div class="col-12">
+                  <label class="form-label small">Description</label>
+                  <textarea
+                    class="form-control form-control-sm"
+                    rows="2"
+                    formControlName="description"
+                    placeholder="What did you work on?"></textarea>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (popupMode === 'add') {
+          <button type="button" class="btn btn-sm btn-outline-primary timesheet-popup__add-more" (click)="addMoreLogs()">
+            <i class="fe fe-plus me-1"></i>
+            Add more logs
+          </button>
+        }
+
+        <div class="timesheet-popup__actions">
+          <button type="button" class="btn btn-light" [disabled]="saving" (click)="closePopup()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving">
+            @if (saving) { Saving… } @else { {{ popupSaveLabel }} }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

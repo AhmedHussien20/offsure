@@ -6,6 +6,8 @@ namespace OffshoreManagementSystem.Domain.Entities
     {
         public int ProjectId { get; set; }
         public int ResourceManagerUserId { get; set; }
+        /// <summary>Cost rate for this RM's team on this hourly project (per hour).</summary>
+        public decimal? HourlyCostRate { get; set; }
 
         public virtual Project Project { get; set; }
         public virtual User ResourceManager { get; set; }

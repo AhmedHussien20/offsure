@@ -7,7 +7,7 @@
 } @else {
 
   <div class="project-detail-stats">
-    <div class="project-detail-stat">
+    <div class="project-detail-stat project-detail-stat--deadline">
       <span class="project-detail-stat__label">Deadline</span>
       <span class="project-detail-stat__value">
         {{ project.targetEndDate ? (project.targetEndDate | date: 'MMM d, y') : '—' }}
@@ -15,27 +15,23 @@
       <span class="project-detail-stat__hint">Target end date</span>
     </div>
     @if (usesMilestones) {
-      <div class="project-detail-stat">
+      <div class="project-detail-stat project-detail-stat--milestones">
         <span class="project-detail-stat__label">Phases complete</span>
         <span class="project-detail-stat__value">{{ milestonesPaidLabel }}</span>
         <span class="project-detail-stat__hint">Completed phases</span>
       </div>
-    } @else {
-      <div class="project-detail-stat">
-        <span class="project-detail-stat__label">Team</span>
-        <span class="project-detail-stat__value">{{ teamMemberCount }}</span>
-        <span class="project-detail-stat__hint">Assigned members</span>
-      </div>
+    } @else if (isHourlyBudget) {
+      <app-admin-hourly-project-panel [projectId]="project.id" [projectName]="project.name" portal="rm" />
     }
-    <div class="project-detail-stat">
-      <span class="project-detail-stat__label">Progress</span>
-      <span class="project-detail-stat__value">{{ progressPercent }}%</span>
-      <div class="project-detail-stat__progress">
-        <div class="project-detail-stat__progress-track">
-          <div class="project-detail-stat__progress-fill" [style.width.%]="progressPercent"></div>
-        </div>
-      </div>
-    </div>
+    <button
+      type="button"
+      class="project-detail-stat project-detail-stat--action project-detail-stat--team"
+      (click)="openTeamSummaryModal()">
+      <span class="project-detail-stat__label">Assigned team</span>
+      <span class="project-detail-stat__value">{{ totalAssignedCount }}</span>
+      <span class="project-detail-stat__hint project-detail-stat__hint--action">View members</span>
+      <i class="fe fe-arrow-right project-detail-stat__arrow" aria-hidden="true"></i>
+    </button>
   </div>
 
   @if (usesMilestones) {
@@ -49,7 +45,7 @@
   }
 
   <div class="row g-3 mb-3">
-    <div class="col-lg-7">
+    <div class="col-6">
       <div class="card custom-card h-100 mb-0">
         <div class="card-header border-bottom-0">
           <h5 class="mb-0">Project details</h5>
@@ -65,12 +61,6 @@
               <dd>{{ project.serviceName }}</dd>
             </div>
             <div class="project-detail-info-grid__item">
-              <dt>Status</dt>
-              <dd>
-                <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
-              </dd>
-            </div>
-            <div class="project-detail-info-grid__item">
               <dt>Start</dt>
               <dd>{{ project.startDate ? (project.startDate | date: 'mediumDate') : '—' }}</dd>
             </div>
@@ -84,91 +74,64 @@
             <div class="project-detail-description__label">Description</div>
             <p class="text-muted mb-0 small">{{ project.description || 'No description.' }}</p>
           </div>
-
-          <div class="project-delivery-section">
-            <form [formGroup]="deliveryForm">
-              <div class="project-delivery-block">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <label class="form-label fw-semibold mb-0">Progress</label>
-                  <span class="project-delivery-value">{{ progressPreview }}%</span>
-                </div>
-                @if (isDeliveryLocked) {
-                  <div class="delivery-progress-slider delivery-progress-slider--readonly" [style.--progress]="(project.progress ?? 0) + '%'">
-                    <div class="delivery-progress-slider__track">
-                      <div class="delivery-progress-slider__fill" [style.width.%]="project.progress ?? 0"></div>
-                    </div>
-                  </div>
-                } @else {
-                  <div class="delivery-progress-slider" [style.--progress]="progressPreview + '%'">
-                    <input
-                      type="range"
-                      class="delivery-progress-slider__input"
-                      min="0"
-                      max="100"
-                      step="1"
-                      [formControl]="progressControl"
-                      (input)="onProgressSliderInput($event)" />
-                  </div>
-                }
-              </div>
-
-              <div class="project-delivery-block project-delivery-block--status">
-                <label class="form-label fw-semibold mb-2">Status</label>
-                @if (isDeliveryLocked) {
-                  <p class="text-muted small mb-0">Delivery settings are locked for this project.</p>
-                } @else {
-                  <select class="form-select form-select-sm mb-2" formControlName="status">
-                    @for (opt of statusOptions; track opt.value) {
-                      <option [ngValue]="opt.value">{{ opt.label }}</option>
-                    }
-                  </select>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-primary w-100"
-                    [disabled]="savingDelivery"
-                    (click)="saveDelivery()">
-                    {{ savingDelivery ? 'Saving…' : 'Save delivery' }}
-                  </button>
-                }
-              </div>
-            </form>
-          </div>
         </div>
       </div>
     </div>
 
-    <div class="col-lg-5">
+    <div class="col-6">
       <div class="card custom-card h-100 mb-0">
-        <div class="card-header border-bottom-0 d-flex align-items-center justify-content-between">
-          <div>
-            <h5 class="mb-0">Assigned team</h5>
-            <span class="fs-12 text-muted">{{ totalAssignedCount }} member{{ totalAssignedCount === 1 ? '' : 's' }}</span>
-          </div>
-          <a href="#project-staffing" class="btn btn-sm btn-light">Staff project</a>
+        <div class="card-header border-bottom-0">
+          <h5 class="mb-0">Progress &amp; status</h5>
         </div>
-        <ul class="list-group list-group-flush project-team-summary">
-          @if (sidebarTeamMembers.length === 0) {
-            <li class="list-group-item project-team-summary__empty">
-              <i class="fe fe-users" aria-hidden="true"></i>
-              <span>No one assigned yet.</span>
-              <a href="#project-staffing" class="small">Add team members below</a>
-            </li>
-          }
-          @for (m of sidebarTeamMembers; track m.id) {
-            <li class="list-group-item d-flex align-items-center gap-2">
-              <span class="project-team-avatar">{{ memberInitials(m.teamMemberName) }}</span>
-              <div class="flex-grow-1 min-width-0">
-                <div class="fw-semibold text-truncate">{{ m.teamMemberName }}</div>
-                <small class="text-muted">{{ roleLabel(m.role) }}</small>
+        <div class="card-body">
+          <form [formGroup]="deliveryForm">
+            <div class="project-delivery-block">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-semibold mb-0">Progress</label>
+                <span class="project-delivery-value">{{ progressPreview }}%</span>
               </div>
-            </li>
-          }
-        </ul>
-        @if (pendingSkillNames) {
-          <div class="project-detail-alert-box mx-3 mb-3">
-            Unassigned skill{{ pendingSkillNames.includes(',') ? 's' : '' }}: {{ pendingSkillNames }}
-          </div>
-        }
+              @if (isDeliveryLocked) {
+                <div class="delivery-progress-slider delivery-progress-slider--readonly" [style.--progress]="(project.progress ?? 0) + '%'">
+                  <div class="delivery-progress-slider__track">
+                    <div class="delivery-progress-slider__fill" [style.width.%]="project.progress ?? 0"></div>
+                  </div>
+                </div>
+              } @else {
+                <div class="delivery-progress-slider" [style.--progress]="progressPreview + '%'">
+                  <input
+                    type="range"
+                    class="delivery-progress-slider__input"
+                    min="0"
+                    max="100"
+                    step="1"
+                    [formControl]="progressControl"
+                    (input)="onProgressSliderInput($event)" />
+                </div>
+              }
+            </div>
+
+            <div class="project-delivery-block project-delivery-block--status">
+              <label class="form-label fw-semibold mb-2">Status</label>
+              @if (isDeliveryLocked) {
+                <p class="text-muted small mb-2">Delivery settings are locked for this project.</p>
+                <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
+              } @else {
+                <select class="form-select form-select-sm mb-2" formControlName="status">
+                  @for (opt of statusOptions; track opt.value) {
+                    <option [ngValue]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary w-100"
+                  [disabled]="savingDelivery"
+                  (click)="saveDelivery()">
+                  {{ savingDelivery ? 'Saving…' : 'Save delivery' }}
+                </button>
+              }
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -188,6 +151,56 @@
       </div>
     </div>
     <div class="card-body pt-0">
+      @if (isHourlyBudget) {
+        <section class="staffing-section">
+          <header class="staffing-section__head">
+            <span class="staffing-section__step">!</span>
+            <div>
+              <h6 class="staffing-section__title mb-0">Your cost rate</h6>
+              <p class="staffing-section__hint mb-0">Set what your team costs per hour on this project before assigning members.</p>
+            </div>
+          </header>
+          @if (!hasHourlyCostRate && !isDeliveryLocked) {
+            <div class="project-detail-alert-box mb-3">
+              Enter your cost rate to unlock team assignment.
+            </div>
+          }
+          @if (isDeliveryLocked) {
+            @if (hasHourlyCostRate) {
+              <p class="mb-0 small text-muted">Your cost rate: <strong>${{ project.myHourlyCostRate }}/hr</strong></p>
+            } @else {
+              <p class="mb-0 small text-muted">No cost rate was set for this project.</p>
+            }
+          } @else {
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <div class="input-group input-group-sm" style="max-width: 220px">
+                <span class="input-group-text">$</span>
+                <input
+                  type="number"
+                  class="form-control"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Cost / hr"
+                  [(ngModel)]="hourlyCostRateInput"
+                  [ngModelOptions]="{ standalone: true }" />
+                <span class="input-group-text">/hr</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                [disabled]="savingHourlyCostRate"
+                (click)="saveHourlyCostRate()">
+                @if (savingHourlyCostRate) {
+                  <i class="fe fe-loader me-1"></i> Saving…
+                } @else {
+                  Save cost rate
+                }
+              </button>
+            </div>
+          }
+        </section>
+      }
+
       <section class="staffing-section">
         <header class="staffing-section__head">
           <span class="staffing-section__step">1</span>

@@ -36,14 +36,14 @@
           [id]="idPrefix + '-total'"
           value="total"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Total amount</label>
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Fixed budget project</label>
         <input
           type="radio"
           class="btn-check"
           [id]="idPrefix + '-hourly'"
           value="hourly"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">By hour</label>
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">Hourly project</label>
       </div>
     }
 
@@ -55,14 +55,14 @@
           [id]="idPrefix + '-total'"
           value="total"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Total amount</label>
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Fixed budget project</label>
         <input
           type="radio"
           class="btn-check"
           [id]="idPrefix + '-hourly'"
           value="hourly"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">By hour</label>
+        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">Hourly project</label>
       </div>
     }
 
@@ -80,38 +80,20 @@
         </div>
       </div>
     } @else {
-      <div class="row g-2">
-        <div class="col-6">
-          <div class="generic-form__control">
-            <div class="input-wrapper">
-              <i class="fe fe-hash"></i>
-              <input
-                type="number"
-                class="form-control"
-                formControlName="hourlyRate"
-                min="0"
-                step="0.01"
-                placeholder="Rate / hour" />
-            </div>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="generic-form__control">
-            <div class="input-wrapper">
-              <i class="fe fe-clock"></i>
-              <input
-                type="number"
-                class="form-control"
-                formControlName="expectedHours"
-                min="1"
-                step="1"
-                placeholder="Expected hours" />
-            </div>
-          </div>
+      <div class="generic-form__control">
+        <div class="input-wrapper">
+          <i class="fe fe-hash"></i>
+          <input
+            type="number"
+            class="form-control"
+            formControlName="hourlyRate"
+            min="0"
+            step="0.01"
+            placeholder="Billing rate / hour" />
         </div>
       </div>
       <small class="text-muted d-block mt-2">
-        Estimated total: <strong>{{ computedHourlyTotal | number: '1.0-2' }}</strong>
+        Revenue is calculated from logged hours × this rate. No fixed total budget is required.
       </small>
     }
   }

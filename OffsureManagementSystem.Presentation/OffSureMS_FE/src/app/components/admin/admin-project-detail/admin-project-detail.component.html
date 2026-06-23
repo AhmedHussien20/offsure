@@ -6,12 +6,14 @@
   <div class="alert alert-warning">Project not found.</div>
 } @else {
   <div class="project-detail-stats">
-    <div class="project-detail-stat">
-      <span class="project-detail-stat__label">Budget</span>
-      <span class="project-detail-stat__value">{{ project.budget != null ? (project.budget | number: '1.0-0') : '—' }}</span>
-      <span class="project-detail-stat__hint">{{ budgetTypeLabel }}</span>
-    </div>
-    <div class="project-detail-stat">
+    @if (!isHourlyBudget) {
+      <div class="project-detail-stat project-detail-stat--budget">
+        <span class="project-detail-stat__label">Budget</span>
+        <span class="project-detail-stat__value">{{ project.budget != null ? (project.budget | number: '1.0-0') : '—' }}</span>
+        <span class="project-detail-stat__hint">{{ budgetTypeLabel }}</span>
+      </div>
+    }
+    <div class="project-detail-stat project-detail-stat--deadline">
       <span class="project-detail-stat__label">Deadline</span>
       <span class="project-detail-stat__value">
         {{ project.targetEndDate ? (project.targetEndDate | date: 'MMM d, y') : '—' }}
@@ -19,78 +21,29 @@
       <span class="project-detail-stat__hint">Target end date</span>
     </div>
     @if (usesMilestones) {
-      <div class="project-detail-stat">
+      <div class="project-detail-stat project-detail-stat--milestones">
         <span class="project-detail-stat__label">Milestones paid</span>
         <span class="project-detail-stat__value">{{ milestonesPaidLabel }}</span>
         <span class="project-detail-stat__hint">Completed phases</span>
       </div>
     } @else if (isHourlyBudget) {
-      <div class="project-detail-stat">
-        <span class="project-detail-stat__label">Cost</span>
-        <span class="project-detail-stat__value">{{ costSummary.cost | number: '1.0-0' }}</span>
-        <span class="project-detail-stat__hint">Team (rate × hours)</span>
+      <div class="project-detail-stat project-detail-stat--billing">
+        <span class="project-detail-stat__label">Billing rate</span>
+        <span class="project-detail-stat__value">{{ project.hourlyRate != null ? ('$' + (project.hourlyRate | number: '1.0-0') + '/hr') : '—' }}</span>
+        <span class="project-detail-stat__hint">Client rate</span>
       </div>
-    } @else {
-      <div class="project-detail-stat">
-        <span class="project-detail-stat__label">Team</span>
-        <span class="project-detail-stat__value">{{ teamMemberCount }}</span>
-        <span class="project-detail-stat__hint">Assigned members</span>
-      </div>
+      <app-admin-hourly-project-panel [projectId]="project.id" [projectName]="project.name" />
     }
-    <div class="project-detail-stat">
-      <span class="project-detail-stat__label">Progress</span>
-      <span class="project-detail-stat__value">{{ progressPercent }}%</span>
-      <div class="project-detail-stat__progress">
-        <div class="project-detail-stat__progress-track">
-          <div class="project-detail-stat__progress-fill" [style.width.%]="progressPercent"></div>
-        </div>
-      </div>
-    </div>
+    <button
+      type="button"
+      class="project-detail-stat project-detail-stat--action project-detail-stat--team"
+      (click)="openTeamSummaryModal()">
+      <span class="project-detail-stat__label">Assigned team</span>
+      <span class="project-detail-stat__value">{{ teamMemberCount }}</span>
+      <span class="project-detail-stat__hint project-detail-stat__hint--action">View members</span>
+      <i class="fe fe-arrow-right project-detail-stat__arrow" aria-hidden="true"></i>
+    </button>
   </div>
-
-  @if (isHourlyBudget) {
-    <div class="finance-summary mb-3">
-      <div class="finance-summary__tile finance-summary__tile--revenue">
-        <span class="finance-summary__label">Revenue</span>
-        <span class="finance-summary__value">{{ revenue | number: '1.0-0' }}</span>
-        <span class="finance-summary__hint">Project budget</span>
-      </div>
-      <div
-        class="finance-summary__tile finance-summary__tile--cost"
-        [class.finance-summary__tile--incomplete]="incompleteCostAssignments.length > 0">
-        <span class="finance-summary__label">Cost</span>
-        <span class="finance-summary__value">{{ costSummary.cost | number: '1.0-0' }}</span>
-        <span class="finance-summary__hint">
-          @if (incompleteCostAssignments.length > 0) {
-            Partial — {{ incompleteCostAssignments.length }} missing data
-          } @else {
-            Team (rate × hours)
-          }
-        </span>
-      </div>
-      <div class="finance-summary__tile finance-summary__tile--profit" [class.finance-summary__tile--negative]="costSummary.profit < 0">
-        <span class="finance-summary__label">Profit</span>
-        <span class="finance-summary__value">{{ costSummary.profit | number: '1.0-0' }}</span>
-        @if (costSummary.marginPercent != null) {
-          <span class="finance-summary__hint">{{ costSummary.marginPercent }}% margin</span>
-        }
-      </div>
-    </div>
-    @if (incompleteCostAssignments.length > 0) {
-      <div class="alert alert-warning border small py-2 mb-3 finance-cost-warning">
-        <strong class="d-block mb-1">Incomplete cost data</strong>
-        The following assignments are excluded from cost and profit until resolved:
-        <ul class="mb-0 mt-1 finance-cost-warning__list">
-          @for (a of incompleteCostAssignments; track a.id) {
-            <li>
-              <span class="finance-cost-warning__name">{{ a.teamMemberName }}</span>
-              <span class="text-muted"> — {{ assignmentCostIssueLabel(a) }}</span>
-            </li>
-          }
-        </ul>
-      </div>
-    }
-  }
 
   @if (usesMilestones) {
     <div class="project-detail-section">
@@ -105,7 +58,7 @@
   }
 
   <div class="row g-3 mb-3">
-    <div class="col-lg-7">
+    <div class="col-6">
       <div class="card custom-card h-100 mb-0">
         <div class="card-header border-bottom-0">
           <h5 class="mb-0">Project details</h5>
@@ -117,12 +70,6 @@
               <dd>{{ project.clientName }}</dd>
             </div>
             <div class="project-detail-info-grid__item">
-              <dt>Status</dt>
-              <dd>
-                <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
-              </dd>
-            </div>
-            <div class="project-detail-info-grid__item">
               <dt>Start</dt>
               <dd>{{ project.startDate ? (project.startDate | date: 'mediumDate') : '—' }}</dd>
             </div>
@@ -130,110 +77,92 @@
               <dt>Deadline</dt>
               <dd>{{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}</dd>
             </div>
-            <div class="project-detail-info-grid__item">
-              <dt>Budget</dt>
-              <dd>{{ project.budget != null ? (project.budget | number: '1.0-2') : '—' }}</dd>
-            </div>
-            <div class="project-detail-info-grid__item">
-              <dt>Budget type</dt>
-              <dd>{{ budgetTypeLabel }}</dd>
-            </div>
+            @if (!isHourlyBudget) {
+              <div class="project-detail-info-grid__item">
+                <dt>Budget</dt>
+                <dd>{{ project.budget != null ? (project.budget | number: '1.0-2') : '—' }}</dd>
+              </div>
+              <div class="project-detail-info-grid__item">
+                <dt>Budget type</dt>
+                <dd>{{ budgetTypeLabel }}</dd>
+              </div>
+            }
           </dl>
 
           <div class="project-detail-description">
             <div class="project-detail-description__label">Description</div>
             <p class="text-muted mb-0 small">{{ project.description || 'No description.' }}</p>
           </div>
-
-          <div class="project-delivery-section">
-            <form [formGroup]="deliveryForm">
-              <div class="project-delivery-block">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <label class="form-label fw-semibold mb-0">Progress</label>
-                  <span class="project-delivery-value">{{ progressPreview }}%</span>
-                </div>
-                @if (isDeliveryLocked) {
-                  <div class="delivery-progress-slider delivery-progress-slider--readonly" [style.--progress]="(project.progress ?? 0) + '%'">
-                    <div class="delivery-progress-slider__track">
-                      <div class="delivery-progress-slider__fill" [style.width.%]="project.progress ?? 0"></div>
-                    </div>
-                  </div>
-                } @else {
-                  <div class="delivery-progress-slider" [style.--progress]="progressPreview + '%'">
-                    <input
-                      type="range"
-                      class="delivery-progress-slider__input"
-                      min="0"
-                      max="100"
-                      step="1"
-                      [formControl]="progressControl"
-                      (input)="onProgressSliderInput($event)" />
-                  </div>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-primary w-100 mt-2"
-                    [disabled]="savingProgress"
-                    (click)="saveProgress()">
-                    Save progress
-                  </button>
-                }
-              </div>
-
-              <div class="project-delivery-block project-delivery-block--status">
-                <label class="form-label fw-semibold mb-2">Status</label>
-                @if (isDeliveryLocked) {
-                  <p class="text-muted small mb-0">Delivery settings are locked for this project.</p>
-                } @else {
-                  <select class="form-select form-select-sm mb-2" formControlName="status">
-                    @for (opt of statusOptions; track opt.value) {
-                      <option [ngValue]="opt.value">{{ opt.label }}</option>
-                    }
-                  </select>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-primary w-100"
-                    [disabled]="savingStatus"
-                    (click)="saveStatus()">
-                    Update status
-                  </button>
-                  @if (!usesMilestones) {
-                    <button type="button" class="btn btn-sm btn-success w-100 mt-2" (click)="markComplete()">
-                      Mark complete
-                    </button>
-                  }
-                }
-              </div>
-            </form>
-          </div>
         </div>
       </div>
     </div>
 
-    <div class="col-lg-5">
+    <div class="col-6">
       <div class="card custom-card h-100 mb-0">
-        <div class="card-header border-bottom-0 d-flex align-items-center justify-content-between">
-          <h5 class="mb-0">Assigned team</h5>
-          <a href="#project-staffing" class="btn btn-sm btn-light">Manage</a>
+        <div class="card-header border-bottom-0">
+          <h5 class="mb-0">Progress &amp; status</h5>
         </div>
-        <ul class="list-group list-group-flush project-team-summary">
-          @if (summaryTeamMembers.length === 0) {
-            <li class="list-group-item text-muted">No members yet.</li>
-          }
-          @for (m of summaryTeamMembers; track m.id) {
-            <li class="list-group-item d-flex align-items-center gap-2">
-              <span class="project-team-avatar">{{ memberInitials(m.teamMemberName) }}</span>
-              <div class="flex-grow-1 min-width-0">
-                <div class="fw-semibold text-truncate">{{ m.teamMemberName }}</div>
-                <small class="text-muted">{{ roleLabel(m.role) }}</small>
+        <div class="card-body">
+          <form [formGroup]="deliveryForm">
+            <div class="project-delivery-block">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-semibold mb-0">Progress</label>
+                <span class="project-delivery-value">{{ progressPreview }}%</span>
               </div>
-            </li>
-          }
-        </ul>
-        @if (pendingSkillNames) {
-          <div class="project-detail-alert-box mx-3 mb-3">
-            Unassigned skill{{ pendingSkillNames.includes(',') ? 's' : '' }}: {{ pendingSkillNames }}
-          </div>
-        }
+              @if (isDeliveryLocked) {
+                <div class="delivery-progress-slider delivery-progress-slider--readonly" [style.--progress]="(project.progress ?? 0) + '%'">
+                  <div class="delivery-progress-slider__track">
+                    <div class="delivery-progress-slider__fill" [style.width.%]="project.progress ?? 0"></div>
+                  </div>
+                </div>
+              } @else {
+                <div class="delivery-progress-slider" [style.--progress]="progressPreview + '%'">
+                  <input
+                    type="range"
+                    class="delivery-progress-slider__input"
+                    min="0"
+                    max="100"
+                    step="1"
+                    [formControl]="progressControl"
+                    (input)="onProgressSliderInput($event)" />
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary w-100 mt-2"
+                  [disabled]="savingProgress"
+                  (click)="saveProgress()">
+                  Save progress
+                </button>
+              }
+            </div>
+
+            <div class="project-delivery-block project-delivery-block--status">
+              <label class="form-label fw-semibold mb-2">Status</label>
+              @if (isDeliveryLocked) {
+                <p class="text-muted small mb-2">Delivery settings are locked for this project.</p>
+                <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
+              } @else {
+                <select class="form-select form-select-sm mb-2" formControlName="status">
+                  @for (opt of statusOptions; track opt.value) {
+                    <option [ngValue]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary w-100"
+                  [disabled]="savingStatus"
+                  (click)="saveStatus()">
+                  Update status
+                </button>
+                @if (!usesMilestones) {
+                  <button type="button" class="btn btn-sm btn-success w-100 mt-2" (click)="markComplete()">
+                    Mark complete
+                  </button>
+                }
+              }
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -311,6 +240,9 @@
           <div>
             <h6 class="staffing-section__title mb-0">Resource managers</h6>
             <p class="staffing-section__hint mb-0">Who can staff this project (max {{ maxResourceManagers }}).</p>
+            @if (isHourlyBudget) {
+              <p class="staffing-section__hint mb-0 mt-1 text-muted">Each resource manager sets their own cost rate on this project.</p>
+            }
           </div>
         </header>
         @if (isDeliveryLocked) {
@@ -320,6 +252,13 @@
                 <span class="project-detail-rm-chip">
                   <span class="project-detail-rm-chip__avatar">{{ memberInitials(rm.fullName) }}</span>
                   {{ rm.fullName }}
+                  @if (isHourlyBudget) {
+                    @if (rm.hourlyCostRate != null && rm.hourlyCostRate > 0) {
+                      <span class="badge bg-success-transparent ms-1">${{ rm.hourlyCostRate }}/hr</span>
+                    } @else {
+                      <span class="badge bg-warning-transparent ms-1">Rate pending</span>
+                    }
+                  }
                 </span>
               }
             </div>
@@ -332,13 +271,23 @@
           <p class="text-muted small mb-0">No resource managers available.</p>
         } @else {
           @if (selectedResourceManagersForDisplay.length > 0) {
-            <div class="project-detail-rm-list mb-2">
+            <div class="skill-selection-bar mb-2">{{ selectedResourceManagersForDisplay.length }} selected</div>
+            <div class="skill-picker skill-picker--selected mb-2">
               @for (rm of selectedResourceManagersForDisplay; track rm.id) {
-                <button type="button" class="project-detail-rm-chip border-0" (click)="toggleResourceManager(rm)">
-                  <span class="project-detail-rm-chip__avatar">{{ memberInitials(rm.fullName || rm.firstName) }}</span>
-                  {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
-                  <i class="fe fe-x ms-1 text-muted"></i>
-                </button>
+                <span class="d-inline-flex flex-wrap align-items-center gap-1">
+                  <button type="button" class="skill-picker__chip skill-picker__chip--on" (click)="toggleResourceManager(rm)">
+                    <span class="project-detail-rm-chip__avatar">{{ memberInitials(rm.fullName || rm.firstName) }}</span>
+                    {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
+                    <i class="fe fe-x"></i>
+                  </button>
+                  @if (isHourlyBudget) {
+                    @if (getRmHourlyCostRateStatus(rm.id) === 'set') {
+                      <span class="badge bg-success-transparent">${{ getRmHourlyCostRateDisplay(rm.id) }}/hr cost</span>
+                    } @else {
+                      <span class="badge bg-warning-transparent">Awaiting RM cost rate</span>
+                    }
+                  }
+                </span>
               }
             </div>
           }
@@ -526,10 +475,7 @@
                         <span class="track-member__role">{{ roleLabel(a.role) }}</span>
                         @if (isHourlyBudget) {
                           @if (isAssignmentCostComplete(a)) {
-                            <span class="track-member__title">
-                              {{ a.hourlyRate | number: '1.0-2' }}/hr × {{ a.allocatedHours }}h
-                              = {{ lineCost(a) | number: '1.0-2' }}
-                            </span>
+                            <span class="track-member__title">${{ a.hourlyRate | number: '1.0-2' }}/hr cost rate</span>
                           } @else {
                             <span class="track-member__cost-warning">{{ assignmentCostIssueLabel(a) }}</span>
                           }
@@ -601,10 +547,7 @@
                     <span class="track-member__role">{{ roleLabel(a.role) }}</span>
                     @if (isHourlyBudget) {
                       @if (isAssignmentCostComplete(a)) {
-                        <span class="track-member__title">
-                          {{ a.hourlyRate | number: '1.0-2' }}/hr × {{ a.allocatedHours }}h
-                          = {{ lineCost(a) | number: '1.0-2' }}
-                        </span>
+                        <span class="track-member__title">${{ a.hourlyRate | number: '1.0-2' }}/hr cost rate</span>
                       } @else {
                         <span class="track-member__cost-warning">{{ assignmentCostIssueLabel(a) }}</span>
                       }
