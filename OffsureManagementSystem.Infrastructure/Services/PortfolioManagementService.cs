@@ -27,9 +27,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _portfolioRepo = portfolioRepo;
             _portfolioImageRepo = portfolioImageRepo;
             _serviceRepo = serviceRepo;
-            _imageRootPath = configuration["Storage:PortfolioImageRoot"]
-                ?? Path.Combine(AppContext.BaseDirectory, "storage", "portfolio-images");
+            _imageRootPath = configuration[PortfolioImageRootConfigKey]
+                ?? throw new InvalidOperationException(
+                    $"Missing configuration key '{PortfolioImageRootConfigKey}'. Ensure LocalStorageBootstrap runs at startup.");
         }
+
+        private const string PortfolioImageRootConfigKey = "Storage:PortfolioImageRoot";
 
         public async Task<PagedResponse<PortfolioDto>> GetAllPortfoliosAsync(PortfolioFilterRequest request)
         {

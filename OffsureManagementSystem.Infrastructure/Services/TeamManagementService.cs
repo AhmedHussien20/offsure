@@ -8,20 +8,22 @@ using OffsureManagementSystem.Application.Interfaces.Services;
 using OffshoreManagementSystem.Domain.Entities;
 using OffsureManagementSystem.Domain.Entities;
 using OffsureManagementSystem.Domain.Entities.Enum;
-using System.Text;
 using TaskMangment.Application.Common.Responses;
 
 namespace OffsureManagementSystem.Infrastructure.Services
 {
-    public class TeamManagementService : ITeamManagementService
+    public partial class TeamManagementService : ITeamManagementService
     {
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly IRepository<User> _userRepo;
         private readonly IRepository<Role> _roleRepo;
         private readonly IRepository<Skill> _skillRepo;
         private readonly IRepository<TeamMemberSkill> _teamMemberSkillRepo;
+        private readonly IRepository<TeamMemberCertificate> _certificateRepo;
+        private readonly IRepository<TeamMemberExperience> _experienceRepo;
         private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
         private readonly ITeamCvStorageService _cvStorageService;
+        private readonly ITeamProfileStorageService _profileStorageService;
 
         public TeamManagementService(
             IRepository<TeamMember> teamMemberRepo,
@@ -29,16 +31,22 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<Role> roleRepo,
             IRepository<Skill> skillRepo,
             IRepository<TeamMemberSkill> teamMemberSkillRepo,
+            IRepository<TeamMemberCertificate> certificateRepo,
+            IRepository<TeamMemberExperience> experienceRepo,
             IRepository<ProjectAssignment> projectAssignmentRepo,
-            ITeamCvStorageService cvStorageService)
+            ITeamCvStorageService cvStorageService,
+            ITeamProfileStorageService profileStorageService)
         {
             _teamMemberRepo = teamMemberRepo;
             _userRepo = userRepo;
             _roleRepo = roleRepo;
             _skillRepo = skillRepo;
             _teamMemberSkillRepo = teamMemberSkillRepo;
+            _certificateRepo = certificateRepo;
+            _experienceRepo = experienceRepo;
             _projectAssignmentRepo = projectAssignmentRepo;
             _cvStorageService = cvStorageService;
+            _profileStorageService = profileStorageService;
         }
 
         public async Task<PagedResponse<TeamMemberDto>> GetAllAsync(TeamMemberRequest request)
@@ -310,29 +318,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetByIdAsync(teamMemberId);
         }
 
-        public async Task<CvStorageResultDto> GenerateCvAsync(int teamMemberId)
-        {
-            var member = await BuildBaseQuery()
-                .FirstOrDefaultAsync(t => t.Id == teamMemberId);
-
-            if (member is null)
-                throw new AppException("Resource not found.", 404);
-
-            var content = BuildCvContent(member);
-            var path = await _cvStorageService.SaveGeneratedCvAsync(
-                member.Id,
-                UserDisplayName.FromTeamMember(member),
-                content);
-
-            await UpdateCvPathAsync(member.Id, path);
-
-            return new CvStorageResultDto
-            {
-                TeamMemberId = member.Id,
-                CvPath = path
-            };
-        }
-
         public async Task<CvStorageResultDto> StoreCvAsync(int teamMemberId, Stream content, string fileName)
         {
             await EnsureTeamMemberExistsAsync(teamMemberId);
@@ -428,11 +413,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return RemoveSkillForMemberAsync(userId, skillId);
         }
 
-        public Task<CvStorageResultDto> GenerateCvForUserAsync(int userId)
-        {
-            return GenerateCvForMemberAsync(userId);
-        }
-
         public Task<CvStorageResultDto> StoreCvForUserAsync(int userId, Stream content, string fileName)
         {
             return StoreCvForMemberAsync(userId, content, fileName);
@@ -448,12 +428,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var member = await GetTeamMemberEntityForUserAsync(userId);
             return await RemoveSkillAsync(member.Id, skillId);
-        }
-
-        private async Task<CvStorageResultDto> GenerateCvForMemberAsync(int userId)
-        {
-            var member = await GetTeamMemberEntityForUserAsync(userId);
-            return await GenerateCvAsync(member.Id);
         }
 
         private async Task<CvStorageResultDto> StoreCvForMemberAsync(int userId, Stream content, string fileName)
@@ -481,7 +455,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(t => t.ResourceManager)
                 .Include(t => t.TeamMemberSkills)
                     .ThenInclude(ts => ts.Skill)
-                        .ThenInclude(s => s.SkillCategory);
+                        .ThenInclude(s => s.SkillCategory)
+                .Include(t => t.Certificates.Where(c => !c.IsDeleted))
+                .Include(t => t.Experiences.Where(e => !e.IsDeleted));
         }
 
         private async Task AddSkillAssignmentsAsync(int teamMemberId, IEnumerable<UpsertTeamMemberSkillDto> assignments)
@@ -900,8 +876,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static string HashPassword(string password)
             => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
 
-        private static TeamMemberDto MapToDto(TeamMember member)
+        private static TeamMemberDto MapToDto(TeamMember member, ITeamCvStorageService cvStorage, ITeamProfileStorageService photoStorage)
         {
+            var cvFileName = cvStorage.GetCvFileName(member.CV);
             return new TeamMemberDto
             {
                 Id = member.Id,
@@ -913,6 +890,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Title = member.Title,
                 YearsOfExperience = member.YearsOfExperience,
                 CV = member.CV,
+                CvFileName = string.IsNullOrWhiteSpace(cvFileName) ? null : cvFileName,
+                CvDownloadUrl = string.IsNullOrWhiteSpace(member.CV) ? null : cvStorage.GetCvPublicUrl(member.CV),
+                ProfilePhoto = member.ProfilePhoto ?? string.Empty,
+                ProfilePhotoUrl = string.IsNullOrWhiteSpace(member.ProfilePhoto)
+                    ? null
+                    : photoStorage.GetPhotoPublicUrl(member.ProfilePhoto),
                 PhoneNumber = member.PhoneNumber,
                 ResourceManagerId = member.ResourceManagerId,
                 ResourceManagerName = UserDisplayName.FromUser(member.ResourceManager),
@@ -921,9 +904,36 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 SkillAssignments = member.TeamMemberSkills
                     .OrderBy(s => s.Skill.Name)
                     .Select(MapSkill)
+                    .ToList(),
+                Certificates = member.Certificates
+                    .OrderByDescending(c => c.IssuedDate)
+                    .Select(c => new TeamMemberCertificateDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Issuer = c.Issuer,
+                        IssuedDate = c.IssuedDate,
+                        ExpiryDate = c.ExpiryDate
+                    })
+                    .ToList(),
+                Experiences = member.Experiences
+                    .OrderByDescending(e => e.StartDate)
+                    .Select(e => new TeamMemberExperienceDto
+                    {
+                        Id = e.Id,
+                        JobTitle = e.JobTitle,
+                        Company = e.Company,
+                        StartDate = e.StartDate,
+                        EndDate = e.EndDate,
+                        Description = e.Description,
+                        DisplayOrder = e.DisplayOrder
+                    })
                     .ToList()
             };
         }
+
+        private TeamMemberDto MapToDto(TeamMember member)
+            => MapToDto(member, _cvStorageService, _profileStorageService);
 
         private static TeamMemberSkillDto MapSkill(TeamMemberSkill skill)
         {
@@ -939,30 +949,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 IsEndorsed = skill.IsEndorsed,
                 EndorsementCount = skill.EndorsementCount
             };
-        }
-
-        private static string BuildCvContent(TeamMember member)
-        {
-            var builder = new StringBuilder();
-            builder.AppendLine(UserDisplayName.FromTeamMember(member));
-            builder.AppendLine(member.Title);
-            builder.AppendLine();
-            builder.AppendLine($"Years of Experience: {member.YearsOfExperience}");
-            builder.AppendLine($"Phone: {member.PhoneNumber}");
-            builder.AppendLine($"Resource Manager: {(string.IsNullOrWhiteSpace(UserDisplayName.FromUser(member.ResourceManager)) ? "N/A" : UserDisplayName.FromUser(member.ResourceManager))}");
-            builder.AppendLine($"Availability: {(member.IsAvailable ? "Available" : "Unavailable")}");
-            builder.AppendLine();
-            builder.AppendLine("Skills Summary");
-            builder.AppendLine();
-            builder.AppendLine("Tracked Skills");
-
-            foreach (var skill in member.TeamMemberSkills.OrderBy(s => s.Skill.Name))
-            {
-                builder.AppendLine(
-                    $"- {skill.Skill.Name} ({skill.Skill.SkillCategory.Name}) | Level {skill.ProficiencyLevel}/5 | {skill.YearsOfExperience} years");
-            }
-
-            return builder.ToString();
         }
     }
 }

@@ -9,7 +9,7 @@ import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
-  selector: 'app-admin-profile',
+  selector: 'app-rm-profile',
   standalone: true,
   imports: [
     CommonModule,
@@ -18,10 +18,10 @@ import { ToastrService } from 'ngx-toastr';
     NgbNavModule,
     ChangePasswordCardComponent,
   ],
-  templateUrl: './admin-profile.component.html',
-  styleUrl: './admin-profile.component.scss',
+  templateUrl: './rm-profile.component.html',
+  styleUrl: './rm-profile.component.scss',
 })
-export class AdminProfileComponent implements OnInit {
+export class RmProfileComponent implements OnInit {
   profile: AccountProfileDto | null = null;
   loading = true;
   saving = false;
@@ -45,7 +45,7 @@ export class AdminProfileComponent implements OnInit {
   get initials(): string {
     const first = this.profile?.firstName?.charAt(0) ?? '';
     const last = this.profile?.lastName?.charAt(0) ?? '';
-    return `${first}${last}`.toUpperCase() || 'AD';
+    return `${first}${last}`.toUpperCase() || 'RM';
   }
 
   get displayName(): string {
@@ -53,6 +53,10 @@ export class AdminProfileComponent implements OnInit {
       return '';
     }
     return `${this.profile.firstName} ${this.profile.lastName}`.trim();
+  }
+
+  get roleLabel(): string {
+    return this.profile?.role || 'Resource Manager';
   }
 
   saveProfile(): void {

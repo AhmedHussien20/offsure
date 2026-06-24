@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using OffshoreManagementSystem.Infrastructure.DataContext;
+using OffsureManagementSystem.API.Storage;
 using OffsureManagementSystem.Infrastructure;
 using OffsureManagementSystem.Infrastructure.Services;
 using Serilog;
@@ -14,6 +14,8 @@ namespace OffsureManagementSystem.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            LocalStorageBootstrap.Configure(builder);
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -144,13 +146,8 @@ namespace OffsureManagementSystem.API
             app.UseHttpsRedirection();
             app.UseStaticFiles(); // wwwroot
 
-            //app.UseStaticFiles(new StaticFileOptions
-            //{
-            //    FileProvider = new PhysicalFileProvider(
-            //        Path.Combine(builder.Environment.ContentRootPath, "storage", "portfolio-images")
-            //    ),
-            //    RequestPath = "/portfolio-images"
-            //});
+            LocalStorageBootstrap.UseUploadedFileStaticFiles(app);
+
             app.UseCors("AllowAngular");
             app.UseAuthentication();
             app.UseAuthorization();

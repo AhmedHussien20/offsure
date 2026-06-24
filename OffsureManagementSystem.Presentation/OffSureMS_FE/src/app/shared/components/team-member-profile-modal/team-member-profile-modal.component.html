@@ -1,0 +1,129 @@
+<div class="modal-header border-0 pb-0">
+  <h5 class="modal-title">Team member profile</h5>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body team-member-profile-modal pt-2">
+  @if (loading) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+      Loading profile…
+    </div>
+  } @else if (loadError) {
+    <div class="alert alert-warning mb-0">{{ loadError }}</div>
+  } @else if (member) {
+    <div class="member-profile-hero">
+      <div class="member-profile-hero__cover"></div>
+      <div class="member-profile-hero__body">
+        @if (photoUrl) {
+          <img [src]="photoUrl" [alt]="member.fullName" class="member-profile-hero__photo" />
+        } @else {
+          <span class="member-profile-hero__avatar">{{ initials }}</span>
+        }
+        <div class="member-profile-hero__info">
+          <h4 class="member-profile-hero__name mb-1">{{ member.fullName }}</h4>
+          <p class="member-profile-hero__title mb-2">{{ member.title || 'Team member' }}</p>
+          <span class="badge bg-primary-transparent">
+            <i class="fe fe-briefcase me-1"></i>{{ member.yearsOfExperience }} yrs experience
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <section class="member-profile-tabs-card">
+      <ul ngbNav #memberNav="ngbNav" [(activeId)]="activeTab" class="nav profile-tabs member-profile-tabs">
+        <li [ngbNavItem]="'overview'">
+          <a ngbNavLink class="nav-link">Overview</a>
+          <ng-template ngbNavContent>
+            @if (member.projectNames.length) {
+              <div class="member-profile-section">
+                <h6 class="member-profile-section__title">Shared projects</h6>
+                <div class="d-flex flex-wrap gap-2">
+                  @for (project of member.projectNames; track project) {
+                    <span class="badge bg-primary-transparent">{{ project }}</span>
+                  }
+                </div>
+              </div>
+            } @else {
+              <p class="text-muted small mb-0">No shared project context for this member.</p>
+            }
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="'skills'">
+          <a ngbNavLink class="nav-link">Skills & experience</a>
+          <ng-template ngbNavContent>
+            <div class="member-profile-section">
+              <h6 class="member-profile-section__title">Skills</h6>
+              @if (member.skills.length) {
+                <div class="d-flex flex-wrap gap-2">
+                  @for (skill of member.skills; track skill) {
+                    <span class="member-skill-chip">{{ skill }}</span>
+                  }
+                </div>
+              } @else {
+                <p class="text-muted small mb-0">No skills listed.</p>
+              }
+            </div>
+
+            <div class="member-profile-section mb-0">
+              <h6 class="member-profile-section__title">Work experience</h6>
+              @if (member.experiences.length) {
+                <ol class="member-experience-timeline mb-0">
+                  @for (exp of member.experiences; track exp.jobTitle + exp.startDate) {
+                    <li class="member-experience-item">
+                      <div class="member-experience-item__marker"></div>
+                      <div class="member-experience-item__card">
+                        <p class="member-experience-item__title mb-1">{{ exp.jobTitle }}</p>
+                        <p class="member-experience-item__company text-muted small mb-1">{{ exp.company }}</p>
+                        <p class="member-experience-item__dates text-muted small mb-0">{{ experiencePeriod(exp) }}</p>
+                        @if (exp.description) {
+                          <p class="member-experience-item__description mb-0">{{ exp.description }}</p>
+                        }
+                      </div>
+                    </li>
+                  }
+                </ol>
+              } @else {
+                <p class="text-muted small mb-0">No experience history listed.</p>
+              }
+            </div>
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="'certificates'">
+          <a ngbNavLink class="nav-link">Certificates</a>
+          <ng-template ngbNavContent>
+            @if (member.certificates.length) {
+              <ul class="member-certificate-list mb-0">
+                @for (cert of member.certificates; track cert.name + cert.issuedDate) {
+                  <li class="member-certificate-item">
+                    <span class="member-certificate-item__icon"><i class="fe fe-award"></i></span>
+                    <div>
+                      <p class="member-certificate-item__name mb-1">{{ cert.name }}</p>
+                      <p class="member-certificate-item__issuer text-muted small mb-1">{{ cert.issuer }}</p>
+                      <p class="member-certificate-item__dates text-muted small mb-0">
+                        Issued {{ formatDate(cert.issuedDate) }}
+                        @if (cert.expiryDate) {
+                          · Expires {{ formatDate(cert.expiryDate) }}
+                        }
+                      </p>
+                    </div>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-muted small mb-0">No certificates listed.</p>
+            }
+          </ng-template>
+        </li>
+      </ul>
+
+      <div class="member-profile-tabs__outlet" [ngbNavOutlet]="memberNav"></div>
+    </section>
+  }
+</div>
+
+<div class="modal-footer border-0 pt-0">
+  <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Close</button>
+</div>

@@ -97,13 +97,6 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member skill removed successfully."));
         }
 
-        [HttpPost("{id:int}/cv/generate")]
-        public async Task<ActionResult<ApiResponse<CvStorageResultDto>>> GenerateCv(int id)
-        {
-            var result = await _teamManagementService.GenerateCvAsync(id);
-            return Ok(ApiResponse<CvStorageResultDto>.Ok(result, "Team member CV generated successfully."));
-        }
-
         [HttpPost("{id:int}/cv/upload")]
         public async Task<ActionResult<ApiResponse<CvStorageResultDto>>> UploadCv(int id, IFormFile file)
         {

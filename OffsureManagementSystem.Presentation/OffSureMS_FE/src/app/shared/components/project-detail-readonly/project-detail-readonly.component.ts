@@ -147,7 +147,7 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
   openTeamSummaryModal(): void {
     const modalRef = this.modalService.open(ProjectTeamSummaryModalComponent, {
       centered: true,
-      size: 'md',
+      size: 'lg',
       scrollable: true,
     });
     modalRef.componentInstance.projectName = this.project.name;
@@ -157,6 +157,8 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     modalRef.componentInstance.manageHint = this.isClient
       ? 'Members assigned to deliver your project.'
       : 'Your colleagues on this project.';
+    modalRef.componentInstance.profileSource = this.isClient ? 'client' : undefined;
+    modalRef.componentInstance.allowMemberProfile = this.isClient;
   }
 
   onLogTimeClick(): void {

@@ -27,6 +27,14 @@ export const clientRoutes: Routes = [
           import('./client-projects-list/client-projects-list.component').then(m => m.ClientProjectsListComponent),
       },
       {
+        path: 'team-members',
+        data: { breadcrumb: 'Team Members', title: 'Team Members' },
+        loadComponent: () =>
+          import('./client-team-members-list/client-team-members-list.component').then(
+            m => m.ClientTeamMembersListComponent
+          ),
+      },
+      {
         path: 'projects/:id',
         data: {
           breadcrumb: 'Project Details',

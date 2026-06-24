@@ -60,6 +60,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (this.authService.isTeamMember()) {
       return '/team/profile';
     }
+    if (this.authService.isResourceManager()) {
+      return '/resource-manager/profile';
+    }
     return '/admin/profile';
   }
 

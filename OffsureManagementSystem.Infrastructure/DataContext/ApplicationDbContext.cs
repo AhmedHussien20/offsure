@@ -19,6 +19,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<TeamMember> TeamMembers { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<TeamMemberSkill> TeamMemberSkills { get; set; }
+        public DbSet<TeamMemberCertificate> TeamMemberCertificates { get; set; }
+        public DbSet<TeamMemberExperience> TeamMemberExperiences { get; set; }
         public DbSet<Client> Clients { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<ServiceRequest> ServiceRequests { get; set; }
@@ -176,6 +178,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.Property(e => e.CV)
                     .HasMaxLength(500);
 
+                entity.Property(e => e.ProfilePhoto)
+                    .HasMaxLength(500);
+
                 entity.Property(e => e.PhoneNumber)
                     .HasMaxLength(20);
 
@@ -312,6 +317,47 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 // Composite index to prevent duplicate skill assignments to same member
                 entity.HasIndex(e => new { e.TeamMemberId, e.SkillId })
                     .IsUnique();
+            });
+
+            modelBuilder.Entity<TeamMemberCertificate>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Issuer)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.HasOne(e => e.TeamMember)
+                    .WithMany(t => t.Certificates)
+                    .HasForeignKey(e => e.TeamMemberId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<TeamMemberExperience>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.JobTitle)
+                    .IsRequired()
+                    .HasMaxLength(150);
+
+                entity.Property(e => e.Company)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(2000);
+
+                entity.HasOne(e => e.TeamMember)
+                    .WithMany(t => t.Experiences)
+                    .HasForeignKey(e => e.TeamMemberId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.TeamMemberId, e.DisplayOrder });
             });
 
             // CLIENT ENTITY CONFIGURATION

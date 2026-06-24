@@ -1,153 +1,406 @@
 <app-page-header></app-page-header>
 
 @if (loading) {
-  <div class="text-center py-5 text-muted">Loading profile...</div>
+  <div class="profile-loading text-center py-5 text-muted">
+    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+    Loading profile…
+  </div>
 } @else if (!profile) {
   <div class="alert alert-warning">Profile not found.</div>
 } @else {
-  <div class="card custom-card profile-shell mb-3">
-    <div class="profile-cover">
-      <img
-        src="assets/images/offshore_white.png"
-        alt="Profile cover"
-        class="profile-cover-image" />
-    </div>
-    <div class="profile-topbar p-3 p-md-4">
-      <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-3">
-        <div class="d-flex align-items-center gap-3">
-          <span class="profile-avatar avatar avatar-xxl rounded-circle bg-primary-transparent text-primary fw-bold">
-            {{ profile.firstName?.charAt(0) }}{{ profile.lastName?.charAt(0) }}
-          </span>
-          <div>
-            <h4 class="mb-1">{{ displayName }}</h4>
-            <p class="mb-1 text-muted">{{ profile.email }}</p>
-            <span class="badge {{ profile.isAvailable ? 'bg-success-transparent' : 'bg-danger-transparent' }}">
-              {{ profile.isAvailable ? 'Available' : 'Busy' }}
+  <div class="team-profile">
+    <!-- Header -->
+    <section class="card custom-card profile-header-card mb-4">
+      <div class="profile-header-cover"></div>
+      <div class="profile-header-body">
+        <div class="profile-header-main">
+          <label class="profile-photo" [class.profile-photo--busy]="photoUploading" title="Click to upload photo">
+            @if (photoUrl) {
+              <img [src]="photoUrl" [alt]="displayName" class="profile-photo__image" />
+            } @else {
+              <span class="profile-photo__initials">{{ initials }}</span>
+            }
+            <span class="profile-photo__overlay">
+              <i class="fe fe-camera"></i>
             </span>
+            <input
+              type="file"
+              class="profile-photo__input"
+              accept="image/*"
+              [disabled]="photoUploading"
+              (change)="onPhotoSelected($event)" />
+          </label>
+
+          <div class="profile-header-info">
+            <h2 class="profile-header-name mb-1">{{ displayName }}</h2>
+            <p class="profile-header-title mb-2">{{ profile.title || 'Team member' }}</p>
+            <div class="profile-header-meta">
+              <span class="profile-meta-item">
+                <i class="fe fe-mail me-1"></i>{{ profile.email }}
+              </span>
+              @if (profile.phoneNumber) {
+                <span class="profile-meta-item">
+                  <i class="fe fe-phone me-1"></i>{{ profile.phoneNumber }}
+                </span>
+              }
+              <span class="profile-meta-item">
+                <i class="fe fe-briefcase me-1"></i>{{ profile.yearsOfExperience }} yrs experience
+              </span>
+            </div>
             @if (profile.resourceManagerName) {
-              <p class="text-muted small mt-2 mb-0">Resource manager: {{ profile.resourceManagerName }}</p>
+              <p class="profile-header-rm text-muted small mb-0 mt-2">
+                Resource manager: {{ profile.resourceManagerName }}
+              </p>
             }
           </div>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-          <a routerLink="/team/projects" class="btn btn-primary btn-sm">My projects</a>
-        </div>
-      </div>
-    </div>
-    <div class="profile-statbar p-3 px-md-4">
-      <div class="profile-stat-grid">
-        <div class="stat-cell">
-          <p class="stat-value">{{ profile.yearsOfExperience }}</p>
-          <p class="stat-label">Years Experience</p>
-        </div>
-        <div class="stat-cell">
-          <p class="stat-value">{{ skills.length }}</p>
-          <p class="stat-label">Skills</p>
-        </div>
-        <div class="stat-cell">
-          <p class="stat-value">{{ profile.phoneNumber || '—' }}</p>
-          <p class="stat-label">Phone</p>
-        </div>
-        <div class="stat-cell">
-          <p class="stat-value">{{ profile.title || '—' }}</p>
-          <p class="stat-label">Title</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="card custom-card team-profile-tabs-card">
-    <div class="card-header border-bottom-0 pb-0">
-      <nav ngbNav #profileNav="ngbNav" class="nav-tabs nav-tabs-custom team-profile-tabs" role="tablist">
-        <ng-container ngbNavItem="edit">
-          <button type="button" class="nav-link" ngbNavLink>
+        <div class="profile-header-actions">
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            [disabled]="!hasCv || cvBusy"
+            (click)="downloadCv()">
+            <i class="fe fe-download me-1"></i>
+            {{ cvBusy ? 'Working…' : 'Download CV' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            (click)="toggleEditPersonalInfo()">
             <i class="fe fe-edit-2 me-1"></i>
-            Edit profile
+            {{ editingPersonalInfo ? 'Cancel edit' : 'Edit profile' }}
           </button>
+          <a routerLink="/team/projects" class="btn btn-light btn-sm">
+            <i class="fe fe-layers me-1"></i>My projects
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="card custom-card profile-tabs-card">
+      <ul ngbNav #profileNav="ngbNav" [(activeId)]="activeTab" class="nav profile-tabs">
+        <li [ngbNavItem]="'personal'">
+          <a ngbNavLink class="nav-link">Personal info</a>
           <ng-template ngbNavContent>
-            <div class="team-profile-tab-pane">
-              <p class="text-muted fs-12 mb-3">
-                Update your professional details and account password.
-              </p>
-              <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Job Title</label>
-                    <input type="text" class="form-control" formControlName="title" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Years of Experience</label>
-                    <input type="number" class="form-control" formControlName="yearsOfExperience" min="0" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Phone</label>
-                    <input type="text" class="form-control" formControlName="phoneNumber" />
+            <div class="profile-tab-content">
+              <section class="profile-card profile-card--flat">
+                <div class="profile-card__header">
+                  <div>
+                    <h5 class="profile-card__title mb-0">Personal information</h5>
+                    <p class="profile-card__subtitle mb-0">Your professional contact details</p>
                   </div>
                 </div>
-                <div class="d-flex justify-content-end mt-3">
-                  <button type="submit" class="btn btn-primary px-4" [disabled]="savingProfile">
-                    Save changes
-                  </button>
+                <div class="profile-card__body">
+                  @if (editingPersonalInfo) {
+                    <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+                      <div class="row g-3">
+                        <div class="col-12">
+                          <label class="form-label">Job title</label>
+                          <input type="text" class="form-control" formControlName="title" />
+                          @if (profileForm.controls['title'].touched && profileForm.controls['title'].invalid) {
+                            <small class="text-danger">Title is required.</small>
+                          }
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Years of experience</label>
+                          <input type="number" class="form-control" formControlName="yearsOfExperience" min="0" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Phone</label>
+                          <input type="text" class="form-control" formControlName="phoneNumber" />
+                        </div>
+                      </div>
+                      <div class="profile-form-actions">
+                        <button type="button" class="btn btn-light btn-sm" (click)="cancelPersonalInfoEdit()">
+                          Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingProfile">
+                          {{ savingProfile ? 'Saving…' : 'Save changes' }}
+                        </button>
+                      </div>
+                    </form>
+
+                    <app-change-password-card [embedded]="true"></app-change-password-card>
+                  } @else {
+                    <dl class="profile-info-list mb-0">
+                      <div class="profile-info-row">
+                        <dt>Job title</dt>
+                        <dd>{{ profile.title || '—' }}</dd>
+                      </div>
+                      <div class="profile-info-row">
+                        <dt>Years of experience</dt>
+                        <dd>{{ profile.yearsOfExperience }}</dd>
+                      </div>
+                      <div class="profile-info-row">
+                        <dt>Phone</dt>
+                        <dd>{{ profile.phoneNumber || '—' }}</dd>
+                      </div>
+                      <div class="profile-info-row">
+                        <dt>Email</dt>
+                        <dd>{{ profile.email }}</dd>
+                      </div>
+                      <div class="profile-info-row">
+                        <dt>Availability</dt>
+                        <dd>
+                          <span
+                            class="badge"
+                            [class.bg-success-transparent]="profile.isAvailable"
+                            [class.bg-danger-transparent]="!profile.isAvailable">
+                            {{ profile.isAvailable ? 'Available' : 'Busy' }}
+                          </span>
+                        </dd>
+                      </div>
+                    </dl>
+                  }
                 </div>
-              </form>
-              <app-change-password-card [embedded]="true"></app-change-password-card>
+              </section>
             </div>
           </ng-template>
-        </ng-container>
+        </li>
 
-        <ng-container ngbNavItem="skills">
-          <button type="button" class="nav-link" ngbNavLink>
-            <i class="fe fe-award me-1"></i>
-            Skills
-            @if (skills.length > 0) {
-              <span class="badge bg-primary-transparent ms-1">{{ skills.length }}</span>
-            }
-          </button>
+        <li [ngbNavItem]="'skills'">
+          <a ngbNavLink class="nav-link">Skills & experience</a>
           <ng-template ngbNavContent>
-            <div class="team-profile-tab-pane">
-              <p class="text-muted fs-12 mb-3">
-                Search and select skills. Set proficiency and years for each — changes save automatically.
-              </p>
-              <app-team-member-skills-editor
-                mode="live"
-                [usePortal]="true"
-                [initialSkills]="skills"
-                (profileChange)="onSkillsProfileChange($event)" />
-            </div>
-          </ng-template>
-        </ng-container>
+            <div class="profile-tab-content">
+              <section class="profile-card profile-card--flat">
+                <div class="profile-card__header">
+                  <div>
+                    <h5 class="profile-card__title mb-0">Skills</h5>
+                    <p class="profile-card__subtitle mb-0">Search, select, and set proficiency — changes save automatically</p>
+                  </div>
+                  @if (skills.length > 0) {
+                    <span class="badge bg-primary-transparent">{{ skills.length }}</span>
+                  }
+                </div>
+                <div class="profile-card__body">
+                  <app-team-member-skills-editor
+                    mode="live"
+                    [usePortal]="true"
+                    [memberId]="profile.id"
+                    [initialSkills]="skills"
+                    (profileChange)="onSkillsProfileChange($event)" />
+                </div>
+              </section>
 
-        <ng-container ngbNavItem="cv">
-          <button type="button" class="nav-link" ngbNavLink>
-            <i class="fe fe-file-text me-1"></i>
-            CV
-          </button>
-          <ng-template ngbNavContent>
-            <div class="team-profile-tab-pane">
-              @if (profile.cv) {
-                <p class="mb-3">
-                  <strong>Current file:</strong>
-                  <span class="text-muted ms-1">{{ profile.cv }}</span>
-                </p>
-              } @else {
-                <p class="text-muted mb-3">No CV on file yet.</p>
-              }
-              <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-primary" [disabled]="cvBusy" (click)="generateCv()">
-                  Generate CV
-                </button>
-                <label class="btn btn-outline-secondary mb-0" [class.disabled]="cvBusy">
-                  Upload CV
-                  <input type="file" class="d-none" accept=".pdf,.doc,.docx,.txt" (change)="onCvSelected($event)" />
-                </label>
-              </div>
+              <section class="profile-card profile-card--flat">
+                <div class="profile-card__header">
+                  <div>
+                    <h5 class="profile-card__title mb-0">Work experience</h5>
+                    <p class="profile-card__subtitle mb-0">Your professional history</p>
+                  </div>
+                  @if (!showExperienceForm) {
+                    <button type="button" class="btn btn-outline-primary btn-sm" (click)="openExperienceForm()">
+                      <i class="fe fe-plus me-1"></i>Add experience
+                    </button>
+                  }
+                </div>
+                <div class="profile-card__body">
+                  @if (showExperienceForm) {
+                    <form [formGroup]="experienceForm" (ngSubmit)="saveExperience()" class="profile-inline-form">
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <label class="form-label">Job title</label>
+                          <input type="text" class="form-control" formControlName="jobTitle" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Company</label>
+                          <input type="text" class="form-control" formControlName="company" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Start date</label>
+                          <input type="date" class="form-control" formControlName="startDate" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">End date <span class="text-muted">(leave blank if current)</span></label>
+                          <input type="date" class="form-control" formControlName="endDate" />
+                        </div>
+                        <div class="col-12">
+                          <label class="form-label">Description</label>
+                          <textarea class="form-control" rows="3" formControlName="description"></textarea>
+                        </div>
+                      </div>
+                      <div class="profile-form-actions">
+                        <button type="button" class="btn btn-light btn-sm" (click)="cancelExperienceForm()">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingExperience">
+                          {{ savingExperience ? 'Saving…' : editingExperienceId != null ? 'Update' : 'Add' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
+
+                  @if (experiences.length === 0 && !showExperienceForm) {
+                    <p class="text-muted mb-0">No work experience added yet.</p>
+                  } @else {
+                    <ol class="experience-timeline mb-0">
+                      @for (exp of experiences; track exp.id) {
+                        <li class="experience-item">
+                          <div class="experience-item__marker"></div>
+                          <div class="experience-item__card">
+                            <div class="experience-item__header">
+                              <div>
+                                <h6 class="experience-item__title mb-1">{{ exp.jobTitle }}</h6>
+                                <p class="experience-item__company text-muted mb-1">{{ exp.company }}</p>
+                                <p class="experience-item__dates small text-muted mb-0">
+                                  {{ formatDateRange(exp.startDate, exp.endDate) }}
+                                </p>
+                              </div>
+                              <div class="experience-item__actions">
+                                <button type="button" class="btn btn-light btn-icon btn-sm" title="Edit" (click)="openExperienceForm(exp)">
+                                  <i class="fe fe-edit-2"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-icon btn-sm text-danger" title="Delete" (click)="deleteExperience(exp)">
+                                  <i class="fe fe-trash-2"></i>
+                                </button>
+                              </div>
+                            </div>
+                            @if (exp.description) {
+                              <p class="experience-item__description mb-0">{{ exp.description }}</p>
+                            }
+                          </div>
+                        </li>
+                      }
+                    </ol>
+                  }
+                </div>
+              </section>
             </div>
           </ng-template>
-        </ng-container>
-      </nav>
-    </div>
-    <div class="card-body pt-3">
-      <div [ngbNavOutlet]="profileNav"></div>
-    </div>
+        </li>
+
+        <li [ngbNavItem]="'documents'">
+          <a ngbNavLink class="nav-link">CV & certificates</a>
+          <ng-template ngbNavContent>
+            <div class="profile-tab-content profile-tab-content--split">
+              <section class="profile-card profile-card--flat">
+                <div class="profile-card__header">
+                  <div>
+                    <h5 class="profile-card__title mb-0">CV / Resume</h5>
+                    <p class="profile-card__subtitle mb-0">PDF only, max 5 MB</p>
+                  </div>
+                </div>
+                <div class="profile-card__body">
+                  @if (hasCv) {
+                    <div class="cv-file-row">
+                      <div class="cv-file-icon">
+                        <i class="fe fe-file-text"></i>
+                      </div>
+                      <div class="cv-file-details">
+                        <p class="cv-file-name mb-0">{{ cvFileName }}</p>
+                        <p class="cv-file-hint text-muted small mb-0">Ready to download or replace</p>
+                      </div>
+                    </div>
+                  } @else {
+                    <p class="text-muted mb-3">No CV on file yet. Upload a PDF.</p>
+                  }
+
+                  <div
+                    class="cv-dropzone"
+                    [class.cv-dropzone--active]="cvDragOver"
+                    [class.cv-dropzone--busy]="cvBusy"
+                    (dragover)="onCvDragOver($event)"
+                    (dragleave)="onCvDragLeave($event)"
+                    (drop)="onCvDrop($event)">
+                    <i class="fe fe-upload-cloud cv-dropzone__icon"></i>
+                    <p class="cv-dropzone__title mb-1">Drag & drop your CV here</p>
+                    <p class="cv-dropzone__hint text-muted small mb-2">or choose a file</p>
+                    <label class="btn btn-outline-primary btn-sm mb-0" [class.disabled]="cvBusy">
+                      Browse PDF
+                      <input type="file" class="d-none" accept=".pdf,application/pdf" [disabled]="cvBusy" (change)="onCvSelected($event)" />
+                    </label>
+                  </div>
+
+                  @if (hasCv) {
+                    <div class="cv-actions">
+                      <button type="button" class="btn btn-outline-danger btn-sm" [disabled]="cvBusy" (click)="deleteCv()">
+                        <i class="fe fe-trash-2 me-1"></i>Remove
+                      </button>
+                    </div>
+                  }
+                </div>
+              </section>
+
+              <section class="profile-card profile-card--flat">
+                <div class="profile-card__header">
+                  <div>
+                    <h5 class="profile-card__title mb-0">Certificates</h5>
+                    <p class="profile-card__subtitle mb-0">Professional certifications and credentials</p>
+                  </div>
+                  @if (!showCertificateForm) {
+                    <button type="button" class="btn btn-outline-primary btn-sm" (click)="openCertificateForm()">
+                      <i class="fe fe-plus me-1"></i>Add certificate
+                    </button>
+                  }
+                </div>
+                <div class="profile-card__body">
+                  @if (showCertificateForm) {
+                    <form [formGroup]="certificateForm" (ngSubmit)="saveCertificate()" class="profile-inline-form">
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <label class="form-label">Certificate name</label>
+                          <input type="text" class="form-control" formControlName="name" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Issuer</label>
+                          <input type="text" class="form-control" formControlName="issuer" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Issued date</label>
+                          <input type="date" class="form-control" formControlName="issuedDate" />
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Expiry date <span class="text-muted">(optional)</span></label>
+                          <input type="date" class="form-control" formControlName="expiryDate" />
+                        </div>
+                      </div>
+                      <div class="profile-form-actions">
+                        <button type="button" class="btn btn-light btn-sm" (click)="cancelCertificateForm()">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm" [disabled]="savingCertificate">
+                          {{ savingCertificate ? 'Saving…' : editingCertificateId != null ? 'Update' : 'Add' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
+
+                  @if (certificates.length === 0 && !showCertificateForm) {
+                    <p class="text-muted mb-0">No certificates added yet.</p>
+                  } @else {
+                    <ul class="certificate-list mb-0">
+                      @for (cert of certificates; track cert.id) {
+                        <li class="certificate-item">
+                          <div class="certificate-item__icon">
+                            <i class="fe fe-award"></i>
+                          </div>
+                          <div class="certificate-item__content">
+                            <h6 class="certificate-item__name mb-1">{{ cert.name }}</h6>
+                            <p class="certificate-item__issuer text-muted small mb-1">{{ cert.issuer }}</p>
+                            <p class="certificate-item__dates small mb-0">
+                              Issued {{ formatDate(cert.issuedDate) }}
+                              @if (cert.expiryDate) {
+                                <span class="text-muted"> · Expires {{ formatDate(cert.expiryDate) }}</span>
+                              }
+                            </p>
+                          </div>
+                          <div class="certificate-item__actions">
+                            <button type="button" class="btn btn-light btn-icon btn-sm" title="Edit" (click)="openCertificateForm(cert)">
+                              <i class="fe fe-edit-2"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-icon btn-sm text-danger" title="Delete" (click)="deleteCertificate(cert)">
+                              <i class="fe fe-trash-2"></i>
+                            </button>
+                          </div>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              </section>
+            </div>
+          </ng-template>
+        </li>
+      </ul>
+
+      <div class="profile-tabs__outlet" [ngbNavOutlet]="profileNav"></div>
+    </section>
   </div>
 }

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { ClientDto, UpdateClientProfileDto } from 'app/core/models/clients/client.models';
 import { ClientsService } from 'app/core/services/clients.service';
 import { ChangePasswordCardComponent } from 'app/shared/components/change-password-card/change-password-card.component';
@@ -11,7 +11,13 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-client-profile',
   standalone: true,
-  imports: [CommonModule, SharedModule, ReactiveFormsModule, RouterModule, ChangePasswordCardComponent],
+  imports: [
+    CommonModule,
+    SharedModule,
+    ReactiveFormsModule,
+    NgbNavModule,
+    ChangePasswordCardComponent,
+  ],
   templateUrl: './client-profile.component.html',
   styleUrl: './client-profile.component.scss',
 })
@@ -19,6 +25,7 @@ export class ClientProfileComponent implements OnInit {
   profile: ClientDto | null = null;
   loading = true;
   saving = false;
+  activeTab = 'company';
 
   profileForm!: FormGroup;
 

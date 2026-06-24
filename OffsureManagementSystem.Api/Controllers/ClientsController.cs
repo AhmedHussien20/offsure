@@ -13,10 +13,14 @@ namespace OffsureManagementSystem.API.Controllers
     public class ClientsController : BaseController
     {
         private readonly IClientManagementService _clientManagementService;
+        private readonly IClientTeamBrowseService _clientTeamBrowseService;
 
-        public ClientsController(IClientManagementService clientManagementService)
+        public ClientsController(
+            IClientManagementService clientManagementService,
+            IClientTeamBrowseService clientTeamBrowseService)
         {
             _clientManagementService = clientManagementService;
+            _clientTeamBrowseService = clientTeamBrowseService;
         }
 
         [HttpGet]
@@ -79,6 +83,23 @@ namespace OffsureManagementSystem.API.Controllers
         {
             var client = await _clientManagementService.UpdateClientProfileAsync(GetCurrentUserId(), dto);
             return Ok(ApiResponse<ClientDto>.Ok(client, "Client profile updated successfully."));
+        }
+
+        [HttpGet("team-members")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ClientTeamMemberCardDto>>>> BrowseTeamMembers(
+            [FromQuery] ClientTeamMemberBrowseRequest request)
+        {
+            var members = await _clientTeamBrowseService.BrowseTeamMembersAsync(GetCurrentUserId(), request);
+            return Ok(ApiResponse<PagedResponse<ClientTeamMemberCardDto>>.Ok(members));
+        }
+
+        [HttpGet("team-members/{teamMemberId:int}")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<ClientTeamMemberDetailDto>>> GetTeamMemberDetail(int teamMemberId)
+        {
+            var member = await _clientTeamBrowseService.GetTeamMemberDetailAsync(GetCurrentUserId(), teamMemberId);
+            return Ok(ApiResponse<ClientTeamMemberDetailDto>.Ok(member));
         }
 
         [HttpPatch("{id:int}/deactivate")]

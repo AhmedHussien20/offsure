@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { BaseResponse } from '../models/base.response';
 import {
@@ -7,6 +7,8 @@ import {
   TeamMemberDto,
   UpdateTeamMemberAvailabilityDto,
   UpdateTeamMemberProfileDto,
+  UpsertTeamMemberCertificateDto,
+  UpsertTeamMemberExperienceDto,
   UpsertTeamMemberSkillDto,
 } from '../models/team-members/team-member.models';
 
@@ -17,9 +19,7 @@ export class TeamPortalService {
   constructor(private api: ApiService) {}
 
   getProfile(): Observable<BaseResponse<TeamMemberDto>> {
-    return this.api
-      .get<BaseResponse<TeamMemberDto>>(this.service, 'profile')
-      .pipe(map(res => ({ ...res, data: res.data ?? null })));
+    return this.api.get<BaseResponse<TeamMemberDto>>(this.service, 'profile');
   }
 
   updateProfile(dto: UpdateTeamMemberProfileDto): Observable<BaseResponse<TeamMemberDto>> {
@@ -38,10 +38,6 @@ export class TeamPortalService {
     return this.api.delete<BaseResponse<TeamMemberDto>>(this.service, `profile/skills/${skillId}`);
   }
 
-  generateCv(): Observable<BaseResponse<CvStorageResultDto>> {
-    return this.api.post<BaseResponse<CvStorageResultDto>>(this.service, 'profile/cv/generate', {});
-  }
-
   uploadCv(file: File): Observable<BaseResponse<CvStorageResultDto>> {
     const formData = new FormData();
     formData.append('file', file, file.name);
@@ -49,6 +45,64 @@ export class TeamPortalService {
       this.service,
       'profile/cv/upload',
       formData
+    );
+  }
+
+  deleteCv(): Observable<BaseResponse<unknown>> {
+    return this.api.delete<BaseResponse<unknown>>(this.service, 'profile/cv');
+  }
+
+  downloadCv(): Observable<Blob> {
+    return this.api.getBlob(this.service, 'profile/cv/download');
+  }
+
+  uploadProfilePhoto(file: File): Observable<BaseResponse<TeamMemberDto>> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.api.postFormData<BaseResponse<TeamMemberDto>>(this.service, 'profile/photo', formData);
+  }
+
+  addCertificate(dto: UpsertTeamMemberCertificateDto): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.post<BaseResponse<TeamMemberDto>>(this.service, 'profile/certificates', dto);
+  }
+
+  updateCertificate(
+    certificateId: number,
+    dto: UpsertTeamMemberCertificateDto
+  ): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.put<BaseResponse<TeamMemberDto>>(
+      this.service,
+      `profile/certificates/${certificateId}`,
+      dto
+    );
+  }
+
+  deleteCertificate(certificateId: number): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.delete<BaseResponse<TeamMemberDto>>(
+      this.service,
+      `profile/certificates/${certificateId}`
+    );
+  }
+
+  addExperience(dto: UpsertTeamMemberExperienceDto): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.post<BaseResponse<TeamMemberDto>>(this.service, 'profile/experiences', dto);
+  }
+
+  updateExperience(
+    experienceId: number,
+    dto: UpsertTeamMemberExperienceDto
+  ): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.put<BaseResponse<TeamMemberDto>>(
+      this.service,
+      `profile/experiences/${experienceId}`,
+      dto
+    );
+  }
+
+  deleteExperience(experienceId: number): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.delete<BaseResponse<TeamMemberDto>>(
+      this.service,
+      `profile/experiences/${experienceId}`
     );
   }
 }

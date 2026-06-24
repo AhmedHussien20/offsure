@@ -48,6 +48,12 @@ export const resourceManagerRoutes: Routes = [
         loadComponent: () =>
           import('./rm-project-detail/rm-project-detail.component').then(m => m.RmProjectDetailComponent),
       },
+      {
+        path: 'profile',
+        data: { breadcrumb: 'My Profile', title: 'My Profile' },
+        loadComponent: () =>
+          import('./rm-profile/rm-profile.component').then(m => m.RmProfileComponent),
+      },
     ],
   },
 ];

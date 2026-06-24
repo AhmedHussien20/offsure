@@ -1,0 +1,202 @@
+.team-member-profile-modal {
+  padding-top: 0.5rem;
+}
+
+.member-profile-hero {
+  position: relative;
+  margin-bottom: 1rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--default-border, rgb(15 23 42 / 8%));
+
+  &__cover {
+    height: 88px;
+    background: linear-gradient(
+      135deg,
+      rgb(var(--primary-rgb) / 38%) 0%,
+      rgb(var(--primary-rgb) / 14%) 100%
+    );
+  }
+
+  &__body {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    padding: 0 1.1rem 1.1rem;
+    margin-top: -2.25rem;
+  }
+
+  &__photo,
+  &__avatar {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 8px 20px rgb(15 23 42 / 12%);
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  &__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(var(--primary-rgb) / 12%);
+    color: rgb(var(--primary-rgb));
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+
+  &__info {
+    min-width: 0;
+    padding-bottom: 0.15rem;
+  }
+
+  &__name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  &__title {
+    color: var(--text-muted, #64748b);
+    font-size: 0.9rem;
+  }
+}
+
+.member-profile-tabs-card {
+  border: 1px solid var(--default-border, rgb(15 23 42 / 8%));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.member-profile-tabs {
+  padding: 0 1rem;
+}
+
+.member-profile-tabs__outlet {
+  padding: 1rem;
+  min-height: 140px;
+}
+
+.member-profile-section {
+  margin-bottom: 1.1rem;
+
+  &__title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 0.6rem;
+  }
+}
+
+.member-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgb(var(--primary-rgb) / 8%);
+  color: rgb(var(--primary-rgb));
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.member-certificate-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.member-certificate-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--default-border, rgb(15 23 42 / 8%));
+  border-radius: 10px;
+  background: #fff;
+
+  &__icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(var(--primary-rgb) / 10%);
+    color: rgb(var(--primary-rgb));
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    margin: 0;
+  }
+
+  &__issuer,
+  &__dates {
+    margin: 0;
+  }
+}
+
+.member-experience-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.member-experience-item {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+
+  &:not(:last-child)::before {
+    content: '';
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    justify-self: center;
+    width: 2px;
+    margin-top: 0.9rem;
+    background: linear-gradient(to bottom, rgb(var(--primary-rgb) / 35%), rgb(var(--primary-rgb) / 8%));
+  }
+
+  &__marker {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    margin-top: 0.35rem;
+    justify-self: center;
+    background: rgb(var(--primary-rgb));
+    box-shadow: 0 0 0 3px rgb(var(--primary-rgb) / 15%);
+  }
+
+  &__card {
+    border: 1px solid var(--default-border, rgb(15 23 42 / 8%));
+    border-radius: 10px;
+    padding: 0.85rem;
+    background: #fff;
+  }
+
+  &__title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    margin: 0;
+  }
+
+  &__company,
+  &__dates {
+    margin: 0;
+  }
+
+  &__description {
+    margin-top: 0.65rem;
+    font-size: 0.86rem;
+    color: #475569;
+    white-space: pre-wrap;
+  }
+}

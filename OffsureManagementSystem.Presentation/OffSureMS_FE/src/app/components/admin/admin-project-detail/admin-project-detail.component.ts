@@ -323,13 +323,14 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
 
     const modalRef = this.modalService.open(ProjectTeamSummaryModalComponent, {
       centered: true,
-      size: 'md',
+      size: 'lg',
       scrollable: true,
     });
     modalRef.componentInstance.projectName = this.project.name;
     modalRef.componentInstance.members = this.summaryTeamMembers;
     modalRef.componentInstance.pendingSkillNames = this.pendingSkillNames;
     modalRef.componentInstance.manageHint = 'Scroll to Team staffing on this page to add or remove members.';
+    modalRef.componentInstance.profileSource = 'admin';
   }
 
   onProjectUpdated(project: ProjectDto): void {

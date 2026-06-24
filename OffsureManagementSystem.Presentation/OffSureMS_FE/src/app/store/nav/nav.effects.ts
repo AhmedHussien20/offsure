@@ -153,6 +153,13 @@ private CLIENT_MENUITEMS: MenuItem[] = [
     icon: 'ti-folder',
     requiredRole: 'Client',
   },
+  {
+    title: 'Team Members',
+    path: '/client/team-members',
+    type: 'link',
+    icon: 'ti-id-badge',
+    requiredRole: 'Client',
+  },
   // {
   //   title: 'Company Profile',
   //   path: '/client/profile',

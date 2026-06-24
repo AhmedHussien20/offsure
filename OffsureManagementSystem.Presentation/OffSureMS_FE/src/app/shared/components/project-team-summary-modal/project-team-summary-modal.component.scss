@@ -1,17 +1,99 @@
-.team-summary-modal__list {
-  max-height: 50vh;
+.team-summary-empty {
+  &__icon {
+    font-size: 2rem;
+    color: rgb(var(--primary-rgb) / 45%);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+}
+
+.team-summary-hint {
+  margin: 0;
+}
+
+.team-summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.65rem;
+  max-height: 52vh;
   overflow-y: auto;
 }
 
-.team-summary-modal__avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #e2e8f0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  display: inline-flex;
+.team-summary-card {
+  width: 100%;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--default-border, rgb(15 23 42 / 8%));
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+
+  &:not(:disabled):hover {
+    border-color: rgb(var(--primary-rgb) / 35%);
+    box-shadow: 0 6px 18px rgb(15 23 42 / 8%);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &--self {
+    border-color: rgb(var(--primary-rgb) / 28%);
+    background: rgb(var(--primary-rgb) / 4%);
+  }
+
+  &__avatar {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: rgb(var(--primary-rgb) / 12%);
+    color: rgb(var(--primary-rgb));
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+
+  &__role {
+    font-size: 0.82rem;
+    color: var(--text-muted, #64748b);
+    margin-top: 0.1rem;
+  }
+
+  &__chevron {
+    color: var(--text-muted, #94a3b8);
+    flex-shrink: 0;
+  }
+}
+
+.team-summary-alert {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: rgb(var(--warning-rgb, 255 193 7) / 12%);
+  color: #92400e;
+  font-size: 0.85rem;
 }

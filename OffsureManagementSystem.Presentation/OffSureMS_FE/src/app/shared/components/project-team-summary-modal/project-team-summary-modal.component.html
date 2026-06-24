@@ -1,40 +1,65 @@
-<div class="modal-header">
+<div class="modal-header border-0 pb-0">
   <div>
     <h5 class="modal-title mb-1">Assigned team</h5>
     <p class="text-muted small mb-0">{{ projectName }}</p>
   </div>
-  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 
-<div class="modal-body p-0">
+<div class="modal-body pt-2">
   @if (members.length === 0) {
-    <p class="text-muted text-center py-4 mb-0">No members assigned yet.</p>
+    <div class="team-summary-empty text-center py-4">
+      <i class="fe fe-users team-summary-empty__icon"></i>
+      <p class="text-muted mb-0">No members assigned yet.</p>
+    </div>
   } @else {
-    <ul class="list-group list-group-flush team-summary-modal__list">
+    <p class="team-summary-hint text-muted small mb-3">
+      @if (allowMemberProfile) {
+        Click a member to view their profile.
+      } @else {
+        Team members on this project.
+      }
+    </p>
+    <ul class="team-summary-list mb-0">
       @for (m of members; track m.id) {
-        <li class="list-group-item d-flex align-items-center gap-2">
-          <span class="team-summary-modal__avatar">{{ memberInitials(m.teamMemberName) }}</span>
-          <div class="flex-grow-1 min-width-0">
-            <div class="fw-semibold text-truncate">
-              {{ m.teamMemberName }}
-              @if (highlightMemberId === m.teamMemberId) {
-                <span class="badge bg-primary-transparent text-primary ms-1">You</span>
-              }
+        <li>
+          <button
+            type="button"
+            class="team-summary-card"
+            [class.team-summary-card--self]="isSelf(m)"
+            [disabled]="!allowMemberProfile"
+            (click)="openMemberProfile(m, $event)">
+            <span class="team-summary-card__avatar">{{ memberInitials(m.teamMemberName) }}</span>
+            <div class="team-summary-card__body">
+              <div class="team-summary-card__name">
+                {{ m.teamMemberName }}
+                @if (isSelf(m)) {
+                  <span class="badge bg-primary-transparent text-primary ms-1">You</span>
+                }
+              </div>
+              <div class="team-summary-card__role">{{ roleLabel(m.role) }}</div>
             </div>
-            <small class="text-muted">{{ roleLabel(m.role) }}</small>
-          </div>
+            @if (allowMemberProfile) {
+              <i class="fe fe-chevron-right team-summary-card__chevron"></i>
+            }
+          </button>
         </li>
       }
     </ul>
   }
+
   @if (pendingSkillNames) {
-    <div class="project-detail-alert-box m-3">
+    <div class="team-summary-alert mt-3">
+      <i class="fe fe-alert-circle me-2"></i>
       Unassigned skill{{ pendingSkillNames.includes(',') ? 's' : '' }}: {{ pendingSkillNames }}
     </div>
   }
-  <p class="text-muted small px-3 pb-3 mb-0">{{ manageHint }}</p>
+
+  @if (manageHint) {
+    <p class="text-muted small mb-0 mt-3">{{ manageHint }}</p>
+  }
 </div>
 
-<div class="modal-footer">
+<div class="modal-footer border-0 pt-0">
   <button type="button" class="btn btn-primary" (click)="activeModal.close()">Close</button>
 </div>

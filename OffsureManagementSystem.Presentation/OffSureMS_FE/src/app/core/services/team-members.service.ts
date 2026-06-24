@@ -55,10 +55,6 @@ export class TeamMembersService {
     return this.api.delete<BaseResponse<TeamMemberDto>>(this.service, `${id}/skills/${skillId}`);
   }
 
-  generateCv(id: number): Observable<BaseResponse<CvStorageResultDto>> {
-    return this.api.post<BaseResponse<CvStorageResultDto>>(this.service, `${id}/cv/generate`, {});
-  }
-
   uploadCv(id: number, file: File): Observable<BaseResponse<CvStorageResultDto>> {
     const formData = new FormData();
     formData.append('file', file, file.name);

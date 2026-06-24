@@ -100,12 +100,55 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string Title { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
         public string CV { get; set; } = string.Empty;
+        public string? CvFileName { get; set; }
+        public string? CvDownloadUrl { get; set; }
+        public string ProfilePhoto { get; set; } = string.Empty;
+        public string? ProfilePhotoUrl { get; set; }
         public string PhoneNumber { get; set; } = string.Empty;
         public int? ResourceManagerId { get; set; }
         public string? ResourceManagerName { get; set; }
         public bool IsAvailable { get; set; }
         public decimal? HourlySalary { get; set; }
         public List<TeamMemberSkillDto> SkillAssignments { get; set; } = new();
+        public List<TeamMemberCertificateDto> Certificates { get; set; } = new();
+        public List<TeamMemberExperienceDto> Experiences { get; set; } = new();
+    }
+
+    public class UpsertTeamMemberCertificateDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Issuer { get; set; } = string.Empty;
+        public DateOnly IssuedDate { get; set; }
+        public DateOnly? ExpiryDate { get; set; }
+    }
+
+    public class TeamMemberCertificateDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Issuer { get; set; } = string.Empty;
+        public DateOnly IssuedDate { get; set; }
+        public DateOnly? ExpiryDate { get; set; }
+    }
+
+    public class UpsertTeamMemberExperienceDto
+    {
+        public string JobTitle { get; set; } = string.Empty;
+        public string Company { get; set; } = string.Empty;
+        public DateOnly StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public string Description { get; set; } = string.Empty;
+    }
+
+    public class TeamMemberExperienceDto
+    {
+        public int Id { get; set; }
+        public string JobTitle { get; set; } = string.Empty;
+        public string Company { get; set; } = string.Empty;
+        public DateOnly StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
     }
 
     public class TeamMemberSkillDto

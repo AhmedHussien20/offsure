@@ -12,7 +12,6 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task DeleteAsync(int id);
         Task<TeamMemberDto> AssignSkillAsync(int teamMemberId, UpsertTeamMemberSkillDto dto);
         Task<TeamMemberDto> RemoveSkillAsync(int teamMemberId, int skillId);
-        Task<CvStorageResultDto> GenerateCvAsync(int teamMemberId);
         Task<CvStorageResultDto> StoreCvAsync(int teamMemberId, Stream content, string fileName);
         Task<IReadOnlyList<TeamStructureDto>> GetTeamStructureAsync();
         Task<TeamMemberDto> GetTeamMemberProfileAsync(int userId);
@@ -20,7 +19,6 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<TeamMemberDto> UpdateAvailabilityAsync(int userId, bool isAvailable);
         Task<TeamMemberDto> AssignSkillForUserAsync(int userId, UpsertTeamMemberSkillDto dto);
         Task<TeamMemberDto> RemoveSkillForUserAsync(int userId, int skillId);
-        Task<CvStorageResultDto> GenerateCvForUserAsync(int userId);
         Task<CvStorageResultDto> StoreCvForUserAsync(int userId, Stream content, string fileName);
         Task<PagedResponse<ResourceManagerUserDto>> GetResourceManagersAsync(ResourceManagerRequest request);
         Task<ResourceManagerUserDto> CreateResourceManagerAsync(CreateResourceManagerDto dto);
@@ -34,5 +32,14 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task EnsureTeamMemberManagedByAsync(int resourceManagerUserId, int teamMemberId);
         Task ResetTeamMemberPasswordAsync(int teamMemberId, ResetTeamMemberPasswordDto dto);
         Task ResetManagedTeamMemberPasswordAsync(int resourceManagerUserId, int teamMemberId, ResetTeamMemberPasswordDto dto);
+        Task<TeamMemberDto> StoreProfilePhotoForUserAsync(int userId, Stream content, string fileName);
+        Task<(Stream Stream, string FileName, string ContentType)?> OpenCvForUserAsync(int userId);
+        Task DeleteCvForUserAsync(int userId);
+        Task<TeamMemberDto> AddCertificateForUserAsync(int userId, UpsertTeamMemberCertificateDto dto);
+        Task<TeamMemberDto> UpdateCertificateForUserAsync(int userId, int certificateId, UpsertTeamMemberCertificateDto dto);
+        Task<TeamMemberDto> DeleteCertificateForUserAsync(int userId, int certificateId);
+        Task<TeamMemberDto> AddExperienceForUserAsync(int userId, UpsertTeamMemberExperienceDto dto);
+        Task<TeamMemberDto> UpdateExperienceForUserAsync(int userId, int experienceId, UpsertTeamMemberExperienceDto dto);
+        Task<TeamMemberDto> DeleteExperienceForUserAsync(int userId, int experienceId);
     }
 }

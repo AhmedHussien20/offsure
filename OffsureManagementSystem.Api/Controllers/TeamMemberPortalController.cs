@@ -56,18 +56,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Skill removed successfully."));
         }
 
-        [HttpPost("profile/cv/generate")]
-        public async Task<ActionResult<ApiResponse<CvStorageResultDto>>> GenerateCv()
-        {
-            var result = await _teamManagementService.GenerateCvForUserAsync(GetCurrentUserId());
-            return Ok(ApiResponse<CvStorageResultDto>.Ok(result, "CV generated successfully."));
-        }
-
         [HttpPost("profile/cv/upload")]
         public async Task<ActionResult<ApiResponse<CvStorageResultDto>>> UploadCv(IFormFile file)
         {
             if (file.Length == 0)
                 return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR"));
+
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(ApiResponse<object>.Fail("CV must be 5MB or smaller."));
 
             await using var stream = file.OpenReadStream();
             var result = await _teamManagementService.StoreCvForUserAsync(
@@ -76,6 +72,93 @@ namespace OffsureManagementSystem.API.Controllers
                 file.FileName);
 
             return Ok(ApiResponse<CvStorageResultDto>.Ok(result, "CV uploaded successfully."));
+        }
+
+        [HttpGet("profile/cv/download")]
+        public async Task<IActionResult> DownloadCv()
+        {
+            var file = await _teamManagementService.OpenCvForUserAsync(GetCurrentUserId());
+            if (file is null)
+                return NotFound(ApiResponse<object>.Fail("CV not found."));
+
+            return File(file.Value.Stream, file.Value.ContentType, file.Value.FileName);
+        }
+
+        [HttpDelete("profile/cv")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteCv()
+        {
+            await _teamManagementService.DeleteCvForUserAsync(GetCurrentUserId());
+            return Ok(ApiResponse<object>.Ok(null, "CV removed successfully."));
+        }
+
+        [HttpPost("profile/photo")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> UploadProfilePhoto(IFormFile file)
+        {
+            if (file.Length == 0)
+                return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR"));
+
+            if (file.Length > 2 * 1024 * 1024)
+                return BadRequest(ApiResponse<object>.Fail("Profile photo must be 2MB or smaller."));
+
+            await using var stream = file.OpenReadStream();
+            var member = await _teamManagementService.StoreProfilePhotoForUserAsync(
+                GetCurrentUserId(),
+                stream,
+                file.FileName);
+
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Profile photo updated."));
+        }
+
+        [HttpPost("profile/certificates")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> AddCertificate(UpsertTeamMemberCertificateDto dto)
+        {
+            var member = await _teamManagementService.AddCertificateForUserAsync(GetCurrentUserId(), dto);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Certificate added."));
+        }
+
+        [HttpPut("profile/certificates/{certificateId:int}")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> UpdateCertificate(
+            int certificateId,
+            UpsertTeamMemberCertificateDto dto)
+        {
+            var member = await _teamManagementService.UpdateCertificateForUserAsync(
+                GetCurrentUserId(),
+                certificateId,
+                dto);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Certificate updated."));
+        }
+
+        [HttpDelete("profile/certificates/{certificateId:int}")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> DeleteCertificate(int certificateId)
+        {
+            var member = await _teamManagementService.DeleteCertificateForUserAsync(GetCurrentUserId(), certificateId);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Certificate removed."));
+        }
+
+        [HttpPost("profile/experiences")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> AddExperience(UpsertTeamMemberExperienceDto dto)
+        {
+            var member = await _teamManagementService.AddExperienceForUserAsync(GetCurrentUserId(), dto);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Experience added."));
+        }
+
+        [HttpPut("profile/experiences/{experienceId:int}")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> UpdateExperience(
+            int experienceId,
+            UpsertTeamMemberExperienceDto dto)
+        {
+            var member = await _teamManagementService.UpdateExperienceForUserAsync(
+                GetCurrentUserId(),
+                experienceId,
+                dto);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Experience updated."));
+        }
+
+        [HttpDelete("profile/experiences/{experienceId:int}")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> DeleteExperience(int experienceId)
+        {
+            var member = await _teamManagementService.DeleteExperienceForUserAsync(GetCurrentUserId(), experienceId);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Experience removed."));
         }
 
         private int GetCurrentUserId()

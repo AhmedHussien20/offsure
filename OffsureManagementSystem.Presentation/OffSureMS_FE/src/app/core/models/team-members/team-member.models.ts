@@ -105,17 +105,55 @@ export interface TeamMemberDto {
   firstName: string;
   lastName: string;
   email: string;
-  /** Derived display name from firstName + lastName (API convenience). */
   fullName: string;
   title: string;
   yearsOfExperience: number;
   cv: string | null;
+  cvFileName?: string | null;
+  cvDownloadUrl?: string | null;
+  profilePhoto?: string | null;
+  profilePhotoUrl?: string | null;
   phoneNumber: string;
   resourceManagerId: number | null;
   resourceManagerName: string | null;
   isAvailable: boolean;
   hourlySalary: number | null;
   skillAssignments: TeamMemberSkillDto[];
+  certificates?: TeamMemberCertificateDto[];
+  experiences?: TeamMemberExperienceDto[];
+}
+
+export interface TeamMemberCertificateDto {
+  id: number;
+  name: string;
+  issuer: string;
+  issuedDate: string;
+  expiryDate?: string | null;
+}
+
+export interface TeamMemberExperienceDto {
+  id: number;
+  jobTitle: string;
+  company: string;
+  startDate: string;
+  endDate?: string | null;
+  description: string;
+  displayOrder: number;
+}
+
+export interface UpsertTeamMemberCertificateDto {
+  name: string;
+  issuer: string;
+  issuedDate: string;
+  expiryDate?: string | null;
+}
+
+export interface UpsertTeamMemberExperienceDto {
+  jobTitle: string;
+  company: string;
+  startDate: string;
+  endDate?: string | null;
+  description?: string;
 }
 
 export interface TeamStructureDto {
@@ -132,6 +170,8 @@ export interface CvStorageResultDto {
   cvPath: string;
 }
 
+import { environment } from '../../../../environments/environment';
+
 export function teamMemberDisplayName(
   member: Pick<TeamMemberDto, 'firstName' | 'lastName' | 'fullName'> | null | undefined
 ): string {
@@ -140,4 +180,11 @@ export function teamMemberDisplayName(
   }
   const combined = `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim();
   return combined || member.fullName?.trim() || '';
+}
+
+export function resolveStorageAssetUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const apiRoot = environment.apiUrl.replace(/\/api\/?$/i, '');
+  return `${apiRoot}${path.startsWith('/') ? path : `/${path}`}`;
 }

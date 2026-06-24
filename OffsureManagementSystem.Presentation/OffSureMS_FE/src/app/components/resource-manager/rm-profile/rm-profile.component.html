@@ -16,7 +16,7 @@
             <p class="profile-header-title mb-2">{{ profile.email }}</p>
             <div class="profile-header-meta">
               <span class="profile-meta-item">
-                <span class="badge bg-primary-transparent">{{ profile.role }}</span>
+                <span class="badge bg-primary-transparent">{{ roleLabel }}</span>
               </span>
             </div>
           </div>
@@ -27,7 +27,7 @@
     <section class="card custom-card profile-tabs-card">
       <ul ngbNav #profileNav="ngbNav" [(activeId)]="activeTab" class="nav profile-tabs">
         <li [ngbNavItem]="'personal'">
-          <a ngbNavLink class="nav-link">{{ 'ACCOUNT.GENERAL_INFO' | translate }}</a>
+          <a ngbNavLink class="nav-link">Personal info</a>
           <ng-template ngbNavContent>
             <div class="profile-tab-content">
               <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
