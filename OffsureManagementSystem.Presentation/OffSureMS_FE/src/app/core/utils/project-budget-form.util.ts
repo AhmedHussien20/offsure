@@ -12,6 +12,25 @@ export function isHourlyBudgetProject(
   return project?.budgetType === 'Hourly';
 }
 
+export function isCustomProjectBudgetValid(
+  form: FormGroup,
+  requestBudget?: number | null
+): boolean {
+  const mode = form.get('budgetMode')?.value;
+  if (mode === 'sameAsRequest') {
+    return requestBudget != null && requestBudget > 0;
+  }
+
+  const customType = form.get('customBudgetType')?.value;
+  if (customType === 'hourly') {
+    const rate = Number(form.get('hourlyRate')?.value);
+    return Number.isFinite(rate) && rate > 0;
+  }
+
+  const total = Number(form.get('totalBudget')?.value);
+  return Number.isFinite(total) && total > 0;
+}
+
 export function resolveProjectBudget(form: FormGroup, requestBudget?: number | null): number | undefined {
   const mode = form.get('budgetMode')?.value;
   if (mode === 'sameAsRequest') {

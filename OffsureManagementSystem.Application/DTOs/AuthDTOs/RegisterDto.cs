@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using OffsureManagementSystem.Application.Common;
+
 namespace OffsureManagementSystem.Application.DTOs.AuthDTOs
 {
     public class RegisterDto
@@ -26,6 +28,7 @@ namespace OffsureManagementSystem.Application.DTOs.AuthDTOs
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;
-        public string Message { get; set; } = "Registration successful. Please check your email to verify your account.";
+        public string Message { get; set; } =
+            $"Registration successful. Check your email to verify your {BrandingConstants.ClientPortalName} account.";
     }
 }

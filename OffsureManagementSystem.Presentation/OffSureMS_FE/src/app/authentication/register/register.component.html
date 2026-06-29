@@ -4,10 +4,10 @@
     <div class="auth-brand-section">
       <div class="brand-content">
         <a routerLink="/landing-page" class="brand-logo-link mb-4" aria-label="Go to landing page">
-          <img src="assets/images/offshore1.png" alt="Offshore TechX" class="brand-logo-image" />
+          <img src="assets/images/offshore1.png" alt="Offshore TechX LLC" class="brand-logo-image" />
         </a>
         <p class="brand-subtitle">
-          Create your account and start managing offshore operations
+          Create your {{ clientPortalName }} account. {{ serviceProviderName }} is your service provider.
         </p>
         <div class="brand-features mt-5">
           <div class="feature-item">
@@ -202,6 +202,10 @@
                 <i class="fe fe-lock"></i>
                 Security
               </h3>
+              <p class="text-muted small mb-3">
+                After you create your account, {{ serviceProviderName }} will send a verification email to activate your
+                {{ clientPortalName }} access.
+              </p>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Password <span class="required">*</span></label>

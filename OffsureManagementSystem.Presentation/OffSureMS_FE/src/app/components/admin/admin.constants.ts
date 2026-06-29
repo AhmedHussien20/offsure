@@ -38,7 +38,23 @@ export const ADMIN_TEAM_COLUMNS: TableColumn[] = [
   { key: 'fullName', label: 'Name', type: 'text' },
   { key: 'title', label: 'Title', type: 'text' },
   { key: 'email', label: 'Email', type: 'text' },
+  { key: 'resourceManagerName', label: 'Resource manager', type: 'text' },
   { key: 'availabilityLabel', label: 'Availability', type: 'text' },
+  { key: 'accountStatusLabel', label: 'Account', type: 'text' },
+];
+
+export const RM_TEAM_COLUMNS: TableColumn[] = [
+  { key: 'fullName', label: 'Name', type: 'text' },
+  { key: 'title', label: 'Title', type: 'text' },
+  { key: 'email', label: 'Email', type: 'text' },
+  { key: 'availabilityLabel', label: 'Availability', type: 'text' },
+  { key: 'accountStatusLabel', label: 'Account', type: 'text' },
+];
+
+export const ADMIN_RESOURCE_MANAGER_COLUMNS: TableColumn[] = [
+  { key: 'fullName', label: 'Name', type: 'text' },
+  { key: 'email', label: 'Email', type: 'text' },
+  { key: 'accountStatusLabel', label: 'Account', type: 'text' },
 ];
 
 export const ADMIN_TIMESHEET_ENTRY_COLUMNS: TableColumn[] = [

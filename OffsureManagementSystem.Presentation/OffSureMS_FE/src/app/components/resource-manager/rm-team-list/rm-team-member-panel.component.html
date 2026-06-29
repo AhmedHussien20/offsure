@@ -12,17 +12,40 @@
       <div class="d-flex flex-wrap align-items-center gap-2">
         <span
           class="badge rounded-pill"
+          [class.bg-success-transparent]="member.isActive"
+          [class.bg-secondary-transparent]="!member.isActive">
+          {{ member.isActive ? 'Active account' : 'Inactive account' }}
+        </span>
+        <span
+          class="badge rounded-pill"
           [class.bg-success-transparent]="member.isAvailable"
           [class.bg-secondary-transparent]="!member.isAvailable">
           {{ member.isAvailable ? 'Available' : 'Unavailable' }}
         </span>
         @if (!editing) {
-          <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
-            Edit
-          </button>
-          <button type="button" class="btn btn-sm btn-outline-secondary no-expand" (click)="openResetPasswordModal()">
-            Reset password
-          </button>
+          @if (member.isActive) {
+            <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
+              Edit
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary no-expand" (click)="openResetPasswordModal()">
+              Reset password
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-warning no-expand"
+              [disabled]="deactivating"
+              (click)="deactivateMember()">
+              {{ deactivating ? 'Deactivating…' : 'Deactivate' }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-success no-expand"
+              [disabled]="activating"
+              (click)="activateMember()">
+              {{ activating ? 'Activating…' : 'Activate' }}
+            </button>
+          }
           <button
             type="button"
             class="btn btn-sm btn-outline-danger no-expand"
@@ -128,7 +151,11 @@
               <strong>{{ member.skillAssignments?.length ?? 0 }}</strong>
             </li>
             <li>
-              <span class="admin-detail-stat-label">Status</span>
+              <span class="admin-detail-stat-label">Account</span>
+              <strong>{{ member.isActive ? 'Active' : 'Inactive' }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Availability</span>
               <strong>{{ member.isAvailable ? 'Available' : 'Unavailable' }}</strong>
             </li>
           </ul>

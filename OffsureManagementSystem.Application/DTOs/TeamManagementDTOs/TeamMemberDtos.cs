@@ -9,11 +9,13 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public int? UserId { get; set; }
         public int? ResourceManagerId { get; set; }
         public bool? IsAvailable { get; set; }
+        public bool? IsActive { get; set; }
         public int? SkillId { get; set; }
     }
 
     public class ResourceManagerRequest : BaseApiRequest
     {
+        public bool? IsActive { get; set; }
     }
 
     public class CreateResourceManagerDto
@@ -24,6 +26,13 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string Password { get; set; } = string.Empty;
     }
 
+    public class UpdateResourceManagerDto
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
+
     public class ResourceManagerUserDto
     {
         public int Id { get; set; }
@@ -31,6 +40,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
     }
 
     public class CreateTeamMemberDto
@@ -108,6 +118,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public int? ResourceManagerId { get; set; }
         public string? ResourceManagerName { get; set; }
         public bool IsAvailable { get; set; }
+        public bool IsActive { get; set; }
         public decimal? HourlySalary { get; set; }
         public List<TeamMemberSkillDto> SkillAssignments { get; set; } = new();
         public List<TeamMemberCertificateDto> Certificates { get; set; } = new();

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OffshoreManagementSystem.Domain.Entities;
+using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.AuthDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
@@ -101,7 +102,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 LastName = user.LastName,
                 Email = user.Email,
                 CompanyName = dto.CompanyName.Trim(),
-                Message = "Registration successful. Your account is pending email verification.",
+                Message =
+                    $"Registration successful. Check your email to verify your {BrandingConstants.ClientPortalName} account.",
             };
         }
 
@@ -122,7 +124,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await EnsureUserCanAuthenticateAsync(user);
 
             if (!user.IsEmailVerified)
-                throw new AppException("Please verify your email before logging in.");
+                throw new AppException(
+                    $"Please verify your email before logging in. Check your inbox for a verification message from {BrandingConstants.ServiceProviderName}.");
 
             var accessToken = await _jwtGenerator.GenerateToken(user);
             var refreshToken = _jwtGenerator.GenerateRefreshToken();
@@ -319,7 +322,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Invalid or expired verification link.", 400);
 
             if (user.EmailVerificationExpiry is null || user.EmailVerificationExpiry < DateTime.UtcNow)
-                throw new AppException("Verification link has expired. Please register again or contact support.", 400);
+                throw new AppException(
+                    $"Verification link has expired. Please register again or contact {BrandingConstants.ServiceProviderName} support.",
+                    400);
 
             user.IsEmailVerified = true;
             user.EmailVerificationToken = null;

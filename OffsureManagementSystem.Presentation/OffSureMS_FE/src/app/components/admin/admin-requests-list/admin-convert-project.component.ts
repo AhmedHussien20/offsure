@@ -9,7 +9,7 @@ import { FormFieldConfig } from 'app/core/models/form-field-config';
 import { ProjectsService } from 'app/core/services/projects.service';
 import {
   buildProjectBudgetFields,
-  resolveProjectBudget,
+  isCustomProjectBudgetValid,
   updateProjectBudgetValidators,
 } from 'app/core/utils/project-budget-form.util';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
@@ -107,8 +107,10 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const budget = resolveProjectBudget(this.form, this.request.budget);
-    if (this.form.get('budgetMode')?.value === 'custom' && budget == null) {
+    if (
+      this.form.get('budgetMode')?.value === 'custom' &&
+      !isCustomProjectBudgetValid(this.form, this.request.budget)
+    ) {
       this.toastr.warning('Enter a valid budget.');
       return;
     }

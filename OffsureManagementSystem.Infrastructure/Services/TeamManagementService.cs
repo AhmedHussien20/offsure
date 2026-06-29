@@ -65,6 +65,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (request.IsAvailable.HasValue)
                 query = query.Where(t => t.IsAvailable == request.IsAvailable.Value);
 
+            if (request.IsActive.HasValue)
+                query = query.Where(t => t.User.IsActive == request.IsActive.Value);
+            else
+                query = query.Where(t => t.User.IsActive);
+
             if (request.SkillId.HasValue)
                 query = query.Where(t => t.TeamMemberSkills.Any(ts => ts.SkillId == request.SkillId.Value));
 
@@ -145,7 +150,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 YearsOfExperience = dto.YearsOfExperience,
                 CV = string.Empty,
                 PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty,
-                ResourceManagerId = dto.ResourceManagerId,
+                ResourceManagerId = dto.ResourceManagerId is > 0 ? dto.ResourceManagerId : null,
                 IsAvailable = dto.IsAvailable,
                 HourlySalary = dto.HourlySalary,
                 CreatedAt = DateTime.UtcNow
@@ -190,7 +195,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             member.Title = dto.Title.Trim();
             member.YearsOfExperience = dto.YearsOfExperience;
             member.PhoneNumber = dto.PhoneNumber?.Trim() ?? string.Empty;
-            member.ResourceManagerId = dto.ResourceManagerId;
+            member.ResourceManagerId = dto.ResourceManagerId is > 0 ? dto.ResourceManagerId : null;
             member.IsAvailable = dto.IsAvailable;
             member.HourlySalary = dto.HourlySalary;
             member.UpdatedAt = DateTime.UtcNow;
@@ -263,6 +268,97 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             _teamMemberRepo.SoftDelete(member);
             await _teamMemberRepo.SaveChangesAsync();
+        }
+
+        public async Task<TeamMemberDto> DeactivateAsync(int id)
+        {
+            var member = await _teamMemberRepo
+                .Query()
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+
+            if (member is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (member.User is null || member.User.IsDeleted)
+                throw new AppException("Resource not found.", 404);
+
+            if (!member.User.IsActive)
+                throw new AppException("Team member is already inactive.", 400);
+
+            var hasActiveProjectAssignments = await _projectAssignmentRepo
+                .GetAll(a => a.TeamMemberId == id && a.IsActive)
+                .AnyAsync();
+
+            if (hasActiveProjectAssignments)
+                throw new AppException("Cannot deactivate a team member who is assigned to a project. Unassign them first.", 400);
+
+            member.User.IsActive = false;
+            member.User.RefreshToken = null;
+            member.User.RefreshTokenExpiry = null;
+            member.User.UpdatedAt = DateTime.UtcNow;
+            member.IsAvailable = false;
+            member.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                member.User,
+                nameof(member.User.IsActive),
+                nameof(member.User.RefreshToken),
+                nameof(member.User.RefreshTokenExpiry),
+                nameof(member.User.UpdatedAt));
+
+            _teamMemberRepo.SaveInclude(
+                member,
+                nameof(member.IsAvailable),
+                nameof(member.UpdatedAt));
+
+            await _teamMemberRepo.SaveChangesAsync();
+
+            return await GetByIdAsync(id);
+        }
+
+        public async Task<TeamMemberDto> ActivateAsync(int id)
+        {
+            var member = await _teamMemberRepo
+                .Query()
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+
+            if (member is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (member.User is null || member.User.IsDeleted)
+                throw new AppException("Resource not found.", 404);
+
+            if (member.User.IsActive)
+                throw new AppException("Team member is already active.", 400);
+
+            if (member.ResourceManagerId is > 0)
+                await ValidateResourceManagerAsync(member.ResourceManagerId, id);
+
+            member.User.IsActive = true;
+            member.User.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                member.User,
+                nameof(member.User.IsActive),
+                nameof(member.User.UpdatedAt));
+
+            await _teamMemberRepo.SaveChangesAsync();
+
+            return await GetByIdAsync(id);
+        }
+
+        public async Task<TeamMemberDto> DeactivateManagedTeamMemberAsync(int resourceManagerUserId, int teamMemberId)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            return await DeactivateAsync(teamMemberId);
+        }
+
+        public async Task<TeamMemberDto> ActivateManagedTeamMemberAsync(int resourceManagerUserId, int teamMemberId)
+        {
+            await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
+            return await ActivateAsync(teamMemberId);
         }
 
         public async Task<TeamMemberDto> AssignSkillAsync(int teamMemberId, UpsertTeamMemberSkillDto dto)
@@ -439,7 +535,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private async Task<TeamMember> GetTeamMemberEntityForUserAsync(int userId)
         {
             var member = await BuildBaseQuery()
-                .FirstOrDefaultAsync(t => t.UserId == userId);
+                .FirstOrDefaultAsync(t => t.UserId == userId && t.User.IsActive);
 
             if (member is null)
                 throw new AppException("Team member profile not found for current user.", 404);
@@ -450,7 +546,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private IQueryable<TeamMember> BuildBaseQuery()
         {
             return _teamMemberRepo.Query()
-                .Where(t => !t.IsDeleted && t.User.IsActive && !t.User.IsDeleted)
+                .Where(t => !t.IsDeleted && !t.User.IsDeleted)
                 .Include(t => t.User)
                 .Include(t => t.ResourceManager)
                 .Include(t => t.TeamMemberSkills)
@@ -558,7 +654,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private async Task ValidateResourceManagerAsync(int? resourceManagerId, int? teamMemberId = null)
         {
             if (!resourceManagerId.HasValue || resourceManagerId.Value <= 0)
-                throw new AppException("Resource manager is required.", 400);
+                return;
 
             var manager = await _userRepo
                 .Query()
@@ -586,8 +682,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(u => u.Role)
                 .Where(u =>
                     u.Role.Name == nameof(UserRole.ResourceManager)
-                    && u.IsActive
                     && !u.IsDeleted);
+
+            if (request.IsActive.HasValue)
+                query = query.Where(u => u.IsActive == request.IsActive.Value);
+            else
+                query = query.Where(u => u.IsActive);
 
             if (!string.IsNullOrWhiteSpace(request.searchKey))
             {
@@ -648,6 +748,114 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _userRepo.SaveChangesAsync();
 
             return MapResourceManagerUser(user);
+        }
+
+        public async Task<ResourceManagerUserDto> GetResourceManagerByIdAsync(int userId)
+        {
+            var user = await GetResourceManagerEntityAsync(userId, includeInactive: true);
+            return MapResourceManagerUser(user);
+        }
+
+        public async Task<ResourceManagerUserDto> UpdateResourceManagerAsync(int userId, UpdateResourceManagerDto dto)
+        {
+            ValidateUserInput(dto.FirstName, dto.LastName, dto.Email);
+
+            var user = await GetResourceManagerEntityAsync(userId, includeInactive: true);
+
+            var normalizedEmail = NormalizeEmail(dto.Email);
+            var emailExists = await _userRepo
+                .GetAll(u => u.Email == normalizedEmail && u.Id != user.Id)
+                .AnyAsync();
+
+            if (emailExists)
+                throw new AppException("Email already exists.", 400);
+
+            user.FirstName = dto.FirstName.Trim();
+            user.LastName = dto.LastName.Trim();
+            user.Email = normalizedEmail;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.FirstName),
+                nameof(user.LastName),
+                nameof(user.Email),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+
+            return MapResourceManagerUser(user);
+        }
+
+        public async Task<ResourceManagerUserDto> DeactivateResourceManagerAsync(int userId)
+        {
+            var user = await GetResourceManagerEntityAsync(userId, includeInactive: true);
+
+            if (!user.IsActive)
+                throw new AppException("Resource manager is already inactive.", 400);
+
+            await EnsureResourceManagerCanBeRemovedAsync(user.Id);
+
+            user.IsActive = false;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.IsActive),
+                nameof(user.RefreshToken),
+                nameof(user.RefreshTokenExpiry),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+
+            return MapResourceManagerUser(user);
+        }
+
+        public async Task<ResourceManagerUserDto> ActivateResourceManagerAsync(int userId)
+        {
+            var user = await GetResourceManagerEntityAsync(userId, includeInactive: true);
+
+            if (user.IsActive)
+                throw new AppException("Resource manager is already active.", 400);
+
+            user.IsActive = true;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.IsActive),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+
+            return MapResourceManagerUser(user);
+        }
+
+        public async Task DeleteResourceManagerAsync(int userId)
+        {
+            var user = await GetResourceManagerEntityAsync(userId, includeInactive: true);
+
+            await EnsureResourceManagerCanBeRemovedAsync(user.Id);
+
+            user.IsActive = false;
+            user.IsDeleted = true;
+            user.DeletedAt = DateTime.UtcNow;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.IsActive),
+                nameof(user.IsDeleted),
+                nameof(user.DeletedAt),
+                nameof(user.RefreshToken),
+                nameof(user.RefreshTokenExpiry),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
         }
 
         public async Task<PagedResponse<TeamMemberDto>> GetManagedTeamMembersAsync(
@@ -786,8 +994,38 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                FullName = UserDisplayName.FromUser(user)
+                FullName = UserDisplayName.FromUser(user),
+                IsActive = user.IsActive
             };
+        }
+
+        private async Task<User> GetResourceManagerEntityAsync(int userId, bool includeInactive = false)
+        {
+            var user = await _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u =>
+                    u.Id == userId
+                    && !u.IsDeleted
+                    && u.Role.Name == nameof(UserRole.ResourceManager));
+
+            if (user is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (!includeInactive && !user.IsActive)
+                throw new AppException("Resource not found.", 404);
+
+            return user;
+        }
+
+        private async Task EnsureResourceManagerCanBeRemovedAsync(int userId)
+        {
+            var hasManagedTeam = await _teamMemberRepo
+                .GetAll(t => t.ResourceManagerId == userId && !t.IsDeleted)
+                .AnyAsync();
+
+            if (hasManagedTeam)
+                throw new AppException("Cannot remove a resource manager who still has team members assigned. Reassign their team first.", 400);
         }
 
         private async Task ValidateSkillAssignmentsAsync(IEnumerable<UpsertTeamMemberSkillDto> assignments)
@@ -900,6 +1138,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ResourceManagerId = member.ResourceManagerId,
                 ResourceManagerName = UserDisplayName.FromUser(member.ResourceManager),
                 IsAvailable = member.IsAvailable,
+                IsActive = member.User?.IsActive ?? false,
                 HourlySalary = member.HourlySalary,
                 SkillAssignments = member.TeamMemberSkills
                     .OrderBy(s => s.Skill.Name)

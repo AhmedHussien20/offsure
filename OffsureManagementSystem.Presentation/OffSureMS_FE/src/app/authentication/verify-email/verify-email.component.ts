@@ -3,6 +3,10 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from 'app/core/services/auth.service';
+import {
+  CLIENT_PORTAL_NAME,
+  SERVICE_PROVIDER_NAME,
+} from 'app/core/constants/branding.constants';
 
 type VerifyState = 'loading' | 'success' | 'error';
 
@@ -14,8 +18,11 @@ type VerifyState = 'loading' | 'success' | 'error';
   styleUrls: ['../login/login.component.scss'],
 })
 export class VerifyEmailComponent implements OnInit {
+  readonly serviceProviderName = SERVICE_PROVIDER_NAME;
+  readonly clientPortalName = CLIENT_PORTAL_NAME;
+
   state: VerifyState = 'loading';
-  message = 'Verifying your email...';
+  message = `Verifying your email with ${SERVICE_PROVIDER_NAME}...`;
 
   constructor(
     private route: ActivatedRoute,
@@ -36,12 +43,16 @@ export class VerifyEmailComponent implements OnInit {
     this.authService.verifyEmail(userId, token).subscribe({
       next: res => {
         this.state = 'success';
-        this.message = res.message || 'Email verified successfully. You can now log in.';
+        this.message =
+          res.message ||
+          `Your email has been verified. You can now sign in to the ${CLIENT_PORTAL_NAME}.`;
         this.toastr.success(this.message);
       },
       error: err => {
         this.setError(
-          err?.error?.message || err?.message || 'Email verification failed.'
+          err?.error?.message ||
+            err?.message ||
+            `Email verification failed. Please try again or contact ${SERVICE_PROVIDER_NAME} support.`
         );
       },
     });

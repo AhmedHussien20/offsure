@@ -343,6 +343,32 @@
   color: #b91c1c;
 }
 
+.milestone-editor__issues {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+
+.milestone-editor__issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #b91c1c;
+
+  i {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 576px) {
   .milestone-item__amount {
     font-size: 1rem;

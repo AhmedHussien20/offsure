@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OffsureManagementSystem.Application.DTOs.AuthDTOs;
+using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Interfaces.Services;
 
 namespace OffsureManagementSystem.API.Controllers
@@ -47,14 +48,18 @@ namespace OffsureManagementSystem.API.Controllers
         public async Task<IActionResult> VerifyEmail([FromQuery] int userId, [FromQuery] string token)
         {
             await _authService.VerifyEmailAsync(userId, token);
-            return Success<string>(null!, "Email verified successfully. You can now log in.");
+            return Success<string>(
+                null!,
+                $"Email verified successfully. You can now sign in to the {BrandingConstants.ClientPortalName}.");
         }
 
         [HttpGet("verify-email")]
         public async Task<IActionResult> VerifyEmailGet([FromQuery] int userId, [FromQuery] string token)
         {
             await _authService.VerifyEmailAsync(userId, token);
-            return Success<string>(null!, "Email verified successfully. You can now log in.");
+            return Success<string>(
+                null!,
+                $"Email verified successfully. You can now sign in to the {BrandingConstants.ClientPortalName}.");
         }
 
         [HttpPost("refresh-token")]

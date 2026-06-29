@@ -66,6 +66,20 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<object>.Ok(null!, "Team member deleted successfully."));
         }
 
+        [HttpPatch("team-members/{id:int}/deactivate")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> DeactivateTeamMember(int id)
+        {
+            var member = await _teamManagementService.DeactivateManagedTeamMemberAsync(GetCurrentUserId(), id);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member deactivated successfully."));
+        }
+
+        [HttpPatch("team-members/{id:int}/activate")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> ActivateTeamMember(int id)
+        {
+            var member = await _teamManagementService.ActivateManagedTeamMemberAsync(GetCurrentUserId(), id);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member activated successfully."));
+        }
+
         [HttpPost("team-members/{id:int}/skills")]
         public async Task<ActionResult<ApiResponse<TeamMemberDto>>> AssignSkill(
             int id,

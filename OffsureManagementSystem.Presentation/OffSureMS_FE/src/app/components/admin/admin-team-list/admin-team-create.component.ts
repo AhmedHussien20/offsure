@@ -59,7 +59,6 @@ export class AdminTeamCreateComponent {
       label: 'Resource manager',
       selectType: 'simple',
       options: [],
-      validations: { required: true },
     },
   ];
 
@@ -79,7 +78,7 @@ export class AdminTeamCreateComponent {
       yearsOfExperience: [null],
       hourlySalary: [null],
       isAvailable: [true],
-      resourceManagerId: [null, Validators.required],
+      resourceManagerId: [null],
     });
     this.loadResourceManagers();
   }
@@ -91,8 +90,8 @@ export class AdminTeamCreateComponent {
         const rmField = this.formConfig.find(f => f.name === 'resourceManagerId');
         if (rmField) {
           rmField.options = this.resourceManagers.map(rm => ({
-            id: rm.id,
-            name: rm.fullName || `${rm.firstName} ${rm.lastName}`.trim(),
+            label: rm.fullName || `${rm.firstName} ${rm.lastName}`.trim(),
+            value: rm.id,
           }));
         }
       },
@@ -121,7 +120,10 @@ export class AdminTeamCreateComponent {
         phoneNumber: raw.phoneNumber?.trim(),
         yearsOfExperience: raw.yearsOfExperience != null ? Number(raw.yearsOfExperience) : undefined,
         hourlySalary: raw.hourlySalary != null && raw.hourlySalary !== '' ? Number(raw.hourlySalary) : undefined,
-        resourceManagerId: Number(raw.resourceManagerId),
+        resourceManagerId:
+          raw.resourceManagerId != null && raw.resourceManagerId !== ''
+            ? Number(raw.resourceManagerId)
+            : undefined,
         isAvailable: true,
         skillAssignments: this.skillAssignments.length ? this.skillAssignments : undefined,
       })

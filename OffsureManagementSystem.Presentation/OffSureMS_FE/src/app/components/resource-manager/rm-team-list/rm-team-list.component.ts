@@ -9,12 +9,13 @@ import { GenericTableComponent } from 'app/shared/components/generic-table/gener
 import { SharedModule } from 'app/shared/shared.module';
 import {
   AVAILABILITY_FILTER_OPTIONS,
+  ACTIVE_FILTER_OPTIONS,
   LIST_FILTER_LABELS,
 } from 'app/core/constants/list-filter.constants';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
-import { ADMIN_TEAM_COLUMNS } from '../../admin/admin.constants';
+import { RM_TEAM_COLUMNS } from '../../admin/admin.constants';
 import { RmTeamCreateComponent } from './rm-team-create.component';
 import { RmTeamMemberPanelComponent } from './rm-team-member-panel.component';
 
@@ -25,8 +26,8 @@ import { RmTeamMemberPanelComponent } from './rm-team-member-panel.component';
   templateUrl: './rm-team-list.component.html',
 })
 export class RmTeamListComponent implements OnInit, OnDestroy {
-  columns = ADMIN_TEAM_COLUMNS;
-  data: Array<TeamMemberDto & { availabilityLabel?: string }> = [];
+  columns = RM_TEAM_COLUMNS;
+  data: Array<TeamMemberDto & { availabilityLabel?: string; accountStatusLabel?: string }> = [];
   expandedRowId: number | null = null;
   totalItems = 0;
   totalPages = 0;
@@ -38,11 +39,14 @@ export class RmTeamListComponent implements OnInit, OnDestroy {
     pageSize: 10,
     sortColumn: 'Id',
     sortDirection: 'ASC',
-    filterTypes: { isAvailable: 'dropdown' },
+    filterTypes: { isAvailable: 'dropdown', isActive: 'dropdown' },
   });
 
   labels: Record<string, string> = { ...LIST_FILTER_LABELS };
-  dropdownOptions = { isAvailable: AVAILABILITY_FILTER_OPTIONS };
+  dropdownOptions = {
+    isAvailable: AVAILABILITY_FILTER_OPTIONS,
+    isActive: ACTIVE_FILTER_OPTIONS,
+  };
 
   private readonly destroy$ = new Subject<void>();
 
@@ -117,11 +121,14 @@ export class RmTeamListComponent implements OnInit, OnDestroy {
     });
   }
 
-  private mapTeamRow(member: TeamMemberDto): TeamMemberDto & { availabilityLabel?: string } {
+  private mapTeamRow(
+    member: TeamMemberDto
+  ): TeamMemberDto & { availabilityLabel?: string; accountStatusLabel?: string } {
     return {
       ...member,
       fullName: teamMemberDisplayName(member),
       availabilityLabel: member.isAvailable ? 'Available' : 'Unavailable',
+      accountStatusLabel: member.isActive ? 'Active' : 'Inactive',
     };
   }
 

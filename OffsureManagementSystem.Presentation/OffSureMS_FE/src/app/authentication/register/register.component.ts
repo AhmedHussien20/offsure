@@ -14,6 +14,10 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AuthService } from 'app/core/services/auth.service';
 import { RegisterRequest } from 'app/core/models/auth/register-request.model';
+import {
+  CLIENT_PORTAL_NAME,
+  SERVICE_PROVIDER_NAME,
+} from 'app/core/constants/branding.constants';
 
 interface RegisterStep {
   id: number;
@@ -35,6 +39,9 @@ interface PasswordRule {
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent implements OnInit, OnDestroy {
+  readonly serviceProviderName = SERVICE_PROVIDER_NAME;
+  readonly clientPortalName = CLIENT_PORTAL_NAME;
+
   registerForm!: FormGroup;
   showPassword = false;
   showConfirmPassword = false;
@@ -276,12 +283,15 @@ export class RegisterComponent implements OnInit, OnDestroy {
     };
 
     this.authService.register(registerRequest).subscribe({
-      next: () => {
+      next: res => {
         this.isLoading = false;
-        this.toastr.success('Account created successfully! Redirecting to login...');
+        const message =
+          res.message ||
+          `Account created. Check your inbox for a verification email from ${SERVICE_PROVIDER_NAME} to activate your ${CLIENT_PORTAL_NAME} account.`;
+        this.toastr.success(message, 'Registration successful', { timeOut: 8000 });
         setTimeout(() => {
           this.router.navigate(['/auth/login']);
-        }, 1500);
+        }, 2500);
       },
       error: error => {
         this.isLoading = false;

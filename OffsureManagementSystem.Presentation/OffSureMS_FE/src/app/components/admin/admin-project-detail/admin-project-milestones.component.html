@@ -117,13 +117,36 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label small text-muted mb-1">Start date</label>
-                <input type="date" class="form-control form-control-sm" [(ngModel)]="draft.startDate" [readonly]="isDraftCompleted(draft)" />
+                <input
+                  type="date"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="draft.startDate"
+                  [readonly]="isDraftCompleted(draft)"
+                  [min]="projectStartDate || null"
+                  [max]="draft.endDate || projectDeadlineDate || null" />
               </div>
               <div class="col-md-6">
                 <label class="form-label small text-muted mb-1">End date</label>
-                <input type="date" class="form-control form-control-sm" [(ngModel)]="draft.endDate" [readonly]="isDraftCompleted(draft)" />
+                <input
+                  type="date"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="draft.endDate"
+                  [readonly]="isDraftCompleted(draft)"
+                  [min]="draft.startDate || projectStartDate || null"
+                  [max]="projectDeadlineDate || null" />
               </div>
             </div>
+          </div>
+        }
+
+        @if (draftValidationIssues.length) {
+          <div class="milestone-editor__issues" role="alert" aria-live="polite">
+            @for (issue of draftValidationIssues; track issue) {
+              <span class="milestone-editor__issue">
+                <i class="fe fe-alert-circle" aria-hidden="true"></i>
+                {{ issue }}
+              </span>
+            }
           </div>
         }
 
@@ -142,7 +165,12 @@
             </span>
           </div>
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-primary" [disabled]="saving || !draftsValid" (click)="saveMilestones()">
+            <button
+              type="button"
+              class="btn btn-sm btn-primary"
+              [disabled]="saving || !draftsValid"
+              [attr.title]="draftValidationIssues[0] || null"
+              (click)="saveMilestones()">
               {{ saving ? 'Saving…' : 'Save phases' }}
             </button>
             <button type="button" class="btn btn-sm btn-light" [disabled]="saving" (click)="cancelEditing()">Cancel</button>

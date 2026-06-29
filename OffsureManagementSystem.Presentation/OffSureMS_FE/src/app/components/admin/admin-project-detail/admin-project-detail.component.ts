@@ -865,6 +865,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         lastName: '',
         fullName: rm.fullName,
         email: rm.email,
+        isActive: true,
       });
     });
   }

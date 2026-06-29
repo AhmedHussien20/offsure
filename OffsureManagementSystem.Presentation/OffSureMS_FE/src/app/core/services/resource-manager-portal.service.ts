@@ -51,6 +51,14 @@ export class ResourceManagerPortalService {
     return this.api.delete<BaseResponse<object>>(this.service, `team-members/${id}`);
   }
 
+  deactivateTeamMember(id: number): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.patch<BaseResponse<TeamMemberDto>>(this.service, `team-members/${id}/deactivate`, {});
+  }
+
+  activateTeamMember(id: number): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.patch<BaseResponse<TeamMemberDto>>(this.service, `team-members/${id}/activate`, {});
+  }
+
   assignSkill(id: number, dto: UpsertTeamMemberSkillDto): Observable<BaseResponse<TeamMemberDto>> {
     return this.api.post<BaseResponse<TeamMemberDto>>(this.service, `team-members/${id}/skills`, dto);
   }

@@ -9,6 +9,7 @@ import { GenericTableComponent } from 'app/shared/components/generic-table/gener
 import { SharedModule } from 'app/shared/shared.module';
 import {
   AVAILABILITY_FILTER_OPTIONS,
+  ACTIVE_FILTER_OPTIONS,
   LIST_FILTER_LABELS,
 } from 'app/core/constants/list-filter.constants';
 import { Subject } from 'rxjs';
@@ -26,7 +27,7 @@ import { AdminTeamMemberPanelComponent } from './admin-team-member-panel.compone
 })
 export class AdminTeamListComponent implements OnInit, OnDestroy {
   columns = ADMIN_TEAM_COLUMNS;
-  data: Array<TeamMemberDto & { availabilityLabel?: string }> = [];
+  data: Array<TeamMemberDto & { availabilityLabel?: string; resourceManagerName?: string; accountStatusLabel?: string }> = [];
   expandedRowId: number | null = null;
   totalItems = 0;
   totalPages = 0;
@@ -38,11 +39,15 @@ export class AdminTeamListComponent implements OnInit, OnDestroy {
     pageSize: 10,
     sortColumn: 'Id',
     sortDirection: 'ASC',
-    filterTypes: { isAvailable: 'dropdown' },
+    filterTypes: { isAvailable: 'dropdown', resourceManagerId: 'dropdown', isActive: 'dropdown' },
   });
 
   labels: Record<string, string> = { ...LIST_FILTER_LABELS };
-  dropdownOptions = { isAvailable: AVAILABILITY_FILTER_OPTIONS };
+  dropdownOptions: Record<string, { id: number | boolean; name: string }[]> = {
+    isAvailable: AVAILABILITY_FILTER_OPTIONS,
+    isActive: ACTIVE_FILTER_OPTIONS,
+    resourceManagerId: [],
+  };
 
   private readonly destroy$ = new Subject<void>();
 
@@ -53,6 +58,7 @@ export class AdminTeamListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.loadResourceManagers();
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = Number(params.get('id'));
       this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;
@@ -119,12 +125,31 @@ export class AdminTeamListComponent implements OnInit, OnDestroy {
       });
   }
 
-  private mapTeamRow(member: TeamMemberDto): TeamMemberDto & { availabilityLabel?: string } {
+  private mapTeamRow(
+    member: TeamMemberDto
+  ): TeamMemberDto & { availabilityLabel?: string; resourceManagerName?: string; accountStatusLabel?: string } {
     return {
       ...member,
       fullName: teamMemberDisplayName(member),
+      resourceManagerName: member.resourceManagerName?.trim() || '—',
       availabilityLabel: member.isAvailable ? 'Available' : 'Unavailable',
+      accountStatusLabel: member.isActive ? 'Active' : 'Inactive',
     };
+  }
+
+  private loadResourceManagers(): void {
+    this.teamMembersService.getResourceManagers({ pageIndex: 1, pageSize: 200 }).subscribe({
+      next: res => {
+        const managers = res.data?.data ?? [];
+        this.dropdownOptions = {
+          ...this.dropdownOptions,
+          resourceManagerId: managers.map(rm => ({
+            id: rm.id,
+            name: rm.fullName || `${rm.firstName} ${rm.lastName}`.trim(),
+          })),
+        };
+      },
+    });
   }
 
   private ensureExpandedMemberVisible(): void {

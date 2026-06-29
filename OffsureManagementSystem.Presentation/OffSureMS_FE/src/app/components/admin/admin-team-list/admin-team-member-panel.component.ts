@@ -34,6 +34,8 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
   loading = false;
   saving = false;
   deleting = false;
+  deactivating = false;
+  activating = false;
   editing = false;
   loadError: string | null = null;
   member: TeamMemberDto | null = null;
@@ -63,7 +65,6 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
       label: 'Resource manager',
       selectType: 'simple',
       options: [],
-      validations: { required: true },
     },
   ];
 
@@ -85,7 +86,7 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
       yearsOfExperience: [null],
       hourlySalary: [null],
       isAvailable: [true],
-      resourceManagerId: [null, Validators.required],
+      resourceManagerId: [null],
     });
     this.loadResourceManagers();
   }
@@ -114,6 +115,9 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
   }
 
   startEdit(): void {
+    if (!this.member?.isActive) {
+      return;
+    }
     if (!this.member) {
       return;
     }
@@ -172,7 +176,10 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
         hourlySalary:
           raw.hourlySalary != null && raw.hourlySalary !== '' ? Number(raw.hourlySalary) : undefined,
         isAvailable: !!raw.isAvailable,
-        resourceManagerId: Number(raw.resourceManagerId),
+        resourceManagerId:
+          raw.resourceManagerId != null && raw.resourceManagerId !== ''
+            ? Number(raw.resourceManagerId)
+            : undefined,
         skillAssignments: this.skillAssignments.length ? this.skillAssignments : [],
       })
       .subscribe({
@@ -191,6 +198,72 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
           this.saving = false;
         },
       });
+  }
+
+  async deactivateMember(): Promise<void> {
+    if (!this.member?.isActive) {
+      return;
+    }
+
+    const name = `${this.member.firstName} ${this.member.lastName}`.trim() || 'this member';
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Deactivate team member',
+      message: `Deactivate ${name}? They will no longer be able to sign in.`,
+      confirmLabel: 'Deactivate',
+      variant: 'warning',
+      icon: 'ti-user-off',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.deactivating = true;
+    this.teamMembersService.deactivate(this.member.id).subscribe({
+      next: res => {
+        this.member = res.data ?? this.member;
+        this.patchForm(this.member!);
+        this.editing = false;
+        this.toastr.success('Team member deactivated.');
+        this.deactivating = false;
+        this.saved.emit();
+      },
+      error: err => {
+        this.toastr.error(err?.error?.message || 'Failed to deactivate team member.');
+        this.deactivating = false;
+      },
+    });
+  }
+
+  async activateMember(): Promise<void> {
+    if (!this.member || this.member.isActive) {
+      return;
+    }
+
+    const name = `${this.member.firstName} ${this.member.lastName}`.trim() || 'this member';
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Activate team member',
+      message: `Activate ${name}? They will be able to sign in again.`,
+      confirmLabel: 'Activate',
+      variant: 'primary',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.activating = true;
+    this.teamMembersService.activate(this.member.id).subscribe({
+      next: res => {
+        this.member = res.data ?? this.member;
+        this.patchForm(this.member!);
+        this.toastr.success('Team member activated.');
+        this.activating = false;
+        this.saved.emit();
+      },
+      error: err => {
+        this.toastr.error(err?.error?.message || 'Failed to activate team member.');
+        this.activating = false;
+      },
+    });
   }
 
   async deleteMember(): Promise<void> {
@@ -272,8 +345,8 @@ export class AdminTeamMemberPanelComponent implements OnChanges, OnDestroy {
         const rmField = this.formConfig.find(f => f.name === 'resourceManagerId');
         if (rmField) {
           rmField.options = this.resourceManagers.map(rm => ({
-            id: rm.id,
-            name: rm.fullName || `${rm.firstName} ${rm.lastName}`.trim(),
+            label: rm.fullName || `${rm.firstName} ${rm.lastName}`.trim(),
+            value: rm.id,
           }));
         }
       },

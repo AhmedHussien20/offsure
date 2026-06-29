@@ -36,6 +36,7 @@ export const LIST_FILTER_LABELS = {
   status: 'Status',
   isActive: 'Active',
   isAvailable: 'Availability',
+  resourceManagerId: 'Resource manager',
   isVisible: 'Visible on landing',
   city: 'City',
   country: 'Country',

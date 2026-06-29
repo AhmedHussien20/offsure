@@ -9,6 +9,7 @@ import {
 } from 'app/core/models/projects/project.models';
 import { ProjectsService } from 'app/core/services/projects.service';
 import {
+  getMilestoneDraftValidationIssues,
   milestonePaymentAmount,
   milestonePercentageTotal,
   milestoneStatusLabel,
@@ -94,7 +95,7 @@ export class AdminProjectMilestonesComponent implements OnChanges {
     return !this.locked && (this.milestones.length === 0 || this.hasEditableMilestones);
   }
 
-  isDraftCompleted(draft: MilestoneDraft): boolean {
+  isDraftCompleted(draft: { status?: MilestoneStatus }): boolean {
     return draft.status === MilestoneStatus.Completed;
   }
 
@@ -106,19 +107,26 @@ export class AdminProjectMilestonesComponent implements OnChanges {
     return milestonePercentageTotal(this.drafts);
   }
 
-  get draftsValid(): boolean {
-    const definingAll = this.milestones.length === 0;
-    const countOk = definingAll
-      ? this.drafts.length === this.maxMilestones && this.maxMilestones > 0
-      : this.drafts.length > 0 && this.drafts.length <= this.maxMilestones;
+  get draftValidationIssues(): string[] {
+    return getMilestoneDraftValidationIssues(this.drafts, {
+      maxMilestones: this.maxMilestones,
+      isInitialDefinition: this.milestones.length === 0,
+      projectStartDate: this.project.startDate,
+      projectTargetEndDate: this.project.targetEndDate,
+      isDraftCompleted: d => this.isDraftCompleted(d),
+    });
+  }
 
-    return (
-      countOk &&
-      this.drafts.every(
-        d => this.isDraftCompleted(d) || (d.name.trim().length > 0 && Number(d.paymentPercentage) > 0)
-      ) &&
-      milestonesPercentagesValid(this.drafts)
-    );
+  get draftsValid(): boolean {
+    return this.draftValidationIssues.length === 0;
+  }
+
+  get projectStartDate(): string {
+    return this.project.startDate?.slice(0, 10) ?? '';
+  }
+
+  get projectDeadlineDate(): string {
+    return this.project.targetEndDate?.slice(0, 10) ?? '';
   }
 
   get allocatedPercent(): number {
@@ -206,6 +214,8 @@ export class AdminProjectMilestonesComponent implements OnChanges {
         description: '',
         order,
         paymentPercentage: 0,
+        startDate: '',
+        endDate: '',
       },
     ];
   }
@@ -219,11 +229,12 @@ export class AdminProjectMilestonesComponent implements OnChanges {
 
   saveMilestones(): void {
     if (!this.draftsValid || this.saving) {
-      const hint =
-        this.milestones.length === 0
+      const message =
+        this.draftValidationIssues[0] ??
+        (this.milestones.length === 0
           ? `Define all ${this.maxMilestones} phases with names, dates, and percentages totaling 100%.`
-          : 'Enter names and percentages that total 100%.';
-      this.toastr.warning(hint);
+          : 'Enter names, dates, and percentages that total 100%.');
+      this.toastr.warning(message);
       return;
     }
 

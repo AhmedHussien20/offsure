@@ -476,6 +476,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException($"This project allows up to {project.MilestoneCount} milestones.", 400);
 
             ValidateMilestonePercentages(items);
+            ValidateMilestoneDates(items, project.StartDate, project.TargetEndDate);
 
             var budget = project.Budget ?? 0;
             var incomingIds = items.Where(m => m.Id.HasValue && m.Id.Value > 0).Select(m => m.Id!.Value).ToHashSet();
@@ -688,6 +689,59 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Milestone payment percentages must total 100%.", 400);
         }
 
+        private static void ValidateMilestoneDates(
+            IReadOnlyList<UpsertProjectMilestoneItemDto> items,
+            DateTime? projectStartDate,
+            DateTime? projectTargetEndDate)
+        {
+            var projectStart = projectStartDate?.Date;
+            var projectEnd = projectTargetEndDate?.Date;
+            var dated = new List<(int Order, string Label, DateTime Start, DateTime End)>();
+
+            foreach (var item in items.OrderBy(m => m.Order).ThenBy(m => m.Name))
+            {
+                var label = string.IsNullOrWhiteSpace(item.Name)
+                    ? $"Phase {item.Order}"
+                    : item.Name.Trim();
+
+                if (!item.StartDate.HasValue || !item.EndDate.HasValue)
+                    throw new AppException($"{label}: enter both start and end dates.", 400);
+
+                var start = item.StartDate.Value.Date;
+                var end = item.EndDate.Value.Date;
+
+                if (start > end)
+                    throw new AppException($"{label}: start date must be on or before the end date.", 400);
+
+                if (projectStart.HasValue && start < projectStart.Value)
+                    throw new AppException(
+                        $"{label}: start date cannot be before the project start ({projectStart:yyyy-MM-dd}).",
+                        400);
+
+                if (projectEnd.HasValue && end > projectEnd.Value)
+                    throw new AppException(
+                        $"{label}: end date cannot be after the project deadline ({projectEnd:yyyy-MM-dd}).",
+                        400);
+
+                dated.Add((item.Order, label, start, end));
+            }
+
+            for (var i = 0; i < dated.Count; i++)
+            {
+                for (var j = i + 1; j < dated.Count; j++)
+                {
+                    var first = dated[i];
+                    var second = dated[j];
+                    if (first.Start <= second.End && second.Start <= first.End)
+                    {
+                        throw new AppException(
+                            $"Phases \"{first.Label}\" and \"{second.Label}\" have overlapping dates.",
+                            400);
+                    }
+                }
+            }
+        }
+
         private static decimal CalculateMilestoneAmount(decimal budget, decimal paymentPercentage)
             => Math.Round(budget * paymentPercentage / 100m, 2, MidpointRounding.AwayFromZero);
 
@@ -764,6 +818,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Milestone entries must match the number of phases.", 400);
 
             ValidateMilestonePercentages(ordered);
+            ValidateMilestoneDates(ordered, project.StartDate, project.TargetEndDate);
 
             var budget = project.Budget ?? 0;
             for (var index = 0; index < ordered.Count; index++)

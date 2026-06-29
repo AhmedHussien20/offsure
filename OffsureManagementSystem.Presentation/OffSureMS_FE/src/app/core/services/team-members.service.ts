@@ -12,6 +12,7 @@ import {
   TeamMemberDto,
   TeamMemberRequest,
   TeamStructureDto,
+  UpdateResourceManagerDto,
   UpdateTeamMemberDto,
   UpsertTeamMemberSkillDto,
   ResetTeamMemberPasswordDto,
@@ -47,6 +48,14 @@ export class TeamMembersService {
     return this.api.delete<BaseResponse<object>>(this.service, `${id}`);
   }
 
+  deactivate(id: number): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.patch<BaseResponse<TeamMemberDto>>(this.service, `${id}/deactivate`, {});
+  }
+
+  activate(id: number): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.patch<BaseResponse<TeamMemberDto>>(this.service, `${id}/activate`, {});
+  }
+
   assignSkill(id: number, dto: UpsertTeamMemberSkillDto): Observable<BaseResponse<TeamMemberDto>> {
     return this.api.post<BaseResponse<TeamMemberDto>>(this.service, `${id}/skills`, dto);
   }
@@ -71,8 +80,28 @@ export class TeamMembersService {
     );
   }
 
+  getResourceManagerById(id: number): Observable<BaseResponse<ResourceManagerUserDto>> {
+    return this.api.get<BaseResponse<ResourceManagerUserDto>>(this.service, `resource-managers/${id}`);
+  }
+
   createResourceManager(dto: CreateResourceManagerDto): Observable<BaseResponse<ResourceManagerUserDto>> {
     return this.api.post<BaseResponse<ResourceManagerUserDto>>(this.service, 'resource-managers', dto);
+  }
+
+  updateResourceManager(id: number, dto: UpdateResourceManagerDto): Observable<BaseResponse<ResourceManagerUserDto>> {
+    return this.api.put<BaseResponse<ResourceManagerUserDto>>(this.service, `resource-managers/${id}`, dto);
+  }
+
+  deactivateResourceManager(id: number): Observable<BaseResponse<ResourceManagerUserDto>> {
+    return this.api.patch<BaseResponse<ResourceManagerUserDto>>(this.service, `resource-managers/${id}/deactivate`, {});
+  }
+
+  activateResourceManager(id: number): Observable<BaseResponse<ResourceManagerUserDto>> {
+    return this.api.patch<BaseResponse<ResourceManagerUserDto>>(this.service, `resource-managers/${id}/activate`, {});
+  }
+
+  deleteResourceManager(id: number): Observable<BaseResponse<object>> {
+    return this.api.delete<BaseResponse<object>>(this.service, `resource-managers/${id}`);
   }
 
   resetPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {

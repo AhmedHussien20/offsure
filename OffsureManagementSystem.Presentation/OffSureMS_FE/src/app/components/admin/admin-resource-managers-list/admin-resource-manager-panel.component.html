@@ -1,0 +1,105 @@
+<div class="admin-detail-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="admin-detail-panel__loading text-muted">Loading resource manager…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (manager) {
+    <div class="admin-detail-panel__header">
+      <div>
+        <h5 class="admin-detail-panel__title mb-0">{{ manager.fullName }}</h5>
+        <p class="admin-detail-panel__meta mb-0">{{ manager.email }}</p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="manager.isActive"
+          [class.bg-secondary-transparent]="!manager.isActive">
+          {{ manager.isActive ? 'Active account' : 'Inactive account' }}
+        </span>
+        @if (!editing) {
+          @if (manager.isActive) {
+            <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
+              Edit
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-warning no-expand"
+              [disabled]="deactivating"
+              (click)="deactivateManager()">
+              {{ deactivating ? 'Deactivating…' : 'Deactivate' }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-success no-expand"
+              [disabled]="activating"
+              (click)="activateManager()">
+              {{ activating ? 'Activating…' : 'Activate' }}
+            </button>
+          }
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger no-expand"
+            [disabled]="deleting"
+            (click)="deleteManager()">
+            {{ deleting ? 'Deleting…' : 'Delete' }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="admin-detail-grid">
+      <div class="admin-detail-main">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Account details</h6>
+          @if (editing) {
+            <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+            <div class="admin-detail-form-actions">
+              <button type="button" class="btn btn-sm btn-primary no-expand" [disabled]="saving" (click)="saveEdit()">
+                {{ saving ? 'Saving…' : 'Save changes' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-light no-expand" [disabled]="saving" (click)="cancelEdit()">
+                Cancel
+              </button>
+            </div>
+          } @else {
+            <div class="admin-detail-info-row">
+              <div class="admin-detail-info-item">
+                <label>First name</label>
+                <span>{{ display(manager.firstName) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Last name</label>
+                <span>{{ display(manager.lastName) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Email</label>
+                <span>{{ display(manager.email) }}</span>
+              </div>
+              <div class="admin-detail-info-item">
+                <label>Account status</label>
+                <span>{{ manager.isActive ? 'Active' : 'Inactive' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="admin-detail-sidebar">
+        <div class="admin-detail-card">
+          <h6 class="admin-detail-card__title">Summary</h6>
+          <ul class="admin-detail-stat-list">
+            <li>
+              <span class="admin-detail-stat-label">User ID</span>
+              <strong>{{ manager.id }}</strong>
+            </li>
+            <li>
+              <span class="admin-detail-stat-label">Account</span>
+              <strong>{{ manager.isActive ? 'Active' : 'Inactive' }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  }
+</div>

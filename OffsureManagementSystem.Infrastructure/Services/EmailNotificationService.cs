@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.DTOs.ContactDTOs;
 using OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
@@ -36,13 +37,36 @@ namespace OffsureManagementSystem.Infrastructure.Services
             string verificationToken)
         {
             var verificationLink = $"{_frontendBaseUrl}/auth/verify-email?userId={userId}&token={verificationToken}";
+            var safeName = WebUtility.HtmlEncode(firstName.Trim());
             var body = $@"
-                <h2>Welcome {firstName}</h2>
-                <p>Please verify your email:</p>
-                <a href='{verificationLink}'>Verify Email</a>
-                <p>This link expires in 24 hours.</p>";
+                <div style=""font-family: Arial, Helvetica, sans-serif; max-width: 600px; color: #1e293b;"">
+                    <h2 style=""color: #4f46e5; margin-bottom: 0.5rem;"">Welcome to the {BrandingConstants.ClientPortalName}</h2>
+                    <p>Hello {safeName},</p>
+                    <p>
+                        Thank you for registering. <strong>{BrandingConstants.ServiceProviderName}</strong>
+                        is your service provider for offshore team and project management through this client portal.
+                    </p>
+                    <p>Please verify your email address to activate your account:</p>
+                    <p style=""margin: 1.5rem 0;"">
+                        <a href=""{verificationLink}""
+                           style=""display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;"">
+                            Verify email address
+                        </a>
+                    </p>
+                    <p style=""font-size: 14px; color: #64748b;"">This link expires in 24 hours.</p>
+                    <p style=""font-size: 14px; color: #64748b;"">
+                        If you did not create this account with {BrandingConstants.ServiceProviderName}, you can safely ignore this email.
+                    </p>
+                    <hr style=""border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;"" />
+                    <p style=""font-size: 12px; color: #94a3b8; margin: 0;"">
+                        {BrandingConstants.ServiceProviderName} — Client Portal
+                    </p>
+                </div>";
 
-            await _emailService.SendEmailAsync(to, "Verify Your Email", body);
+            await _emailService.SendEmailAsync(
+                to,
+                $"Verify your {BrandingConstants.ClientPortalName} account",
+                body);
         }
 
         public async Task SendPasswordResetEmailAsync(string to, string resetToken)

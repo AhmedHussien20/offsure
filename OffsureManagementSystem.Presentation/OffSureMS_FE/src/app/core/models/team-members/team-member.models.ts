@@ -9,6 +9,7 @@ export interface TeamMemberRequest {
   userId?: number;
   resourceManagerId?: number;
   isAvailable?: boolean;
+  isActive?: boolean;
   skillId?: number;
   searchKey?: string;
   pageIndex?: number;
@@ -16,6 +17,7 @@ export interface TeamMemberRequest {
 }
 
 export interface ResourceManagerRequest {
+  isActive?: boolean;
   searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
@@ -79,12 +81,19 @@ export interface CreateResourceManagerDto {
   password: string;
 }
 
+export interface UpdateResourceManagerDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export interface ResourceManagerUserDto {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
   fullName: string;
+  isActive: boolean;
 }
 
 export interface TeamMemberSkillDto {
@@ -117,6 +126,7 @@ export interface TeamMemberDto {
   resourceManagerId: number | null;
   resourceManagerName: string | null;
   isAvailable: boolean;
+  isActive: boolean;
   hourlySalary: number | null;
   skillAssignments: TeamMemberSkillDto[];
   certificates?: TeamMemberCertificateDto[];

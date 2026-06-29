@@ -49,12 +49,49 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<PagedResponse<ResourceManagerUserDto>>.Ok(managers));
         }
 
+        [HttpGet("resource-managers/{id:int}")]
+        public async Task<ActionResult<ApiResponse<ResourceManagerUserDto>>> GetResourceManagerById(int id)
+        {
+            var manager = await _teamManagementService.GetResourceManagerByIdAsync(id);
+            return Ok(ApiResponse<ResourceManagerUserDto>.Ok(manager));
+        }
+
         [HttpPost("resource-managers")]
         public async Task<ActionResult<ApiResponse<ResourceManagerUserDto>>> CreateResourceManager(
             CreateResourceManagerDto dto)
         {
             var manager = await _teamManagementService.CreateResourceManagerAsync(dto);
             return Ok(ApiResponse<ResourceManagerUserDto>.Ok(manager, "Resource manager created successfully."));
+        }
+
+        [HttpPut("resource-managers/{id:int}")]
+        public async Task<ActionResult<ApiResponse<ResourceManagerUserDto>>> UpdateResourceManager(
+            int id,
+            UpdateResourceManagerDto dto)
+        {
+            var manager = await _teamManagementService.UpdateResourceManagerAsync(id, dto);
+            return Ok(ApiResponse<ResourceManagerUserDto>.Ok(manager, "Resource manager updated successfully."));
+        }
+
+        [HttpPatch("resource-managers/{id:int}/deactivate")]
+        public async Task<ActionResult<ApiResponse<ResourceManagerUserDto>>> DeactivateResourceManager(int id)
+        {
+            var manager = await _teamManagementService.DeactivateResourceManagerAsync(id);
+            return Ok(ApiResponse<ResourceManagerUserDto>.Ok(manager, "Resource manager deactivated successfully."));
+        }
+
+        [HttpPatch("resource-managers/{id:int}/activate")]
+        public async Task<ActionResult<ApiResponse<ResourceManagerUserDto>>> ActivateResourceManager(int id)
+        {
+            var manager = await _teamManagementService.ActivateResourceManagerAsync(id);
+            return Ok(ApiResponse<ResourceManagerUserDto>.Ok(manager, "Resource manager activated successfully."));
+        }
+
+        [HttpDelete("resource-managers/{id:int}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteResourceManager(int id)
+        {
+            await _teamManagementService.DeleteResourceManagerAsync(id);
+            return Ok(ApiResponse<object>.Ok(null!, "Resource manager deleted successfully."));
         }
 
         [HttpPost]
@@ -79,6 +116,20 @@ namespace OffsureManagementSystem.API.Controllers
         {
             await _teamManagementService.DeleteAsync(id);
             return Ok(ApiResponse<object>.Ok(null!, "Team member deleted successfully."));
+        }
+
+        [HttpPatch("{id:int}/deactivate")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> Deactivate(int id)
+        {
+            var member = await _teamManagementService.DeactivateAsync(id);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member deactivated successfully."));
+        }
+
+        [HttpPatch("{id:int}/activate")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> Activate(int id)
+        {
+            var member = await _teamManagementService.ActivateAsync(id);
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Team member activated successfully."));
         }
 
         [HttpPost("{id:int}/skills")]

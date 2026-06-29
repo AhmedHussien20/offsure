@@ -10,6 +10,10 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<TeamMemberDto> CreateAsync(CreateTeamMemberDto dto);
         Task<TeamMemberDto> UpdateAsync(int id, UpdateTeamMemberDto dto);
         Task DeleteAsync(int id);
+        Task<TeamMemberDto> DeactivateAsync(int id);
+        Task<TeamMemberDto> ActivateAsync(int id);
+        Task<TeamMemberDto> DeactivateManagedTeamMemberAsync(int resourceManagerUserId, int teamMemberId);
+        Task<TeamMemberDto> ActivateManagedTeamMemberAsync(int resourceManagerUserId, int teamMemberId);
         Task<TeamMemberDto> AssignSkillAsync(int teamMemberId, UpsertTeamMemberSkillDto dto);
         Task<TeamMemberDto> RemoveSkillAsync(int teamMemberId, int skillId);
         Task<CvStorageResultDto> StoreCvAsync(int teamMemberId, Stream content, string fileName);
@@ -21,7 +25,12 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<TeamMemberDto> RemoveSkillForUserAsync(int userId, int skillId);
         Task<CvStorageResultDto> StoreCvForUserAsync(int userId, Stream content, string fileName);
         Task<PagedResponse<ResourceManagerUserDto>> GetResourceManagersAsync(ResourceManagerRequest request);
+        Task<ResourceManagerUserDto> GetResourceManagerByIdAsync(int userId);
         Task<ResourceManagerUserDto> CreateResourceManagerAsync(CreateResourceManagerDto dto);
+        Task<ResourceManagerUserDto> UpdateResourceManagerAsync(int userId, UpdateResourceManagerDto dto);
+        Task<ResourceManagerUserDto> DeactivateResourceManagerAsync(int userId);
+        Task<ResourceManagerUserDto> ActivateResourceManagerAsync(int userId);
+        Task DeleteResourceManagerAsync(int userId);
         Task<PagedResponse<TeamMemberDto>> GetManagedTeamMembersAsync(int resourceManagerUserId, TeamMemberRequest request);
         Task<TeamMemberDto> GetManagedTeamMemberByIdAsync(int resourceManagerUserId, int teamMemberId);
         Task<TeamMemberDto> CreateManagedTeamMemberAsync(int resourceManagerUserId, CreateTeamMemberDto dto);
