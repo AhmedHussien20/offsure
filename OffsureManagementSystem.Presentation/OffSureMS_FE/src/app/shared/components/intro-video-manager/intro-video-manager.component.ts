@@ -56,7 +56,7 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
   private recordedBlob: Blob | null = null;
-  private recordedObjectUrl: string | null = null;
+  recordedPreviewUrl: string | null = null;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
   private recordingTimer: ReturnType<typeof setInterval> | null = null;
   private maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
@@ -91,8 +91,8 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   }
 
   get previewUrl(): string | null {
-    if (this.recordedObjectUrl) {
-      return this.recordedObjectUrl;
+    if (this.recordedPreviewUrl) {
+      return this.recordedPreviewUrl;
     }
     return resolveStorageAssetUrl(this.videoUrl);
   }
@@ -362,17 +362,20 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
     this.mediaRecorder.onstop = () => {
       const type = this.mediaRecorder?.mimeType || 'video/webm';
       this.recordedBlob = new Blob(this.recordedChunks, { type });
-      this.revokeRecordedObjectUrl();
-      this.recordedObjectUrl = URL.createObjectURL(this.recordedBlob);
+      this.revokeRecordedPreviewUrl();
+      this.recordedPreviewUrl = URL.createObjectURL(this.recordedBlob);
 
-      const preview = this.recordedPreviewRef?.nativeElement;
-      if (preview) {
-        preview.src = this.recordedObjectUrl;
-        preview.load();
-      }
-
+      this.stopMediaStream();
       this.recorderPhase = 'preview';
       this.clearRecordingTimer();
+      this.cdr.detectChanges();
+
+      afterNextRender(
+        () => {
+          void this.loadRecordedPreview();
+        },
+        { injector: this.injector }
+      );
     };
 
     this.mediaRecorder.start(250);
@@ -386,6 +389,16 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
     this.maxDurationTimer = setTimeout(() => {
       this.stopRecording();
     }, this.settings.maxDurationSeconds * 1000);
+  }
+
+  private async loadRecordedPreview(): Promise<void> {
+    const preview = this.recordedPreviewRef?.nativeElement;
+    if (!preview || !this.recordedPreviewUrl) {
+      return;
+    }
+
+    preview.src = this.recordedPreviewUrl;
+    preview.load();
   }
 
   stopRecording(): void {
@@ -411,14 +424,14 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
 
   private clearRecordedPreview(): void {
     this.recordedBlob = null;
-    this.revokeRecordedObjectUrl();
+    this.revokeRecordedPreviewUrl();
     this.recordedChunks = [];
   }
 
-  private revokeRecordedObjectUrl(): void {
-    if (this.recordedObjectUrl) {
-      URL.revokeObjectURL(this.recordedObjectUrl);
-      this.recordedObjectUrl = null;
+  private revokeRecordedPreviewUrl(): void {
+    if (this.recordedPreviewUrl) {
+      URL.revokeObjectURL(this.recordedPreviewUrl);
+      this.recordedPreviewUrl = null;
     }
   }
 

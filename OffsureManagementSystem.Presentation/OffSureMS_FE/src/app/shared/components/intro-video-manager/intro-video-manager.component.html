@@ -66,8 +66,10 @@
           <video
             #recordedPreview
             class="intro-video-recorder__video"
+            [src]="recordedPreviewUrl ?? undefined"
             controls
-            playsinline></video>
+            playsinline
+            preload="auto"></video>
         } @else {
           <video #livePreview class="intro-video-recorder__video" autoplay muted playsinline></video>
 
@@ -108,6 +110,9 @@
         }
 
         @if (recorderPhase === 'preview') {
+          <p class="intro-video-manager__hint text-muted small mb-2">
+            Review your recording below. Play it back, then save or re-record.
+          </p>
           <button type="button" class="btn btn-outline-primary btn-sm" (click)="discardRecording()">
             <i class="fe fe-rotate-ccw me-1"></i>Re-record
           </button>
