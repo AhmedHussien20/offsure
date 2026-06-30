@@ -149,6 +149,16 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Project milestones saved successfully."));
         }
 
+        [HttpPut("{id:int}/sales-assignment")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateSalesAssignment(
+            int id,
+            UpdateProjectSalesAssignmentDto dto)
+        {
+            var project = await _projectManagementService.UpdateProjectSalesAssignmentAsync(id, dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Sales assignment updated successfully."));
+        }
+
         [HttpPatch("{id:int}/milestones/{milestoneId:int}/status")]
         [Authorize(Roles = "Administrator,ResourceManager")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateMilestoneStatus(

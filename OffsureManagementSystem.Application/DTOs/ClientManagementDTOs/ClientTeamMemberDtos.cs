@@ -5,8 +5,9 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
 {
     public class ClientTeamMemberBrowseRequest : BaseApiRequest
     {
+        public string? NameSearch { get; set; }
         public string? SkillSearch { get; set; }
-        /// <summary>3-5, 5+, or 10+</summary>
+        /// <summary>0-3, 3-5, 5+, or 10+</summary>
         public string? ExperienceBand { get; set; }
         public int? ProjectId { get; set; }
     }

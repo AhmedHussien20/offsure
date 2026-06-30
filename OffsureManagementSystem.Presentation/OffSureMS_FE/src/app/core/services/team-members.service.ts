@@ -6,13 +6,17 @@ import { PagedResponse } from '../models/paged-response.model';
 import {
   CreateTeamMemberDto,
   CreateResourceManagerDto,
+  CreateSalesUserDto,
   CvStorageResultDto,
   ResourceManagerRequest,
   ResourceManagerUserDto,
+  SalesUserDto,
+  SalesUserRequest,
   TeamMemberDto,
   TeamMemberRequest,
   TeamStructureDto,
   UpdateResourceManagerDto,
+  UpdateSalesUserDto,
   UpdateTeamMemberDto,
   UpsertTeamMemberSkillDto,
   ResetTeamMemberPasswordDto,
@@ -102,6 +106,38 @@ export class TeamMembersService {
 
   deleteResourceManager(id: number): Observable<BaseResponse<object>> {
     return this.api.delete<BaseResponse<object>>(this.service, `resource-managers/${id}`);
+  }
+
+  getSalesUsers(request?: SalesUserRequest): Observable<BaseResponse<PagedResponse<SalesUserDto>>> {
+    return this.api.get<BaseResponse<PagedResponse<SalesUserDto>>>(
+      this.service,
+      'sales-users',
+      request as Record<string, unknown>
+    );
+  }
+
+  getSalesUserById(id: number): Observable<BaseResponse<SalesUserDto>> {
+    return this.api.get<BaseResponse<SalesUserDto>>(this.service, `sales-users/${id}`);
+  }
+
+  createSalesUser(dto: CreateSalesUserDto): Observable<BaseResponse<SalesUserDto>> {
+    return this.api.post<BaseResponse<SalesUserDto>>(this.service, 'sales-users', dto);
+  }
+
+  updateSalesUser(id: number, dto: UpdateSalesUserDto): Observable<BaseResponse<SalesUserDto>> {
+    return this.api.put<BaseResponse<SalesUserDto>>(this.service, `sales-users/${id}`, dto);
+  }
+
+  deactivateSalesUser(id: number): Observable<BaseResponse<SalesUserDto>> {
+    return this.api.patch<BaseResponse<SalesUserDto>>(this.service, `sales-users/${id}/deactivate`, {});
+  }
+
+  activateSalesUser(id: number): Observable<BaseResponse<SalesUserDto>> {
+    return this.api.patch<BaseResponse<SalesUserDto>>(this.service, `sales-users/${id}/activate`, {});
+  }
+
+  deleteSalesUser(id: number): Observable<BaseResponse<object>> {
+    return this.api.delete<BaseResponse<object>>(this.service, `sales-users/${id}`);
   }
 
   resetPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {

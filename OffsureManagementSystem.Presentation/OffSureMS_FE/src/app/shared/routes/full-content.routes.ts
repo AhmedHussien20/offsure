@@ -54,6 +54,12 @@ export const content: Routes = [
             r => r.resourceManagerRoutes
           ),
       },
+      {
+        path: 'sales',
+        data: { breadcrumb: 'Sales', title: 'Sales' },
+        loadChildren: () =>
+          import('../../../app/components/sales/sales.routes').then(r => r.salesRoutes),
+      },
       { path: '', loadChildren: () => import('../../../app/components/crypto-currencies/crypto.routes').then(r => r.cryptoRoutingModule) },
       { path: '', loadChildren: () => import('../../../app/components/ecommerce/ecommerce.routes').then(r => r.ecommerceRoutingModule) },
       { path: '', loadChildren: () => import('../../../app/components/apps/blog/blog.routes').then(r => r.blogRoutingModule) },

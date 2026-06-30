@@ -63,6 +63,14 @@ export const adminRoutes: Routes = [
           ),
       },
       {
+        path: 'sales-users',
+        data: { breadcrumb: 'Sales Users', title: 'Sales Users' },
+        loadComponent: () =>
+          import('./admin-sales-users-list/admin-sales-users-list.component').then(
+            m => m.AdminSalesUsersListComponent
+          ),
+      },
+      {
         path: 'team/new',
         data: {
           breadcrumb: 'Add Member',

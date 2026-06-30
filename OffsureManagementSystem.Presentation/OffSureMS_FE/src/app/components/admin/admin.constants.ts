@@ -57,6 +57,12 @@ export const ADMIN_RESOURCE_MANAGER_COLUMNS: TableColumn[] = [
   { key: 'accountStatusLabel', label: 'Account', type: 'text' },
 ];
 
+export const ADMIN_SALES_USER_COLUMNS: TableColumn[] = [
+  { key: 'fullName', label: 'Name', type: 'text' },
+  { key: 'email', label: 'Email', type: 'text' },
+  { key: 'accountStatusLabel', label: 'Account', type: 'text' },
+];
+
 export const ADMIN_TIMESHEET_ENTRY_COLUMNS: TableColumn[] = [
   { key: 'workDate', label: 'Date', type: 'date' },
   { key: 'teamMemberName', label: 'Resource', type: 'text' },

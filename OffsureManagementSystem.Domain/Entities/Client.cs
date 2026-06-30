@@ -13,9 +13,11 @@ namespace OffshoreManagementSystem.Domain.Entities
         public string? Country { get; set; }
         public string? PostalCode { get; set; }
         public bool IsActive { get; set; } = true;
+        public int? SalesId { get; set; }
 
         // Navigation Properties
         public virtual User User { get; set; }
+        public virtual User? SalesUser { get; set; }
         public virtual ICollection<ServiceRequest> ServiceRequests { get; set; } = new List<ServiceRequest>();
     }
 }

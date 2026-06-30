@@ -12,6 +12,7 @@ export interface ProjectFilterRequest {
   clientId?: number;
   serviceId?: number;
   teamMemberId?: number;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }
@@ -19,6 +20,7 @@ export interface ProjectFilterRequest {
 export type ProjectBudgetMode = 'sameAsRequest' | 'custom';
 export type ProjectBudgetType = 'Total' | 'Hourly';
 export type ProjectCustomBudgetType = 'total' | 'hourly';
+export type CommissionType = 'Fixed' | 'Percentage';
 
 export enum MilestoneStatus {
   NotStarted = 'NotStarted',
@@ -41,6 +43,27 @@ export interface CreateProjectDto {
   expectedHours?: number;
   usesMilestones?: boolean;
   milestoneCount?: number;
+  salesId?: number | null;
+  commissionType?: CommissionType | null;
+  commissionValue?: number | null;
+}
+
+export interface UpdateProjectSalesAssignmentDto {
+  salesId?: number | null;
+  commissionType?: CommissionType | null;
+  commissionValue?: number | null;
+}
+
+export interface SalesProjectSummaryDto {
+  id: number;
+  name: string;
+  description: string;
+  clientName: string;
+  status: ProjectStatus;
+  teamMemberNames: string[];
+  commissionType?: CommissionType | null;
+  commissionValue?: number | null;
+  calculatedCommissionAmount?: number | null;
 }
 
 export interface UpdateProjectDto {
@@ -168,4 +191,9 @@ export interface ProjectDto {
   milestones?: ProjectMilestoneDto[];
   /** Current RM's cost rate on this hourly project (resource manager portal). */
   myHourlyCostRate?: number | null;
+  salesId?: number | null;
+  salesPersonName?: string;
+  commissionType?: CommissionType | null;
+  commissionValue?: number | null;
+  calculatedCommissionAmount?: number | null;
 }

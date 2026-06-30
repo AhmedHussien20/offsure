@@ -10,6 +10,7 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public int? ClientId { get; set; }
         public int? ServiceId { get; set; }
         public int? TeamMemberId { get; set; }
+        public int? SalesId { get; set; }
     }
 
     public class CreateProjectDto
@@ -30,6 +31,9 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public bool UsesMilestones { get; set; }
         public int? MilestoneCount { get; set; }
         public List<UpsertProjectMilestoneItemDto>? Milestones { get; set; }
+        public int? SalesId { get; set; }
+        public CommissionType? CommissionType { get; set; }
+        public decimal? CommissionValue { get; set; }
     }
 
     public class UpdateProjectDto
@@ -87,6 +91,13 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public decimal HourlyCostRate { get; set; }
     }
 
+    public class UpdateProjectSalesAssignmentDto
+    {
+        public int? SalesId { get; set; }
+        public CommissionType? CommissionType { get; set; }
+        public decimal? CommissionValue { get; set; }
+    }
+
     public class ProjectResourceManagerDto
     {
         public int UserId { get; set; }
@@ -124,6 +135,24 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public List<ProjectMilestoneDto> Milestones { get; set; } = new();
         /// <summary>Current RM's cost rate on this hourly project (resource manager portal only).</summary>
         public decimal? MyHourlyCostRate { get; set; }
+        public int? SalesId { get; set; }
+        public string SalesPersonName { get; set; } = string.Empty;
+        public CommissionType? CommissionType { get; set; }
+        public decimal? CommissionValue { get; set; }
+        public decimal? CalculatedCommissionAmount { get; set; }
+    }
+
+    public class SalesProjectSummaryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string ClientName { get; set; } = string.Empty;
+        public ProjectStatus Status { get; set; }
+        public List<string> TeamMemberNames { get; set; } = new();
+        public CommissionType? CommissionType { get; set; }
+        public decimal? CommissionValue { get; set; }
+        public decimal? CalculatedCommissionAmount { get; set; }
     }
 
     public class ProjectAssignmentDto

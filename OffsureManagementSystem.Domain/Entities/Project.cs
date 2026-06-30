@@ -23,9 +23,13 @@ namespace OffshoreManagementSystem.Domain.Entities
         public int? MilestoneCount { get; set; }
         /// <summary>When true, team is assigned via required skill tracks; when false, RMs pick from their full roster.</summary>
         public bool AssignTeamBySkill { get; set; } = true;
+        public int? SalesId { get; set; }
+        public CommissionType? CommissionType { get; set; }
+        public decimal? CommissionValue { get; set; }
 
         // Navigation Properties
         public virtual ServiceRequest ServiceRequest { get; set; }
+        public virtual User? SalesUser { get; set; }
         public virtual ICollection<ProjectAssignment> ProjectAssignments { get; set; } = new List<ProjectAssignment>();
         public virtual ICollection<ProjectSkill> ProjectSkills { get; set; } = new List<ProjectSkill>();
         public virtual ICollection<ProjectResourceManager> ProjectResourceManagers { get; set; } = new List<ProjectResourceManager>();

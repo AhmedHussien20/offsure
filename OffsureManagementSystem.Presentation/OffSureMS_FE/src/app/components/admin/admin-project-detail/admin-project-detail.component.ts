@@ -38,6 +38,7 @@ import { PROJECT_STATUS_BADGES } from '../admin.constants';
 import { AdminAssignSkillModalComponent } from './admin-assign-skill-modal.component';
 import { AdminProjectMilestonesComponent } from './admin-project-milestones.component';
 import { AdminHourlyProjectPanelComponent } from './admin-hourly-project-panel.component';
+import { AdminProjectSalesCardComponent } from './admin-project-sales-card.component';
 import { ProjectTeamSummaryModalComponent } from 'app/shared/components/project-team-summary-modal/project-team-summary-modal.component';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
@@ -59,7 +60,7 @@ const MAX_PROJECT_RESOURCE_MANAGERS = 2;
 @Component({
   selector: 'app-admin-project-detail',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, AdminProjectMilestonesComponent, AdminHourlyProjectPanelComponent],
+  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, AdminProjectMilestonesComponent, AdminHourlyProjectPanelComponent, AdminProjectSalesCardComponent],
   templateUrl: './admin-project-detail.component.html',
   styleUrl: './admin-project-detail.component.scss',
 })

@@ -1,58 +1,102 @@
-<div class="modal-header">
+<div class="modal-header project-flow-modal__header">
   <div>
     <h5 class="modal-title mb-1">New project</h5>
     <p class="text-muted small mb-0">Create a project without a client request. Assign the team after creation.</p>
   </div>
-  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 
-<div class="modal-body project-form-modal">
-  <form [formGroup]="form" class="generic-form">
-    <div class="row gy-3 gx-3 align-items-start mb-2">
-      <div class="col-md-4">
-        <app-paginated-select
-          formControlName="clientId"
-          label="Client"
-          fieldIcon="fe fe-briefcase"
-          [required]="true"
-          placeholder="Search clients..."
-          [pageSize]="20"
-          [loadPage]="loadClients" />
-      </div>
-      <div class="col-md-4">
-        <app-paginated-select
-          formControlName="serviceCategoryId"
-          label="Service category"
-          fieldIcon="fe fe-folder"
-          [required]="true"
-          placeholder="Search categories..."
-          [loadPage]="loadCategories" />
-      </div>
-      <div class="col-md-4">
-        <app-paginated-select
-          formControlName="serviceId"
-          label="Service"
-          fieldIcon="fe fe-layers"
-          [required]="true"
-          placeholder="Select category first..."
-          [disabled]="!serviceCategoryId"
-          [resetToken]="serviceResetToken"
-          [loadPage]="loadServices" />
-      </div>
-    </div>
-
-    @if (formConfig.length) {
-      <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+<div class="modal-body project-flow-modal__body">
+  <nav class="project-flow-stepper" aria-label="New project steps">
+    @for (step of stepDefs; track step.id; let i = $index) {
+      <button
+        type="button"
+        class="project-flow-stepper__item"
+        [class.project-flow-stepper__item--active]="currentStep === i + 1"
+        [class.project-flow-stepper__item--done]="currentStep > i + 1"
+        [disabled]="creating || i + 1 > currentStep"
+        (click)="goToStep(i + 1)">
+        <span class="project-flow-stepper__dot">{{ i + 1 }}</span>
+        <span class="project-flow-stepper__label">{{ step.label }}</span>
+      </button>
+      @if (i < stepDefs.length - 1) {
+        <span class="project-flow-stepper__line" [class.project-flow-stepper__line--done]="currentStep > i + 1"></span>
+      }
     }
+  </nav>
 
-    <app-project-budget-fields [form]="form" mode="standalone" idPrefix="np"></app-project-budget-fields>
-    <app-project-milestone-create-fields [form]="form" idPrefix="np"></app-project-milestone-create-fields>
+  <form [formGroup]="form" class="project-flow-modal__step-pane generic-form">
+    @switch (activeStepId) {
+      @case ('project') {
+        <div class="project-form-modal">
+          <div class="row gy-3 gx-3 align-items-start mb-2">
+            <div class="col-md-4">
+              <app-paginated-select
+                formControlName="clientId"
+                label="Client"
+                fieldIcon="fe fe-briefcase"
+                [required]="true"
+                placeholder="Search clients..."
+                [pageSize]="20"
+                [loadPage]="loadClients" />
+            </div>
+            <div class="col-md-4">
+              <app-paginated-select
+                formControlName="serviceCategoryId"
+                label="Service category"
+                fieldIcon="fe fe-folder"
+                [required]="true"
+                placeholder="Search categories..."
+                [loadPage]="loadCategories" />
+            </div>
+            <div class="col-md-4">
+              <app-paginated-select
+                formControlName="serviceId"
+                label="Service"
+                fieldIcon="fe fe-layers"
+                [required]="true"
+                placeholder="Select category first..."
+                [disabled]="!serviceCategoryId"
+                [resetToken]="serviceResetToken"
+                [loadPage]="loadServices" />
+            </div>
+          </div>
+
+          @if (formConfig.length) {
+            <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+          }
+        </div>
+      }
+
+      @case ('budget') {
+        <div class="project-flow-budget-step">
+          <app-project-budget-fields [form]="form" mode="standalone" idPrefix="np"></app-project-budget-fields>
+          <app-project-sales-assignment-fields [form]="form" [budget]="salesBudgetPreview"></app-project-sales-assignment-fields>
+        </div>
+      }
+
+      @case ('milestones') {
+        <app-project-milestone-create-fields [form]="form" idPrefix="np"></app-project-milestone-create-fields>
+        @if (form.get('usesMilestones')?.value && form.get('milestoneCount')?.invalid && form.get('milestoneCount')?.touched) {
+          <div class="text-danger small mt-2">Enter a valid number of milestones.</div>
+        }
+      }
+    }
   </form>
 </div>
 
-<div class="modal-footer">
+<div class="modal-footer project-flow-modal__footer">
   <button type="button" class="btn btn-light" (click)="activeModal.dismiss()" [disabled]="creating">Cancel</button>
-  <button type="button" class="btn btn-primary" [disabled]="creating || form.invalid" (click)="submit()">
-    {{ creating ? 'Creating...' : 'Create project' }}
-  </button>
+  <div class="project-flow-modal__footer-actions">
+    @if (!isFirstStep()) {
+      <button type="button" class="btn btn-outline-secondary" (click)="goBack()" [disabled]="creating">Back</button>
+    }
+    @if (!isLastStep()) {
+      <button type="button" class="btn btn-primary" (click)="goNext()" [disabled]="creating">Next</button>
+    } @else {
+      <button type="button" class="btn btn-primary" [disabled]="creating || form.invalid" (click)="submit()">
+        {{ creating ? 'Creating...' : 'Create project' }}
+      </button>
+    }
+  </div>
 </div>

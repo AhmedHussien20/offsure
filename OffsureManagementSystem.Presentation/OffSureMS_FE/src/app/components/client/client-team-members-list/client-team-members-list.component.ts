@@ -8,33 +8,36 @@ import {
   ClientTeamMemberBrowseRequest,
   ClientTeamMemberCardDto,
 } from 'app/core/models/clients/client-team-member.models';
-import { ProjectDto } from 'app/core/models/projects/project.models';
 import { resolveStorageAssetUrl } from 'app/core/models/team-members/team-member.models';
 import { ClientsService } from 'app/core/services/clients.service';
 import { ProjectsService } from 'app/core/services/projects.service';
+import { ProjectFilterRequest } from 'app/core/models/projects/project.models';
+import { ToolbarSelectComponent } from 'app/shared/components/toolbar-select/toolbar-select.component';
+import { ToolbarSelectLoader, ToolbarSelectOption } from 'app/shared/components/toolbar-select/toolbar-select.models';
 import { SharedModule } from 'app/shared/shared.module';
 import { Subject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { debounceTime, map, takeUntil } from 'rxjs/operators';
 import { TeamMemberProfileModalComponent } from 'app/shared/components/team-member-profile-modal/team-member-profile-modal.component';
 
 const SKILL_SEARCH_DEBOUNCE_MS = 300;
 const DEFAULT_PAGE_SIZE = 12;
+const PROJECT_PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-client-team-members-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SharedModule, NgbPaginationModule],
+  imports: [CommonModule, FormsModule, SharedModule, NgbPaginationModule, ToolbarSelectComponent],
   templateUrl: './client-team-members-list.component.html',
   styleUrl: './client-team-members-list.component.scss',
 })
 export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
-  readonly experienceBands = CLIENT_TEAM_EXPERIENCE_BANDS;
+  readonly experienceOptions: ToolbarSelectOption<ClientTeamExperienceBand>[] =
+    CLIENT_TEAM_EXPERIENCE_BANDS.map(b => ({ label: b.label, value: b.value }));
 
   members: ClientTeamMemberCardDto[] = [];
-  projects: ProjectDto[] = [];
   loading = false;
-  loadingProjects = false;
 
+  nameSearch = '';
   skillSearch = '';
   experienceBand: ClientTeamExperienceBand = '';
   projectId: number | null = null;
@@ -44,6 +47,7 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
   totalCount = 0;
 
   private readonly destroy$ = new Subject<void>();
+  private readonly nameSearch$ = new Subject<string>();
   private readonly skillSearch$ = new Subject<string>();
 
   constructor(
@@ -52,7 +56,28 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
     private modalService: NgbModal
   ) {}
 
+  loadProjectsPage: ToolbarSelectLoader = (search, pageIndex) => {
+    const request: ProjectFilterRequest = { pageIndex, pageSize: PROJECT_PAGE_SIZE };
+    const trimmed = search?.trim();
+    if (trimmed) {
+      request.searchKey = trimmed;
+    }
+    return this.projectsService.getMy(request).pipe(
+      map(res => ({
+        items: (res.data?.data ?? []).map(p => ({ label: p.name, value: p.id })),
+        totalCount: res.data?.totalCount ?? 0,
+      }))
+    );
+  };
+
   ngOnInit(): void {
+    this.nameSearch$
+      .pipe(debounceTime(SKILL_SEARCH_DEBOUNCE_MS), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.page = 1;
+        this.loadMembers();
+      });
+
     this.skillSearch$
       .pipe(debounceTime(SKILL_SEARCH_DEBOUNCE_MS), takeUntil(this.destroy$))
       .subscribe(() => {
@@ -60,7 +85,6 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
         this.loadMembers();
       });
 
-    this.loadProjects();
     this.loadMembers();
   }
 
@@ -79,6 +103,10 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
 
   onSkillSearchInput(): void {
     this.skillSearch$.next(this.skillSearch);
+  }
+
+  onNameSearchInput(): void {
+    this.nameSearch$.next(this.nameSearch);
   }
 
   onExperienceBandChange(): void {
@@ -118,21 +146,6 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
     modalRef.componentInstance.source = 'client';
   }
 
-  private loadProjects(): void {
-    this.loadingProjects = true;
-    this.projectsService
-      .getMy({ pageIndex: 1, pageSize: 200 })
-      .subscribe({
-        next: res => {
-          this.projects = res.data?.data ?? [];
-          this.loadingProjects = false;
-        },
-        error: () => {
-          this.loadingProjects = false;
-        },
-      });
-  }
-
   private loadMembers(): void {
     this.loading = true;
 
@@ -141,6 +154,10 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
       pageSize: this.pageSize,
     };
 
+    const trimmedName = this.nameSearch.trim();
+    if (trimmedName) {
+      request.nameSearch = trimmedName;
+    }
     const trimmedSkill = this.skillSearch.trim();
     if (trimmedSkill) {
       request.skillSearch = trimmedSkill;

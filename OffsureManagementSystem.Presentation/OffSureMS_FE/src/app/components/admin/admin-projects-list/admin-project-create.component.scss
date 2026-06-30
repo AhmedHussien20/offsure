@@ -1,6 +1,5 @@
 .project-form-modal {
-  .row + app-generic-form,
-  app-generic-form + app-project-budget-fields {
+  .row + app-generic-form {
     display: block;
     margin-top: 0.5rem;
   }

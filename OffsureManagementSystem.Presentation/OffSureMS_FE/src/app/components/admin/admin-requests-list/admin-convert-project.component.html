@@ -1,28 +1,144 @@
-<div class="modal-header">
+<div class="modal-header project-flow-modal__header">
   <div>
     <h5 class="modal-title mb-1">Convert to project</h5>
-    <p class="text-muted small mb-0">Set the project name, timeline, and budget. You can assign the team after creation.</p>
+    <p class="text-muted small mb-0">Complete each step, then create the project and assign your team.</p>
   </div>
-  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 
-<div class="modal-body project-form-modal">
-  <form [formGroup]="form" class="generic-form">
-    @if (formConfig.length) {
-      <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+<div class="modal-body project-flow-modal__body">
+  <div class="project-flow-context">
+    <div>
+      <span class="project-flow-context__label">Client</span>
+      <span class="project-flow-context__value">{{ request.clientName }}</span>
+    </div>
+    <div>
+      <span class="project-flow-context__label">Service</span>
+      <span class="project-flow-context__value">{{ request.serviceName }}</span>
+    </div>
+    <div>
+      <span class="project-flow-context__label">Request budget</span>
+      <span class="project-flow-context__value">
+        {{ request.budget != null ? (request.budget | number: '1.0-2') : 'Not specified' }}
+      </span>
+    </div>
+  </div>
+
+  <nav class="project-flow-stepper" aria-label="Convert to project steps">
+    @for (step of stepDefs; track step.id; let i = $index) {
+      <button
+        type="button"
+        class="project-flow-stepper__item"
+        [class.project-flow-stepper__item--active]="currentStep === i + 1"
+        [class.project-flow-stepper__item--done]="currentStep > i + 1"
+        [disabled]="creating || i + 1 > currentStep"
+        (click)="goToStep(i + 1)">
+        <span class="project-flow-stepper__dot">{{ i + 1 }}</span>
+        <span class="project-flow-stepper__label">{{ step.label }}</span>
+      </button>
+      @if (i < stepDefs.length - 1) {
+        <span class="project-flow-stepper__line" [class.project-flow-stepper__line--done]="currentStep > i + 1"></span>
+      }
     }
-    <app-project-budget-fields
-      [form]="form"
-      mode="convert"
-      [requestBudget]="request.budget"
-      idPrefix="cv"></app-project-budget-fields>
-    <app-project-milestone-create-fields [form]="form" mode="convert" idPrefix="cv"></app-project-milestone-create-fields>
+  </nav>
+
+  <form [formGroup]="form" class="project-flow-modal__step-pane">
+    @switch (activeStepId) {
+      @case ('details') {
+        <section class="project-flow-section">
+          <header class="project-flow-section__head">
+            <div>
+              <h6 class="project-flow-section__title">Project details</h6>
+              <p class="project-flow-section__hint">Name and timeline for the new project.</p>
+            </div>
+          </header>
+          <div class="project-flow-section__body">
+            <div class="project-flow-field project-flow-field--full">
+              <label class="project-flow-field__label" for="cv-name">Project name</label>
+              <input id="cv-name" type="text" class="form-control" formControlName="name" />
+              @if (form.get('name')?.invalid && form.get('name')?.touched) {
+                <div class="project-flow-field__error">Project name is required.</div>
+              }
+            </div>
+            <div class="project-flow-field-grid">
+              <div class="project-flow-field">
+                <label class="project-flow-field__label" for="cv-start">Start date</label>
+                <input id="cv-start" type="date" class="form-control" formControlName="startDate" />
+                @if (form.get('startDate')?.invalid && form.get('startDate')?.touched) {
+                  <div class="project-flow-field__error">Start date is required.</div>
+                }
+              </div>
+              <div class="project-flow-field">
+                <label class="project-flow-field__label" for="cv-deadline">Deadline <span class="text-muted">(optional)</span></label>
+                <input id="cv-deadline" type="date" class="form-control" formControlName="targetEndDate" />
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      @case ('budget') {
+        <section class="project-flow-section">
+          <header class="project-flow-section__head">
+            <div>
+              <h6 class="project-flow-section__title">Budget &amp; sales</h6>
+              <p class="project-flow-section__hint">Set the project budget and optional sales commission.</p>
+            </div>
+          </header>
+          <div class="project-flow-section__body project-flow-section__body--flush">
+            <div class="project-flow-budget-step">
+              <app-project-budget-fields
+                [form]="form"
+                mode="convert"
+                [embedded]="true"
+                [requestBudget]="request.budget"
+                idPrefix="cv"></app-project-budget-fields>
+              <app-project-sales-assignment-fields
+                [form]="form"
+                [embedded]="true"
+                [budget]="salesBudgetPreview"
+                [initialSalesId]="request.salesId ?? null"></app-project-sales-assignment-fields>
+            </div>
+          </div>
+        </section>
+      }
+
+      @case ('milestones') {
+        <section class="project-flow-section">
+          <header class="project-flow-section__head">
+            <div>
+              <h6 class="project-flow-section__title">Milestones</h6>
+              <p class="project-flow-section__hint">Split a fixed-budget project into payment phases.</p>
+            </div>
+          </header>
+          <div class="project-flow-section__body project-flow-section__body--flush">
+            <app-project-milestone-create-fields
+              [form]="form"
+              mode="convert"
+              [embedded]="true"
+              idPrefix="cv"></app-project-milestone-create-fields>
+            @if (form.get('usesMilestones')?.value && form.get('milestoneCount')?.invalid && form.get('milestoneCount')?.touched) {
+              <div class="project-flow-field__error mt-2">Enter a valid number of milestones.</div>
+            }
+          </div>
+        </section>
+      }
+    }
   </form>
 </div>
 
-<div class="modal-footer">
+<div class="modal-footer project-flow-modal__footer">
   <button type="button" class="btn btn-light" (click)="activeModal.dismiss()" [disabled]="creating">Cancel</button>
-  <button type="button" class="btn btn-primary" [disabled]="creating || form.invalid" (click)="submit()">
-    {{ creating ? 'Creating...' : 'Create project' }}
-  </button>
+  <div class="project-flow-modal__footer-actions">
+    @if (!isFirstStep()) {
+      <button type="button" class="btn btn-outline-secondary" (click)="goBack()" [disabled]="creating">Back</button>
+    }
+    @if (!isLastStep()) {
+      <button type="button" class="btn btn-primary" (click)="goNext()" [disabled]="creating">Next</button>
+    } @else {
+      <button type="button" class="btn btn-primary" [disabled]="creating || form.invalid" (click)="submit()">
+        {{ creating ? 'Creating...' : 'Create project' }}
+      </button>
+    }
+  </div>
 </div>

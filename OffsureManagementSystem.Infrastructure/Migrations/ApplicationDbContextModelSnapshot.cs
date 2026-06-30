@@ -76,6 +76,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int?>("SalesId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -86,6 +89,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SalesId");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -237,6 +242,14 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("Total");
 
+                    b.Property<string>("CommissionType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("CommissionValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -280,6 +293,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
+                    b.Property<int?>("SalesId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ServiceRequestId")
                         .HasColumnType("int");
 
@@ -304,6 +320,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SalesId");
 
                     b.HasIndex("ServiceRequestId")
                         .IsUnique()
@@ -654,6 +672,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<DateTime>("RequestedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("SalesId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ServiceId")
                         .HasColumnType("int");
 
@@ -676,6 +697,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("SalesId");
 
                     b.HasIndex("ServiceId");
 
@@ -1288,6 +1311,15 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             Name = "ResourceManager"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Sales portal; browse team members, manage attributed clients, and view assigned projects.",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Sales"
                         });
                 });
 
@@ -1397,11 +1429,18 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Client", b =>
                 {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "SalesUser")
+                        .WithMany()
+                        .HasForeignKey("SalesId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "User")
                         .WithOne("Client")
                         .HasForeignKey("OffshoreManagementSystem.Domain.Entities.Client", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("SalesUser");
 
                     b.Navigation("User");
                 });
@@ -1430,10 +1469,17 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Project", b =>
                 {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "SalesUser")
+                        .WithMany()
+                        .HasForeignKey("SalesId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.ServiceRequest", "ServiceRequest")
                         .WithOne("Project")
                         .HasForeignKey("OffshoreManagementSystem.Domain.Entities.Project", "ServiceRequestId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("SalesUser");
 
                     b.Navigation("ServiceRequest");
                 });
@@ -1532,6 +1578,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "SalesUser")
+                        .WithMany()
+                        .HasForeignKey("SalesId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.Service", "Service")
                         .WithMany("ServiceRequests")
                         .HasForeignKey("ServiceId")
@@ -1539,6 +1590,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Client");
+
+                    b.Navigation("SalesUser");
 
                     b.Navigation("Service");
                 });

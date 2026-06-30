@@ -759,6 +759,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 request = await CreateStandaloneServiceRequestAsync(dto);
             }
 
+            var resolvedSalesId = dto.SalesId ?? request.SalesId;
+            ValidateSalesAssignment(resolvedSalesId, dto.CommissionType, dto.CommissionValue);
+
             var startDate = dto.StartDate.HasValue
                 ? DateTime.SpecifyKind(dto.StartDate.Value.Date, DateTimeKind.Utc)
                 : DateTime.UtcNow;
@@ -783,6 +786,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     : null,
                 AssignTeamBySkill = dto.RequiredSkillIds is { Count: > 0 },
                 Progress = 0,
+                SalesId = resolvedSalesId,
+                CommissionType = resolvedSalesId.HasValue ? dto.CommissionType : null,
+                CommissionValue = resolvedSalesId.HasValue ? dto.CommissionValue : null,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -851,6 +857,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var request = await _serviceRequestRepo
                 .Query()
                 .Include(r => r.Project)
+                .Include(r => r.Client)
                 .FirstOrDefaultAsync(r => r.Id == serviceRequestId);
 
             if (request is null)
@@ -882,6 +889,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (!await _serviceRepo.IsExistAsync(dto.ServiceId.Value))
                 throw new AppException("Service not found.", 404);
 
+            var client = await _clientRepo
+                .Query()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == dto.ClientId.Value);
+
+            if (client is null)
+                throw new AppException("Client not found.", 404);
+
             var request = new ServiceRequest
             {
                 ClientId = dto.ClientId.Value,
@@ -893,6 +908,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 DueDate = dto.TargetEndDate,
                 Budget = dto.Budget,
                 Priority = 3,
+                SalesId = dto.SalesId ?? client.SalesId,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -1126,6 +1142,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         .ThenInclude(c => c.User)
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Service)
+                .Include(p => p.SalesUser)
                 .Include(p => p.ProjectSkills)
                 .Include(p => p.ProjectResourceManagers.Where(rm => !rm.IsDeleted))
                     .ThenInclude(rm => rm.ResourceManager)
@@ -1174,6 +1191,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         && (a.TeamMember.User.FirstName.ToLower().Contains(searchKey)
                             || a.TeamMember.User.LastName.ToLower().Contains(searchKey))));
             }
+
+            if (request.SalesId.HasValue)
+                query = query.Where(p => p.SalesId == request.SalesId.Value);
 
             return query;
         }
@@ -1475,8 +1495,142 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     .OrderBy(m => m.Order)
                     .ThenBy(m => m.Name)
                     .Select(MapMilestone)
-                    .ToList() ?? new List<ProjectMilestoneDto>()
+                    .ToList() ?? new List<ProjectMilestoneDto>(),
+                SalesId = project.SalesId,
+                SalesPersonName = project.SalesUser is not null
+                    ? UserDisplayName.FromUser(project.SalesUser)
+                    : string.Empty,
+                CommissionType = project.CommissionType,
+                CommissionValue = project.CommissionValue,
+                CalculatedCommissionAmount = CalculateCommissionAmount(project)
             };
+        }
+
+        private static decimal? CalculateCommissionAmount(Project project)
+        {
+            if (!project.SalesId.HasValue
+                || !project.CommissionType.HasValue
+                || !project.CommissionValue.HasValue)
+            {
+                return null;
+            }
+
+            if (project.CommissionType == CommissionType.Fixed)
+                return project.CommissionValue;
+
+            if (!project.Budget.HasValue)
+                return null;
+
+            return Math.Round(
+                project.Budget.Value * project.CommissionValue.Value / 100m,
+                2,
+                MidpointRounding.AwayFromZero);
+        }
+
+        private static SalesProjectSummaryDto MapSalesProjectSummary(Project project)
+        {
+            return new SalesProjectSummaryDto
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Description = ProjectDescriptionSkills.StripSkillsMarker(project.Description),
+                ClientName = project.ServiceRequest?.Client?.CompanyName ?? string.Empty,
+                Status = project.Status,
+                TeamMemberNames = project.ProjectAssignments
+                    .Where(a => a.IsActive)
+                    .OrderBy(a => a.TeamMember.User.FirstName)
+                    .ThenBy(a => a.TeamMember.User.LastName)
+                    .Select(a => UserDisplayName.FromTeamMember(a.TeamMember))
+                    .ToList(),
+                CommissionType = project.CommissionType,
+                CommissionValue = project.CommissionValue,
+                CalculatedCommissionAmount = CalculateCommissionAmount(project)
+            };
+        }
+
+        private static void ValidateSalesAssignment(
+            int? salesId,
+            CommissionType? commissionType,
+            decimal? commissionValue)
+        {
+            if (!salesId.HasValue)
+                return;
+
+            if (!commissionType.HasValue || !commissionValue.HasValue)
+                throw new AppException("Commission type and value are required when a sales person is assigned.", 400);
+
+            if (commissionValue.Value <= 0)
+                throw new AppException("Commission value must be greater than zero.", 400);
+
+            if (commissionType == CommissionType.Percentage && commissionValue.Value > 100)
+                throw new AppException("Commission percentage cannot exceed 100.", 400);
+        }
+
+        public async Task<ProjectDto> UpdateProjectSalesAssignmentAsync(
+            int projectId,
+            UpdateProjectSalesAssignmentDto dto)
+        {
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (!dto.SalesId.HasValue)
+            {
+                project.SalesId = null;
+                project.CommissionType = null;
+                project.CommissionValue = null;
+            }
+            else
+            {
+                ValidateSalesAssignment(dto.SalesId, dto.CommissionType, dto.CommissionValue);
+                project.SalesId = dto.SalesId;
+                project.CommissionType = dto.CommissionType;
+                project.CommissionValue = dto.CommissionValue;
+            }
+
+            project.UpdatedAt = DateTime.UtcNow;
+            _projectRepo.SaveInclude(
+                project,
+                nameof(project.SalesId),
+                nameof(project.CommissionType),
+                nameof(project.CommissionValue),
+                nameof(project.UpdatedAt));
+            await _projectRepo.SaveChangesAsync();
+
+            return await GetProjectByIdAsync(projectId);
+        }
+
+        public async Task<PagedResponse<SalesProjectSummaryDto>> GetSalesProjectsByUserIdAsync(
+            int userId,
+            ProjectFilterRequest request)
+        {
+            request.SalesId = userId;
+            var query = BuildProjectQuery();
+            query = await ApplyFiltersAsync(query, request);
+
+            var totalCount = await query.CountAsync();
+            var projects = await query
+                .OrderByDescending(p => p.StartDate)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            return new PagedResponse<SalesProjectSummaryDto>(
+                projects.Select(MapSalesProjectSummary).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
+        }
+
+        public async Task<SalesProjectSummaryDto> GetSalesProjectByIdAsync(int userId, int projectId)
+        {
+            var project = await BuildProjectQuery()
+                .FirstOrDefaultAsync(p => p.Id == projectId && p.SalesId == userId);
+
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            return MapSalesProjectSummary(project);
         }
 
         private static ProjectMilestoneDto MapMilestone(ProjectMilestone milestone)

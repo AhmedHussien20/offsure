@@ -14,9 +14,11 @@ namespace OffshoreManagementSystem.Domain.Entities
         public DateTime? DueDate { get; set; }
         public decimal? Budget { get; set; }
         public int? Priority { get; set; } // 1-5 for priority level
+        public int? SalesId { get; set; }
 
         // Navigation Properties
         public virtual Client Client { get; set; }
+        public virtual User? SalesUser { get; set; }
         public virtual Service Service { get; set; }
         public virtual Project Project { get; set; }
     }

@@ -1,0 +1,63 @@
+<div class="modal-header">
+  <div>
+    <h5 class="modal-title mb-1">Sales assignment</h5>
+    <p class="text-muted small mb-0">{{ project.name }}</p>
+  </div>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body sales-modal">
+  @if (editing) {
+    <form [formGroup]="form">
+      <app-project-sales-assignment-fields [form]="form" [budget]="project.budget"></app-project-sales-assignment-fields>
+    </form>
+  } @else if (hasSalesAssignment) {
+    <dl class="project-detail-info-grid mb-0">
+      <div class="project-detail-info-grid__item">
+        <dt>Sales person</dt>
+        <dd>{{ project.salesPersonName || '—' }}</dd>
+      </div>
+      <div class="project-detail-info-grid__item">
+        <dt>Commission type</dt>
+        <dd>{{ commissionTypeLabel }}</dd>
+      </div>
+      <div class="project-detail-info-grid__item">
+        <dt>Commission value</dt>
+        <dd>{{ commissionValueLabel }}</dd>
+      </div>
+      <div class="project-detail-info-grid__item">
+        <dt>Calculated commission</dt>
+        <dd>
+          {{
+            project.calculatedCommissionAmount != null
+              ? ('$' + (project.calculatedCommissionAmount | number: '1.2-2'))
+              : '—'
+          }}
+        </dd>
+      </div>
+    </dl>
+  } @else {
+    <p class="text-muted mb-0">No sales person is assigned to this project yet.</p>
+  }
+</div>
+
+<div class="modal-footer">
+  @if (editing) {
+    <button type="button" class="btn btn-light" [disabled]="saving" (click)="cancelEdit()">
+      {{ hasSalesAssignment ? 'Cancel' : 'Close' }}
+    </button>
+    <button type="button" class="btn btn-primary" [disabled]="saving" (click)="save()">
+      {{ saving ? 'Saving...' : (hasSalesAssignment ? 'Save changes' : 'Assign') }}
+    </button>
+  } @else {
+    <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Close</button>
+    @if (hasSalesAssignment) {
+      <button type="button" class="btn btn-outline-danger" [disabled]="saving" (click)="removeAssignment()">
+        {{ saving ? 'Removing...' : 'Remove' }}
+      </button>
+      <button type="button" class="btn btn-primary" (click)="startEdit()">Edit</button>
+    } @else {
+      <button type="button" class="btn btn-primary" (click)="startEdit()">Assign sales person</button>
+    }
+  }
+</div>

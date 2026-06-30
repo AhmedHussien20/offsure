@@ -99,7 +99,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         && ts.Skill.Name.Contains(term)));
             }
 
-            query = ApplyExperienceBand(query, request.ExperienceBand);
+            query = TeamMemberBrowseFilters.ApplyNameSearch(query, request.NameSearch);
+            query = TeamMemberBrowseFilters.ApplyExperienceBand(query, request.ExperienceBand);
 
             var total = await query.CountAsync();
             var members = await query
@@ -233,20 +234,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         Description = e.Description
                     })
                     .ToList()
-            };
-        }
-
-        private static IQueryable<TeamMember> ApplyExperienceBand(IQueryable<TeamMember> query, string? band)
-        {
-            if (string.IsNullOrWhiteSpace(band))
-                return query;
-
-            return band.Trim() switch
-            {
-                "3-5" => query.Where(t => t.YearsOfExperience >= 3 && t.YearsOfExperience <= 5),
-                "5+" => query.Where(t => t.YearsOfExperience >= 5),
-                "10+" => query.Where(t => t.YearsOfExperience >= 10),
-                _ => query
             };
         }
 

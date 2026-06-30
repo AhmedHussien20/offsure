@@ -81,8 +81,8 @@ export class AdminProjectsListComponent implements OnInit {
   openCreateProject(): void {
     const modalRef = this.modalService.open(AdminProjectCreateComponent, {
       centered: true,
-      size: 'lg',
       backdrop: 'static',
+      modalDialogClass: 'project-flow-modal__dialog',
     });
     modalRef.closed.subscribe(created => {
       if (created) {

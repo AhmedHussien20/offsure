@@ -3,7 +3,21 @@
 <div class="card custom-card client-team-members">
   <div class="card-body">
     <div class="client-team-members__toolbar row g-3 align-items-end">
-      <div class="col-md-5">
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-1" for="nameSearch">Search by name</label>
+        <div class="client-team-members__search">
+          <i class="fe fe-user client-team-members__search-icon"></i>
+          <input
+            id="nameSearch"
+            type="text"
+            class="form-control client-team-members__search-input"
+            placeholder="Team member name"
+            [(ngModel)]="nameSearch"
+            (ngModelChange)="onNameSearchInput()" />
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
         <label class="form-label mb-1" for="skillSearch">Search by skill</label>
         <div class="client-team-members__search">
           <i class="fe fe-search client-team-members__search-icon"></i>
@@ -17,32 +31,25 @@
         </div>
       </div>
 
-      <div class="col-md-3">
-        <label class="form-label mb-1" for="experienceBand">Experience</label>
-        <select
-          id="experienceBand"
-          class="form-select"
+      <div class="col-lg-3 col-md-6">
+        <app-toolbar-select
+          inputId="experienceBand"
+          label="Experience"
+          [options]="experienceOptions"
           [(ngModel)]="experienceBand"
-          (ngModelChange)="onExperienceBandChange()">
-          @for (band of experienceBands; track band.value) {
-            <option [ngValue]="band.value">{{ band.label }}</option>
-          }
-        </select>
+          (selectionChange)="onExperienceBandChange()" />
       </div>
 
-      <div class="col-md-4">
-        <label class="form-label mb-1" for="projectFilter">Project</label>
-        <select
-          id="projectFilter"
-          class="form-select"
+      <div class="col-lg-3 col-md-6">
+        <app-toolbar-select
+          inputId="projectFilter"
+          label="Project"
+          nullOptionLabel="All projects"
+          [searchable]="true"
+          [pageSize]="20"
+          [loadPage]="loadProjectsPage"
           [(ngModel)]="projectId"
-          (ngModelChange)="onProjectChange()"
-          [disabled]="loadingProjects">
-          <option [ngValue]="null">All projects</option>
-          @for (project of projects; track project.id) {
-            <option [ngValue]="project.id">{{ project.name }}</option>
-          }
-        </select>
+          (selectionChange)="onProjectChange()" />
       </div>
     </div>
 

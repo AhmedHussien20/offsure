@@ -126,4 +126,6 @@ export interface ServiceRequestDto {
   priority: number | null;
   projectId?: number | null;
   projectStatus?: string | null;
+  salesId?: number | null;
+  salesPersonName?: string;
 }

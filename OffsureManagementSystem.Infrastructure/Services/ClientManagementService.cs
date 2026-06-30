@@ -98,6 +98,77 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetClientByIdAsync(client.Id);
         }
 
+        public async Task<ClientDto> CreateClientBySalesAsync(int salesUserId, CreateClientDto dto)
+        {
+            ValidateCreateInput(dto);
+
+            var salesUser = await _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u =>
+                    u.Id == salesUserId
+                    && u.IsActive
+                    && !u.IsDeleted
+                    && u.Role.Name == nameof(Domain.Entities.Enum.UserRole.Sales));
+
+            if (salesUser is null)
+                throw new AppException("Sales profile not found for current user.", 404);
+
+            var normalizedEmail = NormalizeEmail(dto.Email);
+            var emailExists = await _userRepo
+                .GetAll(u => u.Email == normalizedEmail)
+                .AnyAsync();
+
+            if (emailExists)
+                throw new AppException("Email already exists.", 400);
+
+            var clientRole = await _roleRepo
+                .GetAll(r => r.Name == "Client")
+                .FirstOrDefaultAsync();
+
+            if (clientRole is null)
+                throw new AppException("Resource not found.", 404);
+
+            var user = new User
+            {
+                FirstName = dto.FirstName.Trim(),
+                LastName = dto.LastName.Trim(),
+                Email = normalizedEmail,
+                PasswordHash = HashPassword(dto.Password),
+                RoleId = clientRole.Id,
+                IsEmailVerified = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var client = new Client
+            {
+                User = user,
+                CompanyName = dto.CompanyName.Trim(),
+                ContactPersonPhone = dto.ContactPersonPhone?.Trim() ?? string.Empty,
+                CompanyAddress = dto.CompanyAddress?.Trim() ?? string.Empty,
+                City = dto.City?.Trim() ?? string.Empty,
+                Country = dto.Country?.Trim() ?? string.Empty,
+                PostalCode = dto.PostalCode?.Trim() ?? string.Empty,
+                SalesId = salesUserId,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _clientRepo.AddAsync(client);
+            await _clientRepo.SaveChangesAsync();
+
+            return await GetClientByIdAsync(client.Id);
+        }
+
+        public async Task<PagedResponse<ClientDto>> GetClientsBySalesUserAsync(
+            int salesUserId,
+            ClientFilterRequest request)
+        {
+            request.SalesId = salesUserId;
+            return await GetAllClientsAsync(request);
+        }
+
         public async Task<ClientDto> GetClientByIdAsync(int id)
         {
             var client = await BuildClientProfileQuery()
@@ -248,6 +319,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return _clientRepo
                 .Query()
                 .Include(c => c.User)
+                .Include(c => c.SalesUser)
                 .Include(c => c.ServiceRequests)
                     .ThenInclude(r => r.Service)
                 .Include(c => c.ServiceRequests)
@@ -258,7 +330,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             return _clientRepo
                 .Query()
-                .Include(c => c.User);
+                .Include(c => c.User)
+                .Include(c => c.SalesUser);
         }
 
         private static IQueryable<Client> ApplyFilters(
@@ -270,6 +343,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (request.UserId.HasValue)
                 query = query.Where(c => c.UserId == request.UserId.Value);
+
+            if (request.SalesId.HasValue)
+                query = query.Where(c => c.SalesId == request.SalesId.Value);
 
             if (request.IsActive.HasValue)
                 query = query.Where(c => c.IsActive == request.IsActive.Value);
@@ -414,6 +490,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Country = client.Country ?? string.Empty,
                 PostalCode = client.PostalCode ?? string.Empty,
                 IsActive = client.IsActive,
+                SalesId = client.SalesId,
+                SalesPersonName = client.SalesUser is not null
+                    ? $"{client.SalesUser.FirstName} {client.SalesUser.LastName}".Trim()
+                    : string.Empty,
                 RequestsCount = requestsCount,
                 ProjectsCount = projectsCount,
                 ServiceRequests = serviceRequests

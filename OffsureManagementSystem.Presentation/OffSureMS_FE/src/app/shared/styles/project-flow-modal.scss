@@ -1,0 +1,264 @@
+// Applied via modalDialogClass when opening project create / convert modals.
+.project-flow-modal__dialog {
+  width: 960px;
+  max-width: min(960px, calc(100vw - 2rem));
+  margin: 1.75rem auto;
+}
+
+.project-flow-modal__dialog .modal-content {
+  overflow: hidden;
+}
+
+.project-flow-modal__header {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.project-flow-modal__body {
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-flow-modal__step-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.project-flow-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.project-flow-stepper__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.35rem;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.project-flow-stepper__item:not(:disabled) {
+  cursor: pointer;
+}
+
+.project-flow-stepper__item--active {
+  color: rgb(var(--primary-rgb, 98, 89, 202));
+}
+
+.project-flow-stepper__item--done {
+  color: #475569;
+}
+
+.project-flow-stepper__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #94a3b8;
+  transition: background 0.15s, color 0.15s;
+}
+
+.project-flow-stepper__item--active .project-flow-stepper__dot {
+  background: rgb(var(--primary-rgb, 98, 89, 202));
+  color: #fff;
+}
+
+.project-flow-stepper__item--done .project-flow-stepper__dot {
+  background: rgba(var(--primary-rgb, 98, 89, 202), 0.15);
+  color: rgb(var(--primary-rgb, 98, 89, 202));
+}
+
+.project-flow-stepper__line {
+  flex: 1;
+  min-width: 1.25rem;
+  height: 2px;
+  margin: 0 0.35rem;
+  background: #e2e8f0;
+  border-radius: 1px;
+}
+
+.project-flow-stepper__line--done {
+  background: rgba(var(--primary-rgb, 98, 89, 202), 0.35);
+}
+
+.project-flow-section {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-flow-section__head {
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbfc;
+  flex-shrink: 0;
+}
+
+.project-flow-section__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.project-flow-section__hint {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.project-flow-section__body {
+  padding: 1rem 1.1rem 1.1rem;
+  flex: 1;
+}
+
+.project-flow-section__body--flush {
+  padding: 0.85rem 1.1rem 1rem;
+}
+
+.project-flow-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.project-flow-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.project-flow-field--full {
+  margin-bottom: 0.85rem;
+}
+
+.project-flow-field__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+.project-flow-field__error {
+  font-size: 0.75rem;
+  color: #dc3545;
+}
+
+.project-flow-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e2e8f0;
+}
+
+.project-flow-modal__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.project-flow-context {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .project-flow-context {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.project-flow-context__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 0.15rem;
+}
+
+.project-flow-context__value {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+.project-flow-context__value--accent {
+  color: rgb(var(--primary-rgb, 98, 89, 202));
+}
+
+.project-flow-context__value--muted {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.project-flow-sales-card {
+  flex-shrink: 0;
+  margin-bottom: 1rem;
+}
+
+.project-flow-budget-step {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .project-flow-budget-step {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .project-flow-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-flow-stepper__label {
+    display: none;
+  }
+
+  .project-flow-modal__body {
+    min-height: 420px;
+  }
+}

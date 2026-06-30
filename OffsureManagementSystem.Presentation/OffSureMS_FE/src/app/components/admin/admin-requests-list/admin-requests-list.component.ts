@@ -118,6 +118,15 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
     return this.canConvert(item);
   }
 
+  hasSalesPerson(item: ServiceRequestDto): boolean {
+    return item.salesId != null && item.salesId > 0;
+  }
+
+  salesPersonLabel(item: ServiceRequestDto): string {
+    const name = item.salesPersonName?.trim();
+    return name || 'Assigned sales user';
+  }
+
   statusBadgeClass(status: unknown): string {
     return SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.class ?? 'bg-light';
   }
@@ -235,8 +244,8 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
 
     const modalRef = this.modalService.open(AdminConvertProjectComponent, {
       centered: true,
-      size: 'lg',
       backdrop: 'static',
+      modalDialogClass: 'project-flow-modal__dialog',
     });
     modalRef.componentInstance.request = item;
 

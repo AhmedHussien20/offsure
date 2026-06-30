@@ -14,6 +14,7 @@ import {
   UpsertProjectMilestonesDto,
   UpdateProjectMilestoneStatusDto,
   SetProjectResourceManagersDto,
+  UpdateProjectSalesAssignmentDto,
 } from '../models/projects/project.models';
 import { normalizeProjectStatus } from '../utils/enum-status.util';
 import { normalizeMilestoneStatus } from '../utils/project-milestone.util';
@@ -119,6 +120,15 @@ export class ProjectsService {
   ): Observable<BaseResponse<ProjectDto>> {
     return this.api
       .patch<BaseResponse<ProjectDto>>(this.service, `${projectId}/milestones/${milestoneId}/status`, dto)
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
+  }
+
+  updateSalesAssignment(
+    id: number,
+    dto: UpdateProjectSalesAssignmentDto
+  ): Observable<BaseResponse<ProjectDto>> {
+    return this.api
+      .put<BaseResponse<ProjectDto>>(this.service, `${id}/sales-assignment`, dto)
       .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
   }
 

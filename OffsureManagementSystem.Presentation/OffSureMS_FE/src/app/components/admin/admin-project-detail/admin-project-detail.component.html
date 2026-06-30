@@ -34,6 +34,7 @@
       </div>
       <app-admin-hourly-project-panel [projectId]="project.id" [projectName]="project.name" />
     }
+    <app-admin-project-sales-card [project]="project" (projectChange)="onProjectUpdated($event)" />
     <button
       type="button"
       class="project-detail-stat project-detail-stat--action project-detail-stat--team"

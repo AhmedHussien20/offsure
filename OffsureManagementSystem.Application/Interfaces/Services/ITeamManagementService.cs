@@ -31,6 +31,13 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<ResourceManagerUserDto> DeactivateResourceManagerAsync(int userId);
         Task<ResourceManagerUserDto> ActivateResourceManagerAsync(int userId);
         Task DeleteResourceManagerAsync(int userId);
+        Task<PagedResponse<SalesUserDto>> GetSalesUsersAsync(SalesUserRequest request);
+        Task<SalesUserDto> GetSalesUserByIdAsync(int userId);
+        Task<SalesUserDto> CreateSalesUserAsync(CreateSalesUserDto dto);
+        Task<SalesUserDto> UpdateSalesUserAsync(int userId, UpdateSalesUserDto dto);
+        Task<SalesUserDto> DeactivateSalesUserAsync(int userId);
+        Task<SalesUserDto> ActivateSalesUserAsync(int userId);
+        Task DeleteSalesUserAsync(int userId);
         Task<PagedResponse<TeamMemberDto>> GetManagedTeamMembersAsync(int resourceManagerUserId, TeamMemberRequest request);
         Task<TeamMemberDto> GetManagedTeamMemberByIdAsync(int resourceManagerUserId, int teamMemberId);
         Task<TeamMemberDto> CreateManagedTeamMemberAsync(int resourceManagerUserId, CreateTeamMemberDto dto);

@@ -96,6 +96,35 @@ export interface ResourceManagerUserDto {
   isActive: boolean;
 }
 
+export interface SalesUserRequest {
+  pageIndex?: number;
+  pageSize?: number;
+  searchKey?: string;
+  isActive?: boolean;
+}
+
+export interface CreateSalesUserDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface UpdateSalesUserDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface SalesUserDto {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+}
+
 export interface TeamMemberSkillDto {
   id: number;
   skillId: number;

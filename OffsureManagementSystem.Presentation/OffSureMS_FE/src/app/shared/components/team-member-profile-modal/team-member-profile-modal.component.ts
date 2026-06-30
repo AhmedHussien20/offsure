@@ -11,10 +11,11 @@ import { AuthService } from 'app/core/services/auth.service';
 import { ClientsService } from 'app/core/services/clients.service';
 import { IntroVideoPlayerComponent } from 'app/shared/components/intro-video-player/intro-video-player.component';
 import { ResourceManagerPortalService } from 'app/core/services/resource-manager-portal.service';
+import { SalesService } from 'app/core/services/sales.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { Observable, map } from 'rxjs';
 
-export type TeamMemberProfileSource = 'client' | 'admin' | 'resource-manager';
+export type TeamMemberProfileSource = 'client' | 'admin' | 'resource-manager' | 'sales';
 
 export interface TeamMemberProfileView {
   fullName: string;
@@ -49,7 +50,8 @@ export class TeamMemberProfileModalComponent implements OnInit {
     private authService: AuthService,
     private clientsService: ClientsService,
     private teamMembersService: TeamMembersService,
-    private rmPortalService: ResourceManagerPortalService
+    private rmPortalService: ResourceManagerPortalService,
+    private salesService: SalesService
   ) {}
 
   ngOnInit(): void {
@@ -118,6 +120,10 @@ export class TeamMemberProfileModalComponent implements OnInit {
         return this.rmPortalService.getTeamMemberById(this.memberId).pipe(
           map(res => (res.data ? this.mapTeamMember(res.data) : null))
         );
+      case 'sales':
+        return this.salesService.getTeamMemberDetail(this.memberId).pipe(
+          map(res => (res.data ? this.mapClientMember(res.data) : null))
+        );
       default:
         return this.clientsService.getTeamMemberDetail(this.memberId).pipe(
           map(res => (res.data ? this.mapClientMember(res.data) : null))
@@ -131,6 +137,9 @@ export class TeamMemberProfileModalComponent implements OnInit {
     }
     if (this.authService.isResourceManager()) {
       return 'resource-manager';
+    }
+    if (this.authService.isSales()) {
+      return 'sales';
     }
     return 'client';
   }

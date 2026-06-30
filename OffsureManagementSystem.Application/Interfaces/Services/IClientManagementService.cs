@@ -7,6 +7,8 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
     {
         Task<PagedResponse<ClientDto>> GetAllClientsAsync(ClientFilterRequest request);
         Task<ClientDto> CreateClientAsync(CreateClientDto dto);
+        Task<ClientDto> CreateClientBySalesAsync(int salesUserId, CreateClientDto dto);
+        Task<PagedResponse<ClientDto>> GetClientsBySalesUserAsync(int salesUserId, ClientFilterRequest request);
         Task<ClientDto> GetClientByIdAsync(int id);
         Task<ClientDto> GetClientProfileAsync(int userId);
         Task<IReadOnlyList<ClientServiceRequestSummaryDto>> GetClientRecentServiceRequestsAsync(int userId, int limit = 5);

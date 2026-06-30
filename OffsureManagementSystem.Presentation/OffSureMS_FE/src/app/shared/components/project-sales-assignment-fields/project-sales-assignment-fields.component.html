@@ -1,0 +1,109 @@
+<div
+  class="project-sales-fields"
+  [class.project-sales-fields--embedded]="embedded"
+  [class.project-sales-fields--compact]="compact"
+  [formGroup]="form">
+  @if (!embedded && !compact) {
+    <h6 class="project-sales-fields__title">Sales assignment <span class="text-muted fw-normal">(optional)</span></h6>
+  }
+
+  <div class="project-sales-fields__top-card">
+    @if (compact) {
+      <div class="project-sales-fields__top-card-icon" aria-hidden="true">
+        <i class="fe fe-user-check"></i>
+      </div>
+    }
+    <div class="project-sales-fields__top-card-main">
+      @if (compact) {
+        <span class="project-sales-fields__top-card-label">Sales assignment <span class="text-muted fw-normal">(optional)</span></span>
+      } @else {
+        <label class="project-sales-fields__label" for="salesPersonSelect">Sales person</label>
+      }
+      <select
+        id="salesPersonSelect"
+        class="form-select"
+        [class.form-select-sm]="compact"
+        formControlName="salesId">
+        <option [ngValue]="null">— None —</option>
+        @for (user of salesUsers; track user.id) {
+          <option [ngValue]="user.id">{{ user.fullName || (user.firstName + ' ' + user.lastName) }}</option>
+        }
+      </select>
+      @if (loadingSales) {
+        <div class="form-text">Loading sales users...</div>
+      }
+    </div>
+  </div>
+
+  @if (salesSelected) {
+    <div class="project-sales-fields__details">
+      <div class="project-sales-fields__row">
+        <span class="project-sales-fields__label d-block">Commission type</span>
+        <div class="segment-group" role="group">
+          <button
+            type="button"
+            class="segment-group__pill"
+            [class.segment-group__pill--active]="commissionType === 'Fixed'"
+            (click)="onCommissionTypeChange('Fixed')">
+            Fixed amount
+          </button>
+          <button
+            type="button"
+            class="segment-group__pill"
+            [class.segment-group__pill--active]="commissionType === 'Percentage'"
+            (click)="onCommissionTypeChange('Percentage')">
+            Percentage
+          </button>
+        </div>
+      </div>
+
+      <div class="project-sales-fields__commission-grid">
+        @if (commissionType === 'Fixed') {
+          <div class="project-sales-fields__row mb-0">
+            <label class="project-sales-fields__label" for="commissionFixed">Commission amount</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">$</span>
+              <input
+                id="commissionFixed"
+                type="number"
+                class="form-control"
+                formControlName="commissionValue"
+                min="0"
+                step="0.01"
+                placeholder="e.g. 500" />
+            </div>
+          </div>
+        }
+
+        @if (commissionType === 'Percentage') {
+          <div class="project-sales-fields__row mb-0">
+            <label class="project-sales-fields__label" for="commissionPct">Commission %</label>
+            <div class="input-group input-group-sm">
+              <input
+                id="commissionPct"
+                type="number"
+                class="form-control"
+                formControlName="commissionValue"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="e.g. 10" />
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="project-sales-fields__row mb-0">
+            <label class="project-sales-fields__label">Calculated</label>
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              readonly
+              [value]="calculatedCommission != null ? ('$' + (calculatedCommission | number: '1.2-2')) : '—'" />
+            @if (budget == null) {
+              <div class="form-text text-muted">Set budget to calculate.</div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

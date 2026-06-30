@@ -94,6 +94,56 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<object>.Ok(null!, "Resource manager deleted successfully."));
         }
 
+        [HttpGet("sales-users")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<SalesUserDto>>>> GetSalesUsers(
+            [FromQuery] SalesUserRequest request)
+        {
+            var users = await _teamManagementService.GetSalesUsersAsync(request);
+            return Ok(ApiResponse<PagedResponse<SalesUserDto>>.Ok(users));
+        }
+
+        [HttpGet("sales-users/{id:int}")]
+        public async Task<ActionResult<ApiResponse<SalesUserDto>>> GetSalesUserById(int id)
+        {
+            var user = await _teamManagementService.GetSalesUserByIdAsync(id);
+            return Ok(ApiResponse<SalesUserDto>.Ok(user));
+        }
+
+        [HttpPost("sales-users")]
+        public async Task<ActionResult<ApiResponse<SalesUserDto>>> CreateSalesUser(CreateSalesUserDto dto)
+        {
+            var user = await _teamManagementService.CreateSalesUserAsync(dto);
+            return Ok(ApiResponse<SalesUserDto>.Ok(user, "Sales user created successfully."));
+        }
+
+        [HttpPut("sales-users/{id:int}")]
+        public async Task<ActionResult<ApiResponse<SalesUserDto>>> UpdateSalesUser(int id, UpdateSalesUserDto dto)
+        {
+            var user = await _teamManagementService.UpdateSalesUserAsync(id, dto);
+            return Ok(ApiResponse<SalesUserDto>.Ok(user, "Sales user updated successfully."));
+        }
+
+        [HttpPatch("sales-users/{id:int}/deactivate")]
+        public async Task<ActionResult<ApiResponse<SalesUserDto>>> DeactivateSalesUser(int id)
+        {
+            var user = await _teamManagementService.DeactivateSalesUserAsync(id);
+            return Ok(ApiResponse<SalesUserDto>.Ok(user, "Sales user deactivated successfully."));
+        }
+
+        [HttpPatch("sales-users/{id:int}/activate")]
+        public async Task<ActionResult<ApiResponse<SalesUserDto>>> ActivateSalesUser(int id)
+        {
+            var user = await _teamManagementService.ActivateSalesUserAsync(id);
+            return Ok(ApiResponse<SalesUserDto>.Ok(user, "Sales user activated successfully."));
+        }
+
+        [HttpDelete("sales-users/{id:int}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteSalesUser(int id)
+        {
+            await _teamManagementService.DeleteSalesUserAsync(id);
+            return Ok(ApiResponse<object>.Ok(null!, "Sales user deleted successfully."));
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApiResponse<TeamMemberDto>>> Create(CreateTeamMemberDto dto)
         {

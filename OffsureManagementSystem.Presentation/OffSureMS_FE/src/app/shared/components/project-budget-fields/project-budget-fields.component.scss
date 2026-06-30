@@ -1,17 +1,5 @@
-@use '../../styles/generic-form-controls' as gfc;
-
 :host {
   display: block;
-}
-
-:host ::ng-deep {
-  @include gfc.gf-field-label;
-
-  .budget-section > .form-label {
-    margin-bottom: 0.75rem;
-  }
-
-  @include gfc.gf-text-input;
 }
 
 .budget-section {
@@ -19,4 +7,73 @@
   border-radius: 12px;
   border: 1px solid rgba(98, 89, 202, 0.15);
   background: rgba(98, 89, 202, 0.04);
+}
+
+.budget-section--embedded {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.budget-section__note {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.65rem;
+}
+
+.segment-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.segment-group--secondary {
+  margin-top: 0.25rem;
+}
+
+.segment-group__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segment-group__label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  margin: 0;
+}
+
+.segment-group__input:checked + .segment-group__label {
+  background: rgba(var(--primary-rgb, 98, 89, 202), 0.12);
+  border-color: rgba(var(--primary-rgb, 98, 89, 202), 0.35);
+  color: rgb(var(--primary-rgb, 98, 89, 202));
+}
+
+.segment-group__input:focus-visible + .segment-group__label {
+  outline: 2px solid rgba(var(--primary-rgb, 98, 89, 202), 0.4);
+  outline-offset: 2px;
+}
+
+.budget-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.budget-field__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
 }

@@ -18,6 +18,8 @@ export class ProjectBudgetFieldsComponent implements OnInit, OnDestroy {
   /** standalone = total/hourly only; convert = same as request + custom */
   @Input() mode: 'standalone' | 'convert' = 'standalone';
   @Input() requestBudget: number | null = null;
+  /** Strip outer chrome when nested inside a parent section (e.g. convert modal). */
+  @Input() embedded = false;
   /** Unique prefix for radio ids when multiple modals exist. */
   @Input() idPrefix = 'pb';
 

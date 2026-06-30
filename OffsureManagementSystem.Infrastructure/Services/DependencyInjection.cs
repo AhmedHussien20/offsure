@@ -27,6 +27,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             services.AddScoped<ITeamProfileStorageService, TeamProfileStorageService>();
             services.AddScoped<ITeamIntroVideoStorageService, TeamIntroVideoStorageService>();
             services.AddScoped<IClientTeamBrowseService, ClientTeamBrowseService>();
+            services.AddScoped<ISalesTeamBrowseService, SalesTeamBrowseService>();
             services.AddScoped<IServiceManagementService, ServiceManagementService>();
             services.AddScoped<IServiceRequestManagementService, ServiceRequestManagementService>();
             services.AddScoped<IProjectManagementService, ProjectManagementService>();

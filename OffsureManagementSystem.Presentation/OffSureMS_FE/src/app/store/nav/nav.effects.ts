@@ -51,6 +51,13 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     requiredRole: 'Administrator',
   },
   {
+    title: 'Sales Users',
+    path: '/admin/sales-users',
+    type: 'link',
+    icon: 'ti-user',
+    requiredRole: 'Administrator',
+  },
+  {
     title: 'Services',
     path: '/admin/services',
     type: 'link',
@@ -127,6 +134,38 @@ private RESOURCE_MANAGER_MENUITEMS: MenuItem[] = [
     type: 'link',
     icon: 'ti-folder',
     requiredRole: 'ResourceManager',
+  },
+];
+
+private SALES_MENUITEMS: MenuItem[] = [
+  { headTitle: 'Sales Portal' },
+  {
+    title: 'Dashboard',
+    path: '/sales/dashboard',
+    type: 'link',
+    icon: 'ti-home',
+    requiredRole: 'Sales',
+  },
+  {
+    title: 'Browse Team Members',
+    path: '/sales/team-members',
+    type: 'link',
+    icon: 'ti-id-badge',
+    requiredRole: 'Sales',
+  },
+  {
+    title: 'My Projects',
+    path: '/sales/projects',
+    type: 'link',
+    icon: 'ti-folder',
+    requiredRole: 'Sales',
+  },
+  {
+    title: 'My Clients',
+    path: '/sales/clients',
+    type: 'link',
+    icon: 'ti-briefcase',
+    requiredRole: 'Sales',
   },
 ];
 
@@ -433,6 +472,9 @@ private MENUITEMS: MenuItem[] = [
     }
     if (this.auth.isResourceManager()) {
       return this.RESOURCE_MANAGER_MENUITEMS;
+    }
+    if (this.auth.isSales()) {
+      return this.SALES_MENUITEMS;
     }
     if (this.auth.isAdministrator()) {
       return this.ADMIN_MENUITEMS;

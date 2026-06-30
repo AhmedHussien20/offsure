@@ -105,6 +105,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 DueDate = dto.DueDate,
                 Budget = dto.Budget,
                 Priority = dto.Priority ?? 3,
+                SalesId = client.SalesId,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -198,6 +199,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Query()
                 .Include(r => r.Client)
                     .ThenInclude(c => c.User)
+                .Include(r => r.Client)
+                    .ThenInclude(c => c.SalesUser)
+                .Include(r => r.SalesUser)
                 .Include(r => r.Service)
                     .ThenInclude(s => s.ServiceCategory)
                 .Include(r => r.Project);
@@ -351,6 +355,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static ServiceRequestDto MapRequest(ServiceRequest request)
         {
+            var salesId = request.SalesId ?? request.Client?.SalesId;
+            var salesUser = request.SalesUser ?? request.Client?.SalesUser;
+
             return new ServiceRequestDto
             {
                 Id = request.Id,
@@ -368,7 +375,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Budget = request.Budget,
                 Priority = request.Priority,
                 ProjectId = request.Project?.Id,
-                ProjectStatus = request.Project?.Status
+                ProjectStatus = request.Project?.Status,
+                SalesId = salesId,
+                SalesPersonName = salesUser is not null
+                    ? $"{salesUser.FirstName} {salesUser.LastName}".Trim()
+                    : string.Empty
             };
         }
     }

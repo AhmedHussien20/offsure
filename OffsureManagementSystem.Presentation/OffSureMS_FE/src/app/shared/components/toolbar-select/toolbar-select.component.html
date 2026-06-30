@@ -1,0 +1,52 @@
+<div class="toolbar-select">
+  <label class="form-label mb-1" [attr.for]="inputId">{{ label }}</label>
+  <div class="toolbar-select__wrap" [class.toolbar-select__wrap--open]="open">
+    <div class="form-select toolbar-select__trigger">
+      <input
+        #fieldInput
+        type="text"
+        class="toolbar-select__input"
+        [id]="inputId"
+        [attr.aria-expanded]="open"
+        autocomplete="off"
+        [readonly]="!open"
+        [ngModel]="open ? search : selectedLabel"
+        (ngModelChange)="onFieldInput($event)"
+        (click)="onTriggerClick()"
+        (keydown.escape)="closePanel()" />
+      <i class="fe fe-chevron-down toolbar-select__chevron" [class.toolbar-select__chevron--open]="open"></i>
+    </div>
+
+    @if (open) {
+      <div class="toolbar-select__panel">
+        <div class="toolbar-select__list" (scroll)="onListScroll($event)">
+          @if (nullOptionLabel != null) {
+            <button
+              type="button"
+              class="toolbar-select__option"
+              [class.toolbar-select__option--active]="isSelected(null)"
+              (mousedown)="$event.preventDefault()"
+              (click)="selectOption(null)">
+              {{ nullOptionLabel }}
+            </button>
+          }
+          @for (option of displayOptions; track option.label + '-' + option.value) {
+            <button
+              type="button"
+              class="toolbar-select__option"
+              [class.toolbar-select__option--active]="isSelected(option.value)"
+              (mousedown)="$event.preventDefault()"
+              (click)="selectOption(option.value)">
+              {{ option.label }}
+            </button>
+          }
+          @if (loading) {
+            <div class="toolbar-select__status">Loading...</div>
+          } @else if (!displayOptions.length && nullOptionLabel == null) {
+            <div class="toolbar-select__status text-muted">No options found.</div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

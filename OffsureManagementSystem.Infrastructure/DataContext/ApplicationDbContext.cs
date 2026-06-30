@@ -160,6 +160,15 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                         IsActive = true,
                         CreatedAt = rolesSeededAt,
                         IsDeleted = false
+                    },
+                    new Role
+                    {
+                        Id = 5,
+                        Name = "Sales",
+                        Description = "Sales portal; browse team members, manage attributed clients, and view assigned projects.",
+                        IsActive = true,
+                        CreatedAt = rolesSeededAt,
+                        IsDeleted = false
                     });
             });
 
@@ -395,6 +404,12 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey<Client>(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(e => e.SalesUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.SalesId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
                 entity.HasMany(e => e.ServiceRequests)
                     .WithOne(s => s.Client)
                     .HasForeignKey(s => s.ClientId)
@@ -468,7 +483,11 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey(e => e.ServiceId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-               
+                entity.HasOne(e => e.SalesUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.SalesId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
             });
            
 
@@ -506,10 +525,23 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.Property(e => e.HourlyRate)
                     .HasPrecision(18, 2);
 
+                entity.Property(e => e.CommissionValue)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.CommissionType)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
                 entity.HasOne(e => e.ServiceRequest)
                     .WithOne(s => s.Project)
                     .HasForeignKey<Project>(e => e.ServiceRequestId)
                     .OnDelete(DeleteBehavior.SetNull)
+                    .IsRequired(false);
+
+                entity.HasOne(e => e.SalesUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.SalesId)
+                    .OnDelete(DeleteBehavior.Restrict)
                     .IsRequired(false);
 
                 entity.HasMany(e => e.ProjectAssignments)

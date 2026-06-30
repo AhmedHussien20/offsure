@@ -113,5 +113,7 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public int? Priority { get; set; }
         public int? ProjectId { get; set; }
         public ProjectStatus? ProjectStatus { get; set; }
+        public int? SalesId { get; set; }
+        public string SalesPersonName { get; set; } = string.Empty;
     }
 }

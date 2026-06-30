@@ -6,6 +6,7 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
     public class ClientFilterRequest : BaseApiRequest
     {
         public int? UserId { get; set; }
+        public int? SalesId { get; set; }
         public bool? IsActive { get; set; }
         public string? City { get; set; }
         public string? Country { get; set; }
@@ -51,6 +52,8 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public string Country { get; set; } = string.Empty;
         public string PostalCode { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public int? SalesId { get; set; }
+        public string SalesPersonName { get; set; } = string.Empty;
         public int RequestsCount { get; set; }
         public int ProjectsCount { get; set; }
         public List<ClientServiceRequestSummaryDto> ServiceRequests { get; set; } = new();

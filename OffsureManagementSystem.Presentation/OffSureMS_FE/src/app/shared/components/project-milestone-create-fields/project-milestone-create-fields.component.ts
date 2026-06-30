@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, input } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAX_MILESTONE_COUNT, MIN_MILESTONE_COUNT } from 'app/core/utils/project-milestone.util';
 import { Subject } from 'rxjs';
@@ -16,6 +16,8 @@ export class ProjectMilestoneCreateFieldsComponent implements OnInit, OnDestroy 
   @Input({ required: true }) form!: FormGroup;
   @Input() idPrefix = 'ms';
   @Input() mode: 'standalone' | 'convert' = 'standalone';
+  /** Strip outer chrome when nested inside a parent section (e.g. convert modal). */
+  readonly embedded = input(false);
 
   readonly minCount = MIN_MILESTONE_COUNT;
   readonly maxCount = MAX_MILESTONE_COUNT;

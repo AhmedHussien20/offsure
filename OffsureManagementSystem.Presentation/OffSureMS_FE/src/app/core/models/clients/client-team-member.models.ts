@@ -1,6 +1,7 @@
-export type ClientTeamExperienceBand = '' | '3-5' | '5+' | '10+';
+export type ClientTeamExperienceBand = '' | '0-3' | '3-5' | '5+' | '10+';
 
 export interface ClientTeamMemberBrowseRequest {
+  nameSearch?: string;
   skillSearch?: string;
   experienceBand?: ClientTeamExperienceBand;
   projectId?: number;
@@ -41,6 +42,7 @@ export interface ClientTeamMemberExperienceDto {
 
 export const CLIENT_TEAM_EXPERIENCE_BANDS: Array<{ value: ClientTeamExperienceBand; label: string }> = [
   { value: '', label: 'All experience' },
+  { value: '0-3', label: '0–3 years' },
   { value: '3-5', label: '3–5 years' },
   { value: '5+', label: '5+ years' },
   { value: '10+', label: '10+ years' },

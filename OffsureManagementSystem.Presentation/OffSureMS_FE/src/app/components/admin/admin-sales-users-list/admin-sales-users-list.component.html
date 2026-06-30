@@ -1,0 +1,34 @@
+<app-page-header></app-page-header>
+
+<div class="card custom-card">
+  <app-generic-table
+    [columns]="columns"
+    [data]="data"
+    [page]="page"
+    [entries]="entries"
+    [totalItems]="totalItems"
+    [totalPages]="totalPages"
+    [searchCriteria]="searchCriteria"
+    [labels]="labels"
+    [dropdownOptions]="dropdownOptions"
+    [showFilters]="true"
+    [showPagination]="true"
+    [showEmployeeFilter]="false"
+    [showExportExcel]="false"
+    [showAddButton]="true"
+    [addButtonLabel]="'Add sales user'"
+    [expandable]="true"
+    [expandTemplate]="salesUserDetail"
+    [onSearch]="onSearch"
+    (pageChange)="onPageChange($event)"
+    (entriesChange)="onEntriesChange($event)"
+    (addClick)="onAdd()">
+  </app-generic-table>
+</div>
+
+<ng-template #salesUserDetail let-item>
+  <app-admin-sales-user-panel
+    [salesUserId]="item.id"
+    (saved)="onSalesUserSaved()"
+    (deleted)="onSalesUserDeleted()" />
+</ng-template>

@@ -30,5 +30,8 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<ProjectDto> SetProjectResourceManagersAsync(int projectId, SetProjectResourceManagersDto dto);
         Task<ProjectDto> UpsertProjectMilestonesAsync(int projectId, UpsertProjectMilestonesDto dto);
         Task<ProjectDto> UpdateProjectMilestoneStatusAsync(int projectId, int milestoneId, UpdateProjectMilestoneStatusDto dto);
+        Task<ProjectDto> UpdateProjectSalesAssignmentAsync(int projectId, UpdateProjectSalesAssignmentDto dto);
+        Task<PagedResponse<SalesProjectSummaryDto>> GetSalesProjectsByUserIdAsync(int userId, ProjectFilterRequest request);
+        Task<SalesProjectSummaryDto> GetSalesProjectByIdAsync(int userId, int projectId);
     }
 }

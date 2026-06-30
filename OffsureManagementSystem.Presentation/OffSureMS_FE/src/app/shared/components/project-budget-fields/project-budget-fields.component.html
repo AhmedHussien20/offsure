@@ -1,100 +1,103 @@
-<div class="budget-section" [formGroup]="form">
-  <label class="form-label d-block">Budget</label>
+<div
+  class="budget-section"
+  [class.budget-section--embedded]="embedded"
+  [formGroup]="form">
+  @if (!embedded) {
+    <label class="form-label d-block">Budget</label>
+  }
 
   @if (mode === 'convert') {
-    <div class="btn-group btn-group-sm w-100 mb-3" role="group">
+    <div class="segment-group" role="group">
       <input
         type="radio"
-        class="btn-check"
+        class="segment-group__input"
         [id]="idPrefix + '-same'"
         value="sameAsRequest"
         formControlName="budgetMode" />
-      <label class="btn btn-outline-primary" [for]="idPrefix + '-same'">Same as request</label>
+      <label class="segment-group__label" [for]="idPrefix + '-same'">Same as request</label>
       <input
         type="radio"
-        class="btn-check"
+        class="segment-group__input"
         [id]="idPrefix + '-custom'"
         value="custom"
         formControlName="budgetMode" />
-      <label class="btn btn-outline-primary" [for]="idPrefix + '-custom'">Custom budget</label>
+      <label class="segment-group__label" [for]="idPrefix + '-custom'">Custom budget</label>
     </div>
 
     @if (budgetMode === 'sameAsRequest') {
-      <div class="alert alert-light border mb-0 py-2">
-        Client budget:
+      <p class="budget-section__note mb-0">
+        Using client request amount:
         <strong>{{ requestBudget != null ? (requestBudget | number: '1.0-2') : 'Not specified' }}</strong>
-      </div>
+      </p>
     }
   }
 
   @if (mode === 'standalone' || budgetMode === 'custom') {
     @if (mode === 'convert' && budgetMode === 'custom') {
-      <div class="btn-group btn-group-sm mb-3" role="group">
+      <div class="segment-group segment-group--secondary" role="group">
         <input
           type="radio"
-          class="btn-check"
+          class="segment-group__input"
           [id]="idPrefix + '-total'"
           value="total"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Fixed budget project</label>
+        <label class="segment-group__label" [for]="idPrefix + '-total'">Fixed budget</label>
         <input
           type="radio"
-          class="btn-check"
+          class="segment-group__input"
           [id]="idPrefix + '-hourly'"
           value="hourly"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">Hourly project</label>
+        <label class="segment-group__label" [for]="idPrefix + '-hourly'">Hourly</label>
       </div>
     }
 
     @if (mode === 'standalone') {
-      <div class="btn-group btn-group-sm mb-3" role="group">
+      <div class="segment-group segment-group--secondary mb-3" role="group">
         <input
           type="radio"
-          class="btn-check"
+          class="segment-group__input"
           [id]="idPrefix + '-total'"
           value="total"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-total'">Fixed budget project</label>
+        <label class="segment-group__label" [for]="idPrefix + '-total'">Fixed budget project</label>
         <input
           type="radio"
-          class="btn-check"
+          class="segment-group__input"
           [id]="idPrefix + '-hourly'"
           value="hourly"
           formControlName="customBudgetType" />
-        <label class="btn btn-outline-secondary" [for]="idPrefix + '-hourly'">Hourly project</label>
+        <label class="segment-group__label" [for]="idPrefix + '-hourly'">Hourly project</label>
       </div>
     }
 
     @if (customBudgetType === 'total') {
-        <div class="generic-form__control">
-          <div class="input-wrapper">
-            <i class="fe fe-hash"></i>
-            <input
-              type="number"
-              class="form-control"
-              formControlName="totalBudget"
-            min="0"
-            step="0.01"
-            placeholder="Total budget" />
-        </div>
+      <div class="budget-field">
+        <label class="budget-field__label" [for]="idPrefix + '-totalBudget'">Total budget</label>
+        <input
+          [id]="idPrefix + '-totalBudget'"
+          type="number"
+          class="form-control"
+          formControlName="totalBudget"
+          min="0"
+          step="0.01"
+          placeholder="Enter amount" />
       </div>
     } @else {
-      <div class="generic-form__control">
-        <div class="input-wrapper">
-          <i class="fe fe-hash"></i>
-          <input
-            type="number"
-            class="form-control"
-            formControlName="hourlyRate"
-            min="0"
-            step="0.01"
-            placeholder="Billing rate / hour" />
-        </div>
+      <div class="budget-field">
+        <label class="budget-field__label" [for]="idPrefix + '-hourlyRate'">Billing rate per hour</label>
+        <input
+          [id]="idPrefix + '-hourlyRate'"
+          type="number"
+          class="form-control"
+          formControlName="hourlyRate"
+          min="0"
+          step="0.01"
+          placeholder="Rate per hour" />
       </div>
-      <small class="text-muted d-block mt-2">
-        Revenue is calculated from logged hours × this rate. No fixed total budget is required.
-      </small>
+      <p class="budget-section__note mb-0">
+        Revenue is calculated from logged hours × this rate.
+      </p>
     }
   }
 </div>

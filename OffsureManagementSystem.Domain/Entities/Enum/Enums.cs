@@ -51,6 +51,13 @@ namespace OffsureManagementSystem.Domain.Entities.Enum
         Administrator = 1,
         Client = 2,
         TeamMember = 3,
-        ResourceManager = 4
+        ResourceManager = 4,
+        Sales = 5
+    }
+
+    public enum CommissionType
+    {
+        Fixed = 0,
+        Percentage = 1
     }
 }

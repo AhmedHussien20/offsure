@@ -19,9 +19,14 @@ import {
 } from 'app/shared/components/paginated-select/paginated-select.component';
 import { ProjectBudgetFieldsComponent } from 'app/shared/components/project-budget-fields/project-budget-fields.component';
 import { ProjectMilestoneCreateFieldsComponent } from 'app/shared/components/project-milestone-create-fields/project-milestone-create-fields.component';
+import { ProjectSalesAssignmentFieldsComponent } from 'app/shared/components/project-sales-assignment-fields/project-sales-assignment-fields.component';
 import { ToastrService } from 'ngx-toastr';
 import { map, Observable, of, Subject, takeUntil } from 'rxjs';
 import { Router } from '@angular/router';
+import {
+  buildProjectSalesFields,
+  resolveStandaloneProjectBudget,
+} from 'app/core/utils/project-sales-form.util';
 
 @Component({
   selector: 'app-admin-project-create',
@@ -33,6 +38,7 @@ import { Router } from '@angular/router';
     PaginatedSelectComponent,
     ProjectBudgetFieldsComponent,
     ProjectMilestoneCreateFieldsComponent,
+    ProjectSalesAssignmentFieldsComponent,
   ],
   templateUrl: './admin-project-create.component.html',
   styleUrl: './admin-project-create.component.scss',
@@ -42,6 +48,9 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
   formConfig: FormFieldConfig[] = [];
   creating = false;
   serviceResetToken = 0;
+  salesBudgetPreview: number | null = null;
+  showMilestonesSection = true;
+  currentStep = 1;
 
   private minDate = new Date().toISOString().split('T')[0];
   private clientNameById = new Map<number, string>();
@@ -58,6 +67,49 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     private router: Router,
     private toastr: ToastrService
   ) {}
+
+  get stepDefs(): { id: string; label: string }[] {
+    const steps = [
+      { id: 'project', label: 'Project' },
+      { id: 'budget', label: 'Budget & sales' },
+    ];
+    if (this.showMilestonesSection) {
+      steps.push({ id: 'milestones', label: 'Milestones' });
+    }
+    return steps;
+  }
+
+  get activeStepId(): string {
+    return this.stepDefs[this.currentStep - 1]?.id ?? 'project';
+  }
+
+  isFirstStep(): boolean {
+    return this.currentStep === 1;
+  }
+
+  isLastStep(): boolean {
+    return this.currentStep === this.stepDefs.length;
+  }
+
+  goBack(): void {
+    if (!this.isFirstStep()) {
+      this.currentStep--;
+    }
+  }
+
+  goNext(): void {
+    if (!this.validateCurrentStep() || this.isLastStep()) {
+      return;
+    }
+    this.currentStep++;
+  }
+
+  goToStep(step: number): void {
+    if (step < 1 || step > this.currentStep || step === this.currentStep || this.creating) {
+      return;
+    }
+    this.currentStep = step;
+  }
 
   get serviceCategoryId(): number | null {
     const v = this.form?.get('serviceCategoryId')?.value;
@@ -127,6 +179,9 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
       expectedHours: [null],
       usesMilestones: [false],
       milestoneCount: [null],
+      salesId: [null],
+      commissionType: [null],
+      commissionValue: [null],
     });
 
     this.formConfig = [
@@ -180,9 +235,20 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     this.form
       .get('customBudgetType')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
-      .subscribe(() => updateProjectBudgetValidators(this.form, 'standalone'));
+      .subscribe(() => {
+        updateProjectBudgetValidators(this.form, 'standalone');
+        this.refreshDerivedState();
+      });
+
+    this.form
+      .get('totalBudget')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.salesBudgetPreview = resolveStandaloneProjectBudget(this.form);
+      });
 
     updateProjectBudgetValidators(this.form, 'standalone');
+    this.refreshDerivedState();
   }
 
   ngOnDestroy(): void {
@@ -190,9 +256,97 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  private refreshDerivedState(): void {
+    this.salesBudgetPreview = resolveStandaloneProjectBudget(this.form);
+    this.showMilestonesSection = this.form.get('customBudgetType')?.value === 'total';
+
+    if (this.currentStep > this.stepDefs.length) {
+      this.currentStep = this.stepDefs.length;
+    }
+  }
+
+  private validateCurrentStep(): boolean {
+    switch (this.activeStepId) {
+      case 'project': {
+        const clientId = this.form.get('clientId');
+        const serviceCategoryId = this.form.get('serviceCategoryId');
+        const serviceId = this.form.get('serviceId');
+        const name = this.form.get('name');
+        const startDate = this.form.get('startDate');
+        clientId?.markAsTouched();
+        serviceCategoryId?.markAsTouched();
+        serviceId?.markAsTouched();
+        name?.markAsTouched();
+        startDate?.markAsTouched();
+        if (clientId?.invalid || serviceCategoryId?.invalid || serviceId?.invalid) {
+          this.toastr.warning('Select a client, service category, and service.');
+          return false;
+        }
+        if (name?.invalid || startDate?.invalid) {
+          this.toastr.warning('Fill in the required project details.');
+          return false;
+        }
+        return true;
+      }
+      case 'budget': {
+        const customType = this.form.get('customBudgetType')?.value;
+        if (customType === 'total') {
+          this.form.get('totalBudget')?.markAsTouched();
+          if (this.form.get('totalBudget')?.invalid) {
+            this.toastr.warning('Enter a valid total budget.');
+            return false;
+          }
+        } else {
+          this.form.get('hourlyRate')?.markAsTouched();
+          if (this.form.get('hourlyRate')?.invalid) {
+            this.toastr.warning('Enter a valid hourly rate.');
+            return false;
+          }
+        }
+        return this.validateSalesAssignment();
+      }
+      case 'milestones': {
+        if (!this.form.get('usesMilestones')?.value) {
+          return true;
+        }
+        const count = this.form.get('milestoneCount');
+        count?.markAsTouched();
+        if (count?.invalid) {
+          this.toastr.warning('Enter a valid number of milestones.');
+          return false;
+        }
+        return true;
+      }
+      default:
+        return true;
+    }
+  }
+
+  private validateSalesAssignment(): boolean {
+    const salesId = this.form.get('salesId')?.value;
+    if (salesId == null || salesId === '') {
+      return true;
+    }
+    const commissionType = this.form.get('commissionType')?.value;
+    const commissionValue = this.form.get('commissionValue')?.value;
+    if (!commissionType) {
+      this.toastr.warning('Select a commission type or remove the sales person.');
+      return false;
+    }
+    if (commissionValue == null || commissionValue === '') {
+      this.toastr.warning('Enter a commission value.');
+      return false;
+    }
+    return true;
+  }
+
   submit(): void {
     if (this.form.invalid || this.creating) {
       this.form.markAllAsTouched();
+      return;
+    }
+
+    if (!this.validateSalesAssignment()) {
       return;
     }
 
@@ -212,6 +366,7 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
         isFixedBudget && raw.usesMilestones && raw.milestoneCount != null
           ? Number(raw.milestoneCount)
           : undefined,
+      ...buildProjectSalesFields(this.form),
     };
 
     this.creating = true;
