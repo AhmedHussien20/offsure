@@ -18,7 +18,6 @@ import {
 export class ProjectTeamSummaryModalComponent {
   @Input() projectName = '';
   @Input() members: ProjectAssignmentDto[] = [];
-  @Input() pendingSkillNames = '';
   @Input() manageHint = 'Use Team staffing below to add or remove members.';
   @Input() highlightMemberId?: number;
   @Input() profileSource?: TeamMemberProfileSource;

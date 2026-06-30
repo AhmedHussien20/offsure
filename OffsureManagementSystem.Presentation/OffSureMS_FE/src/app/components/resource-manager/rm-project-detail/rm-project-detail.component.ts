@@ -357,7 +357,6 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     });
     modalRef.componentInstance.projectName = this.project.name;
     modalRef.componentInstance.members = this.sidebarTeamMembers;
-    modalRef.componentInstance.pendingSkillNames = this.pendingSkillNames;
     modalRef.componentInstance.manageHint = 'Use Team staffing below to add or remove your team members.';
     modalRef.componentInstance.profileSource = 'resource-manager';
   }

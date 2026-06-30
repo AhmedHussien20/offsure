@@ -34,7 +34,11 @@ namespace OffsureManagementSystem.API.Controllers
             int clientId,
             [FromQuery] ServiceRequestFilterRequest request)
         {
-            var requests = await _serviceRequestManagementService.GetClientRequestsAsync(clientId, request);
+            var role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+            var requests = string.Equals(role, "Client", StringComparison.OrdinalIgnoreCase)
+                ? await _serviceRequestManagementService.GetClientRequestsForUserAsync(GetCurrentUserId(), request)
+                : await _serviceRequestManagementService.GetClientRequestsAsync(clientId, request);
+
             return Ok(ApiResponse<PagedResponse<ServiceRequestDto>>.Ok(requests));
         }
 
@@ -42,7 +46,10 @@ namespace OffsureManagementSystem.API.Controllers
         [Authorize(Roles = "Administrator,Client")]
         public async Task<ActionResult<ApiResponse<ServiceRequestDto>>> GetRequestById(int id)
         {
-            var request = await _serviceRequestManagementService.GetRequestByIdAsync(id);
+            var request = await _serviceRequestManagementService.GetRequestByIdForCallerAsync(
+                GetCurrentUserId(),
+                User.FindFirstValue(ClaimTypes.Role) ?? string.Empty,
+                id);
             return Ok(ApiResponse<ServiceRequestDto>.Ok(request));
         }
 
@@ -72,7 +79,10 @@ namespace OffsureManagementSystem.API.Controllers
         [Authorize(Roles = "Administrator,Client")]
         public async Task<ActionResult<ApiResponse<ServiceRequestDto>>> CancelRequest(int id)
         {
-            var request = await _serviceRequestManagementService.CancelRequestAsync(id);
+            var request = await _serviceRequestManagementService.CancelRequestForCallerAsync(
+                GetCurrentUserId(),
+                User.FindFirstValue(ClaimTypes.Role) ?? string.Empty,
+                id);
             return Ok(ApiResponse<ServiceRequestDto>.Ok(request, "Service request cancelled successfully."));
         }
 

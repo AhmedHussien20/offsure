@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.Interfaces.Services;
 
 namespace OffsureManagementSystem.Infrastructure.Services
@@ -23,7 +24,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
             if (extension is not (".jpg" or ".jpeg" or ".png" or ".webp"))
-                throw new InvalidOperationException("Profile photo must be JPG, PNG, or WEBP.");
+                throw new AppException("Profile photo must be JPG, PNG, or WEBP.");
 
             var storedName = $"{teamMemberId}-photo{extension}";
             var path = Path.Combine(_rootPath, storedName);

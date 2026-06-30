@@ -1717,6 +1717,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             StripAssignmentFinancials(project);
             StripMilestoneFinancials(project);
             project.Milestones = new List<ProjectMilestoneDto>();
+            project.UsesMilestones = false;
+            project.MilestoneCount = null;
             StripResourceManagers(project);
             StripAssignmentResourceManagerIds(project);
             return project;

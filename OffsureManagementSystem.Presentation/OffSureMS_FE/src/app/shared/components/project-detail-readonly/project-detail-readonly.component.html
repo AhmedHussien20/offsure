@@ -20,7 +20,7 @@
     </span>
     <span class="project-detail-stat__hint">Target end date</span>
   </div>
-  @if (usesMilestones) {
+  @if (showMilestones) {
     <div class="project-detail-stat project-detail-stat--milestones">
       <span class="project-detail-stat__label">Phases complete</span>
       <span class="project-detail-stat__value">{{ milestonesPaidLabel }}</span>
@@ -54,7 +54,7 @@
   </button>
 </div>
 
-@if (usesMilestones) {
+@if (showMilestones) {
   <div class="project-detail-section">
     <app-project-milestones-readonly [project]="project" [showFinancials]="false" />
   </div>

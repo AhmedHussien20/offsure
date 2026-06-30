@@ -48,13 +48,6 @@
     </ul>
   }
 
-  @if (pendingSkillNames) {
-    <div class="team-summary-alert mt-3">
-      <i class="fe fe-alert-circle me-2"></i>
-      Unassigned skill{{ pendingSkillNames.includes(',') ? 's' : '' }}: {{ pendingSkillNames }}
-    </div>
-  }
-
   @if (manageHint) {
     <p class="text-muted small mb-0 mt-3">{{ manageHint }}</p>
   }

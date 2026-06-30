@@ -8,10 +8,13 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
     {
         Task<PagedResponse<ServiceRequestDto>> GetAllRequestsAsync(ServiceRequestFilterRequest request);
         Task<PagedResponse<ServiceRequestDto>> GetClientRequestsAsync(int clientId, ServiceRequestFilterRequest request);
+        Task<PagedResponse<ServiceRequestDto>> GetClientRequestsForUserAsync(int userId, ServiceRequestFilterRequest request);
         Task<ServiceRequestDto> GetRequestByIdAsync(int id);
+        Task<ServiceRequestDto> GetRequestByIdForCallerAsync(int userId, string role, int id);
         Task<ServiceRequestDto> CreateRequestAsync(CreateServiceRequestDto dto, int userId);
         Task<ServiceRequestDto> UpdateRequestStatusAsync(int id, ServiceRequestStatus status);
         Task<ServiceRequestDto> CancelRequestAsync(int id);
+        Task<ServiceRequestDto> CancelRequestForCallerAsync(int userId, string role, int id);
         Task SendNotificationAsync(ServiceRequestDto request);
     }
 }

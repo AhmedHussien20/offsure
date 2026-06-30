@@ -140,6 +140,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPut("{id:int}/milestones")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> UpsertMilestones(
             int id,
             UpsertProjectMilestonesDto dto)
@@ -149,12 +150,21 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPatch("{id:int}/milestones/{milestoneId:int}/status")]
+        [Authorize(Roles = "Administrator,ResourceManager")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateMilestoneStatus(
             int id,
             int milestoneId,
             UpdateProjectMilestoneStatusDto dto)
         {
-            var project = await _projectManagementService.UpdateProjectMilestoneStatusAsync(id, milestoneId, dto);
+            var role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+            var project = string.Equals(role, "ResourceManager", StringComparison.OrdinalIgnoreCase)
+                ? await _projectManagementService.UpdateProjectMilestoneStatusForResourceManagerAsync(
+                    GetCurrentUserId(),
+                    id,
+                    milestoneId,
+                    dto)
+                : await _projectManagementService.UpdateProjectMilestoneStatusAsync(id, milestoneId, dto);
+
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Milestone status updated successfully."));
         }
 

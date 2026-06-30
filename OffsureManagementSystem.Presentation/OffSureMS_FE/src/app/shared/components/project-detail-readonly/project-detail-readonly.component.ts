@@ -74,6 +74,11 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     return !!this.project.usesMilestones && !this.isHourlyBudget;
   }
 
+  /** Milestone phases are internal (admin/RM); never shown to clients. */
+  get showMilestones(): boolean {
+    return this.usesMilestones && !this.isClient;
+  }
+
   get headerSubtitle(): string {
     if (this.isClient) {
       return this.project.serviceName || '';
@@ -103,13 +108,6 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
 
   get teamMemberCount(): number {
     return this.summaryTeamMembers.length;
-  }
-
-  get pendingSkillNames(): string {
-    return this.skillSlots
-      .filter(s => s.pending)
-      .map(s => s.skill.name)
-      .join(', ');
   }
 
   get completedMilestonesCount(): number {
@@ -152,7 +150,6 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     });
     modalRef.componentInstance.projectName = this.project.name;
     modalRef.componentInstance.members = this.summaryTeamMembers;
-    modalRef.componentInstance.pendingSkillNames = this.pendingSkillNames;
     modalRef.componentInstance.highlightMemberId = this.highlightMemberId;
     modalRef.componentInstance.manageHint = this.isClient
       ? 'Members assigned to deliver your project.'

@@ -58,6 +58,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetAllRequestsAsync(request);
         }
 
+        public async Task<PagedResponse<ServiceRequestDto>> GetClientRequestsForUserAsync(
+            int userId,
+            ServiceRequestFilterRequest request)
+        {
+            var client = await GetClientByUserIdAsync(userId);
+            return await GetClientRequestsAsync(client.Id, request);
+        }
+
         public async Task<ServiceRequestDto> GetRequestByIdAsync(int id)
         {
             var request = await BuildRequestQuery()
@@ -67,6 +75,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Resource not found.", 404);
 
             return MapRequest(request);
+        }
+
+        public async Task<ServiceRequestDto> GetRequestByIdForCallerAsync(int userId, string role, int id)
+        {
+            var request = await GetRequestByIdAsync(id);
+            await EnsureCallerCanAccessRequestAsync(userId, role, request.ClientId);
+            return request;
         }
 
         public async Task<ServiceRequestDto> CreateRequestAsync(CreateServiceRequestDto dto, int userId)
@@ -162,6 +177,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return cancelledRequest;
         }
 
+        public async Task<ServiceRequestDto> CancelRequestForCallerAsync(int userId, string role, int id)
+        {
+            var request = await _serviceRequestRepo.GetByIDAsync(id);
+            if (request is null)
+                throw new AppException("Resource not found.", 404);
+
+            await EnsureCallerCanAccessRequestAsync(userId, role, request.ClientId);
+            return await CancelRequestAsync(id);
+        }
+
         public async Task SendNotificationAsync(ServiceRequestDto request)
         {
             await _emailNotificationService.SendStatusUpdateAsync(request);
@@ -227,6 +252,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 "priority" => isDescending ? query.OrderByDescending(r => r.Priority) : query.OrderBy(r => r.Priority),
                 _ => isDescending ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id)
             };
+        }
+
+        private async Task EnsureCallerCanAccessRequestAsync(int userId, string role, int clientId)
+        {
+            if (!string.Equals(role, "Client", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var client = await GetClientByUserIdAsync(userId);
+            if (client.Id != clientId)
+                throw new AppException("You do not have access to this request.", 403);
         }
 
         private async Task EnsureClientExistsAsync(int id)
