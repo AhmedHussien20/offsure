@@ -10,6 +10,7 @@ internal static class LocalStorageBootstrap
     public const string StorageRootKey = "Storage:Root";
     public const string TeamCvRootKey = "Storage:TeamCvRoot";
     public const string TeamPhotoRootKey = "Storage:TeamPhotoRoot";
+    public const string TeamIntroVideoRootKey = "Storage:TeamIntroVideoRoot";
     public const string PortfolioImageRootKey = "Storage:PortfolioImageRoot";
 
     public static void Configure(WebApplicationBuilder builder)
@@ -17,10 +18,12 @@ internal static class LocalStorageBootstrap
         var storageRoot = ResolveStorageRoot(builder.Environment, builder.Configuration);
         var cvRoot = Path.Combine(storageRoot, "team-cvs");
         var photoRoot = Path.Combine(storageRoot, "team-photos");
+        var introVideoRoot = Path.Combine(storageRoot, "team-videos");
         var portfolioRoot = Path.Combine(storageRoot, "portfolio-images");
 
         Directory.CreateDirectory(cvRoot);
         Directory.CreateDirectory(photoRoot);
+        Directory.CreateDirectory(introVideoRoot);
         Directory.CreateDirectory(portfolioRoot);
 
         var overrides = new Dictionary<string, string?>();
@@ -30,6 +33,8 @@ internal static class LocalStorageBootstrap
             overrides[TeamCvRootKey] = cvRoot;
         if (string.IsNullOrWhiteSpace(builder.Configuration[TeamPhotoRootKey]))
             overrides[TeamPhotoRootKey] = photoRoot;
+        if (string.IsNullOrWhiteSpace(builder.Configuration[TeamIntroVideoRootKey]))
+            overrides[TeamIntroVideoRootKey] = introVideoRoot;
         if (string.IsNullOrWhiteSpace(builder.Configuration[PortfolioImageRootKey]))
             overrides[PortfolioImageRootKey] = portfolioRoot;
 
@@ -41,6 +46,7 @@ internal static class LocalStorageBootstrap
     {
         MapStaticFolder(app, TeamCvRootKey, "/storage/team-cvs");
         MapStaticFolder(app, TeamPhotoRootKey, "/storage/team-photos");
+        MapStaticFolder(app, TeamIntroVideoRootKey, "/storage/team-videos");
         MapStaticFolder(app, PortfolioImageRootKey, "/portfolio-images");
     }
 

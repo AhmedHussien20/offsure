@@ -268,6 +268,29 @@
           </ng-template>
         </li>
 
+        <li [ngbNavItem]="'intro-video'">
+          <a ngbNavLink class="nav-link">Intro video</a>
+          <ng-template ngbNavContent>
+            <div class="profile-tab-content">
+              <section class="profile-card profile-card--flat">
+                <div class="profile-card__header">
+                  <div>
+                    <h5 class="profile-card__title mb-0">Personal introduction video</h5>
+                    <p class="profile-card__subtitle mb-0">
+                      Record or upload a short video so clients can get to know you
+                    </p>
+                  </div>
+                </div>
+                <div class="profile-card__body">
+                  <app-intro-video-manager
+                    [videoUrl]="profile.introVideoUrl"
+                    (videoChange)="onIntroVideoChange($event)" />
+                </div>
+              </section>
+            </div>
+          </ng-template>
+        </li>
+
         <li [ngbNavItem]="'documents'">
           <a ngbNavLink class="nav-link">CV & certificates</a>
           <ng-template ngbNavContent>

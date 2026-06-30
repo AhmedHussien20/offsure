@@ -91,6 +91,16 @@
           </ng-template>
         </li>
 
+        <li [ngbNavItem]="'intro-video'">
+          <a ngbNavLink class="nav-link">Personal video</a>
+          <ng-template ngbNavContent>
+            <div class="member-profile-section mb-0">
+              <h6 class="member-profile-section__title">Introduction video</h6>
+              <app-intro-video-player [videoUrl]="member.introVideoUrl" />
+            </div>
+          </ng-template>
+        </li>
+
         <li [ngbNavItem]="'certificates'">
           <a ngbNavLink class="nav-link">Certificates</a>
           <ng-template ngbNavContent>

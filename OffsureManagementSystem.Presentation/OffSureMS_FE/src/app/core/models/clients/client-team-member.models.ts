@@ -19,6 +19,7 @@ export interface ClientTeamMemberCardDto {
 }
 
 export interface ClientTeamMemberDetailDto extends ClientTeamMemberCardDto {
+  introVideoUrl?: string | null;
   certificates: ClientTeamMemberCertificateDto[];
   experiences: ClientTeamMemberExperienceDto[];
 }

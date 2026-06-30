@@ -11,6 +11,7 @@ import {
   UpsertTeamMemberExperienceDto,
   UpsertTeamMemberSkillDto,
 } from '../models/team-members/team-member.models';
+import { IntroVideoSettingsDto } from '../models/team-members/intro-video.models';
 
 @Injectable({ providedIn: 'root' })
 export class TeamPortalService {
@@ -104,5 +105,23 @@ export class TeamPortalService {
       this.service,
       `profile/experiences/${experienceId}`
     );
+  }
+
+  getIntroVideoSettings(): Observable<BaseResponse<IntroVideoSettingsDto>> {
+    return this.api.get<BaseResponse<IntroVideoSettingsDto>>(this.service, 'profile/intro-video/settings');
+  }
+
+  uploadIntroVideo(file: File): Observable<BaseResponse<TeamMemberDto>> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.api.postFormData<BaseResponse<TeamMemberDto>>(
+      this.service,
+      'profile/intro-video',
+      formData
+    );
+  }
+
+  deleteIntroVideo(): Observable<BaseResponse<TeamMemberDto>> {
+    return this.api.delete<BaseResponse<TeamMemberDto>>(this.service, 'profile/intro-video');
   }
 }

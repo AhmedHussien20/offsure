@@ -16,6 +16,7 @@ import {
 import { TeamContextService } from 'app/core/services/team-context.service';
 import { TeamPortalService } from 'app/core/services/team-portal.service';
 import { ChangePasswordCardComponent } from 'app/shared/components/change-password-card/change-password-card.component';
+import { IntroVideoManagerComponent } from 'app/shared/components/intro-video-manager/intro-video-manager.component';
 import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { SharedModule } from 'app/shared/shared.module';
@@ -24,7 +25,7 @@ import { ToastrService } from 'ngx-toastr';
 const CV_MAX_BYTES = 5 * 1024 * 1024;
 const PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 
-export type TeamProfileTab = 'personal' | 'skills' | 'documents';
+export type TeamProfileTab = 'personal' | 'skills' | 'intro-video' | 'documents';
 
 @Component({
   selector: 'app-team-profile',
@@ -36,6 +37,7 @@ export type TeamProfileTab = 'personal' | 'skills' | 'documents';
     RouterModule,
     NgbNavModule,
     TeamMemberSkillsEditorComponent,
+    IntroVideoManagerComponent,
     ChangePasswordCardComponent,
   ],
   templateUrl: './team-profile.component.html',
@@ -238,6 +240,14 @@ export class TeamProfileComponent implements OnInit {
 
   onSkillsProfileChange(profile: TeamMemberDto): void {
     this.profile = profile;
+  }
+
+  onIntroVideoChange(videoUrl: string | null | undefined): void {
+    if (!this.profile) {
+      return;
+    }
+    this.profile = { ...this.profile, introVideoUrl: videoUrl ?? null };
+    this.teamContext.loadProfile(true).subscribe();
   }
 
   downloadCv(): void {

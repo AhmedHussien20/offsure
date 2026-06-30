@@ -9,6 +9,7 @@ import {
 } from 'app/core/models/team-members/team-member.models';
 import { AuthService } from 'app/core/services/auth.service';
 import { ClientsService } from 'app/core/services/clients.service';
+import { IntroVideoPlayerComponent } from 'app/shared/components/intro-video-player/intro-video-player.component';
 import { ResourceManagerPortalService } from 'app/core/services/resource-manager-portal.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { Observable, map } from 'rxjs';
@@ -20,6 +21,7 @@ export interface TeamMemberProfileView {
   title: string;
   yearsOfExperience: number;
   profilePhotoUrl?: string | null;
+  introVideoUrl?: string | null;
   skills: string[];
   projectNames: string[];
   certificates: ClientTeamMemberDetailDto['certificates'];
@@ -29,7 +31,7 @@ export interface TeamMemberProfileView {
 @Component({
   selector: 'app-team-member-profile-modal',
   standalone: true,
-  imports: [CommonModule, NgbNavModule],
+  imports: [CommonModule, NgbNavModule, IntroVideoPlayerComponent],
   templateUrl: './team-member-profile-modal.component.html',
   styleUrl: './team-member-profile-modal.component.scss',
 })
@@ -37,7 +39,7 @@ export class TeamMemberProfileModalComponent implements OnInit {
   @Input({ required: true }) memberId!: number;
   @Input() source?: TeamMemberProfileSource;
 
-  activeTab: 'overview' | 'skills' | 'certificates' = 'overview';
+  activeTab: 'overview' | 'skills' | 'certificates' | 'intro-video' = 'overview';
   loading = true;
   loadError: string | null = null;
   member: TeamMemberProfileView | null = null;
@@ -139,6 +141,7 @@ export class TeamMemberProfileModalComponent implements OnInit {
       title: dto.title,
       yearsOfExperience: dto.yearsOfExperience,
       profilePhotoUrl: dto.profilePhotoUrl,
+      introVideoUrl: dto.introVideoUrl,
       skills: dto.skills ?? [],
       projectNames: dto.projectNames ?? [],
       certificates: dto.certificates ?? [],
@@ -152,6 +155,7 @@ export class TeamMemberProfileModalComponent implements OnInit {
       title: dto.title,
       yearsOfExperience: dto.yearsOfExperience,
       profilePhotoUrl: dto.profilePhotoUrl ?? dto.profilePhoto,
+      introVideoUrl: dto.introVideoUrl ?? dto.introVideo,
       skills: (dto.skillAssignments ?? []).map(s => s.skillName).filter(Boolean),
       projectNames: [],
       certificates: (dto.certificates ?? []).map(cert => ({

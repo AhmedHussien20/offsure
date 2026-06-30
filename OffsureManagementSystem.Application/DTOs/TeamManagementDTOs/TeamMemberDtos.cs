@@ -114,6 +114,8 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public string? CvDownloadUrl { get; set; }
         public string ProfilePhoto { get; set; } = string.Empty;
         public string? ProfilePhotoUrl { get; set; }
+        public string IntroVideo { get; set; } = string.Empty;
+        public string? IntroVideoUrl { get; set; }
         public string PhoneNumber { get; set; } = string.Empty;
         public int? ResourceManagerId { get; set; }
         public string? ResourceManagerName { get; set; }

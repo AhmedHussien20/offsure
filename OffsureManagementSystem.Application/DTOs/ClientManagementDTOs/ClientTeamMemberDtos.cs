@@ -29,6 +29,7 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public string Title { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
         public string? ProfilePhotoUrl { get; set; }
+        public string? IntroVideoUrl { get; set; }
         public List<string> Skills { get; set; } = new();
         public List<string> ProjectNames { get; set; } = new();
         public List<ClientTeamMemberCertificateDto> Certificates { get; set; } = new();

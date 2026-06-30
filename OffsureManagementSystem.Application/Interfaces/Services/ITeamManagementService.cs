@@ -50,5 +50,8 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<TeamMemberDto> AddExperienceForUserAsync(int userId, UpsertTeamMemberExperienceDto dto);
         Task<TeamMemberDto> UpdateExperienceForUserAsync(int userId, int experienceId, UpsertTeamMemberExperienceDto dto);
         Task<TeamMemberDto> DeleteExperienceForUserAsync(int userId, int experienceId);
+        Task<TeamMemberDto> StoreIntroVideoForUserAsync(int userId, Stream content, string fileName);
+        Task DeleteIntroVideoForUserAsync(int userId);
+        IntroVideoSettingsDto GetIntroVideoSettings();
     }
 }

@@ -9,6 +9,7 @@ namespace OffshoreManagementSystem.Domain.Entities
         public int YearsOfExperience { get; set; }
         public string CV { get; set; } // File path or blob
         public string ProfilePhoto { get; set; } = string.Empty;
+        public string IntroVideo { get; set; } = string.Empty;
         public string PhoneNumber { get; set; }
         public int? ResourceManagerId { get; set; }
         public bool IsAvailable { get; set; } = true;

@@ -109,6 +109,45 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Profile photo updated."));
         }
 
+        [HttpGet("profile/intro-video/settings")]
+        public ActionResult<ApiResponse<IntroVideoSettingsDto>> GetIntroVideoSettings()
+        {
+            var settings = _teamManagementService.GetIntroVideoSettings();
+            return Ok(ApiResponse<IntroVideoSettingsDto>.Ok(settings));
+        }
+
+        [HttpPost("profile/intro-video")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> UploadIntroVideo(IFormFile file)
+        {
+            if (file.Length == 0)
+                return BadRequest(ApiResponse<object>.Fail("VALIDATION_ERROR"));
+
+            var settings = _teamManagementService.GetIntroVideoSettings();
+            var maxBytes = settings.MaxFileSizeMb * 1024L * 1024L;
+            if (file.Length > maxBytes)
+                return BadRequest(ApiResponse<object>.Fail($"Intro video must be {settings.MaxFileSizeMb}MB or smaller."));
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (extension is not (".mp4" or ".webm" or ".mov"))
+                return BadRequest(ApiResponse<object>.Fail("Intro video must be MP4, WEBM, or MOV."));
+
+            await using var stream = file.OpenReadStream();
+            var member = await _teamManagementService.StoreIntroVideoForUserAsync(
+                GetCurrentUserId(),
+                stream,
+                file.FileName);
+
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Introduction video saved."));
+        }
+
+        [HttpDelete("profile/intro-video")]
+        public async Task<ActionResult<ApiResponse<TeamMemberDto>>> DeleteIntroVideo()
+        {
+            await _teamManagementService.DeleteIntroVideoForUserAsync(GetCurrentUserId());
+            var member = await _teamManagementService.GetTeamMemberProfileAsync(GetCurrentUserId());
+            return Ok(ApiResponse<TeamMemberDto>.Ok(member, "Introduction video removed."));
+        }
+
         [HttpPost("profile/certificates")]
         public async Task<ActionResult<ApiResponse<TeamMemberDto>>> AddCertificate(UpsertTeamMemberCertificateDto dto)
         {

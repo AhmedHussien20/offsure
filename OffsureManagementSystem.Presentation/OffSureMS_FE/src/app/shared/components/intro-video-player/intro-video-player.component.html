@@ -1,0 +1,19 @@
+@if (resolvedUrl) {
+  <div class="intro-video-player">
+    <video
+      class="intro-video-player__video"
+      [src]="resolvedUrl"
+      controls
+      playsinline
+      preload="metadata">
+      Your browser does not support video playback.
+    </video>
+  </div>
+} @else {
+  <div class="intro-video-player intro-video-player--empty">
+    <div class="intro-video-player__placeholder">
+      <i class="fe fe-video-off intro-video-player__placeholder-icon"></i>
+      <p class="intro-video-player__placeholder-text mb-0">{{ placeholder }}</p>
+    </div>
+  </div>
+}

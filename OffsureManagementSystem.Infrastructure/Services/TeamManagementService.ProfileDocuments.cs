@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
@@ -7,6 +8,45 @@ namespace OffsureManagementSystem.Infrastructure.Services
 {
     public partial class TeamManagementService
     {
+        public async Task<TeamMemberDto> StoreIntroVideoForUserAsync(int userId, Stream content, string fileName)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            var storedName = await _introVideoStorageService.SaveIntroVideoAsync(member.Id, fileName, content);
+
+            member.IntroVideo = storedName;
+            member.UpdatedAt = DateTime.UtcNow;
+            _teamMemberRepo.SaveInclude(member, nameof(member.IntroVideo), nameof(member.UpdatedAt));
+            await _teamMemberRepo.SaveChangesAsync();
+
+            return await GetTeamMemberProfileAsync(userId);
+        }
+
+        public async Task DeleteIntroVideoForUserAsync(int userId)
+        {
+            var member = await GetTeamMemberEntityForUserAsync(userId);
+            member.IntroVideo = string.Empty;
+            member.UpdatedAt = DateTime.UtcNow;
+            _teamMemberRepo.SaveInclude(member, nameof(member.IntroVideo), nameof(member.UpdatedAt));
+            await _teamMemberRepo.SaveChangesAsync();
+        }
+
+        public IntroVideoSettingsDto GetIntroVideoSettings()
+        {
+            var maxDuration = 90;
+            if (int.TryParse(_configuration["IntroVideo:MaxDurationSeconds"], out var configuredDuration))
+                maxDuration = configuredDuration;
+
+            var maxFileSizeMb = 50;
+            if (int.TryParse(_configuration["IntroVideo:MaxFileSizeMb"], out var configuredSize))
+                maxFileSizeMb = configuredSize;
+
+            return new IntroVideoSettingsDto
+            {
+                MaxDurationSeconds = Math.Clamp(maxDuration, 60, 90),
+                MaxFileSizeMb = maxFileSizeMb < 1 ? 50 : maxFileSizeMb
+            };
+        }
+
         public async Task<TeamMemberDto> StoreProfilePhotoForUserAsync(int userId, Stream content, string fileName)
         {
             var member = await GetTeamMemberEntityForUserAsync(userId);

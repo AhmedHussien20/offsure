@@ -181,6 +181,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.Property(e => e.ProfilePhoto)
                     .HasMaxLength(500);
 
+                entity.Property(e => e.IntroVideo)
+                    .HasMaxLength(500);
+
                 entity.Property(e => e.PhoneNumber)
                     .HasMaxLength(20);
 

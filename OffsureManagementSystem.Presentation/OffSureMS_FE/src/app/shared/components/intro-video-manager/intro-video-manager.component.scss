@@ -1,0 +1,125 @@
+.intro-video-manager {
+  display: grid;
+  gap: 1rem;
+
+  &--busy {
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__hint {
+    line-height: 1.45;
+  }
+}
+
+.intro-video-recorder {
+  display: grid;
+  gap: 0.85rem;
+
+  &__stage {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    border: 1px solid var(--default-border, rgb(15 23 42 / 10%));
+  }
+
+  &__video {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    object-fit: cover;
+    background: #000;
+  }
+
+  &__countdown {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    font-weight: 800;
+    color: #fff;
+    background: rgb(0 0 0 / 35%);
+    text-shadow: 0 4px 20px rgb(0 0 0 / 45%);
+  }
+
+  &__recording-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: rgb(220 38 38 / 88%);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  &__dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: #fff;
+    animation: intro-video-pulse 1s ease-in-out infinite;
+  }
+
+  &__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__permission {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    background: linear-gradient(
+      180deg,
+      rgb(var(--primary-rgb) / 6%) 0%,
+      rgb(var(--primary-rgb) / 2%) 100%
+    );
+  }
+
+  &__permission-icon {
+    font-size: 2.5rem;
+    color: rgb(var(--primary-rgb));
+    margin-bottom: 0.75rem;
+  }
+
+  &__permission-title {
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+
+  &__permission-text {
+    max-width: 320px;
+    line-height: 1.5;
+  }
+}
+
+@keyframes intro-video-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}

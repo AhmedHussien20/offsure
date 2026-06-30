@@ -122,6 +122,8 @@ export interface TeamMemberDto {
   cvDownloadUrl?: string | null;
   profilePhoto?: string | null;
   profilePhotoUrl?: string | null;
+  introVideo?: string | null;
+  introVideoUrl?: string | null;
   phoneNumber: string;
   resourceManagerId: number | null;
   resourceManagerName: string | null;

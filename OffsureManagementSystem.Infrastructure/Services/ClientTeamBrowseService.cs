@@ -17,19 +17,22 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<ProjectAssignment> _assignmentRepo;
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly ITeamProfileStorageService _photoStorage;
+        private readonly ITeamIntroVideoStorageService _introVideoStorage;
 
         public ClientTeamBrowseService(
             IRepository<Client> clientRepo,
             IRepository<Project> projectRepo,
             IRepository<ProjectAssignment> assignmentRepo,
             IRepository<TeamMember> teamMemberRepo,
-            ITeamProfileStorageService photoStorage)
+            ITeamProfileStorageService photoStorage,
+            ITeamIntroVideoStorageService introVideoStorage)
         {
             _clientRepo = clientRepo;
             _projectRepo = projectRepo;
             _assignmentRepo = assignmentRepo;
             _teamMemberRepo = teamMemberRepo;
             _photoStorage = photoStorage;
+            _introVideoStorage = introVideoStorage;
         }
 
         public async Task<PagedResponse<ClientTeamMemberCardDto>> BrowseTeamMembersAsync(
@@ -199,6 +202,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ProfilePhotoUrl = string.IsNullOrWhiteSpace(member.ProfilePhoto)
                     ? null
                     : _photoStorage.GetPhotoPublicUrl(member.ProfilePhoto),
+                IntroVideoUrl = string.IsNullOrWhiteSpace(member.IntroVideo)
+                    ? null
+                    : _introVideoStorage.GetIntroVideoPublicUrl(member.IntroVideo),
                 Skills = member.TeamMemberSkills
                     .OrderBy(s => s.Skill?.Name)
                     .Select(s => s.Skill?.Name ?? string.Empty)

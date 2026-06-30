@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.Common.Requests;
@@ -24,6 +25,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<ProjectAssignment> _projectAssignmentRepo;
         private readonly ITeamCvStorageService _cvStorageService;
         private readonly ITeamProfileStorageService _profileStorageService;
+        private readonly ITeamIntroVideoStorageService _introVideoStorageService;
+        private readonly IConfiguration _configuration;
 
         public TeamManagementService(
             IRepository<TeamMember> teamMemberRepo,
@@ -35,7 +38,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<TeamMemberExperience> experienceRepo,
             IRepository<ProjectAssignment> projectAssignmentRepo,
             ITeamCvStorageService cvStorageService,
-            ITeamProfileStorageService profileStorageService)
+            ITeamProfileStorageService profileStorageService,
+            ITeamIntroVideoStorageService introVideoStorageService,
+            IConfiguration configuration)
         {
             _teamMemberRepo = teamMemberRepo;
             _userRepo = userRepo;
@@ -47,6 +52,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _projectAssignmentRepo = projectAssignmentRepo;
             _cvStorageService = cvStorageService;
             _profileStorageService = profileStorageService;
+            _introVideoStorageService = introVideoStorageService;
+            _configuration = configuration;
         }
 
         public async Task<PagedResponse<TeamMemberDto>> GetAllAsync(TeamMemberRequest request)
@@ -1114,7 +1121,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static string HashPassword(string password)
             => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
 
-        private static TeamMemberDto MapToDto(TeamMember member, ITeamCvStorageService cvStorage, ITeamProfileStorageService photoStorage)
+        private static TeamMemberDto MapToDto(
+            TeamMember member,
+            ITeamCvStorageService cvStorage,
+            ITeamProfileStorageService photoStorage,
+            ITeamIntroVideoStorageService introVideoStorage)
         {
             var cvFileName = cvStorage.GetCvFileName(member.CV);
             return new TeamMemberDto
@@ -1134,6 +1145,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ProfilePhotoUrl = string.IsNullOrWhiteSpace(member.ProfilePhoto)
                     ? null
                     : photoStorage.GetPhotoPublicUrl(member.ProfilePhoto),
+                IntroVideo = member.IntroVideo ?? string.Empty,
+                IntroVideoUrl = string.IsNullOrWhiteSpace(member.IntroVideo)
+                    ? null
+                    : introVideoStorage.GetIntroVideoPublicUrl(member.IntroVideo),
                 PhoneNumber = member.PhoneNumber,
                 ResourceManagerId = member.ResourceManagerId,
                 ResourceManagerName = UserDisplayName.FromUser(member.ResourceManager),
@@ -1172,7 +1187,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         }
 
         private TeamMemberDto MapToDto(TeamMember member)
-            => MapToDto(member, _cvStorageService, _profileStorageService);
+            => MapToDto(member, _cvStorageService, _profileStorageService, _introVideoStorageService);
 
         private static TeamMemberSkillDto MapSkill(TeamMemberSkill skill)
         {
