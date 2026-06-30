@@ -52,6 +52,7 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   cameraReady = false;
 
   private mediaStream: MediaStream | null = null;
+  private previewStream: MediaStream | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
   private recordedBlob: Blob | null = null;
@@ -318,7 +319,11 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    video.srcObject = this.mediaStream;
+    // Preview is video-only so the mic is not played back through speakers (no echo).
+    this.previewStream = new MediaStream(this.mediaStream.getVideoTracks());
+    video.muted = true;
+    video.volume = 0;
+    video.srcObject = this.previewStream;
     try {
       await video.play();
     } catch {
@@ -427,10 +432,13 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   private stopMediaStream(): void {
     this.mediaStream?.getTracks().forEach(track => track.stop());
     this.mediaStream = null;
+    this.previewStream = null;
 
     const video = this.livePreviewRef?.nativeElement;
     if (video) {
       video.srcObject = null;
+      video.muted = true;
+      video.volume = 0;
     }
   }
 
