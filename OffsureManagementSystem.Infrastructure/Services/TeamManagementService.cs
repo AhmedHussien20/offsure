@@ -560,7 +560,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     .ThenInclude(ts => ts.Skill)
                         .ThenInclude(s => s.SkillCategory)
                 .Include(t => t.Certificates.Where(c => !c.IsDeleted))
-                .Include(t => t.Experiences.Where(e => !e.IsDeleted));
+                .Include(t => t.Experiences.Where(e => !e.IsDeleted))
+                .AsSplitQuery();
         }
 
         private async Task AddSkillAssignmentsAsync(int teamMemberId, IEnumerable<UpsertTeamMemberSkillDto> assignments)

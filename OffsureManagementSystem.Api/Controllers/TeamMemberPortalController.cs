@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using OffsureManagementSystem.Application.DTOs.TeamManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.Services;
@@ -117,6 +118,8 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpPost("profile/intro-video")]
+        [RequestSizeLimit(100 * 1024 * 1024)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 100 * 1024 * 1024)]
         public async Task<ActionResult<ApiResponse<TeamMemberDto>>> UploadIntroVideo(IFormFile file)
         {
             if (file.Length == 0)

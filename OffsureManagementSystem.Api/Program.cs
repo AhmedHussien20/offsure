@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using OffshoreManagementSystem.Infrastructure.DataContext;
 using OffsureManagementSystem.API.Storage;
@@ -16,6 +17,17 @@ namespace OffsureManagementSystem.API
             var builder = WebApplication.CreateBuilder(args);
 
             LocalStorageBootstrap.Configure(builder);
+
+            // Intro videos allow up to 50 MB; Kestrel defaults to ~28.6 MB without this.
+            const long maxUploadBytes = 100 * 1024 * 1024;
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.MaxRequestBodySize = maxUploadBytes;
+            });
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = maxUploadBytes;
+            });
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -61,6 +73,7 @@ namespace OffsureManagementSystem.API
                 {
                     policy.WithOrigins(
                             "http://localhost:4200",
+                            "https://localhost:4200",
                             "http://localhost:5050",
                             "http://41.38.219.114:5050",
                             "http://127.0.0.1:4200"
