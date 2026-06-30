@@ -24,17 +24,32 @@
 
   &__stage {
     position: relative;
+    width: 100%;
     border-radius: 12px;
     overflow: hidden;
-    background: #000;
     border: 1px solid var(--default-border, rgb(15 23 42 / 10%));
+
+    &--permission {
+      background: linear-gradient(
+        180deg,
+        rgb(var(--primary-rgb) / 6%) 0%,
+        rgb(var(--primary-rgb) / 2%) 100%
+      );
+    }
+
+    &--live,
+    &--playback {
+      background: #000;
+      aspect-ratio: 16 / 9;
+      max-height: min(70vh, 420px);
+    }
   }
 
   &__video {
     display: block;
     width: 100%;
-    max-height: 360px;
-    object-fit: cover;
+    height: 100%;
+    object-fit: contain;
     background: #000;
   }
 
@@ -89,11 +104,6 @@
     min-height: 280px;
     padding: 2rem 1.5rem;
     text-align: center;
-    background: linear-gradient(
-      180deg,
-      rgb(var(--primary-rgb) / 6%) 0%,
-      rgb(var(--primary-rgb) / 2%) 100%
-    );
   }
 
   &__permission-icon {

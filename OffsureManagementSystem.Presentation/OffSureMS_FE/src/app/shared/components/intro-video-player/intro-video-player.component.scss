@@ -1,13 +1,20 @@
 .intro-video-player {
+  width: 100%;
   border-radius: 12px;
   overflow: hidden;
-  background: #0f172a;
   border: 1px solid var(--default-border, rgb(15 23 42 / 10%));
+
+  &--has-video {
+    background: #000;
+    aspect-ratio: 16 / 9;
+    max-height: min(70vh, 420px);
+  }
 
   &__video {
     display: block;
     width: 100%;
-    max-height: 360px;
+    height: 100%;
+    object-fit: contain;
     background: #000;
   }
 
