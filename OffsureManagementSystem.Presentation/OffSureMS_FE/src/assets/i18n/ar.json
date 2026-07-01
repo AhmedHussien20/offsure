@@ -123,6 +123,19 @@
         "dashboard": "لوحة التحكم",
         "projects": "مشاريعي",
         "profile": "ملفي"
+      },
+      "sales": {
+        "dashboard": "لوحة التحكم",
+        "browseTeam": "تصفح الفريق",
+        "addClient": "إضافة عميل",
+        "clients": "عملائي",
+        "projects": "مشاريعي"
+      },
+      "rm": {
+        "dashboard": "لوحة التحكم",
+        "team": "فريقي",
+        "projects": "المشاريع",
+        "profile": "ملفي"
       }
     },
     "apps": {

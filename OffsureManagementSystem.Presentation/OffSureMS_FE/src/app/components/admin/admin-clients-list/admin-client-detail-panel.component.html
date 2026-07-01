@@ -47,6 +47,12 @@
             <label>Account status</label>
             <span>{{ client.isUserActive ? 'User active' : 'User inactive' }}</span>
           </div>
+          @if (hasSalesPerson) {
+            <div class="client-info-item">
+              <label>Sales person</label>
+              <span>{{ salesPersonLabel() }}</span>
+            </div>
+          }
           <div class="client-info-item">
             <label>Email verified</label>
             <span>{{ client.isEmailVerified ? 'Yes' : 'No' }}</span>
@@ -82,6 +88,12 @@
               <span class="client-stat-label">Projects</span>
               <strong>{{ client.projectsCount }}</strong>
             </li>
+            @if (hasSalesPerson) {
+              <li>
+                <span class="client-stat-label">Sales person</span>
+                <strong>{{ salesPersonLabel() }}</strong>
+              </li>
+            }
           </ul>
         </div>
 

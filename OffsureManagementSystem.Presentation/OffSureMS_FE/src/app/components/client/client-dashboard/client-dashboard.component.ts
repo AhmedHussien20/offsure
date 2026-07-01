@@ -90,7 +90,7 @@ export class ClientDashboardComponent implements OnInit {
                 {
                   label: 'Completed',
                   value: String(data.completedProjects),
-                  icon: 'ti-circle-check',
+                  icon: 'ti-check-box',
                   description: 'Finished projects',
                   subValue: '',
                 },

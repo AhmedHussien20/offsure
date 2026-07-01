@@ -1,0 +1,135 @@
+<app-page-header></app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading dashboard...</div>
+} @else {
+  <div class="row row-sm mb-3">
+    @for (card of statCards; track card.label) {
+      <div class="col-sm-12 col-md-6 col-lg-3">
+        <a [routerLink]="card.link" class="text-decoration-none">
+          <spk-ecommerce
+            [label]="card.label"
+            [value]="card.value"
+            [icon]="card.icon"
+            [description]="card.description"
+            [subValue]="card.subValue">
+          </spk-ecommerce>
+        </a>
+      </div>
+    }
+  </div>
+
+  <div class="row row-sm mb-4">
+    <div class="col-xl-6">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (projectsStatusChart) {
+            <spk-apex-charts [chartOptions]="projectsStatusChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No projects to chart yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6">
+      <div class="card custom-card dashboard-chart-card h-100">
+        <div class="card-body">
+          @if (clientsStatusChart) {
+            <spk-apex-charts [chartOptions]="clientsStatusChart"></spk-apex-charts>
+          } @else {
+            <p class="text-muted mb-0 text-center py-5">No clients to chart yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-sm sales-dashboard-tables">
+    <div class="col-xl-6">
+      <section class="rm-dashboard-block h-100">
+        <div class="rm-dashboard-block__header">
+          <div>
+            <h6 class="rm-dashboard-block__title">My Clients</h6>
+            <p class="rm-dashboard-block__subtitle">Companies you registered or are linked to</p>
+          </div>
+          <a routerLink="/sales/clients" class="btn btn-sm btn-primary">View all</a>
+        </div>
+        <div class="table-responsive rm-dashboard-block__table">
+          <table class="table table-hover mb-0 text-nowrap">
+            <thead>
+              <tr>
+                <th>Company</th>
+                <th>Contact</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (clients.length === 0) {
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">No clients yet.</td>
+                </tr>
+              }
+              @for (client of clients; track client.id) {
+                <tr>
+                  <td>
+                    <a routerLink="/sales/clients" class="rm-dashboard-block__link">
+                      {{ client.companyName }}
+                    </a>
+                  </td>
+                  <td>{{ client.firstName }} {{ client.lastName }}</td>
+                  <td>
+                    <span
+                      class="badge rounded-pill {{ client.isActive ? 'bg-success-transparent' : 'bg-secondary-transparent' }}">
+                      {{ client.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="col-xl-6">
+      <section class="rm-dashboard-block h-100">
+        <div class="rm-dashboard-block__header">
+          <div>
+            <h6 class="rm-dashboard-block__title">Active Projects</h6>
+            <p class="rm-dashboard-block__subtitle">Projects in progress with your commission</p>
+          </div>
+          <a routerLink="/sales/projects" class="btn btn-sm btn-primary">View all</a>
+        </div>
+        <div class="table-responsive rm-dashboard-block__table">
+          <table class="table table-hover mb-0 text-nowrap">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Client</th>
+                <th>Commission</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (activeProjects.length === 0) {
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">No active projects.</td>
+                </tr>
+              }
+              @for (project of activeProjects; track project.id) {
+                <tr>
+                  <td>
+                    <a routerLink="/sales/projects" class="rm-dashboard-block__link">
+                      {{ project.name }}
+                    </a>
+                  </td>
+                  <td>{{ project.clientName }}</td>
+                  <td>{{ formatCommission(project) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+}

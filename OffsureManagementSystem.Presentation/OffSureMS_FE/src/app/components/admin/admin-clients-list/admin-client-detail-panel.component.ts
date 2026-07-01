@@ -54,6 +54,14 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
     return `${this.client.firstName ?? ''} ${this.client.lastName ?? ''}`.trim();
   }
 
+  get hasSalesPerson(): boolean {
+    return !!(this.client?.salesId || this.client?.salesPersonName?.trim());
+  }
+
+  salesPersonLabel(): string {
+    return this.client?.salesPersonName?.trim() || '—';
+  }
+
   display(value: string | number | null | undefined): string {
     if (value === null || value === undefined || value === '') {
       return '—';

@@ -145,6 +145,19 @@
         "dashboard": "Dashboard",
         "projects": "My projects",
         "profile": "My profile"
+      },
+      "sales": {
+        "dashboard": "Dashboard",
+        "browseTeam": "Browse team",
+        "addClient": "Add client",
+        "clients": "My clients",
+        "projects": "My projects"
+      },
+      "rm": {
+        "dashboard": "Dashboard",
+        "team": "My team",
+        "projects": "Projects",
+        "profile": "My profile"
       }
     },
     "apps": {

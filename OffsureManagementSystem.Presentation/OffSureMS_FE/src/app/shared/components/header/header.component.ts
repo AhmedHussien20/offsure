@@ -15,6 +15,8 @@ import { Router } from '@angular/router';
 import { HeaderShortcutService } from '../../services/header-shortcut.service';
 import { ADMIN_HEADER_SHORTCUTS } from 'app/components/admin/admin-shortcuts.config';
 import { CLIENT_HEADER_SHORTCUTS } from 'app/components/client/client-shortcuts.config';
+import { RM_HEADER_SHORTCUTS } from 'app/components/resource-manager/rm-shortcuts.config';
+import { SALES_HEADER_SHORTCUTS } from 'app/components/sales/sales-shortcuts.config';
 import { TEAM_HEADER_SHORTCUTS } from 'app/components/team/team-shortcuts.config';
 
 interface Item {
@@ -139,6 +141,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
     if (this.authService.isTeamMember()) {
       return TEAM_HEADER_SHORTCUTS;
+    }
+    if (this.authService.isResourceManager()) {
+      return RM_HEADER_SHORTCUTS;
+    }
+    if (this.authService.isSales()) {
+      return SALES_HEADER_SHORTCUTS;
     }
 
     return this.headerShortcuts;

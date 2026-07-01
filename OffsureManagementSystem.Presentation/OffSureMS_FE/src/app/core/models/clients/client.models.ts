@@ -59,6 +59,8 @@ export interface ClientDto {
   country: string;
   postalCode: string;
   isActive: boolean;
+  salesId?: number | null;
+  salesPersonName?: string;
   requestsCount: number;
   projectsCount: number;
   serviceRequests: ClientServiceRequestSummaryDto[];

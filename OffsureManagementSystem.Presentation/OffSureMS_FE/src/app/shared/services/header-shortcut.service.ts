@@ -8,6 +8,7 @@ import { AdminPortfolioCreateComponent } from 'app/components/admin/admin-portfo
 import { AdminProjectCreateComponent } from 'app/components/admin/admin-projects-list/admin-project-create.component';
 import { AdminServiceCreateComponent } from 'app/components/admin/admin-services/admin-service-create.component';
 import { AdminTeamCreateComponent } from 'app/components/admin/admin-team-list/admin-team-create.component';
+import { SalesClientCreateComponent } from 'app/components/sales/sales-client-create/sales-client-create.component';
 import { ClientRequestCreateComponent } from 'app/components/client/client-request-form/client-request-create.component';
 import { ServiceCategoriesService } from 'app/core/services/service-categories.service';
 import { ServicesService } from 'app/core/services/services.service';
@@ -39,6 +40,7 @@ export class HeaderShortcutService {
       size: 'lg',
       prepare: modalRef => this.preparePortfolioCreate(modalRef),
     },
+    'sales-client-create': { component: SalesClientCreateComponent, size: 'lg' },
   };
 
   constructor(

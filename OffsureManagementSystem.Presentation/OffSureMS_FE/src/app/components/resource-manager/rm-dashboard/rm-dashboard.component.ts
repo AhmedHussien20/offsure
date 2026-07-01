@@ -62,7 +62,7 @@ export class RmDashboardComponent implements OnInit {
           {
             label: 'Team Members',
             value: String(totalTeam),
-            icon: 'ti-users',
+            icon: 'ti-user',
             description: 'Under your management',
             subValue: '',
             link: '/resource-manager/team',
@@ -70,7 +70,7 @@ export class RmDashboardComponent implements OnInit {
           {
             label: 'Available',
             value: String(availableCount),
-            icon: 'ti-user-check',
+            icon: 'ti-check-box',
             description: `${busyCount} busy`,
             subValue: '',
             link: '/resource-manager/team',
@@ -78,7 +78,7 @@ export class RmDashboardComponent implements OnInit {
           {
             label: 'In Progress',
             value: String(inProgressCount),
-            icon: 'ti-loader',
+            icon: 'ti-reload',
             description: 'Active projects',
             subValue: '',
             link: '/resource-manager/projects',

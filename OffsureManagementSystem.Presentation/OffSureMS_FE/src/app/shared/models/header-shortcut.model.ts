@@ -14,7 +14,8 @@ export type HeaderShortcutModalKey =
   | 'admin-service-create'
   | 'admin-portfolio-create'
   | 'admin-client-create'
-  | 'admin-project-create';
+  | 'admin-project-create'
+  | 'sales-client-create';
 
 export interface HeaderShortcut {
   title: string;

@@ -77,7 +77,7 @@ export class TeamDashboardComponent implements OnInit {
                 {
                   label: 'In Progress',
                   value: String(data.inProgressProjects),
-                  icon: 'ti-loader',
+                  icon: 'ti-reload',
                   description: 'Active work',
                   subValue: '',
                 },

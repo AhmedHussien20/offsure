@@ -11,10 +11,7 @@
     [class.team-availability-banner--busy]="!profile.isAvailable">
     <div class="team-availability-banner__content">
       <div class="team-availability-banner__icon" aria-hidden="true">
-        <i
-          class="ti"
-          [class.ti-circle-check]="profile.isAvailable"
-          [class.ti-circle-x]="!profile.isAvailable"></i>
+        <i [class]="profile.isAvailable ? 'ti-check-box' : 'ti-close'"></i>
       </div>
       <div class="team-availability-banner__text">
         <h6 class="team-availability-banner__title">My Status</h6>
