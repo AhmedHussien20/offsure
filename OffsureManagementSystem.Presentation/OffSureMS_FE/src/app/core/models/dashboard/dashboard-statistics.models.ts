@@ -32,3 +32,13 @@ export interface TeamDashboardStatistics {
   projectsByStatus: ChartCountItem[];
   hoursByProject: ChartCountItem[];
 }
+
+export interface SalesDashboardStatistics {
+  totalClients: number;
+  totalProjects: number;
+  inProgressProjects: number;
+  projectsWithCommission: number;
+  teamPoolCount: number;
+  projectsByStatus: ChartCountItem[];
+  clientsByStatus: ChartCountItem[];
+}

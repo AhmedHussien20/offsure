@@ -242,6 +242,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("Total");
 
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("int");
+
                     b.Property<string>("CommissionType")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -296,6 +299,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<int?>("SalesId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ServiceRequestId")
                         .HasColumnType("int");
 
@@ -321,7 +327,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClientId");
+
                     b.HasIndex("SalesId");
+
+                    b.HasIndex("ServiceId");
 
                     b.HasIndex("ServiceRequestId")
                         .IsUnique()
@@ -1469,9 +1479,19 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Project", b =>
                 {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "SalesUser")
                         .WithMany()
                         .HasForeignKey("SalesId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.ServiceRequest", "ServiceRequest")
@@ -1479,7 +1499,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasForeignKey("OffshoreManagementSystem.Domain.Entities.Project", "ServiceRequestId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.Navigation("Client");
+
                     b.Navigation("SalesUser");
+
+                    b.Navigation("Service");
 
                     b.Navigation("ServiceRequest");
                 });

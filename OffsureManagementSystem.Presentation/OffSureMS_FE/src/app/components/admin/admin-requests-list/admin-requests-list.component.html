@@ -70,28 +70,20 @@
       </div>
     }
 
-    <div
-      class="request-sales-banner"
-      [class.request-sales-banner--assigned]="hasSalesPerson(item)"
-      [class.request-sales-banner--none]="!hasSalesPerson(item)">
-      <div class="request-sales-banner__icon" aria-hidden="true">
-        <i class="fe" [class.fe-user-check]="hasSalesPerson(item)" [class.fe-user-x]="!hasSalesPerson(item)"></i>
-      </div>
-      <div class="request-sales-banner__body">
-        <span class="request-sales-banner__label">Sales attribution</span>
-        @if (hasSalesPerson(item)) {
+    @if (showSalesAttributionBanner(item)) {
+      <div class="request-sales-banner request-sales-banner--assigned">
+        <div class="request-sales-banner__icon" aria-hidden="true">
+          <i class="fe fe-user-check"></i>
+        </div>
+        <div class="request-sales-banner__body">
+          <span class="request-sales-banner__label">Sales attribution</span>
           <strong class="request-sales-banner__value">{{ salesPersonLabel(item) }}</strong>
           <span class="request-sales-banner__hint">
             This client is linked to a sales user. They will be pre-filled when you convert this request to a project.
           </span>
-        } @else {
-          <strong class="request-sales-banner__value">No sales person linked</strong>
-          <span class="request-sales-banner__hint">
-            This client was not created by a sales user. You can assign a sales person manually when creating the project.
-          </span>
-        }
+        </div>
       </div>
-    </div>
+    }
 
     <div class="request-detail-grid">
       <div class="request-info-card">

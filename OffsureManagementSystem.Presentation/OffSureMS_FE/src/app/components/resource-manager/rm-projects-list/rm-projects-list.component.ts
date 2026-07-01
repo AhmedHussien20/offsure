@@ -48,7 +48,7 @@ export class RmProjectsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadProjects();
+        this.loadProjects();
   }
 
   onSearch = (): void => {

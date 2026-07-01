@@ -49,7 +49,7 @@ export class SalesClientsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.load();
+        this.load();
   }
 
   onSearch = (): void => {

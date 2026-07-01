@@ -671,7 +671,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
 
     let completeLinkedRequest = false;
 
-    if (this.project.serviceRequestId > 0) {
+    if ((this.project.serviceRequestId ?? 0) > 0) {
       const choice = await this.confirmDialog.confirmChoice({
         title: 'Complete project',
         message: `Mark "${this.project.name}" as completed. Do you also want to mark the linked service request as Completed?`,

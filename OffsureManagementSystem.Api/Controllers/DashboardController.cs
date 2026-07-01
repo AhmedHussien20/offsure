@@ -43,6 +43,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<TeamDashboardStatisticsDto>.Ok(stats));
         }
 
+        [HttpGet("sales")]
+        [Authorize(Roles = "Sales")]
+        public async Task<ActionResult<ApiResponse<SalesDashboardStatisticsDto>>> GetSalesStatistics()
+        {
+            var stats = await _dashboardStatisticsService.GetSalesStatisticsAsync(GetCurrentUserId());
+            return Ok(ApiResponse<SalesDashboardStatisticsDto>.Ok(stats));
+        }
+
         private int GetCurrentUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

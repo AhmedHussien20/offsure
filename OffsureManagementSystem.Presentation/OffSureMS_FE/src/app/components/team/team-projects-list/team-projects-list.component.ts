@@ -51,7 +51,7 @@ export class TeamProjectsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.teamContext.loadProfile().subscribe(profile => {
+        this.teamContext.loadProfile().subscribe(profile => {
       this.teamMemberId = profile?.id ?? null;
       if (this.teamMemberId) {
         this.loadProjects();

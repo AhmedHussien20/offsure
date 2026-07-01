@@ -538,6 +538,21 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .OnDelete(DeleteBehavior.SetNull)
                     .IsRequired(false);
 
+                entity.HasOne(e => e.Client)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClientId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasOne(e => e.Service)
+                    .WithMany()
+                    .HasForeignKey(e => e.ServiceId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasIndex(e => e.ClientId);
+                entity.HasIndex(e => e.ServiceId);
+
                 entity.HasOne(e => e.SalesUser)
                     .WithMany()
                     .HasForeignKey(e => e.SalesId)

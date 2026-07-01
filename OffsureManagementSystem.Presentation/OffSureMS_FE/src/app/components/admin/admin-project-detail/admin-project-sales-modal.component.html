@@ -1,63 +1,144 @@
-<div class="modal-header">
-  <div>
-    <h5 class="modal-title mb-1">Sales assignment</h5>
-    <p class="text-muted small mb-0">{{ project.name }}</p>
+<div class="modal-header sales-modal__header">
+  <div class="sales-modal__header-main">
+    <div class="sales-modal__title-row">
+      <span class="sales-modal__icon" aria-hidden="true">
+        <i class="fe fe-user-check"></i>
+      </span>
+      <div class="min-width-0">
+        <h5 class="modal-title mb-0">Sales assignment</h5>
+        <p class="sales-modal__subtitle mb-0">{{ project.name }}</p>
+      </div>
+    </div>
+    @if (hasSalesAssignment && !editing) {
+      <span class="sales-modal__status-badge">
+        <i class="fe fe-check-circle" aria-hidden="true"></i>
+        Assigned
+      </span>
+    } @else if (editing && !hasSalesAssignment) {
+      <span class="sales-modal__status-badge sales-modal__status-badge--muted">New assignment</span>
+    }
   </div>
   <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 
-<div class="modal-body sales-modal">
+<div class="modal-body sales-modal__body">
+  <div class="sales-modal__context">
+    <div class="sales-modal__context-item">
+      <span class="sales-modal__context-label">Client</span>
+      <span class="sales-modal__context-value">{{ project.clientName || '—' }}</span>
+    </div>
+    <div class="sales-modal__context-item">
+      <span class="sales-modal__context-label">Service</span>
+      <span class="sales-modal__context-value">{{ project.serviceName || '—' }}</span>
+    </div>
+    <div class="sales-modal__context-item">
+      <span class="sales-modal__context-label">Budget</span>
+      <span class="sales-modal__context-value" [class.sales-modal__context-value--accent]="project.budget != null">
+        {{ budgetLabel }}
+      </span>
+    </div>
+  </div>
+
   @if (editing) {
-    <form [formGroup]="form">
-      <app-project-sales-assignment-fields [form]="form" [budget]="project.budget"></app-project-sales-assignment-fields>
-    </form>
+    <div class="sales-modal__panel">
+      <div class="sales-modal__panel-head">
+        <h6 class="sales-modal__panel-title mb-0">
+          {{ hasSalesAssignment ? 'Update assignment' : 'Assign sales person' }}
+        </h6>
+        <p class="sales-modal__panel-hint mb-0">Choose a sales user and set commission terms.</p>
+      </div>
+      <form [formGroup]="form">
+        <app-project-sales-assignment-fields
+          [form]="form"
+          [budget]="project.budget"
+          [embedded]="true"
+          [compact]="true"></app-project-sales-assignment-fields>
+      </form>
+    </div>
   } @else if (hasSalesAssignment) {
-    <dl class="project-detail-info-grid mb-0">
-      <div class="project-detail-info-grid__item">
-        <dt>Sales person</dt>
-        <dd>{{ project.salesPersonName || '—' }}</dd>
+    <div class="sales-modal__hero">
+      <span class="sales-modal__avatar">{{ salesInitials }}</span>
+      <div class="sales-modal__hero-body min-width-0">
+        <span class="sales-modal__hero-label">Sales person</span>
+        <strong class="sales-modal__hero-name">{{ project.salesPersonName || '—' }}</strong>
+        <span class="sales-modal__hero-meta">{{ commissionSummary }}</span>
       </div>
-      <div class="project-detail-info-grid__item">
-        <dt>Commission type</dt>
-        <dd>{{ commissionTypeLabel }}</dd>
+    </div>
+
+    <div class="sales-modal__metrics">
+      <div class="sales-modal__metric">
+        <span class="sales-modal__metric-label">Commission type</span>
+        <span class="sales-modal__metric-value">{{ commissionTypeLabel }}</span>
       </div>
-      <div class="project-detail-info-grid__item">
-        <dt>Commission value</dt>
-        <dd>{{ commissionValueLabel }}</dd>
+      <div class="sales-modal__metric">
+        <span class="sales-modal__metric-label">Commission value</span>
+        <span class="sales-modal__metric-value">{{ commissionValueLabel }}</span>
       </div>
-      <div class="project-detail-info-grid__item">
-        <dt>Calculated commission</dt>
-        <dd>
+      <div class="sales-modal__metric sales-modal__metric--highlight">
+        <span class="sales-modal__metric-label">Calculated commission</span>
+        <span class="sales-modal__metric-value sales-modal__metric-value--amount">
           {{
             project.calculatedCommissionAmount != null
               ? ('$' + (project.calculatedCommissionAmount | number: '1.2-2'))
               : '—'
           }}
-        </dd>
+        </span>
+        @if (project.commissionType === 'Percentage' && project.budget == null) {
+          <span class="sales-modal__metric-hint">Set project budget to calculate</span>
+        }
       </div>
-    </dl>
+    </div>
   } @else {
-    <p class="text-muted mb-0">No sales person is assigned to this project yet.</p>
+    <div class="sales-modal__empty">
+      <span class="sales-modal__empty-icon" aria-hidden="true">
+        <i class="fe fe-user-plus"></i>
+      </span>
+      <p class="sales-modal__empty-title mb-1">No sales person assigned</p>
+      <p class="sales-modal__empty-hint mb-0">
+        Link a sales user to track commission on this project.
+      </p>
+    </div>
   }
 </div>
 
-<div class="modal-footer">
+<div class="modal-footer sales-modal__footer">
   @if (editing) {
     <button type="button" class="btn btn-light" [disabled]="saving" (click)="cancelEdit()">
       {{ hasSalesAssignment ? 'Cancel' : 'Close' }}
     </button>
-    <button type="button" class="btn btn-primary" [disabled]="saving" (click)="save()">
-      {{ saving ? 'Saving...' : (hasSalesAssignment ? 'Save changes' : 'Assign') }}
-    </button>
+    <div class="sales-modal__footer-actions">
+      <button type="button" class="btn btn-primary" [disabled]="saving" (click)="save()">
+        @if (saving) {
+          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Saving...
+        } @else {
+          <i class="fe fe-check me-1" aria-hidden="true"></i>
+          {{ hasSalesAssignment ? 'Save changes' : 'Assign' }}
+        }
+      </button>
+    </div>
   } @else {
     <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Close</button>
-    @if (hasSalesAssignment) {
-      <button type="button" class="btn btn-outline-danger" [disabled]="saving" (click)="removeAssignment()">
-        {{ saving ? 'Removing...' : 'Remove' }}
-      </button>
-      <button type="button" class="btn btn-primary" (click)="startEdit()">Edit</button>
-    } @else {
-      <button type="button" class="btn btn-primary" (click)="startEdit()">Assign sales person</button>
-    }
+    <div class="sales-modal__footer-actions">
+      @if (hasSalesAssignment) {
+        <button type="button" class="btn btn-outline-danger" [disabled]="saving" (click)="removeAssignment()">
+          @if (saving) {
+            Removing...
+          } @else {
+            <i class="fe fe-trash-2 me-1" aria-hidden="true"></i>
+            Remove
+          }
+        </button>
+        <button type="button" class="btn btn-primary" (click)="startEdit()">
+          <i class="fe fe-edit-2 me-1" aria-hidden="true"></i>
+          Edit
+        </button>
+      } @else {
+        <button type="button" class="btn btn-primary" (click)="startEdit()">
+          <i class="fe fe-user-plus me-1" aria-hidden="true"></i>
+          Assign sales person
+        </button>
+      }
+    </div>
   }
 </div>

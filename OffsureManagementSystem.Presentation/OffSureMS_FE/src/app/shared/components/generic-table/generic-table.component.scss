@@ -336,6 +336,7 @@ tr.row-clickable {
 
 tr.expanded-row {
   background: var(--gt-expand-bg) !important;
+  scroll-margin-top: calc(4rem + 3.25rem);
 }
 
 tr.expanded-row td {

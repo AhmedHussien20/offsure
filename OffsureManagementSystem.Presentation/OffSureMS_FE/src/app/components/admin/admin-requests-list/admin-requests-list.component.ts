@@ -66,7 +66,7 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+        this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = Number(params.get('id'));
       this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;
       this.loadRequests();
@@ -116,6 +116,14 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
 
   showConvertBanner(item: ServiceRequestDto): boolean {
     return this.canConvert(item);
+  }
+
+  showSalesAttributionBanner(item: ServiceRequestDto): boolean {
+    return (
+      this.hasSalesPerson(item) &&
+      !this.hasLinkedProject(item) &&
+      normalizeServiceRequestStatus(item.status) === ServiceRequestStatus.Pending
+    );
   }
 
   hasSalesPerson(item: ServiceRequestDto): boolean {

@@ -49,6 +49,10 @@ export interface TableColumn {
 interface HasId {
   id: any;
 }
+
+/** Shared open/closed state for every generic-table filters panel. */
+const GLOBAL_FILTERS_PANEL_STORAGE_KEY = 'offsure.tableFiltersPanel.open';
+
 @Component({
   selector: 'app-generic-table',
   standalone: true,
@@ -139,6 +143,8 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   @Input() loading: boolean = false;
   /** Smooth-scroll table into view when changing pages inside the same route. */
   @Input() smoothPageChange: boolean = true;
+  /** When expanding a row, scroll it to the top of the viewport; restore scroll on collapse. */
+  @Input() smoothExpandScroll: boolean = true;
   filtersOpen: boolean = false;
 
   @ViewChild('tableAnchor') tableAnchor?: ElementRef<HTMLElement>;
@@ -167,6 +173,8 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   private readonly filterChanged$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.restoreFiltersPanelOpen();
+
     this.filterChanged$
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => this.applyFilters());
@@ -336,6 +344,7 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
 
   toggleFilters() {
     this.filtersOpen = !this.filtersOpen;
+    this.saveFiltersPanelOpen();
   }
 
   // ---------- Sorting ----------
@@ -531,6 +540,8 @@ onRowClick(item: T, event: MouseEvent) {
 
 expandedRow: any = null;
 private expandedRowKey: unknown = null;
+private savedScrollY: number | null = null;
+private expandScrollFromUserClick = false;
 
 ngOnChanges(changes: SimpleChanges): void {
   if (changes['expandedRowId'] && this.expandable) {
@@ -550,6 +561,10 @@ private getRowKey(item: T): unknown {
   return item == null ? null : (item as Record<string, unknown>)[this.rowKey];
 }
 
+getExpandRowKey(item: T): unknown {
+  return this.getRowKey(item);
+}
+
 private rowKeysMatch(a: unknown, b: unknown): boolean {
   return a != null && b != null && String(a) === String(b);
 }
@@ -559,17 +574,66 @@ private syncExpandedRowFromData(): void {
   if (match) {
     this.expandedRow = match;
     this.expandedRowChange.emit(this.expandedRow);
-    this.scheduleScrollToExpandedRow();
+    this.scheduleScrollExpandedRowToTop();
   } else {
     this.expandedRow = null;
     this.expandedRowChange.emit(null);
   }
 }
 
-private scheduleScrollToExpandedRow(): void {
-  setTimeout(() => {
-    document.querySelector('tr.expanded-row')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 320);
+private scheduleScrollExpandedRowToTop(): void {
+  if (!this.smoothExpandScroll) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => this.scrollExpandedRowToTop(), 40);
+    });
+  });
+}
+
+private scrollExpandedRowToTop(): void {
+  const row = this.findExpandedDataRow();
+  if (!row) {
+    return;
+  }
+
+  const offset = this.getExpandScrollTopOffset();
+  const top = row.getBoundingClientRect().top + window.scrollY - offset;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+}
+
+private getExpandScrollTopOffset(): number {
+  const container = this.tableAnchor?.nativeElement?.closest('.generic-table-container');
+  const headerHeight =
+    document.querySelector('.app-header')?.getBoundingClientRect().height ?? 0;
+  const theadHeight = container?.querySelector('thead')?.getBoundingClientRect().height ?? 0;
+  return headerHeight + theadHeight + 12;
+}
+
+private restoreScrollAfterCollapse(): void {
+  if (!this.smoothExpandScroll || !this.expandScrollFromUserClick || this.savedScrollY == null) {
+    this.savedScrollY = null;
+    this.expandScrollFromUserClick = false;
+    return;
+  }
+
+  const y = this.savedScrollY;
+  this.savedScrollY = null;
+  this.expandScrollFromUserClick = false;
+
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  });
+}
+
+private findExpandedDataRow(): HTMLElement | null {
+  return (
+    this.tableAnchor?.nativeElement
+      ?.closest('.generic-table-container')
+      ?.querySelector('tr.expanded-row') ?? null
+  );
 }
 
 toggleExpandRow(item: T, event: MouseEvent) {
@@ -591,15 +655,52 @@ toggleExpandRow(item: T, event: MouseEvent) {
   if (this.rowKeysMatch(this.expandedRowKey, key)) {
     this.expandedRow = null;
     this.expandedRowKey = null;
+    this.expandedRowChange.emit(this.expandedRow);
+    this.restoreScrollAfterCollapse();
   } else {
+    const wasCollapsed = this.expandedRowKey == null;
+    if (wasCollapsed) {
+      this.savedScrollY = window.scrollY;
+      this.expandScrollFromUserClick = true;
+    }
+
     this.expandedRow = item;
     this.expandedRowKey = key;
+    this.expandedRowChange.emit(this.expandedRow);
+    this.scheduleScrollExpandedRowToTop();
   }
-
-  this.expandedRowChange.emit(this.expandedRow);
 }
 
 isRowExpanded(item: T): boolean {
   return this.expandable && this.rowKeysMatch(this.getRowKey(item), this.expandedRowKey);
 }
+
+  private restoreFiltersPanelOpen(): void {
+    if (!this.showFilters) {
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(GLOBAL_FILTERS_PANEL_STORAGE_KEY);
+      if (stored === '1') {
+        this.filtersOpen = true;
+      } else if (stored === '0') {
+        this.filtersOpen = false;
+      }
+    } catch {
+      // Ignore private mode / storage errors.
+    }
+  }
+
+  private saveFiltersPanelOpen(): void {
+    if (!this.showFilters) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(GLOBAL_FILTERS_PANEL_STORAGE_KEY, this.filtersOpen ? '1' : '0');
+    } catch {
+      // Ignore private mode / storage errors.
+    }
+  }
 }

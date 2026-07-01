@@ -48,7 +48,7 @@ export class AdminSalesUsersListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.load();
+        this.load();
   }
 
   onSearch = (): void => {

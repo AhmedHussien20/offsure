@@ -38,4 +38,15 @@ namespace OffsureManagementSystem.Application.DTOs.Dashboard
         public List<ChartCountItemDto> ProjectsByStatus { get; set; } = new();
         public List<ChartCountItemDto> HoursByProject { get; set; } = new();
     }
+
+    public class SalesDashboardStatisticsDto
+    {
+        public int TotalClients { get; set; }
+        public int TotalProjects { get; set; }
+        public int InProgressProjects { get; set; }
+        public int ProjectsWithCommission { get; set; }
+        public int TeamPoolCount { get; set; }
+        public List<ChartCountItemDto> ProjectsByStatus { get; set; } = new();
+        public List<ChartCountItemDto> ClientsByStatus { get; set; } = new();
+    }
 }

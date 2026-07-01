@@ -18,6 +18,11 @@ export const PROJECT_STATUS_BADGES: Record<string, { text: string; class: string
   Cancelled: { text: 'Cancelled', class: 'bg-secondary-transparent' },
 };
 
+export const PROJECT_BUDGET_TYPE_BADGES: Record<string, { text: string; class: string }> = {
+  Total: { text: 'Fixed', class: 'bg-primary-transparent' },
+  Hourly: { text: 'Hourly', class: 'bg-info-transparent' },
+};
+
 export const ADMIN_REQUEST_COLUMNS: TableColumn[] = [
   { key: 'title', label: 'Title', type: 'text' },
   { key: 'clientName', label: 'Client', type: 'text' },
@@ -30,6 +35,7 @@ export const ADMIN_PROJECT_COLUMNS: TableColumn[] = [
   { key: 'name', label: 'Project', type: 'text' },
   { key: 'clientName', label: 'Client', type: 'text' },
   { key: 'serviceName', label: 'Service', type: 'text' },
+  { key: 'budgetType', label: 'Budget type', type: 'badge', badgeMap: PROJECT_BUDGET_TYPE_BADGES },
   { key: 'status', label: 'Status', type: 'badge', badgeMap: PROJECT_STATUS_BADGES },
   { key: 'progressLabel', label: 'Progress', type: 'text' },
 ];

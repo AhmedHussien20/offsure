@@ -126,7 +126,7 @@
       },
       "sales": {
         "dashboard": "لوحة التحكم",
-        "browseTeam": "تصفح الفريق",
+        "browseTeam": "أعضاء الفريق",
         "addClient": "إضافة عميل",
         "clients": "عملائي",
         "projects": "مشاريعي"

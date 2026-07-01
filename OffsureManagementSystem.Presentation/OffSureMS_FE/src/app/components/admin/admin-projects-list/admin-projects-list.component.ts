@@ -8,6 +8,10 @@ import { ProjectsService } from 'app/core/services/projects.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
+import {
+  PROJECT_BUDGET_TYPE_FILTER_OPTIONS,
+  PROJECT_STATUS_FILTER_OPTIONS,
+} from 'app/core/constants/list-filter.constants';
 import { ADMIN_PROJECT_COLUMNS } from '../admin.constants';
 import { AdminProjectCreateComponent } from './admin-project-create.component';
 
@@ -30,18 +34,17 @@ export class AdminProjectsListComponent implements OnInit {
     pageSize: 10,
     sortColumn: 'Id',
     sortDirection: 'DESC',
-    filterTypes: { status: 'dropdown' },
+    filterTypes: { status: 'dropdown', budgetType: 'dropdown' },
   });
 
-  labels: Record<string, string> = { status: 'Status', searchKey: 'Search' };
+  labels: Record<string, string> = {
+    status: 'Status',
+    budgetType: 'Budget type',
+    searchKey: 'Search',
+  };
   dropdownOptions = {
-    status: [
-      { id: 'Pending', name: 'Pending' },
-      { id: 'InProgress', name: 'In Progress' },
-      { id: 'Completed', name: 'Completed' },
-      { id: 'OnHold', name: 'On Hold' },
-      { id: 'Cancelled', name: 'Cancelled' },
-    ],
+    status: PROJECT_STATUS_FILTER_OPTIONS,
+    budgetType: PROJECT_BUDGET_TYPE_FILTER_OPTIONS,
   };
 
   constructor(
@@ -51,7 +54,7 @@ export class AdminProjectsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadProjects();
+        this.loadProjects();
   }
 
   onSearch = (): void => {
@@ -99,6 +102,8 @@ export class AdminProjectsListComponent implements OnInit {
           const paged = res.data;
           this.data = (paged?.data ?? []).map(p => ({
             ...p,
+            budgetType:
+              p.budgetType === 'Hourly' || (p.budgetType as unknown) === 1 ? 'Hourly' : 'Total',
             progressLabel: p.progress != null ? `${p.progress}%` : '—',
           }));
           this.totalItems = paged?.totalCount ?? 0;

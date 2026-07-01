@@ -58,7 +58,7 @@ export class AdminTeamListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadResourceManagers();
+        this.loadResourceManagers();
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = Number(params.get('id'));
       this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;

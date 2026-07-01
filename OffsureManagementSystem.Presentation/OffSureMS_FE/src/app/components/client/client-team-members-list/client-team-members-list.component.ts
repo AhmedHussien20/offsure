@@ -36,6 +36,7 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
 
   members: ClientTeamMemberCardDto[] = [];
   loading = false;
+  hasLoadedOnce = false;
 
   nameSearch = '';
   skillSearch = '';
@@ -49,6 +50,7 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly nameSearch$ = new Subject<string>();
   private readonly skillSearch$ = new Subject<string>();
+  private loadRequestId = 0;
 
   constructor(
     private clientsService: ClientsService,
@@ -147,7 +149,10 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
   }
 
   private loadMembers(): void {
-    this.loading = true;
+    const isInitial = !this.hasLoadedOnce;
+    if (isInitial) {
+      this.loading = true;
+    }
 
     const request: ClientTeamMemberBrowseRequest = {
       pageIndex: this.page,
@@ -169,17 +174,29 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
       request.projectId = this.projectId;
     }
 
+    const requestId = ++this.loadRequestId;
+
     this.clientsService.browseTeamMembers(request).subscribe({
       next: res => {
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
         const paged = res.data;
         this.members = paged?.data ?? [];
         this.totalCount = paged?.totalCount ?? 0;
         this.loading = false;
+        this.hasLoadedOnce = true;
       },
       error: () => {
-        this.members = [];
-        this.totalCount = 0;
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
+        if (isInitial) {
+          this.members = [];
+          this.totalCount = 0;
+        }
         this.loading = false;
+        this.hasLoadedOnce = true;
       },
     });
   }

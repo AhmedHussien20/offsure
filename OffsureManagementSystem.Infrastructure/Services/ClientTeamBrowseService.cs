@@ -43,8 +43,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var projectQuery = _projectRepo
                 .Query()
                 .AsNoTracking()
-                .Include(p => p.ServiceRequest)
-                .Where(p => !p.IsDeleted && p.ServiceRequest != null && p.ServiceRequest.ClientId == clientId);
+                .Where(p => !p.IsDeleted
+                    && (p.ClientId == clientId
+                        || (p.ServiceRequest != null && p.ServiceRequest.ClientId == clientId)));
 
             if (request.ProjectId.HasValue)
                 projectQuery = projectQuery.Where(p => p.Id == request.ProjectId.Value);
@@ -160,8 +161,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     && a.IsActive
                     && !a.IsDeleted
                     && !a.Project.IsDeleted
-                    && a.Project.ServiceRequest != null
-                    && a.Project.ServiceRequest.ClientId == clientId);
+                    && (a.Project.ClientId == clientId
+                        || (a.Project.ServiceRequest != null && a.Project.ServiceRequest.ClientId == clientId)));
 
             if (!hasAccess)
                 throw new AppException("Team member not found on your projects.", 404);
@@ -187,8 +188,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     && a.IsActive
                     && !a.IsDeleted
                     && !a.Project.IsDeleted
-                    && a.Project.ServiceRequest != null
-                    && a.Project.ServiceRequest.ClientId == clientId)
+                    && (a.Project.ClientId == clientId
+                        || (a.Project.ServiceRequest != null && a.Project.ServiceRequest.ClientId == clientId)))
                 .Select(a => a.Project.Name)
                 .Distinct()
                 .OrderBy(name => name)

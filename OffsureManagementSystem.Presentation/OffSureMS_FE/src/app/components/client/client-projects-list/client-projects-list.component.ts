@@ -46,7 +46,7 @@ export class ClientProjectsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadProjects();
+        this.loadProjects();
   }
 
   onSearch = (): void => {

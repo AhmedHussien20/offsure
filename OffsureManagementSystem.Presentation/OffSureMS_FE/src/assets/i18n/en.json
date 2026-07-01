@@ -148,7 +148,7 @@
       },
       "sales": {
         "dashboard": "Dashboard",
-        "browseTeam": "Browse team",
+        "browseTeam": "Team Members",
         "addClient": "Add client",
         "clients": "My clients",
         "projects": "My projects"

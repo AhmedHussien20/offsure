@@ -46,7 +46,7 @@ export class AdminClientsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadClients();
+        this.loadClients();
   }
 
   onSearch = (): void => {

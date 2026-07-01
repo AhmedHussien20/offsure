@@ -123,7 +123,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (project is null)
                 throw new AppException("Resource not found.", 404);
 
-            if (project.ServiceRequest?.ClientId != clientId)
+            if (ResolveProjectClientId(project) != clientId)
                 throw new AppException("You do not have access to this project.", 403);
 
             return StripClientPortalFinancials(await GetProjectDtoByIdAsync(projectId));
@@ -749,17 +749,35 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             ValidateCreateProjectInput(dto);
 
-            ServiceRequest request;
+            ServiceRequest? request = null;
+            int clientId;
+            int serviceId;
+            int? resolvedSalesId;
+            string defaultName;
+            string defaultDescription;
+            decimal? defaultBudget;
+
             if (dto.ServiceRequestId > 0)
             {
                 request = await LoadRequestForProjectConversionAsync(dto.ServiceRequestId);
+                clientId = request.ClientId;
+                serviceId = request.ServiceId;
+                resolvedSalesId = dto.SalesId ?? request.SalesId;
+                defaultName = request.Title.Trim();
+                defaultDescription = request.Description ?? string.Empty;
+                defaultBudget = request.Budget;
             }
             else
             {
-                request = await CreateStandaloneServiceRequestAsync(dto);
+                var client = await ValidateStandaloneProjectClientServiceAsync(dto);
+                clientId = dto.ClientId!.Value;
+                serviceId = dto.ServiceId!.Value;
+                resolvedSalesId = dto.SalesId ?? client.SalesId;
+                defaultName = dto.Name!.Trim();
+                defaultDescription = dto.Description?.Trim() ?? string.Empty;
+                defaultBudget = dto.Budget;
             }
 
-            var resolvedSalesId = dto.SalesId ?? request.SalesId;
             ValidateSalesAssignment(resolvedSalesId, dto.CommissionType, dto.CommissionValue);
 
             var startDate = dto.StartDate.HasValue
@@ -768,15 +786,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var project = new Project
             {
-                ServiceRequestId = request.Id,
-                Name = string.IsNullOrWhiteSpace(dto.Name) ? request.Title.Trim() : dto.Name.Trim(),
-                Description = dto.Description?.Trim() ?? request.Description ?? string.Empty,
+                ServiceRequestId = request?.Id,
+                ClientId = clientId,
+                ServiceId = serviceId,
+                Name = string.IsNullOrWhiteSpace(dto.Name) ? defaultName : dto.Name.Trim(),
+                Description = dto.Description?.Trim() ?? defaultDescription,
                 Status = ProjectStatus.InProgress,
                 StartDate = startDate,
                 TargetEndDate = dto.TargetEndDate,
                 Budget = dto.BudgetType == ProjectBudgetType.Hourly
                     ? null
-                    : dto.Budget ?? request.Budget,
+                    : dto.Budget ?? defaultBudget,
                 BudgetType = dto.BudgetType,
                 HourlyRate = dto.BudgetType == ProjectBudgetType.Hourly ? dto.HourlyRate : null,
                 ExpectedHours = dto.BudgetType == ProjectBudgetType.Hourly ? null : dto.ExpectedHours,
@@ -795,7 +815,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _projectRepo.AddAsync(project);
             await _projectRepo.SaveChangesAsync();
 
-            if (dto.ServiceRequestId > 0)
+            if (request is not null)
             {
                 await LinkRequestToProjectAsync(request);
             }
@@ -872,7 +892,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return request;
         }
 
-        private async Task<ServiceRequest> CreateStandaloneServiceRequestAsync(CreateProjectDto dto)
+        private async Task<Client> ValidateStandaloneProjectClientServiceAsync(CreateProjectDto dto)
         {
             if (!dto.ClientId.HasValue || dto.ClientId.Value <= 0)
                 throw new AppException("Client is required.", 400);
@@ -897,25 +917,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (client is null)
                 throw new AppException("Client not found.", 404);
 
-            var request = new ServiceRequest
-            {
-                ClientId = dto.ClientId.Value,
-                ServiceId = dto.ServiceId.Value,
-                Title = dto.Name.Trim(),
-                Description = dto.Description?.Trim() ?? string.Empty,
-                Status = ServiceRequestStatus.AcceptedWithProject,
-                RequestedDate = DateTime.UtcNow,
-                DueDate = dto.TargetEndDate,
-                Budget = dto.Budget,
-                Priority = 3,
-                SalesId = dto.SalesId ?? client.SalesId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _serviceRequestRepo.AddAsync(request);
-            await _serviceRequestRepo.SaveChangesAsync();
-
-            return request;
+            return client;
         }
 
         private async Task LinkRequestToProjectAsync(ServiceRequest request)
@@ -1137,6 +1139,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             return _projectRepo
                 .Query()
+                .Include(p => p.Client)
+                    .ThenInclude(c => c.User)
+                .Include(p => p.Service)
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Client)
                         .ThenInclude(c => c.User)
@@ -1162,14 +1167,27 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (request.Status.HasValue)
                 query = query.Where(p => p.Status == request.Status.Value);
 
+            if (request.BudgetType.HasValue)
+                query = query.Where(p => p.BudgetType == request.BudgetType.Value);
+
             if (request.ServiceRequestId.HasValue)
                 query = query.Where(p => p.ServiceRequestId == request.ServiceRequestId.Value);
 
             if (request.ClientId.HasValue)
-                query = query.Where(p => p.ServiceRequest != null && p.ServiceRequest.ClientId == request.ClientId.Value);
+            {
+                var filterClientId = request.ClientId.Value;
+                query = query.Where(p =>
+                    p.ClientId == filterClientId
+                    || (p.ServiceRequest != null && p.ServiceRequest.ClientId == filterClientId));
+            }
 
             if (request.ServiceId.HasValue)
-                query = query.Where(p => p.ServiceRequest != null && p.ServiceRequest.ServiceId == request.ServiceId.Value);
+            {
+                var filterServiceId = request.ServiceId.Value;
+                query = query.Where(p =>
+                    p.ServiceId == filterServiceId
+                    || (p.ServiceRequest != null && p.ServiceRequest.ServiceId == filterServiceId));
+            }
 
             if (request.TeamMemberId.HasValue)
             {
@@ -1183,6 +1201,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 query = query.Where(p =>
                     p.Name.ToLower().Contains(searchKey)
                     || p.Description.ToLower().Contains(searchKey)
+                    || (p.Client != null && p.Client.CompanyName.ToLower().Contains(searchKey))
+                    || (p.Service != null && p.Service.Name.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Title.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Client.CompanyName.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Service.Name.ToLower().Contains(searchKey))
@@ -1229,8 +1249,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 "targetenddate" => isDescending ? query.OrderByDescending(p => p.TargetEndDate) : query.OrderBy(p => p.TargetEndDate),
                 "budget" => isDescending ? query.OrderByDescending(p => p.Budget) : query.OrderBy(p => p.Budget),
                 "progress" => isDescending ? query.OrderByDescending(p => p.Progress) : query.OrderBy(p => p.Progress),
-                "clientname" => isDescending ? query.OrderByDescending(p => p.ServiceRequest!.Client.CompanyName) : query.OrderBy(p => p.ServiceRequest!.Client.CompanyName),
-                "servicename" => isDescending ? query.OrderByDescending(p => p.ServiceRequest!.Service.Name) : query.OrderBy(p => p.ServiceRequest!.Service.Name),
+                "clientname" => isDescending
+                    ? query.OrderByDescending(p => p.Client != null ? p.Client.CompanyName : p.ServiceRequest!.Client.CompanyName)
+                    : query.OrderBy(p => p.Client != null ? p.Client.CompanyName : p.ServiceRequest!.Client.CompanyName),
+                "servicename" => isDescending
+                    ? query.OrderByDescending(p => p.Service != null ? p.Service.Name : p.ServiceRequest!.Service.Name)
+                    : query.OrderBy(p => p.Service != null ? p.Service.Name : p.ServiceRequest!.Service.Name),
                 _ => isDescending ? query.OrderByDescending(p => p.Id) : query.OrderBy(p => p.Id)
             };
         }
@@ -1246,12 +1270,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var project = await BuildProjectQuery()
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
-            if (project?.ServiceRequest?.Client is null)
+            var client = ResolveProjectClient(project);
+            if (client is null)
                 return;
 
             await _emailNotificationService.SendProjectCompletionAsync(
-                project.ServiceRequest.Client.User?.Email ?? string.Empty,
-                project.ServiceRequest.Client.CompanyName,
+                client.User?.Email ?? string.Empty,
+                client.CompanyName,
                 project.Name);
         }
 
@@ -1434,6 +1459,25 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return member.Id;
         }
 
+        private static int? ResolveProjectClientId(Project project)
+            => project.ClientId ?? project.ServiceRequest?.ClientId;
+
+        private static Client? ResolveProjectClient(Project project)
+            => project.Client ?? project.ServiceRequest?.Client;
+
+        private static int? ResolveProjectServiceId(Project project)
+            => project.ServiceId ?? project.ServiceRequest?.ServiceId;
+
+        private static string ResolveProjectClientName(Project project)
+            => project.Client?.CompanyName
+               ?? project.ServiceRequest?.Client?.CompanyName
+               ?? string.Empty;
+
+        private static string ResolveProjectServiceName(Project project)
+            => project.Service?.Name
+               ?? project.ServiceRequest?.Service?.Name
+               ?? string.Empty;
+
         private static ProjectDto MapProject(Project project)
         {
             var requiredFromTable = project.ProjectSkills?
@@ -1456,10 +1500,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 RequiredSkillIds = requiredSkillIds,
                 ServiceRequestId = project.ServiceRequestId,
                 ServiceRequestTitle = project.ServiceRequest?.Title ?? string.Empty,
-                ClientId = project.ServiceRequest?.ClientId,
-                ClientName = project.ServiceRequest?.Client?.CompanyName ?? string.Empty,
-                ServiceId = project.ServiceRequest?.ServiceId,
-                ServiceName = project.ServiceRequest?.Service?.Name ?? string.Empty,
+                ClientId = ResolveProjectClientId(project),
+                ClientName = ResolveProjectClientName(project),
+                ServiceId = ResolveProjectServiceId(project),
+                ServiceName = ResolveProjectServiceName(project),
                 Status = project.Status,
                 StartDate = project.StartDate,
                 EndDate = project.EndDate,
@@ -1534,7 +1578,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Id = project.Id,
                 Name = project.Name,
                 Description = ProjectDescriptionSkills.StripSkillsMarker(project.Description),
-                ClientName = project.ServiceRequest?.Client?.CompanyName ?? string.Empty,
+                ClientName = ResolveProjectClientName(project),
                 Status = project.Status,
                 TeamMemberNames = project.ProjectAssignments
                     .Where(a => a.IsActive)

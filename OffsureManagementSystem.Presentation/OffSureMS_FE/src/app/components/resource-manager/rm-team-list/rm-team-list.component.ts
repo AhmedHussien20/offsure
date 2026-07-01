@@ -57,7 +57,7 @@ export class RmTeamListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+        this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = Number(params.get('id'));
       this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;
       this.loadTeam();

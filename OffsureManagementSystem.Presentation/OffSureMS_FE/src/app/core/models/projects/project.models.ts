@@ -29,7 +29,7 @@ export enum MilestoneStatus {
 }
 
 export interface CreateProjectDto {
-  /** 0 = create without an existing client request (requires clientId + serviceId). */
+  /** 0 = standalone project without a service request (requires clientId + serviceId). */
   serviceRequestId: number;
   clientId?: number;
   serviceId?: number;
@@ -167,11 +167,11 @@ export interface ProjectDto {
   id: number;
   name: string;
   description: string;
-  serviceRequestId: number;
-  serviceRequestTitle: string;
-  clientId: number;
+  serviceRequestId?: number | null;
+  serviceRequestTitle?: string;
+  clientId?: number | null;
   clientName: string;
-  serviceId: number;
+  serviceId?: number | null;
   serviceName: string;
   status: ProjectStatus;
   startDate: string | null;

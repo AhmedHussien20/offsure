@@ -15,7 +15,7 @@ export const salesRoutes: Routes = [
       },
       {
         path: 'team-members',
-        data: { breadcrumb: 'Team Members', title: 'Browse Team Members' },
+        data: { breadcrumb: 'Team Members', title: 'Team Members' },
         loadComponent: () =>
           import('./sales-team-members-list/sales-team-members-list.component').then(
             m => m.SalesTeamMembersListComponent

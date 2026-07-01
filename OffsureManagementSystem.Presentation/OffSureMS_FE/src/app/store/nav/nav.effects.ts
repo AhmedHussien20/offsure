@@ -147,7 +147,7 @@ private SALES_MENUITEMS: MenuItem[] = [
     requiredRole: 'Sales',
   },
   {
-    title: 'Browse Team Members',
+    title: 'Team Members',
     path: '/sales/team-members',
     type: 'link',
     icon: 'ti-id-badge',

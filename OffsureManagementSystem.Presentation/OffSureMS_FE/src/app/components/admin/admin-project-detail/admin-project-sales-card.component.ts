@@ -47,6 +47,8 @@ export class AdminProjectSalesCardComponent {
       centered: true,
       size: 'md',
       backdrop: 'static',
+      windowClass: 'sales-assignment-modal',
+      modalDialogClass: 'sales-assignment-modal__dialog',
     });
     modalRef.componentInstance.project = this.project;
 

@@ -7,5 +7,6 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<AdminDashboardStatisticsDto> GetAdminStatisticsAsync();
         Task<ClientDashboardStatisticsDto> GetClientStatisticsAsync(int userId);
         Task<TeamDashboardStatisticsDto> GetTeamStatisticsAsync(int userId);
+        Task<SalesDashboardStatisticsDto> GetSalesStatisticsAsync(int userId);
     }
 }

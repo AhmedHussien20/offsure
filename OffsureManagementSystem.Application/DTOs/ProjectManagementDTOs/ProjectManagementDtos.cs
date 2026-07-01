@@ -6,6 +6,7 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
     public class ProjectFilterRequest : BaseApiRequest
     {
         public ProjectStatus? Status { get; set; }
+        public ProjectBudgetType? BudgetType { get; set; }
         public int? ServiceRequestId { get; set; }
         public int? ClientId { get; set; }
         public int? ServiceId { get; set; }
@@ -15,7 +16,7 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
 
     public class CreateProjectDto
     {
-        /// <summary>When 0 or omitted with ClientId/ServiceId, creates a standalone project (auto service request).</summary>
+        /// <summary>When &gt; 0, converts an accepted request. When 0, creates a standalone project (no service request).</summary>
         public int ServiceRequestId { get; set; }
         public int? ClientId { get; set; }
         public int? ServiceId { get; set; }

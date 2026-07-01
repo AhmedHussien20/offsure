@@ -10,13 +10,12 @@ import {
   PROJECT_STATUS_FILTER_OPTIONS,
 } from 'app/core/constants/list-filter.constants';
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
-import { normalizeProjectStatus } from 'app/core/utils/enum-status.util';
+import { PROJECT_STATUS_BADGES } from '../../admin/admin.constants';
 
 const SALES_PROJECT_COLUMNS = [
   { key: 'name', label: 'Project', type: 'text' as const },
   { key: 'clientName', label: 'Client', type: 'text' as const },
-  { key: 'statusLabel', label: 'Status', type: 'text' as const },
-  { key: 'teamMembersLabel', label: 'Team', type: 'text' as const },
+  { key: 'status', label: 'Status', type: 'badge' as const, badgeMap: PROJECT_STATUS_BADGES },
   { key: 'commissionLabel', label: 'My commission', type: 'text' as const },
 ];
 
@@ -28,13 +27,7 @@ const SALES_PROJECT_COLUMNS = [
 })
 export class SalesProjectsListComponent implements OnInit {
   columns = SALES_PROJECT_COLUMNS;
-  data: Array<
-    SalesProjectSummaryDto & {
-      statusLabel?: string;
-      teamMembersLabel?: string;
-      commissionLabel?: string;
-    }
-  > = [];
+  data: Array<SalesProjectSummaryDto & { commissionLabel?: string }> = [];
   totalItems = 0;
   totalPages = 0;
   page = 1;
@@ -54,7 +47,7 @@ export class SalesProjectsListComponent implements OnInit {
   constructor(private salesService: SalesService) {}
 
   ngOnInit(): void {
-    this.load();
+        this.load();
   }
 
   onSearch = (): void => {
@@ -83,10 +76,6 @@ export class SalesProjectsListComponent implements OnInit {
         const paged = res.data;
         this.data = (paged?.data ?? []).map(project => ({
           ...project,
-          statusLabel: String(normalizeProjectStatus(project.status) ?? project.status),
-          teamMembersLabel: project.teamMemberNames?.length
-            ? project.teamMemberNames.join(', ')
-            : '—',
           commissionLabel: this.formatCommission(project),
         }));
         this.totalItems = paged?.totalCount ?? 0;

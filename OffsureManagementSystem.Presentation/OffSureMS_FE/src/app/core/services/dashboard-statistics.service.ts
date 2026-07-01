@@ -4,6 +4,7 @@ import { BaseResponse } from '../models/base.response';
 import {
   AdminDashboardStatistics,
   ClientDashboardStatistics,
+  SalesDashboardStatistics,
   TeamDashboardStatistics,
 } from '../models/dashboard/dashboard-statistics.models';
 import { ApiService } from './api.service';
@@ -30,6 +31,12 @@ export class DashboardStatisticsService {
     return this.api
       .get<BaseResponse<TeamDashboardStatistics>>(this.service, 'team')
       .pipe(map(res => ({ ...res, data: this.mapTeam(res.data)! })));
+  }
+
+  getSales(): Observable<BaseResponse<SalesDashboardStatistics>> {
+    return this.api
+      .get<BaseResponse<SalesDashboardStatistics>>(this.service, 'sales')
+      .pipe(map(res => ({ ...res, data: this.mapSales(res.data)! })));
   }
 
   private mapAdmin(dto?: AdminDashboardStatistics): AdminDashboardStatistics {
@@ -89,6 +96,25 @@ export class DashboardStatisticsService {
       ...dto,
       projectsByStatus: dto.projectsByStatus ?? [],
       hoursByProject: dto.hoursByProject ?? [],
+    };
+  }
+
+  private mapSales(dto?: SalesDashboardStatistics): SalesDashboardStatistics {
+    if (!dto) {
+      return {
+        totalClients: 0,
+        totalProjects: 0,
+        inProgressProjects: 0,
+        projectsWithCommission: 0,
+        teamPoolCount: 0,
+        projectsByStatus: [],
+        clientsByStatus: [],
+      };
+    }
+    return {
+      ...dto,
+      projectsByStatus: dto.projectsByStatus ?? [],
+      clientsByStatus: dto.clientsByStatus ?? [],
     };
   }
 }

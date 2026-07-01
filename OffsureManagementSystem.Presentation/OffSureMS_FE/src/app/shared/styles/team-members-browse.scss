@@ -29,6 +29,14 @@
   color: #94a3b8;
 }
 
+.client-team-members__results {
+  min-height: 14rem;
+}
+
+.client-team-members__results--initial .client-team-members__grid {
+  min-height: 14rem;
+}
+
 .client-team-members__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -49,7 +57,7 @@
   appearance: none;
   font: inherit;
   color: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, opacity 0.2s ease;
 
   &:hover {
     border-color: var(--primary-color, #6259ca);

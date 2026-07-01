@@ -65,7 +65,7 @@ export class ClientRequestsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.clientContext.loadProfile().subscribe(profile => {
+        this.clientContext.loadProfile().subscribe(profile => {
       this.clientId = profile?.id ?? null;
       if (this.clientId) {
         this.loadRequests();

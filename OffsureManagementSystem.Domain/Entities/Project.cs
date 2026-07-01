@@ -8,6 +8,8 @@ namespace OffshoreManagementSystem.Domain.Entities
         public string Name { get; set; }
         public string Description { get; set; }
         public int? ServiceRequestId { get; set; }
+        public int? ClientId { get; set; }
+        public int? ServiceId { get; set; }
         public ProjectStatus Status { get; set; } = ProjectStatus.Pending;
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
@@ -28,7 +30,9 @@ namespace OffshoreManagementSystem.Domain.Entities
         public decimal? CommissionValue { get; set; }
 
         // Navigation Properties
-        public virtual ServiceRequest ServiceRequest { get; set; }
+        public virtual ServiceRequest? ServiceRequest { get; set; }
+        public virtual Client? Client { get; set; }
+        public virtual Service? Service { get; set; }
         public virtual User? SalesUser { get; set; }
         public virtual ICollection<ProjectAssignment> ProjectAssignments { get; set; } = new List<ProjectAssignment>();
         public virtual ICollection<ProjectSkill> ProjectSkills { get; set; } = new List<ProjectSkill>();

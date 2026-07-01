@@ -87,10 +87,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ToListAsync();
 
             var projectIds = await _projectRepo
-                .GetAll(p => !p.IsDeleted)
+                .GetAll(p => !p.IsDeleted && (p.ClientId == clientId
+                    || (p.ServiceRequest != null && p.ServiceRequest.ClientId == clientId)))
                 .AsNoTracking()
-                .Include(p => p.ServiceRequest)
-                .Where(p => p.ServiceRequest != null && p.ServiceRequest.ClientId == clientId)
                 .Select(p => p.Id)
                 .ToListAsync();
 
@@ -156,6 +155,68 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 SkillsCount = member.TeamMemberSkills?.Count(ts => !ts.IsDeleted) ?? 0,
                 ProjectsByStatus = GroupProjectStatus(projects),
                 HoursByProject = hoursByProject,
+            };
+        }
+
+        public async Task<SalesDashboardStatisticsDto> GetSalesStatisticsAsync(int salesUserId)
+        {
+            var clientsQuery = _clientRepo
+                .GetAll(c => !c.IsDeleted && c.SalesId == salesUserId)
+                .AsNoTracking();
+
+            var projectsQuery = _projectRepo
+                .GetAll(p => !p.IsDeleted && p.SalesId == salesUserId)
+                .AsNoTracking();
+
+            var totalClients = await clientsQuery.CountAsync();
+            var activeClients = await clientsQuery.CountAsync(c => c.IsActive);
+            var inactiveClients = totalClients - activeClients;
+
+            var totalProjects = await projectsQuery.CountAsync();
+            var inProgressProjects = await projectsQuery.CountAsync(p => p.Status == ProjectStatus.InProgress);
+            var projectsWithCommission = await projectsQuery.CountAsync(
+                p => p.CommissionValue != null && p.CommissionValue > 0);
+
+            var statusCounts = await projectsQuery
+                .GroupBy(p => p.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var teamPoolCount = await _assignmentRepo
+                .GetAll(a =>
+                    a.IsActive
+                    && !a.IsDeleted
+                    && !a.Project.IsDeleted
+                    && !a.TeamMember.IsDeleted
+                    && a.TeamMember.User.IsActive
+                    && !a.TeamMember.User.IsDeleted)
+                .AsNoTracking()
+                .Select(a => a.TeamMemberId)
+                .Distinct()
+                .CountAsync();
+
+            return new SalesDashboardStatisticsDto
+            {
+                TotalClients = totalClients,
+                TotalProjects = totalProjects,
+                InProgressProjects = inProgressProjects,
+                ProjectsWithCommission = projectsWithCommission,
+                TeamPoolCount = teamPoolCount,
+                ProjectsByStatus = statusCounts
+                    .Select(x => new ChartCountItemDto
+                    {
+                        Label = FormatProjectStatus(x.Status),
+                        Count = x.Count,
+                    })
+                    .Where(x => x.Count > 0)
+                    .ToList(),
+                ClientsByStatus = new List<ChartCountItemDto>
+                    {
+                        new() { Label = "Active", Count = activeClients },
+                        new() { Label = "Inactive", Count = inactiveClients },
+                    }
+                    .Where(x => x.Count > 0)
+                    .ToList(),
             };
         }
 

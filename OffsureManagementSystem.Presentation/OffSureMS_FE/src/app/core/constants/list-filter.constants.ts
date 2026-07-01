@@ -8,6 +8,11 @@ export const PROJECT_STATUS_FILTER_OPTIONS = [
   { id: 'Cancelled', name: 'Cancelled' },
 ];
 
+export const PROJECT_BUDGET_TYPE_FILTER_OPTIONS = [
+  { id: 'Total', name: 'Fixed' },
+  { id: 'Hourly', name: 'Hourly' },
+];
+
 export const SERVICE_REQUEST_STATUS_FILTER_OPTIONS = [
   { id: 'Pending', name: 'Pending' },
   { id: 'PrimaryAccepted', name: 'Accepted' },
