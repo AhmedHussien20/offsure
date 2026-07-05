@@ -9,6 +9,7 @@ using Client = OffshoreManagementSystem.Domain.Entities.Client;
 using Project = OffshoreManagementSystem.Domain.Entities.Project;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
 using TeamMember = OffshoreManagementSystem.Domain.Entities.TeamMember;
+using TimesheetEntry = OffshoreManagementSystem.Domain.Entities.TimesheetEntry;
 
 namespace OffsureManagementSystem.Infrastructure.Services
 {
@@ -19,19 +20,22 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<Client> _clientRepo;
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly IRepository<ProjectAssignment> _assignmentRepo;
+        private readonly IRepository<TimesheetEntry> _timesheetEntryRepo;
 
         public DashboardStatisticsService(
             IRepository<ServiceRequest> requestRepo,
             IRepository<Project> projectRepo,
             IRepository<Client> clientRepo,
             IRepository<TeamMember> teamMemberRepo,
-            IRepository<ProjectAssignment> assignmentRepo)
+            IRepository<ProjectAssignment> assignmentRepo,
+            IRepository<TimesheetEntry> timesheetEntryRepo)
         {
             _requestRepo = requestRepo;
             _projectRepo = projectRepo;
             _clientRepo = clientRepo;
             _teamMemberRepo = teamMemberRepo;
             _assignmentRepo = assignmentRepo;
+            _timesheetEntryRepo = timesheetEntryRepo;
         }
 
         public async Task<AdminDashboardStatisticsDto> GetAdminStatisticsAsync()
@@ -135,16 +139,29 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Select(g => g.First())
                 .ToList();
 
-            var hoursByProject = assignments
-                .GroupBy(a => a.ProjectId)
-                .Select(g => new ChartCountItemDto
+            var loggedHoursByProject = await GetLoggedHoursByProjectAsync(
+                teamMemberId,
+                projects.Select(p => p.Id).ToList());
+
+            var hoursByProject = projects
+                .Select(p =>
                 {
-                    Label = g.First().Project?.Name ?? $"Project #{g.Key}",
-                    Count = g.Sum(a => a.AllocatedHours ?? 0),
+                    var allocated = assignments
+                        .Where(a => a.ProjectId == p.Id)
+                        .Sum(a => a.AllocatedHours ?? 0);
+                    var logged = loggedHoursByProject.GetValueOrDefault(p.Id);
+                    var hours = p.BudgetType == ProjectBudgetType.Hourly ? logged : allocated;
+
+                    return new { Label = p.Name, Hours = hours };
                 })
-                .Where(x => x.Count > 0)
-                .OrderByDescending(x => x.Count)
+                .Where(x => x.Hours > 0)
+                .OrderByDescending(x => x.Hours)
                 .Take(6)
+                .Select(x => new ChartCountItemDto
+                {
+                    Label = x.Label,
+                    Count = (int)Math.Round(x.Hours, MidpointRounding.AwayFromZero),
+                })
                 .ToList();
 
             return new TeamDashboardStatisticsDto
@@ -294,6 +311,30 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Client profile not found for current user.", 404);
 
             return client.Id;
+        }
+
+        private async Task<Dictionary<int, decimal>> GetLoggedHoursByProjectAsync(
+            int teamMemberId,
+            IReadOnlyCollection<int> projectIds)
+        {
+            if (projectIds.Count == 0)
+                return new Dictionary<int, decimal>();
+
+            var rows = await _timesheetEntryRepo
+                .Query()
+                .AsNoTracking()
+                .Include(e => e.Timesheet)
+                .Where(e =>
+                    !e.IsDeleted
+                    && e.Timesheet != null
+                    && !e.Timesheet.IsDeleted
+                    && e.Timesheet.TeamMemberId == teamMemberId
+                    && projectIds.Contains(e.Timesheet.ProjectId))
+                .GroupBy(e => e.Timesheet!.ProjectId)
+                .Select(g => new { ProjectId = g.Key, Hours = g.Sum(e => e.Hours) })
+                .ToListAsync();
+
+            return rows.ToDictionary(r => r.ProjectId, r => r.Hours);
         }
 
         private async Task<int> GetTeamMemberIdForUserAsync(int userId)

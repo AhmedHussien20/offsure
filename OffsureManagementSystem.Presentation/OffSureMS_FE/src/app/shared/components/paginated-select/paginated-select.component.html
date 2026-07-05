@@ -10,7 +10,7 @@
       <i [class]="fieldIcon"></i>
       <ng-select
         class="custom-ng-select"
-        appendTo="body"
+        [appendTo]="appendTo"
         [items]="items"
         bindLabel="label"
         bindValue="value"

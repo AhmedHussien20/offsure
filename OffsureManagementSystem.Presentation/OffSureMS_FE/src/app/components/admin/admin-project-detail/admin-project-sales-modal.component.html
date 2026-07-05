@@ -51,8 +51,8 @@
         <app-project-sales-assignment-fields
           [form]="form"
           [budget]="project.budget"
-          [embedded]="true"
-          [compact]="true"></app-project-sales-assignment-fields>
+          [initialSalesId]="project.salesId ?? null"
+          [initialSalesName]="project.salesPersonName ?? null"></app-project-sales-assignment-fields>
       </form>
     </div>
   } @else if (hasSalesAssignment) {

@@ -19,6 +19,7 @@ import {
 } from 'app/shared/components/paginated-select/paginated-select.component';
 import { ProjectBudgetFieldsComponent } from 'app/shared/components/project-budget-fields/project-budget-fields.component';
 import { ProjectMilestoneCreateFieldsComponent } from 'app/shared/components/project-milestone-create-fields/project-milestone-create-fields.component';
+import { ProjectRmAssignmentFieldsComponent } from 'app/shared/components/project-rm-assignment-fields/project-rm-assignment-fields.component';
 import { ProjectSalesAssignmentFieldsComponent } from 'app/shared/components/project-sales-assignment-fields/project-sales-assignment-fields.component';
 import { ToastrService } from 'ngx-toastr';
 import { map, Observable, of, Subject, takeUntil } from 'rxjs';
@@ -38,6 +39,7 @@ import {
     PaginatedSelectComponent,
     ProjectBudgetFieldsComponent,
     ProjectMilestoneCreateFieldsComponent,
+    ProjectRmAssignmentFieldsComponent,
     ProjectSalesAssignmentFieldsComponent,
   ],
   templateUrl: './admin-project-create.component.html',
@@ -49,7 +51,6 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
   creating = false;
   serviceResetToken = 0;
   salesBudgetPreview: number | null = null;
-  showMilestonesSection = true;
   currentStep = 1;
 
   private minDate = new Date().toISOString().split('T')[0];
@@ -69,14 +70,15 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
   ) {}
 
   get stepDefs(): { id: string; label: string }[] {
-    const steps = [
+    return [
       { id: 'project', label: 'Project' },
-      { id: 'budget', label: 'Budget & sales' },
+      { id: 'budget', label: 'Budget & milestones' },
+      { id: 'team', label: 'Team setup' },
     ];
-    if (this.showMilestonesSection) {
-      steps.push({ id: 'milestones', label: 'Milestones' });
-    }
-    return steps;
+  }
+
+  get showMilestonesInBudgetStep(): boolean {
+    return this.form?.get('customBudgetType')?.value === 'total';
   }
 
   get activeStepId(): string {
@@ -182,6 +184,7 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
       salesId: [null],
       commissionType: [null],
       commissionValue: [null],
+      resourceManagerIds: [[] as number[]],
     });
 
     this.formConfig = [
@@ -258,11 +261,6 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
 
   private refreshDerivedState(): void {
     this.salesBudgetPreview = resolveStandaloneProjectBudget(this.form);
-    this.showMilestonesSection = this.form.get('customBudgetType')?.value === 'total';
-
-    if (this.currentStep > this.stepDefs.length) {
-      this.currentStep = this.stepDefs.length;
-    }
   }
 
   private validateCurrentStep(): boolean {
@@ -303,19 +301,18 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
             return false;
           }
         }
-        return this.validateSalesAssignment();
-      }
-      case 'milestones': {
-        if (!this.form.get('usesMilestones')?.value) {
-          return true;
-        }
-        const count = this.form.get('milestoneCount');
-        count?.markAsTouched();
-        if (count?.invalid) {
-          this.toastr.warning('Enter a valid number of milestones.');
-          return false;
+        if (this.showMilestonesInBudgetStep && this.form.get('usesMilestones')?.value) {
+          const count = this.form.get('milestoneCount');
+          count?.markAsTouched();
+          if (count?.invalid) {
+            this.toastr.warning('Enter a valid number of milestones.');
+            return false;
+          }
         }
         return true;
+      }
+      case 'team': {
+        return this.validateSalesAssignment();
       }
       default:
         return true;
@@ -372,18 +369,46 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     this.creating = true;
     this.projectsService.create(dto).subscribe({
       next: res => {
-        this.toastr.success('Project created.');
         const projectId = res.data?.id;
-        this.activeModal.close(true);
-        if (projectId) {
-          this.router.navigate(['/admin/projects', projectId], {
-            queryParams: dto.usesMilestones ? { tab: 'milestones' } : undefined,
-          });
-        }
+        this.assignResourceManagersThenClose(projectId, !!dto.usesMilestones);
       },
       error: err => {
         this.creating = false;
         this.toastr.error(err?.error?.message || 'Failed to create project.');
+      },
+    });
+  }
+
+  private assignResourceManagersThenClose(projectId: number | undefined, usesMilestones: boolean): void {
+    const rmIds: number[] = (this.form.get('resourceManagerIds')?.value ?? []).filter(
+      (id: number) => id != null && id > 0
+    );
+
+    const finish = (): void => {
+      this.activeModal.close(true);
+      if (projectId) {
+        this.router.navigate(['/admin/projects', projectId], {
+          queryParams: usesMilestones ? { tab: 'milestones' } : undefined,
+        });
+      }
+    };
+
+    if (!projectId || rmIds.length === 0) {
+      this.toastr.success('Project created.');
+      finish();
+      return;
+    }
+
+    this.projectsService.setResourceManagers(projectId, rmIds).subscribe({
+      next: () => {
+        this.toastr.success('Project created and resource managers assigned.');
+        finish();
+      },
+      error: () => {
+        this.toastr.warning(
+          'Project created, but resource managers could not be assigned. Set them from the project page.'
+        );
+        finish();
       },
     });
   }

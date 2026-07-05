@@ -45,83 +45,60 @@
   <form [formGroup]="form" class="project-flow-modal__step-pane">
     @switch (activeStepId) {
       @case ('details') {
-        <section class="project-flow-section">
-          <header class="project-flow-section__head">
-            <div>
-              <h6 class="project-flow-section__title">Project details</h6>
-              <p class="project-flow-section__hint">Name and timeline for the new project.</p>
-            </div>
-          </header>
-          <div class="project-flow-section__body">
-            <div class="project-flow-field project-flow-field--full">
-              <label class="project-flow-field__label" for="cv-name">Project name</label>
-              <input id="cv-name" type="text" class="form-control" formControlName="name" />
-              @if (form.get('name')?.invalid && form.get('name')?.touched) {
-                <div class="project-flow-field__error">Project name is required.</div>
+        <div class="project-form-modal">
+          <div class="project-flow-field project-flow-field--full">
+            <label class="project-flow-field__label" for="cv-name">Project name</label>
+            <input id="cv-name" type="text" class="form-control" formControlName="name" />
+            @if (form.get('name')?.invalid && form.get('name')?.touched) {
+              <div class="project-flow-field__error">Project name is required.</div>
+            }
+          </div>
+          <div class="project-flow-field-grid">
+            <div class="project-flow-field">
+              <label class="project-flow-field__label" for="cv-start">Start date</label>
+              <input id="cv-start" type="date" class="form-control" formControlName="startDate" />
+              @if (form.get('startDate')?.invalid && form.get('startDate')?.touched) {
+                <div class="project-flow-field__error">Start date is required.</div>
               }
             </div>
-            <div class="project-flow-field-grid">
-              <div class="project-flow-field">
-                <label class="project-flow-field__label" for="cv-start">Start date</label>
-                <input id="cv-start" type="date" class="form-control" formControlName="startDate" />
-                @if (form.get('startDate')?.invalid && form.get('startDate')?.touched) {
-                  <div class="project-flow-field__error">Start date is required.</div>
-                }
-              </div>
-              <div class="project-flow-field">
-                <label class="project-flow-field__label" for="cv-deadline">Deadline <span class="text-muted">(optional)</span></label>
-                <input id="cv-deadline" type="date" class="form-control" formControlName="targetEndDate" />
-              </div>
+            <div class="project-flow-field">
+              <label class="project-flow-field__label" for="cv-deadline">Deadline <span class="text-muted">(optional)</span></label>
+              <input id="cv-deadline" type="date" class="form-control" formControlName="targetEndDate" />
             </div>
           </div>
-        </section>
+        </div>
       }
 
       @case ('budget') {
-        <section class="project-flow-section">
-          <header class="project-flow-section__head">
-            <div>
-              <h6 class="project-flow-section__title">Budget &amp; sales</h6>
-              <p class="project-flow-section__hint">Set the project budget and optional sales commission.</p>
-            </div>
-          </header>
-          <div class="project-flow-section__body project-flow-section__body--flush">
-            <div class="project-flow-budget-step">
-              <app-project-budget-fields
+        <div class="project-flow-budget-milestones-step project-flow-budget-milestones-step--split">
+          <app-project-budget-fields
+            [form]="form"
+            mode="convert"
+            [requestBudget]="request.budget"
+            idPrefix="cv"></app-project-budget-fields>
+          @if (showMilestonesInBudgetStep) {
+            <div class="project-flow-budget-milestones-step__milestones">
+              <app-project-milestone-create-fields
                 [form]="form"
                 mode="convert"
-                [embedded]="true"
-                [requestBudget]="request.budget"
-                idPrefix="cv"></app-project-budget-fields>
-              <app-project-sales-assignment-fields
-                [form]="form"
-                [embedded]="true"
-                [budget]="salesBudgetPreview"
-                [initialSalesId]="request.salesId ?? null"></app-project-sales-assignment-fields>
+                idPrefix="cv"></app-project-milestone-create-fields>
+              @if (form.get('usesMilestones')?.value && form.get('milestoneCount')?.invalid && form.get('milestoneCount')?.touched) {
+                <div class="text-danger small">Enter a valid number of milestones.</div>
+              }
             </div>
-          </div>
-        </section>
+          }
+        </div>
       }
 
-      @case ('milestones') {
-        <section class="project-flow-section">
-          <header class="project-flow-section__head">
-            <div>
-              <h6 class="project-flow-section__title">Milestones</h6>
-              <p class="project-flow-section__hint">Split a fixed-budget project into payment phases.</p>
-            </div>
-          </header>
-          <div class="project-flow-section__body project-flow-section__body--flush">
-            <app-project-milestone-create-fields
-              [form]="form"
-              mode="convert"
-              [embedded]="true"
-              idPrefix="cv"></app-project-milestone-create-fields>
-            @if (form.get('usesMilestones')?.value && form.get('milestoneCount')?.invalid && form.get('milestoneCount')?.touched) {
-              <div class="project-flow-field__error mt-2">Enter a valid number of milestones.</div>
-            }
-          </div>
-        </section>
+      @case ('team') {
+        <div class="project-flow-team-step">
+          <app-project-sales-assignment-fields
+            [form]="form"
+            [budget]="salesBudgetPreview"
+            [initialSalesId]="request.salesId ?? null"
+            [initialSalesName]="request.salesPersonName ?? null"></app-project-sales-assignment-fields>
+          <app-project-rm-assignment-fields [form]="form"></app-project-rm-assignment-fields>
+        </div>
       }
     }
   </form>

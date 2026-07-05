@@ -12,6 +12,7 @@ import { displayRole } from 'app/core/utils/project-skill.util';
 import {
   buildBarChartOptions,
   buildDonutChartOptions,
+  chartHasData,
 } from 'app/core/utils/dashboard-chart.util';
 import { SpkApexChartsComponent } from 'app/@spk/reusable-charts/spk-apex-charts/spk-apex-charts.component';
 import { SpkEcommerceComponent } from 'app/@spk/reusable-ecommerce/spk-ecommerce/spk-ecommerce.component';
@@ -90,11 +91,9 @@ export class TeamDashboardComponent implements OnInit {
                 },
               ];
               this.projectsStatusChart = buildDonutChartOptions('My projects', data.projectsByStatus);
-              this.hoursByProjectChart = buildBarChartOptions(
-                'Allocated hours by project',
-                data.hoursByProject,
-                true
-              );
+              this.hoursByProjectChart = chartHasData(data.hoursByProject)
+                ? buildBarChartOptions('Hours by project', data.hoursByProject, true, 'Hours')
+                : null;
             } else {
               this.buildStatCards(profile);
             }

@@ -12,7 +12,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            ".mp4", ".webm", ".mov"
+            // Video
+            ".mp4", ".webm", ".mov",
+            // Audio
+            ".mp3", ".m4a", ".wav", ".ogg", ".oga"
         };
 
         public TeamIntroVideoStorageService(IConfiguration configuration)
@@ -28,9 +31,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
             if (!AllowedExtensions.Contains(extension))
-                throw new AppException("Intro video must be MP4, WEBM, or MOV.");
+                throw new AppException("Introduction must be a video (MP4, WEBM, MOV) or audio (MP3, M4A, WAV, OGG) file.");
 
-            var storedName = $"{teamMemberId}-intro-video{extension}";
+            var storedName = $"{teamMemberId}-intro-media{extension}";
             var path = Path.Combine(_rootPath, storedName);
 
             await using var output = File.Create(path);
@@ -55,6 +58,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ".mp4" => "video/mp4",
                 ".webm" => "video/webm",
                 ".mov" => "video/quicktime",
+                ".mp3" => "audio/mpeg",
+                ".m4a" => "audio/mp4",
+                ".wav" => "audio/wav",
+                ".ogg" => "audio/ogg",
+                ".oga" => "audio/ogg",
                 _ => "application/octet-stream"
             };
         }

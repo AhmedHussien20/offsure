@@ -18,6 +18,33 @@
     background: #000;
   }
 
+  &--audio {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: rgb(var(--primary-rgb) / 5%);
+  }
+
+  &__audio-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: rgb(var(--primary-rgb) / 12%);
+    color: rgb(var(--primary-rgb));
+    font-size: 1.25rem;
+  }
+
+  &__audio {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
   &--empty {
     background: rgb(var(--primary-rgb) / 4%);
     border-style: dashed;

@@ -35,6 +35,7 @@
                 formControlName="clientId"
                 label="Client"
                 fieldIcon="fe fe-briefcase"
+                appendTo=".project-flow-modal__body"
                 [required]="true"
                 placeholder="Search clients..."
                 [pageSize]="20"
@@ -45,6 +46,7 @@
                 formControlName="serviceCategoryId"
                 label="Service category"
                 fieldIcon="fe fe-folder"
+                appendTo=".project-flow-modal__body"
                 [required]="true"
                 placeholder="Search categories..."
                 [loadPage]="loadCategories" />
@@ -54,6 +56,7 @@
                 formControlName="serviceId"
                 label="Service"
                 fieldIcon="fe fe-layers"
+                appendTo=".project-flow-modal__body"
                 [required]="true"
                 placeholder="Select category first..."
                 [disabled]="!serviceCategoryId"
@@ -69,17 +72,22 @@
       }
 
       @case ('budget') {
-        <div class="project-flow-budget-step">
+        <div class="project-flow-budget-milestones-step">
           <app-project-budget-fields [form]="form" mode="standalone" idPrefix="np"></app-project-budget-fields>
-          <app-project-sales-assignment-fields [form]="form" [budget]="salesBudgetPreview"></app-project-sales-assignment-fields>
+          @if (showMilestonesInBudgetStep) {
+            <app-project-milestone-create-fields [form]="form" idPrefix="np"></app-project-milestone-create-fields>
+            @if (form.get('usesMilestones')?.value && form.get('milestoneCount')?.invalid && form.get('milestoneCount')?.touched) {
+              <div class="text-danger small">Enter a valid number of milestones.</div>
+            }
+          }
         </div>
       }
 
-      @case ('milestones') {
-        <app-project-milestone-create-fields [form]="form" idPrefix="np"></app-project-milestone-create-fields>
-        @if (form.get('usesMilestones')?.value && form.get('milestoneCount')?.invalid && form.get('milestoneCount')?.touched) {
-          <div class="text-danger small mt-2">Enter a valid number of milestones.</div>
-        }
+      @case ('team') {
+        <div class="project-flow-team-step">
+          <app-project-sales-assignment-fields [form]="form" [budget]="salesBudgetPreview"></app-project-sales-assignment-fields>
+          <app-project-rm-assignment-fields [form]="form"></app-project-rm-assignment-fields>
+        </div>
       }
     }
   </form>

@@ -1,0 +1,80 @@
+<div class="project-rm-fields" [formGroup]="form">
+  <header class="project-rm-fields__head">
+    <span class="project-rm-fields__icon" aria-hidden="true">
+      <i class="fe fe-users"></i>
+    </span>
+    <div>
+      <h6 class="project-rm-fields__title">
+        Resource managers <span class="text-muted fw-normal">(optional)</span>
+      </h6>
+      <p class="project-rm-fields__hint">
+        Search and select up to {{ maxManagers }} managers for this project.
+      </p>
+    </div>
+  </header>
+
+  @if (selectedResourceManagersForDisplay.length > 0) {
+    <div class="project-rm-fields__selected-wrap">
+      <div class="skill-selection-bar">{{ selectedResourceManagersForDisplay.length }} selected</div>
+      <div class="skill-picker skill-picker--selected">
+        @for (rm of selectedResourceManagersForDisplay; track rm.id) {
+          <button
+            type="button"
+            class="skill-picker__chip skill-picker__chip--on"
+            (click)="toggleResourceManager(rm)">
+            <span class="project-detail-rm-chip__avatar">{{ memberInitials(rm.fullName || rm.firstName) }}</span>
+            {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
+            <i class="fe fe-x"></i>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="project-rm-fields__picker-body">
+    <div class="skill-search">
+      <i class="fe fe-search skill-search__icon"></i>
+      <input
+        type="search"
+        class="form-control skill-search__input"
+        placeholder="Search by name or email..."
+        [ngModel]="resourceManagerSearchQuery"
+        (ngModelChange)="onResourceManagerSearchInput($event)"
+        [ngModelOptions]="{ standalone: true }"
+        autocomplete="off" />
+    </div>
+
+    @if (resourceManagersLoading && resourceManagersList.length === 0) {
+      <p class="project-rm-fields__status text-muted">Loading resource managers…</p>
+    } @else if (resourceManagersTotalCount === 0 && !resourceManagerSearchQuery) {
+      <p class="project-rm-fields__status text-muted">No resource managers available.</p>
+    } @else {
+      <div
+        class="skill-picker skill-picker--resource-managers"
+        (scroll)="onResourceManagerPickerScroll($event)">
+        @for (rm of resourceManagersList; track rm.id) {
+          <label
+            class="skill-picker__chip"
+            [class.skill-picker__chip--on]="isResourceManagerSelected(rm.id)"
+            [class.pe-none]="isResourceManagerDisabled(rm.id)"
+            [class.opacity-50]="isResourceManagerDisabled(rm.id)">
+            <input
+              type="checkbox"
+              class="d-none"
+              [checked]="isResourceManagerSelected(rm.id)"
+              [disabled]="isResourceManagerDisabled(rm.id)"
+              (change)="toggleResourceManager(rm)" />
+            {{ rm.fullName || (rm.firstName + ' ' + rm.lastName) }}
+            <small class="text-muted">({{ rm.email }})</small>
+          </label>
+        }
+      </div>
+    }
+
+    @if (!canAddResourceManager) {
+      <p class="project-rm-fields__status text-muted mb-0">
+        Maximum of {{ maxManagers }} resource managers reached.
+      </p>
+    }
+  </div>
+</div>

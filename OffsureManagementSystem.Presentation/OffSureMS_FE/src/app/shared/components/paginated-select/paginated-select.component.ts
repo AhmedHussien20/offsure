@@ -50,6 +50,8 @@ export class PaginatedSelectComponent implements ControlValueAccessor, OnChanges
   @Input() pageSize = 10;
   /** Left icon (generic-form style). */
   @Input() fieldIcon = 'fe fe-list';
+  /** Where to render the dropdown panel (use modal body inside modals). */
+  @Input() appendTo = 'body';
   /** Increment to clear value and reload from page 1. */
   @Input() resetToken = 0;
   @Input({ required: true }) loadPage!: PaginatedSelectLoader;

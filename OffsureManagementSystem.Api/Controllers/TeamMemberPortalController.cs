@@ -128,11 +128,12 @@ namespace OffsureManagementSystem.API.Controllers
             var settings = _teamManagementService.GetIntroVideoSettings();
             var maxBytes = settings.MaxFileSizeMb * 1024L * 1024L;
             if (file.Length > maxBytes)
-                return BadRequest(ApiResponse<object>.Fail($"Intro video must be {settings.MaxFileSizeMb}MB or smaller."));
+                return BadRequest(ApiResponse<object>.Fail($"Introduction must be {settings.MaxFileSizeMb}MB or smaller."));
 
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (extension is not (".mp4" or ".webm" or ".mov"))
-                return BadRequest(ApiResponse<object>.Fail("Intro video must be MP4, WEBM, or MOV."));
+            if (extension is not (".mp4" or ".webm" or ".mov" or ".mp3" or ".m4a" or ".wav" or ".ogg" or ".oga"))
+                return BadRequest(ApiResponse<object>.Fail(
+                    "Introduction must be a video (MP4, WEBM, MOV) or audio (MP3, M4A, WAV, OGG) file."));
 
             await using var stream = file.OpenReadStream();
             var member = await _teamManagementService.StoreIntroVideoForUserAsync(

@@ -1,14 +1,25 @@
 @if (resolvedUrl) {
-  <div class="intro-video-player intro-video-player--has-video">
-    <video
-      class="intro-video-player__video"
-      [src]="resolvedUrl"
-      controls
-      playsinline
-      preload="metadata">
-      Your browser does not support video playback.
-    </video>
-  </div>
+  @if (isAudio) {
+    <div class="intro-video-player intro-video-player--audio">
+      <div class="intro-video-player__audio-icon" aria-hidden="true">
+        <i class="fe fe-mic"></i>
+      </div>
+      <audio class="intro-video-player__audio" [src]="resolvedUrl" controls preload="metadata">
+        Your browser does not support audio playback.
+      </audio>
+    </div>
+  } @else {
+    <div class="intro-video-player intro-video-player--has-video">
+      <video
+        class="intro-video-player__video"
+        [src]="resolvedUrl"
+        controls
+        playsinline
+        preload="metadata">
+        Your browser does not support video playback.
+      </video>
+    </div>
+  }
 } @else {
   <div class="intro-video-player intro-video-player--empty">
     <div class="intro-video-player__placeholder">

@@ -3,6 +3,7 @@ import { map, Observable } from 'rxjs';
 import { BaseResponse } from '../models/base.response';
 import {
   AdminDashboardStatistics,
+  ChartCountItem,
   ClientDashboardStatistics,
   SalesDashboardStatistics,
   TeamDashboardStatistics,
@@ -94,9 +95,18 @@ export class DashboardStatisticsService {
     }
     return {
       ...dto,
-      projectsByStatus: dto.projectsByStatus ?? [],
-      hoursByProject: dto.hoursByProject ?? [],
+      projectsByStatus: this.mapChartItems(dto.projectsByStatus),
+      hoursByProject: this.mapChartItems(dto.hoursByProject),
     };
+  }
+
+  private mapChartItems(
+    items?: Array<ChartCountItem & { Label?: string; Count?: number }>
+  ): ChartCountItem[] {
+    return (items ?? []).map(item => ({
+      label: item.label ?? item.Label ?? '',
+      count: Number(item.count ?? item.Count ?? 0),
+    }));
   }
 
   private mapSales(dto?: SalesDashboardStatistics): SalesDashboardStatistics {

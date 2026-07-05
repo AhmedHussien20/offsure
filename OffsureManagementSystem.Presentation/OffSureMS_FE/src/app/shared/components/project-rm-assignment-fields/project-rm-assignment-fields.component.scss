@@ -1,0 +1,78 @@
+@use '../../styles/skill-picker';
+
+:host {
+  display: block;
+}
+
+.project-rm-fields {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: var(--bs-light, #f8f9fa);
+  height: 100%;
+  min-height: 20rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.project-rm-fields__selected-wrap {
+  flex-shrink: 0;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+}
+
+.project-rm-fields__picker-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.project-rm-fields .skill-picker--resource-managers {
+  flex: 1 1 auto;
+  min-height: 7rem;
+  max-height: none;
+  overflow-y: auto;
+}
+
+.project-rm-fields__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.project-rm-fields__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  background: rgba(var(--primary-rgb, 98, 89, 202), 0.12);
+  color: rgb(var(--primary-rgb, 98, 89, 202));
+  flex-shrink: 0;
+  font-size: 0.95rem;
+}
+
+.project-rm-fields__title {
+  margin: 0 0 0.1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.project-rm-fields__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.project-rm-fields__status {
+  font-size: 0.78rem;
+  margin: 0.5rem 0 0;
+}

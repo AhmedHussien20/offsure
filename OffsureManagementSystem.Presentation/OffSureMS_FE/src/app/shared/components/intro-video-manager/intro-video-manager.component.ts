@@ -14,8 +14,13 @@ import {
 } from '@angular/core';
 import {
   DEFAULT_INTRO_VIDEO_SETTINGS,
+  INTRO_AUDIO_ACCEPT,
+  INTRO_AUDIO_EXTENSIONS,
   INTRO_VIDEO_ACCEPT,
+  INTRO_VIDEO_EXTENSIONS,
+  IntroMediaKind,
   IntroVideoSettingsDto,
+  resolveIntroMediaKind,
 } from 'app/core/models/team-members/intro-video.models';
 import { resolveStorageAssetUrl } from 'app/core/models/team-members/team-member.models';
 import { TeamPortalService } from 'app/core/services/team-portal.service';
@@ -37,10 +42,12 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   @Output() videoChange = new EventEmitter<string | null | undefined>();
 
   @ViewChild('livePreview') livePreviewRef?: ElementRef<HTMLVideoElement>;
-  @ViewChild('recordedPreview') recordedPreviewRef?: ElementRef<HTMLVideoElement>;
+  @ViewChild('recordedPreview') recordedPreviewRef?: ElementRef<HTMLMediaElement>;
 
   settings: IntroVideoSettingsDto = { ...DEFAULT_INTRO_VIDEO_SETTINGS };
-  readonly accept = INTRO_VIDEO_ACCEPT;
+
+  /** Which media the member is choosing to add. */
+  mediaKind: IntroMediaKind = 'video';
 
   busy = false;
   showRecorder = false;
@@ -70,6 +77,9 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (this.videoUrl) {
+      this.mediaKind = resolveIntroMediaKind(this.videoUrl);
+    }
     this.teamPortal.getIntroVideoSettings().subscribe({
       next: res => {
         if (res.data) {
@@ -80,6 +90,37 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
         this.settings = { ...DEFAULT_INTRO_VIDEO_SETTINGS };
       },
     });
+  }
+
+  get isAudioKind(): boolean {
+    return this.mediaKind === 'audio';
+  }
+
+  /** Media kind of the currently saved introduction (may differ from the selected toggle). */
+  get savedMediaKind(): IntroMediaKind {
+    return resolveIntroMediaKind(this.videoUrl);
+  }
+
+  get accept(): string {
+    return this.isAudioKind ? INTRO_AUDIO_ACCEPT : INTRO_VIDEO_ACCEPT;
+  }
+
+  get mediaNoun(): string {
+    return this.isAudioKind ? 'audio' : 'video';
+  }
+
+  get formatsLabel(): string {
+    return this.isAudioKind ? 'MP3, M4A, WAV, or OGG' : 'MP4, WEBM, or MOV';
+  }
+
+  selectMediaKind(kind: IntroMediaKind): void {
+    if (this.mediaKind === kind || this.busy) {
+      return;
+    }
+    if (this.showRecorder) {
+      this.closeRecorder();
+    }
+    this.mediaKind = kind;
   }
 
   ngOnDestroy(): void {
@@ -194,19 +235,42 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const extension = this.recordedBlob.type.includes('webm') ? 'webm' : 'mp4';
-    const file = new File([this.recordedBlob], `intro-video.${extension}`, {
-      type: this.recordedBlob.type || 'video/webm',
-    });
+    const type = this.recordedBlob.type || (this.isAudioKind ? 'audio/webm' : 'video/webm');
+    const extension = this.resolveRecordingExtension(type);
+    const baseName = this.isAudioKind ? 'intro-audio' : 'intro-video';
+    const file = new File([this.recordedBlob], `${baseName}.${extension}`, { type });
     await this.uploadFile(file);
     this.closeRecorder();
   }
 
+  private resolvePreferredRecordingType(): string {
+    const candidates = this.isAudioKind
+      ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
+      : ['video/webm;codecs=vp9,opus', 'video/webm'];
+
+    for (const candidate of candidates) {
+      if (MediaRecorder.isTypeSupported(candidate)) {
+        return candidate;
+      }
+    }
+    return '';
+  }
+
+  private resolveRecordingExtension(mimeType: string): string {
+    if (this.isAudioKind) {
+      if (mimeType.includes('ogg')) return 'ogg';
+      if (mimeType.includes('mp4') || mimeType.includes('mpeg')) return 'm4a';
+      // Browsers usually record audio as webm/opus, which we accept.
+      return 'webm';
+    }
+    return mimeType.includes('webm') ? 'webm' : 'mp4';
+  }
+
   async deleteVideo(): Promise<void> {
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Remove introduction video',
-      message: 'Remove your introduction video? You can upload or record a new one later.',
-      confirmLabel: 'Remove video',
+      title: 'Remove introduction',
+      message: 'Remove your personal introduction? You can upload or record a new one later.',
+      confirmLabel: 'Remove',
       variant: 'danger',
     });
     if (!confirmed) {
@@ -218,11 +282,11 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
       next: res => {
         this.videoUrl = res.data?.introVideoUrl ?? null;
         this.videoChange.emit(this.videoUrl);
-        this.toastr.success('Introduction video removed.');
+        this.toastr.success('Introduction removed.');
         this.busy = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to remove video.');
+        this.toastr.error(err?.error?.message || 'Failed to remove introduction.');
         this.busy = false;
       },
     });
@@ -230,14 +294,17 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
 
   private async uploadFile(file: File): Promise<void> {
     const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!this.settings.acceptedFormats.includes(extension)) {
-      this.toastr.error('Video must be MP4, WEBM, or MOV.');
+    const allowed = this.isAudioKind ? INTRO_AUDIO_EXTENSIONS : INTRO_VIDEO_EXTENSIONS;
+    if (!allowed.includes(extension)) {
+      this.toastr.error(`${this.isAudioKind ? 'Audio' : 'Video'} must be ${this.formatsLabel}.`);
       return;
     }
 
     const maxBytes = this.settings.maxFileSizeMb * 1024 * 1024;
     if (file.size > maxBytes) {
-      this.toastr.error(`Video must be ${this.settings.maxFileSizeMb}MB or smaller.`);
+      this.toastr.error(
+        `${this.isAudioKind ? 'Audio' : 'Video'} must be ${this.settings.maxFileSizeMb}MB or smaller.`
+      );
       return;
     }
 
@@ -245,12 +312,13 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
     this.teamPortal.uploadIntroVideo(file).subscribe({
       next: res => {
         this.videoUrl = res.data?.introVideoUrl ?? null;
+        this.mediaKind = resolveIntroMediaKind(this.videoUrl) ?? this.mediaKind;
         this.videoChange.emit(this.videoUrl);
-        this.toastr.success('Introduction video saved.');
+        this.toastr.success('Introduction saved.');
         this.busy = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to upload video.');
+        this.toastr.error(err?.error?.message || 'Failed to upload introduction.');
         this.busy = false;
       },
     });
@@ -258,15 +326,19 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
 
   private async acquireMediaStream(): Promise<MediaStream | null> {
     if (!navigator.mediaDevices?.getUserMedia) {
-      this.cameraError = 'Camera recording is not supported in this browser.';
+      this.cameraError = this.isAudioKind
+        ? 'Audio recording is not supported in this browser.'
+        : 'Camera recording is not supported in this browser.';
       return null;
     }
 
-    const attempts: MediaStreamConstraints[] = [
-      { video: { facingMode: 'user' }, audio: true },
-      { video: true, audio: true },
-      { video: true, audio: false },
-    ];
+    const attempts: MediaStreamConstraints[] = this.isAudioKind
+      ? [{ audio: true }]
+      : [
+          { video: { facingMode: 'user' }, audio: true },
+          { video: true, audio: true },
+          { video: true, audio: false },
+        ];
 
     let lastError: unknown = null;
 
@@ -314,6 +386,11 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   }
 
   private async attachStreamToPreview(): Promise<void> {
+    // Audio recording has no live camera preview.
+    if (this.isAudioKind) {
+      return;
+    }
+
     const video = this.livePreviewRef?.nativeElement;
     if (!video || !this.mediaStream) {
       return;
@@ -337,11 +414,7 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
     }
 
     this.recordedChunks = [];
-    const preferredType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-      ? 'video/webm;codecs=vp9,opus'
-      : MediaRecorder.isTypeSupported('video/webm')
-        ? 'video/webm'
-        : '';
+    const preferredType = this.resolvePreferredRecordingType();
 
     try {
       this.mediaRecorder = preferredType
@@ -360,7 +433,8 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
     };
 
     this.mediaRecorder.onstop = () => {
-      const type = this.mediaRecorder?.mimeType || 'video/webm';
+      const type =
+        this.mediaRecorder?.mimeType || (this.isAudioKind ? 'audio/webm' : 'video/webm');
       this.recordedBlob = new Blob(this.recordedChunks, { type });
       this.revokeRecordedPreviewUrl();
       this.recordedPreviewUrl = URL.createObjectURL(this.recordedBlob);

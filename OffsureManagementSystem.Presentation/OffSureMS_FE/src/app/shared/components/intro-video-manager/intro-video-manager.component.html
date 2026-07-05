@@ -1,10 +1,29 @@
 <div class="intro-video-manager" [class.intro-video-manager--busy]="busy">
   @if (!showRecorder) {
+    <div class="intro-video-manager__type-toggle" role="group" aria-label="Introduction type">
+      <button
+        type="button"
+        class="intro-video-manager__type-btn"
+        [class.intro-video-manager__type-btn--active]="!isAudioKind"
+        [disabled]="busy"
+        (click)="selectMediaKind('video')">
+        <i class="fe fe-video me-1"></i>Video
+      </button>
+      <button
+        type="button"
+        class="intro-video-manager__type-btn"
+        [class.intro-video-manager__type-btn--active]="isAudioKind"
+        [disabled]="busy"
+        (click)="selectMediaKind('audio')">
+        <i class="fe fe-mic me-1"></i>Audio
+      </button>
+    </div>
+
     <app-intro-video-player [videoUrl]="videoUrl" />
 
     <div class="intro-video-manager__actions">
       <label class="btn btn-outline-primary btn-sm mb-0" [class.disabled]="busy">
-        <i class="fe fe-upload me-1"></i>Upload video
+        <i class="fe fe-upload me-1"></i>Upload {{ mediaNoun }}
         <input
           type="file"
           class="d-none"
@@ -14,7 +33,7 @@
       </label>
 
       <button type="button" class="btn btn-primary btn-sm" [disabled]="busy" (click)="openRecorder()">
-        <i class="fe fe-video me-1"></i>Record video
+        <i [class]="isAudioKind ? 'fe fe-mic me-1' : 'fe fe-video me-1'"></i>Record {{ mediaNoun }}
       </button>
 
       @if (hasVideo) {
@@ -25,9 +44,9 @@
     </div>
 
     <p class="intro-video-manager__hint text-muted small mb-0">
-      MP4, WEBM, or MOV · max {{ fileSizeLabel }} · up to {{ maxDurationLabel }}
+      {{ formatsLabel }} · max {{ fileSizeLabel }} · up to {{ maxDurationLabel }}
       @if (hasVideo) {
-        <span> · uploading a new video replaces the current one</span>
+        <span> · uploading a new introduction replaces the current one</span>
       }
     </p>
   } @else {
@@ -38,16 +57,24 @@
 
       <div
         class="intro-video-recorder__stage"
+        [class.intro-video-recorder__stage--audio]="isAudioKind"
         [class.intro-video-recorder__stage--permission]="recorderPhase === 'permission'"
         [class.intro-video-recorder__stage--live]="recorderPhase === 'idle' || recorderPhase === 'countdown' || recorderPhase === 'recording'"
         [class.intro-video-recorder__stage--playback]="recorderPhase === 'preview'">
         @if (recorderPhase === 'permission') {
           <div class="intro-video-recorder__permission">
-            <i class="fe fe-video intro-video-recorder__permission-icon"></i>
-            <h6 class="intro-video-recorder__permission-title">Allow camera &amp; microphone</h6>
+            <i
+              [class]="isAudioKind ? 'fe fe-mic intro-video-recorder__permission-icon' : 'fe fe-video intro-video-recorder__permission-icon'"></i>
+            <h6 class="intro-video-recorder__permission-title">
+              @if (isAudioKind) {
+                Allow microphone
+              } @else {
+                Allow camera &amp; microphone
+              }
+            </h6>
             <p class="intro-video-recorder__permission-text text-muted small mb-3">
               Click the button below. Your browser will ask you to allow access — choose
-              <strong>Allow</strong> so you can record your introduction video.
+              <strong>Allow</strong> so you can record your introduction.
             </p>
             <button
               type="button"
@@ -58,20 +85,42 @@
                 <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                 Waiting for permission…
               } @else {
-                <i class="fe fe-unlock me-1"></i>Allow camera &amp; microphone
+                <i class="fe fe-unlock me-1"></i>
+                {{ isAudioKind ? 'Allow microphone' : 'Allow camera & microphone' }}
               }
             </button>
           </div>
         } @else if (recorderPhase === 'preview') {
-          <video
-            #recordedPreview
-            class="intro-video-recorder__video"
-            [src]="recordedPreviewUrl ?? undefined"
-            controls
-            playsinline
-            preload="auto"></video>
+          @if (isAudioKind) {
+            <div class="intro-video-recorder__audio-preview">
+              <i class="fe fe-mic intro-video-recorder__audio-icon"></i>
+              <audio
+                #recordedPreview
+                class="intro-video-recorder__audio"
+                [src]="recordedPreviewUrl ?? undefined"
+                controls
+                preload="auto"></audio>
+            </div>
+          } @else {
+            <video
+              #recordedPreview
+              class="intro-video-recorder__video"
+              [src]="recordedPreviewUrl ?? undefined"
+              controls
+              playsinline
+              preload="auto"></video>
+          }
         } @else {
-          <video #livePreview class="intro-video-recorder__video" autoplay muted playsinline></video>
+          @if (isAudioKind) {
+            <div class="intro-video-recorder__audio-live">
+              <i class="fe fe-mic intro-video-recorder__audio-icon"></i>
+              @if (recorderPhase === 'idle') {
+                <p class="text-muted small mb-0">Ready to record audio</p>
+              }
+            </div>
+          } @else {
+            <video #livePreview class="intro-video-recorder__video" autoplay muted playsinline></video>
+          }
 
           @if (recorderPhase === 'countdown') {
             <div class="intro-video-recorder__countdown">{{ countdownValue }}</div>
@@ -117,7 +166,7 @@
             <i class="fe fe-rotate-ccw me-1"></i>Re-record
           </button>
           <button type="button" class="btn btn-primary btn-sm" [disabled]="busy" (click)="saveRecording()">
-            <i class="fe fe-check me-1"></i>Save video
+            <i class="fe fe-check me-1"></i>Save {{ mediaNoun }}
           </button>
         }
 

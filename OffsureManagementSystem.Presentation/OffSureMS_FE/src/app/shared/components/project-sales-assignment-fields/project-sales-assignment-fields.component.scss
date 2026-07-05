@@ -1,53 +1,29 @@
+@use '../../styles/skill-picker';
+
 :host {
   display: block;
 }
 
 .project-sales-fields {
-  margin-top: 0.75rem;
   padding: 1rem;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: var(--bs-light, #f8f9fa);
+  height: 100%;
+  min-height: 20rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
-.project-sales-fields--embedded {
-  margin-top: 0;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-}
-
-.project-sales-fields--compact {
-  margin-top: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-
-.project-sales-fields--compact.project-sales-fields--embedded {
-  padding: 0;
-}
-
-.project-sales-fields__title {
-  margin-bottom: 0.85rem;
-}
-
-.project-sales-fields__top-card {
+.project-sales-fields__head {
   display: flex;
   align-items: flex-start;
   gap: 0.65rem;
+  margin-bottom: 0.85rem;
 }
 
-.project-sales-fields--compact .project-sales-fields__top-card {
-  align-items: center;
-  padding: 0.65rem 0.85rem;
-  border-radius: 12px;
-  border: 1px solid rgba(var(--primary-rgb, 98, 89, 202), 0.18);
-  background: rgba(var(--primary-rgb, 98, 89, 202), 0.05);
-}
-
-.project-sales-fields__top-card-icon {
+.project-sales-fields__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -60,19 +36,73 @@
   font-size: 0.95rem;
 }
 
-.project-sales-fields__top-card-main {
-  flex: 1;
-  min-width: 0;
+.project-sales-fields__title {
+  margin: 0 0 0.1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-.project-sales-fields__top-card-label {
-  display: block;
+.project-sales-fields__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.project-sales-fields__status {
+  font-size: 0.78rem;
+  margin: 0.5rem 0 0;
+}
+
+.project-sales-fields__selected {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--primary-rgb, 98, 89, 202), 0.22);
+  background: rgba(var(--primary-rgb, 98, 89, 202), 0.06);
+}
+
+.project-sales-fields__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: rgba(var(--primary-rgb, 98, 89, 202), 0.15);
+  color: rgb(var(--primary-rgb, 98, 89, 202));
   font-size: 0.72rem;
   font-weight: 700;
+  flex-shrink: 0;
+}
+
+.project-sales-fields__selected-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #64748b;
-  margin-bottom: 0.3rem;
+}
+
+.project-sales-fields__selected-name {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.project-sales-fields__selected-email {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.skill-picker--sales {
+  min-height: 7rem;
+  max-height: 10rem;
+  overflow-y: auto;
 }
 
 .project-sales-fields__details {
@@ -81,10 +111,6 @@
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: #fff;
-}
-
-.project-sales-fields--compact .project-sales-fields__details {
-  margin-top: 0.5rem;
 }
 
 .project-sales-fields__row {

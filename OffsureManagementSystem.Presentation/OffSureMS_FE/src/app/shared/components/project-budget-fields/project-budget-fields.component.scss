@@ -5,8 +5,8 @@
 .budget-section {
   padding: 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(98, 89, 202, 0.15);
-  background: rgba(98, 89, 202, 0.04);
+  border: 1px solid #e2e8f0;
+  background: var(--bs-light, #f8f9fa);
 }
 
 .budget-section--embedded {

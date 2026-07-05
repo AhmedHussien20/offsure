@@ -13,6 +13,7 @@ import {
 } from 'app/core/utils/project-budget-form.util';
 import { ProjectBudgetFieldsComponent } from 'app/shared/components/project-budget-fields/project-budget-fields.component';
 import { ProjectMilestoneCreateFieldsComponent } from 'app/shared/components/project-milestone-create-fields/project-milestone-create-fields.component';
+import { ProjectRmAssignmentFieldsComponent } from 'app/shared/components/project-rm-assignment-fields/project-rm-assignment-fields.component';
 import { ProjectSalesAssignmentFieldsComponent } from 'app/shared/components/project-sales-assignment-fields/project-sales-assignment-fields.component';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
@@ -30,6 +31,7 @@ import {
     ReactiveFormsModule,
     ProjectBudgetFieldsComponent,
     ProjectMilestoneCreateFieldsComponent,
+    ProjectRmAssignmentFieldsComponent,
     ProjectSalesAssignmentFieldsComponent,
   ],
   templateUrl: './admin-convert-project.component.html',
@@ -41,7 +43,6 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   creating = false;
   salesBudgetPreview: number | null = null;
-  showMilestonesSection = true;
   currentStep = 1;
 
   private minDate = new Date().toISOString().split('T')[0];
@@ -56,14 +57,17 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
   ) {}
 
   get stepDefs(): { id: string; label: string }[] {
-    const steps = [
+    return [
       { id: 'details', label: 'Details' },
-      { id: 'budget', label: 'Budget & sales' },
+      { id: 'budget', label: 'Budget & milestones' },
+      { id: 'team', label: 'Team setup' },
     ];
-    if (this.showMilestonesSection) {
-      steps.push({ id: 'milestones', label: 'Milestones' });
-    }
-    return steps;
+  }
+
+  get showMilestonesInBudgetStep(): boolean {
+    const budgetMode = this.form?.get('budgetMode')?.value;
+    const customType = this.form?.get('customBudgetType')?.value;
+    return budgetMode === 'sameAsRequest' || customType === 'total';
   }
 
   get activeStepId(): string {
@@ -122,6 +126,7 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
       salesId: [this.request.salesId ?? null],
       commissionType: [null],
       commissionValue: [null],
+      resourceManagerIds: [[] as number[]],
     });
 
     this.form
@@ -156,14 +161,6 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
 
   private refreshDerivedState(): void {
     this.salesBudgetPreview = resolveProjectBudgetForSales(this.form, this.request.budget);
-    const budgetMode = this.form.get('budgetMode')?.value;
-    const customType = this.form.get('customBudgetType')?.value;
-    this.showMilestonesSection =
-      budgetMode === 'sameAsRequest' || customType === 'total';
-
-    if (this.currentStep > this.stepDefs.length) {
-      this.currentStep = this.stepDefs.length;
-    }
   }
 
   private validateCurrentStep(): boolean {
@@ -187,19 +184,18 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
           this.toastr.warning('Enter a valid budget.');
           return false;
         }
-        return this.validateSalesAssignment();
-      }
-      case 'milestones': {
-        if (!this.form.get('usesMilestones')?.value) {
-          return true;
-        }
-        const count = this.form.get('milestoneCount');
-        count?.markAsTouched();
-        if (count?.invalid) {
-          this.toastr.warning('Enter a valid number of milestones.');
-          return false;
+        if (this.showMilestonesInBudgetStep && this.form.get('usesMilestones')?.value) {
+          const count = this.form.get('milestoneCount');
+          count?.markAsTouched();
+          if (count?.invalid) {
+            this.toastr.warning('Enter a valid number of milestones.');
+            return false;
+          }
         }
         return true;
+      }
+      case 'team': {
+        return this.validateSalesAssignment();
       }
       default:
         return true;
@@ -262,18 +258,46 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
     this.creating = true;
     this.projectsService.create(dto).subscribe({
       next: res => {
-        this.toastr.success('Project created. Assign your team on the next screen.');
         const projectId = res.data?.id;
-        this.activeModal.close(true);
-        if (projectId) {
-          this.router.navigate(['/admin/projects', projectId], {
-            queryParams: dto.usesMilestones ? { tab: 'milestones' } : undefined,
-          });
-        }
+        this.assignResourceManagersThenClose(projectId, !!dto.usesMilestones);
       },
       error: err => {
         this.creating = false;
         this.toastr.error(err?.error?.message || 'Failed to create project.');
+      },
+    });
+  }
+
+  private assignResourceManagersThenClose(projectId: number | undefined, usesMilestones: boolean): void {
+    const rmIds: number[] = (this.form.get('resourceManagerIds')?.value ?? []).filter(
+      (id: number) => id != null && id > 0
+    );
+
+    const finish = (): void => {
+      this.activeModal.close(true);
+      if (projectId) {
+        this.router.navigate(['/admin/projects', projectId], {
+          queryParams: usesMilestones ? { tab: 'milestones' } : undefined,
+        });
+      }
+    };
+
+    if (!projectId || rmIds.length === 0) {
+      this.toastr.success('Project created. Assign your team on the next screen.');
+      finish();
+      return;
+    }
+
+    this.projectsService.setResourceManagers(projectId, rmIds).subscribe({
+      next: () => {
+        this.toastr.success('Project created and resource managers assigned.');
+        finish();
+      },
+      error: () => {
+        this.toastr.warning(
+          'Project created, but resource managers could not be assigned. Set them from the project page.'
+        );
+        finish();
       },
     });
   }

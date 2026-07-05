@@ -1,39 +1,66 @@
-<div
-  class="project-sales-fields"
-  [class.project-sales-fields--embedded]="embedded"
-  [class.project-sales-fields--compact]="compact"
-  [formGroup]="form">
-  @if (!embedded && !compact) {
-    <h6 class="project-sales-fields__title">Sales assignment <span class="text-muted fw-normal">(optional)</span></h6>
+<div class="project-sales-fields" [formGroup]="form">
+  <header class="project-sales-fields__head">
+    <span class="project-sales-fields__icon" aria-hidden="true">
+      <i class="fe fe-user-check"></i>
+    </span>
+    <div>
+      <h6 class="project-sales-fields__title">
+        Sales assignment <span class="text-muted fw-normal">(optional)</span>
+      </h6>
+      <p class="project-sales-fields__hint">Search and select a sales person, then set commission.</p>
+    </div>
+  </header>
+
+  @if (salesSelected && selectedSalesUser) {
+    <div class="project-sales-fields__selected">
+      <span class="project-sales-fields__avatar">{{ salesInitials }}</span>
+      <div class="min-width-0 flex-grow-1">
+        <span class="project-sales-fields__selected-label">Selected sales person</span>
+        <strong class="project-sales-fields__selected-name d-block text-truncate">
+          {{ selectedSalesUser.fullName || (selectedSalesUser.firstName + ' ' + selectedSalesUser.lastName) }}
+        </strong>
+        @if (selectedSalesUser.email) {
+          <span class="project-sales-fields__selected-email d-block text-truncate">{{ selectedSalesUser.email }}</span>
+        }
+      </div>
+      <button type="button" class="btn btn-sm btn-light" (click)="clearSalesSelection()" title="Remove">
+        <i class="fe fe-x"></i>
+      </button>
+    </div>
   }
 
-  <div class="project-sales-fields__top-card">
-    @if (compact) {
-      <div class="project-sales-fields__top-card-icon" aria-hidden="true">
-        <i class="fe fe-user-check"></i>
+  @if (!salesSelected) {
+    <div class="skill-search">
+      <i class="fe fe-search skill-search__icon"></i>
+      <input
+        type="search"
+        class="form-control skill-search__input"
+        placeholder="Search sales users..."
+        [ngModel]="salesSearchQuery"
+        (ngModelChange)="onSalesSearchInput($event)"
+        [ngModelOptions]="{ standalone: true }"
+        autocomplete="off" />
+    </div>
+
+    @if (salesLoading && salesUsersList.length === 0) {
+      <p class="project-sales-fields__status text-muted">Loading sales users…</p>
+    } @else if (salesTotalCount === 0 && !salesSearchQuery) {
+      <p class="project-sales-fields__status text-muted">No sales users available.</p>
+    } @else {
+      <div class="skill-picker skill-picker--sales" (scroll)="onSalesPickerScroll($event)">
+        @for (user of salesUsersList; track user.id) {
+          <button
+            type="button"
+            class="skill-picker__chip"
+            [class.skill-picker__chip--on]="isSalesUserSelected(user.id)"
+            (click)="toggleSalesUser(user)">
+            {{ user.fullName || (user.firstName + ' ' + user.lastName) }}
+            <small class="text-muted">({{ user.email }})</small>
+          </button>
+        }
       </div>
     }
-    <div class="project-sales-fields__top-card-main">
-      @if (compact) {
-        <span class="project-sales-fields__top-card-label">Sales assignment <span class="text-muted fw-normal">(optional)</span></span>
-      } @else {
-        <label class="project-sales-fields__label" for="salesPersonSelect">Sales person</label>
-      }
-      <select
-        id="salesPersonSelect"
-        class="form-select"
-        [class.form-select-sm]="compact"
-        formControlName="salesId">
-        <option [ngValue]="null">— None —</option>
-        @for (user of salesUsers; track user.id) {
-          <option [ngValue]="user.id">{{ user.fullName || (user.firstName + ' ' + user.lastName) }}</option>
-        }
-      </select>
-      @if (loadingSales) {
-        <div class="form-text">Loading sales users...</div>
-      }
-    </div>
-  </div>
+  }
 
   @if (salesSelected) {
     <div class="project-sales-fields__details">

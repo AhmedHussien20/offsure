@@ -3,15 +3,17 @@
 }
 
 .milestone-create-fields {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed #e2e8f0;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: var(--bs-light, #f8f9fa);
 }
 
 .milestone-create-fields--embedded {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .milestone-create-fields__hint {

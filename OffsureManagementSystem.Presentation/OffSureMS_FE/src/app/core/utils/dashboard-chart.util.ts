@@ -57,13 +57,14 @@ export function buildDonutChartOptions(
 export function buildBarChartOptions(
   title: string,
   items: ChartCountItem[],
-  horizontal = false
+  horizontal = false,
+  seriesName = 'Count'
 ): Record<string, unknown> | null {
-  const data = items ?? [];
+  const data = (items ?? []).filter(i => (i.count ?? 0) > 0);
   if (!data.length) return null;
 
   return {
-    series: [{ name: 'Count', data: data.map(i => i.count) }],
+    series: [{ name: seriesName, data: data.map(i => i.count) }],
     chart: {
       type: 'bar',
       height: 280,

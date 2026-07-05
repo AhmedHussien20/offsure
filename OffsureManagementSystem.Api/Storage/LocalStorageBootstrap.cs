@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -61,8 +62,20 @@ internal static class LocalStorageBootstrap
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = new PhysicalFileProvider(physicalPath),
-            RequestPath = requestPath
+            RequestPath = requestPath,
+            ContentTypeProvider = BuildContentTypeProvider()
         });
+    }
+
+    private static FileExtensionContentTypeProvider BuildContentTypeProvider()
+    {
+        var provider = new FileExtensionContentTypeProvider();
+        // Ensure intro media audio/video extensions serve with a correct content type.
+        provider.Mappings[".m4a"] = "audio/mp4";
+        provider.Mappings[".oga"] = "audio/ogg";
+        provider.Mappings[".webm"] = "video/webm";
+        provider.Mappings[".mov"] = "video/quicktime";
+        return provider;
     }
 
     private static string ResolveStorageRoot(IWebHostEnvironment env, IConfiguration config)
