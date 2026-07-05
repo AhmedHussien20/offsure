@@ -4,9 +4,53 @@
       <div class="intro-video-player__audio-icon" aria-hidden="true">
         <i class="fe fe-mic"></i>
       </div>
-      <audio class="intro-video-player__audio" [src]="resolvedUrl" controls preload="metadata">
-        Your browser does not support audio playback.
-      </audio>
+
+      <div class="intro-audio-player">
+        <button
+          type="button"
+          class="intro-audio-player__play"
+          [attr.aria-label]="isPlaying ? 'Pause' : 'Play'"
+          (click)="togglePlay()">
+          <i [class]="isPlaying ? 'fe fe-pause' : 'fe fe-play'"></i>
+        </button>
+
+        <div class="intro-audio-player__timeline">
+          <div class="intro-audio-player__times">
+            <span class="intro-audio-player__time">{{ currentTimeLabel }}</span>
+            <span class="intro-audio-player__time">{{ durationLabel }}</span>
+          </div>
+
+          <div class="intro-audio-player__track">
+            <div class="intro-audio-player__fill" [style.width.%]="progressPercent"></div>
+            <span
+              class="intro-audio-player__thumb"
+              [style.left.%]="progressPercent"
+              aria-hidden="true"></span>
+            <input
+              type="range"
+              class="intro-audio-player__range"
+              min="0"
+              max="100"
+              step="0.1"
+              [value]="progressPercent"
+              [disabled]="!metadataReady"
+              aria-label="Seek audio position"
+              (input)="seekAudio($event)" />
+          </div>
+        </div>
+      </div>
+
+      <audio
+        #audioEl
+        class="intro-video-player__audio-native"
+        [src]="resolvedUrl"
+        preload="auto"
+        (play)="onAudioPlay()"
+        (pause)="onAudioPause()"
+        (timeupdate)="onAudioTimeUpdate()"
+        (loadedmetadata)="onAudioLoadedMetadata()"
+        (durationchange)="onAudioDurationChange()"
+        (ended)="onAudioEnded()"></audio>
     </div>
   } @else {
     <div class="intro-video-player intro-video-player--has-video">
