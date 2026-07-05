@@ -110,7 +110,7 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   }
 
   get formatsLabel(): string {
-    return this.isAudioKind ? 'MP3, M4A, WAV, or OGG' : 'MP4, WEBM, or MOV';
+    return this.isAudioKind ? 'MP3, M4A, WAV, OGG, or WEBM' : 'MP4, WEBM, or MOV';
   }
 
   selectMediaKind(kind: IntroMediaKind): void {

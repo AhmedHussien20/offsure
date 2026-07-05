@@ -33,7 +33,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (!AllowedExtensions.Contains(extension))
                 throw new AppException("Introduction must be a video (MP4, WEBM, MOV) or audio (MP3, M4A, WAV, OGG) file.");
 
-            var storedName = $"{teamMemberId}-intro-media{extension}";
+            var storedName = ResolveStoredFileName(teamMemberId, fileName);
             var path = Path.Combine(_rootPath, storedName);
 
             await using var output = File.Create(path);
@@ -53,6 +53,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
         public string GetContentType(string storedFileName)
         {
             var extension = Path.GetExtension(storedFileName).ToLowerInvariant();
+            if (extension == ".webm"
+                && storedFileName.Contains("-intro-audio", StringComparison.OrdinalIgnoreCase))
+            {
+                return "audio/webm";
+            }
+
             return extension switch
             {
                 ".mp4" => "video/mp4",
@@ -65,6 +71,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ".oga" => "audio/ogg",
                 _ => "application/octet-stream"
             };
+        }
+
+        private static string ResolveStoredFileName(int teamMemberId, string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            var stem = Path.GetFileNameWithoutExtension(fileName).ToLowerInvariant();
+
+            if (stem.Contains("intro-audio", StringComparison.Ordinal))
+                return $"{teamMemberId}-intro-audio{extension}";
+
+            if (stem.Contains("intro-video", StringComparison.Ordinal))
+                return $"{teamMemberId}-intro-video{extension}";
+
+            return $"{teamMemberId}-intro-media{extension}";
         }
     }
 }
