@@ -33,7 +33,7 @@
               max="100"
               step="0.1"
               [value]="progressPercent"
-              [disabled]="!metadataReady"
+              [disabled]="!canSeek"
               aria-label="Seek audio position"
               (input)="seekAudio($event)" />
           </div>
@@ -48,8 +48,10 @@
         (play)="onAudioPlay()"
         (pause)="onAudioPause()"
         (timeupdate)="onAudioTimeUpdate()"
+        (progress)="onAudioProgress()"
         (loadedmetadata)="onAudioLoadedMetadata()"
         (durationchange)="onAudioDurationChange()"
+        (canplay)="onAudioCanPlay()"
         (ended)="onAudioEnded()"></audio>
     </div>
   } @else {
