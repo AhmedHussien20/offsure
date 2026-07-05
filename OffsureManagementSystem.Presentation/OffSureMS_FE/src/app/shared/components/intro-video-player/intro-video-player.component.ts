@@ -26,6 +26,10 @@ import {
 export class IntroVideoPlayerComponent implements OnChanges, OnDestroy, AfterViewInit {
   @Input() videoUrl: string | null | undefined;
   @Input() placeholder = 'No introduction added yet';
+  /** When the URL has no extension hint (e.g. blob preview), force audio vs video. */
+  @Input() mediaKindOverride: IntroMediaKind | null = null;
+  /** Optional duration hint for blob previews before metadata is available. */
+  @Input() knownDurationSeconds: number | null = null;
 
   @ViewChild('audioEl') audioEl?: ElementRef<HTMLAudioElement>;
 
@@ -43,7 +47,7 @@ export class IntroVideoPlayerComponent implements OnChanges, OnDestroy, AfterVie
   }
 
   get mediaKind(): IntroMediaKind {
-    return resolveIntroMediaKind(this.videoUrl);
+    return this.mediaKindOverride ?? resolveIntroMediaKind(this.videoUrl);
   }
 
   get isAudio(): boolean {
@@ -80,13 +84,19 @@ export class IntroVideoPlayerComponent implements OnChanges, OnDestroy, AfterVie
   }
 
   ngAfterViewInit(): void {
+    this.applyKnownDuration();
     void this.probeDurationIfNeeded();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['videoUrl']) {
       this.resetPlaybackState();
+      this.applyKnownDuration();
       setTimeout(() => void this.probeDurationIfNeeded());
+    }
+
+    if (changes['knownDurationSeconds']) {
+      this.applyKnownDuration();
     }
   }
 
@@ -238,6 +248,14 @@ export class IntroVideoPlayerComponent implements OnChanges, OnDestroy, AfterVie
       // Playback events will keep trying if the probe fails.
     } finally {
       this.durationProbeActive = false;
+    }
+  }
+
+  private applyKnownDuration(): void {
+    if (this.knownDurationSeconds && this.knownDurationSeconds > 0) {
+      this.duration = this.knownDurationSeconds;
+      this.metadataReady = true;
+      this.cdr.markForCheck();
     }
   }
 

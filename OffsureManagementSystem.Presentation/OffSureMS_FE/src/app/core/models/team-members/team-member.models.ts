@@ -225,7 +225,9 @@ export function teamMemberDisplayName(
 
 export function resolveStorageAssetUrl(path: string | null | undefined): string | null {
   if (!path) return null;
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  if (path.startsWith('blob:') || path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
   const apiRoot = environment.apiUrl.replace(/\/api\/?$/i, '');
   return `${apiRoot}${path.startsWith('/') ? path : `/${path}`}`;
 }

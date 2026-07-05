@@ -93,13 +93,11 @@
         } @else if (recorderPhase === 'preview') {
           @if (isAudioKind) {
             <div class="intro-video-recorder__audio-preview">
-              <i class="fe fe-mic intro-video-recorder__audio-icon"></i>
-              <audio
-                #recordedPreview
-                class="intro-video-recorder__audio"
-                [src]="recordedPreviewUrl ?? undefined"
-                controls
-                preload="auto"></audio>
+              <app-intro-video-player
+                class="intro-video-recorder__audio-player"
+                [videoUrl]="recordedPreviewUrl"
+                [mediaKindOverride]="'audio'"
+                [knownDurationSeconds]="recordingSeconds" />
             </div>
           } @else {
             <video

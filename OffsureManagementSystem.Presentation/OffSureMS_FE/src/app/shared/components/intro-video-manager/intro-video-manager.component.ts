@@ -466,6 +466,10 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
   }
 
   private async loadRecordedPreview(): Promise<void> {
+    if (this.isAudioKind) {
+      return;
+    }
+
     const preview = this.recordedPreviewRef?.nativeElement;
     if (!preview || !this.recordedPreviewUrl) {
       return;

@@ -104,9 +104,11 @@
     color: rgb(var(--primary-rgb));
   }
 
-  &__audio {
+  &__audio-player {
     width: 100%;
-    max-width: 420px;
+    max-width: 520px;
+    border: none;
+    background: transparent;
   }
 
   &__video {
