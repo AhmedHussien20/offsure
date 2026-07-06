@@ -482,8 +482,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
           this.assignBySkill = previous;
           this.pendingAssignmentMode = null;
           this.savingStaffingMode = false;
-          this.toastr.error(err?.error?.message || 'Failed to save assignment mode.');
-        },
+          },
       });
   }
 
@@ -593,7 +592,6 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         this.buildSkillSlots();
         this.toastr.success('Team member unassigned.');
       },
-      error: err => this.toastr.error(err?.error?.message || 'Failed to unassign team member.'),
     });
   }
 
@@ -630,7 +628,6 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
           this.savingProgress = false;
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update progress.');
           this.savingProgress = false;
         },
       });
@@ -660,7 +657,6 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         this.savingStatus = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to update status.');
         this.savingStatus = false;
       },
     });
@@ -742,7 +738,6 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
           resolve(true);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to complete project.');
           this.savingStatus = false;
           resolve(false);
         },
@@ -781,8 +776,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         },
         error: err => {
           this.savingSkills = false;
-          this.toastr.error(err?.error?.message || 'Failed to update required skills.');
-        },
+          },
       });
   }
 
@@ -906,9 +900,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.resourceManagersLoading = false;
-          if (!append) {
-            this.toastr.error('Failed to load resource managers.');
-          }
+          
         },
       });
   }
@@ -928,8 +920,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         error: err => {
           this.savingResourceManagers = false;
           this.syncResourceManagerSelection();
-          this.toastr.error(err?.error?.message || 'Failed to update resource managers.');
-        },
+          },
       });
   }
 

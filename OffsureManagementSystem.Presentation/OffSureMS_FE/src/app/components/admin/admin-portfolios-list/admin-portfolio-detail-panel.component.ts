@@ -162,7 +162,6 @@ export class AdminPortfolioDetailPanelComponent implements OnChanges, OnDestroy 
           this.loadPortfolio();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update image visibility.');
           this.togglingImageId = null;
         },
       });
@@ -217,7 +216,6 @@ export class AdminPortfolioDetailPanelComponent implements OnChanges, OnDestroy 
           this.loadPortfolio();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update portfolio.');
           this.saving = false;
         },
       });
@@ -249,7 +247,6 @@ export class AdminPortfolioDetailPanelComponent implements OnChanges, OnDestroy 
           this.loadPortfolio();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update portfolio.');
           this.publishing = false;
         },
       });
@@ -281,7 +278,6 @@ export class AdminPortfolioDetailPanelComponent implements OnChanges, OnDestroy 
           this.changed.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to delete portfolio.');
           this.deleting = false;
         },
       });
@@ -315,7 +311,6 @@ export class AdminPortfolioDetailPanelComponent implements OnChanges, OnDestroy 
           this.loadPortfolio();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to upload image.');
           this.uploading = false;
         },
       });

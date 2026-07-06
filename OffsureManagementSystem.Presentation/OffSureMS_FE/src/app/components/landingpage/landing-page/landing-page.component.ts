@@ -1151,8 +1151,7 @@ export class LandingPageComponent {
         },
         error: () => {
           this.contactSubmitting = false;
-          this.toastr.error('We could not send your message. Please try again later.');
-        },
+          },
       });
   }
 

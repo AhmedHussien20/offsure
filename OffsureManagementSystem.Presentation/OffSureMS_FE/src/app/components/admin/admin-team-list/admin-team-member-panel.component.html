@@ -23,6 +23,9 @@
           {{ member.isAvailable ? 'Available' : 'Unavailable' }}
         </span>
         @if (!editing) {
+          <button type="button" class="btn btn-sm btn-outline-secondary no-expand" (click)="openMemberProfile()">
+            <i class="fe fe-user me-1"></i>View profile
+          </button>
           @if (member.isActive) {
             <button type="button" class="btn btn-sm btn-outline-primary no-expand" (click)="startEdit()">
               Edit
@@ -127,23 +130,11 @@
               mode="draft"
               [initialSkills]="initialSkills"
               (assignmentsChange)="onSkillsChange($event)" />
-          } @else if (member.skillAssignments?.length) {
-            <ul class="team-member-skill-list mb-0">
-              @for (skill of member.skillAssignments; track skill.id) {
-                <li class="team-member-skill-list__item">
-                  <div>
-                    <strong>{{ skill.skillName }}</strong>
-                    <span class="text-muted small d-block">{{ skill.skillCategoryName }}</span>
-                  </div>
-                  <div class="team-member-skill-list__meta text-end">
-                    <span class="badge bg-primary-transparent">{{ proficiencyLabel(skill.proficiencyLevel) }}</span>
-                    <span class="text-muted small d-block">{{ skill.yearsOfExperience }} yrs</span>
-                  </div>
-                </li>
-              }
-            </ul>
           } @else {
-            <p class="admin-detail-hint mb-0">No skills assigned yet.</p>
+            <app-team-member-skills-editor
+              mode="draft"
+              [readonly]="true"
+              [initialSkills]="member.skillAssignments ?? []" />
           }
         </div>
       </div>

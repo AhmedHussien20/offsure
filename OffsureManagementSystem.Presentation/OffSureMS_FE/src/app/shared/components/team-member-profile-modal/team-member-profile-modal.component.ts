@@ -39,6 +39,8 @@ export interface TeamMemberProfileView {
 export class TeamMemberProfileModalComponent implements OnInit {
   @Input({ required: true }) memberId!: number;
   @Input() source?: TeamMemberProfileSource;
+  /** When opened from admin/RM detail panel, reuse loaded member data instead of refetching. */
+  @Input() prefetchedTeamMember?: TeamMemberDto | null;
 
   activeTab: 'overview' | 'skills' | 'certificates' | 'intro-video' = 'overview';
   loading = true;
@@ -73,6 +75,18 @@ export class TeamMemberProfileModalComponent implements OnInit {
     return this.member.fullName.charAt(0).toUpperCase();
   }
 
+  get projectsSectionTitle(): string {
+    const source = this.source ?? this.inferSource();
+    return source === 'client' || source === 'sales' ? 'Shared projects' : 'Assigned projects';
+  }
+
+  get projectsEmptyMessage(): string {
+    const source = this.source ?? this.inferSource();
+    return source === 'client' || source === 'sales'
+      ? 'No shared project context for this member.'
+      : 'No active project assignments for this member.';
+  }
+
   formatDate(value: string | null | undefined): string {
     if (!value) {
       return '—';
@@ -91,6 +105,18 @@ export class TeamMemberProfileModalComponent implements OnInit {
   }
 
   private loadMember(): void {
+    const source = this.source ?? this.inferSource();
+
+    if (
+      this.prefetchedTeamMember &&
+      (source === 'admin' || source === 'resource-manager')
+    ) {
+      this.member = this.mapTeamMember(this.prefetchedTeamMember);
+      this.loading = false;
+      this.loadError = null;
+      return;
+    }
+
     this.loading = true;
     this.loadError = null;
 
@@ -166,7 +192,7 @@ export class TeamMemberProfileModalComponent implements OnInit {
       profilePhotoUrl: dto.profilePhotoUrl ?? dto.profilePhoto,
       introVideoUrl: dto.introVideoUrl ?? dto.introVideo,
       skills: (dto.skillAssignments ?? []).map(s => s.skillName).filter(Boolean),
-      projectNames: [],
+      projectNames: dto.projectNames ?? [],
       certificates: (dto.certificates ?? []).map(cert => ({
         name: cert.name,
         issuer: cert.issuer,

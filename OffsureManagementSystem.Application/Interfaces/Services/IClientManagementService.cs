@@ -15,5 +15,6 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<IReadOnlyList<ClientServiceRequestSummaryDto>> GetClientRecentServiceRequestsByClientIdAsync(int clientId, int limit = 5);
         Task<ClientDto> UpdateClientProfileAsync(int userId, UpdateClientProfileDto dto);
         Task<ClientDto> DeactivateClientAsync(int id);
+        Task<ClientDto> ActivateClientAsync(int id);
     }
 }

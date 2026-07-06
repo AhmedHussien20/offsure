@@ -15,6 +15,8 @@
       [showPagination]="true"
       [showEmployeeFilter]="false"
       [showExportExcel]="false"
+      [expandable]="true"
+      [expandTemplate]="requestDetailsTemplate"
       [showAddButton]="true"
       [addButtonLabel]="'New Service Request'"
       [onSearch]="onSearch"
@@ -23,3 +25,105 @@
       (addClick)="onAdd()">
     </app-generic-table>
 </div>
+
+<ng-template #requestDetailsTemplate let-item>
+  <div class="request-detail-panel" (click)="$event.stopPropagation()">
+    @if (canViewEnteredData(item)) {
+      <div class="request-detail-panel__header">
+        <div>
+          <h4 class="request-detail-panel__title">{{ item.title }}</h4>
+          <p class="request-detail-panel__meta">
+            {{ item.serviceName }}
+            @if (item.serviceCategoryName) {
+              — {{ item.serviceCategoryName }}
+            }
+          </p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge {{ statusBadgeClass(item.status) }}">
+            {{ statusLabel(item.status) }}
+          </span>
+          @if (hasLinkedProject(item)) {
+            <div class="request-detail-panel__actions">
+              <a [routerLink]="['/client/projects', item.projectId]" class="btn btn-sm btn-outline-primary no-expand">
+                Open project
+              </a>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="request-detail-grid">
+        <div class="request-info-card">
+          <div class="request-info-row">
+            <div class="request-info-item">
+              <label>Service</label>
+              <span>{{ item.serviceName || '—' }}</span>
+            </div>
+            <div class="request-info-item">
+              <label>Category</label>
+              <span>{{ item.serviceCategoryName || '—' }}</span>
+            </div>
+            <div class="request-info-item">
+              <label>Submitted</label>
+              <span>{{ item.requestedDate | date: 'mediumDate' }}</span>
+            </div>
+            <div class="request-info-item">
+              <label>Due date</label>
+              <span>{{ item.dueDate ? (item.dueDate | date: 'mediumDate') : '—' }}</span>
+            </div>
+            <div class="request-info-item">
+              <label>Budget</label>
+              <span>{{ item.budget != null ? (item.budget | number: '1.0-2') : 'Not specified' }}</span>
+            </div>
+            <div class="request-info-item">
+              <label>Priority</label>
+              <span>{{ getPriorityLabel(item.priority) }}</span>
+            </div>
+          </div>
+          <div class="request-info-description">
+            <label class="d-block mb-1" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #94a3b8">
+              Description
+            </label>
+            <p>{{ item.description || 'No description provided.' }}</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="request-sidebar-card">
+            <h6>Request status</h6>
+            <ul class="request-stepper">
+              @for (step of requestSteps(item); track step.key) {
+                <li [class]="step.state">
+                  <span class="request-step-dot"></span>
+                  <span class="request-step-label">{{ step.label }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+          <div class="request-sidebar-card">
+            <h6>Activity</h6>
+            <ul class="request-activity">
+              @for (entry of activityLog(item); track entry.text) {
+                <li>
+                  <strong>{{ entry.text }}</strong>
+                  @if (entry.date) {
+                    <span class="d-block text-muted" style="font-size: 0.72rem">{{ entry.date | date: 'medium' }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="request-unauthorized-banner">
+        <i class="fe fe-alert-triangle" aria-hidden="true"></i>
+        <div>
+          <strong class="d-block mb-1">Access restricted</strong>
+          You are not authorized to view details for this request.
+        </div>
+      </div>
+    }
+  </div>
+</ng-template>

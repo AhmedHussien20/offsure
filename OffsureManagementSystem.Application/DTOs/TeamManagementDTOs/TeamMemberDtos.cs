@@ -155,6 +155,7 @@ namespace OffsureManagementSystem.Application.DTOs.TeamManagementDTOs
         public List<TeamMemberSkillDto> SkillAssignments { get; set; } = new();
         public List<TeamMemberCertificateDto> Certificates { get; set; } = new();
         public List<TeamMemberExperienceDto> Experiences { get; set; } = new();
+        public List<string> ProjectNames { get; set; } = new();
     }
 
     public class UpsertTeamMemberCertificateDto

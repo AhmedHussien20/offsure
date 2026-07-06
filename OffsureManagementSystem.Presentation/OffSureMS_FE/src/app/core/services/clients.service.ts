@@ -80,6 +80,12 @@ export class ClientsService {
       .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
   }
 
+  activate(id: number): Observable<BaseResponse<ClientDto>> {
+    return this.api
+      .patch<BaseResponse<ClientDto>>(this.service, `${id}/activate`, {})
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
+  }
+
   browseTeamMembers(
     request?: ClientTeamMemberBrowseRequest
   ): Observable<BaseResponse<PagedResponse<ClientTeamMemberCardDto>>> {

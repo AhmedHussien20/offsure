@@ -82,8 +82,7 @@ export class ClientRequestCreateComponent implements OnInit {
         this.applyPrefill();
       },
       error: () => {
-        this.toastr.error('Failed to load services.');
-      },
+        },
     });
   }
 
@@ -115,8 +114,7 @@ export class ClientRequestCreateComponent implements OnInit {
       },
       error: err => {
         this.submitting = false;
-        this.toastr.error(err?.error?.message || err?.message || 'Failed to create request.');
-      },
+        },
     });
   }
 

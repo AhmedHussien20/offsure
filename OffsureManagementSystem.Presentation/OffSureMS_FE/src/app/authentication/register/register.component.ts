@@ -297,7 +297,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
         this.isLoading = false;
         const errorMessage =
           error?.error?.message || error?.message || 'Registration failed. Please try again.';
-        this.toastr.error(errorMessage);
         console.error('Registration error:', error);
       },
     });

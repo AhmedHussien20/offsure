@@ -127,8 +127,7 @@ export class ProfileComponent implements OnInit {
       },
       error: err => {
         this.savingProfile = false;
-        this.toastr.error(err?.error?.message || err?.message || 'Failed to update profile.');
-      },
+        },
     });
   }
 
@@ -141,8 +140,7 @@ export class ProfileComponent implements OnInit {
         }
       },
       error: () => {
-        this.toastr.error('Failed to load company profile.');
-      },
+        },
     });
   }
 

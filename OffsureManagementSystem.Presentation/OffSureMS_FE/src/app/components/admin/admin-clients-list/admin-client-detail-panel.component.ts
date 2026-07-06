@@ -16,11 +16,12 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) clientId!: number;
-  @Output() deleted = new EventEmitter<void>();
+  @Output() saved = new EventEmitter<void>();
 
   loading = false;
   loadingRequests = false;
-  deleting = false;
+  deactivating = false;
+  activating = false;
   loadError: string | null = null;
   requestsError: string | null = null;
   client: ClientDto | null = null;
@@ -91,19 +92,53 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    this.deleting = true;
+    this.deactivating = true;
     this.clientsService
       .deactivate(this.client.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: res => {
+          this.client = res.data ?? this.client;
           this.toastr.success('Client deactivated.');
-          this.deleting = false;
-          this.deleted.emit();
+          this.deactivating = false;
+          this.saved.emit();
         },
-        error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to deactivate client.');
-          this.deleting = false;
+        error: () => {
+          this.deactivating = false;
+        },
+      });
+  }
+
+  async activateClient(): Promise<void> {
+    if (!this.client || this.client.isActive) {
+      return;
+    }
+
+    const label = this.client.companyName?.trim() || this.contactName || 'this client';
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Activate client',
+      message: `Activate ${label}? They will be able to sign in again.`,
+      confirmLabel: 'Activate',
+      variant: 'primary',
+      icon: 'ti-user-check',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.activating = true;
+    this.clientsService
+      .activate(this.client.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: res => {
+          this.client = res.data ?? this.client;
+          this.toastr.success('Client activated.');
+          this.activating = false;
+          this.saved.emit();
+        },
+        error: () => {
+          this.activating = false;
         },
       });
   }

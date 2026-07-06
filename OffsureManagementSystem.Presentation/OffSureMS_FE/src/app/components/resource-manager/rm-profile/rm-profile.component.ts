@@ -80,8 +80,7 @@ export class RmProfileComponent implements OnInit {
         },
         error: err => {
           this.saving = false;
-          this.toastr.error(err?.error?.message || 'Failed to update profile.');
-        },
+          },
       });
   }
 
@@ -99,8 +98,7 @@ export class RmProfileComponent implements OnInit {
       },
       error: err => {
         this.loading = false;
-        this.toastr.error(err?.error?.message || 'Failed to load profile.');
-      },
+        },
     });
   }
 }

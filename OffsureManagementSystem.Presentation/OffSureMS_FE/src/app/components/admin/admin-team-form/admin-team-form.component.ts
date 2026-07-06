@@ -95,8 +95,7 @@ export class AdminTeamFormComponent implements OnInit {
           this.router.navigate(['/admin/team']);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to create team member.');
-        },
+          },
       });
   }
 }

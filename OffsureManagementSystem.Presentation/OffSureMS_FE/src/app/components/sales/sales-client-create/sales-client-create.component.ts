@@ -108,7 +108,6 @@ export class SalesClientCreateComponent {
           this.activeModal.close(true);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to create client.');
           this.saving = false;
         },
       });

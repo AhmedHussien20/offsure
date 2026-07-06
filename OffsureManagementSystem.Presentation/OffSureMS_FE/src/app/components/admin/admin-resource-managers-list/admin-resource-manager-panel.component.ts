@@ -112,7 +112,6 @@ export class AdminResourceManagerPanelComponent implements OnChanges, OnDestroy 
           this.saved.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update resource manager.');
           this.saving = false;
         },
       });
@@ -148,7 +147,6 @@ export class AdminResourceManagerPanelComponent implements OnChanges, OnDestroy 
           this.saved.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to deactivate resource manager.');
           this.deactivating = false;
         },
       });
@@ -183,7 +181,6 @@ export class AdminResourceManagerPanelComponent implements OnChanges, OnDestroy 
           this.saved.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to activate resource manager.');
           this.activating = false;
         },
       });
@@ -216,7 +213,6 @@ export class AdminResourceManagerPanelComponent implements OnChanges, OnDestroy 
           this.deleted.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to delete resource manager.');
           this.deleting = false;
         },
       });

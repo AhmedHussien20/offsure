@@ -121,7 +121,6 @@ export class AdminServiceDetailPanelComponent implements OnChanges, OnDestroy {
           this.loadService();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update service.');
           this.saving = false;
         },
       });
@@ -147,7 +146,6 @@ export class AdminServiceDetailPanelComponent implements OnChanges, OnDestroy {
           this.loadService();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update visibility.');
           this.updating = false;
         },
       });

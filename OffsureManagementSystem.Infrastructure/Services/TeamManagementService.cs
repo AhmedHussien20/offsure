@@ -113,7 +113,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (member is null)
                 throw new AppException("Resource not found.", 404);
 
-            return MapToDto(member);
+            var dto = MapToDto(member);
+            dto.ProjectNames = await GetActiveProjectNamesAsync(id);
+            return dto;
         }
 
         public async Task<TeamMemberDto> CreateAsync(CreateTeamMemberDto dto)
@@ -1170,7 +1172,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int teamMemberId)
         {
             await EnsureTeamMemberManagedByAsync(resourceManagerUserId, teamMemberId);
-            return await GetByIdAsync(teamMemberId);
+
+            var member = await BuildBaseQuery()
+                .FirstOrDefaultAsync(t => t.Id == teamMemberId);
+
+            if (member is null)
+                throw new AppException("Resource not found.", 404);
+
+            var dto = MapToDto(member);
+            dto.ProjectNames = await GetActiveProjectNamesAsync(teamMemberId, resourceManagerUserId);
+            return dto;
         }
 
         private static ResourceManagerUserDto MapResourceManagerUser(User user)
@@ -1332,6 +1343,33 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static string HashPassword(string password)
             => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+
+        private async Task<List<string>> GetActiveProjectNamesAsync(
+            int teamMemberId,
+            int? resourceManagerUserId = null)
+        {
+            var query = _projectAssignmentRepo
+                .Query()
+                .AsNoTracking()
+                .Where(a =>
+                    a.TeamMemberId == teamMemberId
+                    && a.IsActive
+                    && !a.IsDeleted
+                    && !a.Project.IsDeleted);
+
+            if (resourceManagerUserId is > 0)
+            {
+                query = query.Where(a =>
+                    a.Project.ProjectResourceManagers.Any(rm =>
+                        !rm.IsDeleted && rm.ResourceManagerUserId == resourceManagerUserId));
+            }
+
+            return await query
+                .Select(a => a.Project.Name)
+                .Distinct()
+                .OrderBy(name => name)
+                .ToListAsync();
+        }
 
         private static TeamMemberDto MapToDto(
             TeamMember member,

@@ -260,8 +260,7 @@ export class AdminProjectMilestonesComponent implements OnChanges {
       },
       error: err => {
         this.saving = false;
-        this.toastr.error(err?.error?.message || 'Failed to save milestones.');
-      },
+        },
     });
   }
 
@@ -288,8 +287,7 @@ export class AdminProjectMilestonesComponent implements OnChanges {
       },
       error: err => {
         this.statusUpdatingId = null;
-        this.toastr.error(err?.error?.message || 'Failed to update milestone status.');
-      },
+        },
     });
   }
 

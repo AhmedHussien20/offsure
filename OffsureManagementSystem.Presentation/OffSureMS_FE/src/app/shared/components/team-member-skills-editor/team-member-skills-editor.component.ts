@@ -230,8 +230,7 @@ export class TeamMemberSkillsEditorComponent implements OnInit, OnChanges, OnDes
       },
       error: err => {
         this.savingLive = false;
-        this.toastr.error(err?.error?.message || 'Failed to save skill.');
-      },
+        },
     });
   }
 
@@ -251,8 +250,7 @@ export class TeamMemberSkillsEditorComponent implements OnInit, OnChanges, OnDes
       },
       error: err => {
         this.savingLive = false;
-        this.toastr.error(err?.error?.message || 'Failed to remove skill.');
-      },
+        },
     });
   }
 

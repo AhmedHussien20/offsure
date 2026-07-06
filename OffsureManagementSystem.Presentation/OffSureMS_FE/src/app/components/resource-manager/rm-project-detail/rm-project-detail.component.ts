@@ -422,8 +422,7 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
         this.assignBySkill = previous;
         this.pendingAssignmentMode = null;
         this.savingStaffingMode = false;
-        this.toastr.error(err?.error?.message || 'Failed to save assignment mode.');
-      },
+        },
     });
   }
 
@@ -442,7 +441,6 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
         this.patchDeliveryForm();
         this.toastr.success('Team member unassigned.');
       },
-      error: err => this.toastr.error(err?.error?.message || 'Failed to unassign team member.'),
     });
   }
 
@@ -520,8 +518,7 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
       },
       error: err => {
         this.savingHourlyCostRate = false;
-        this.toastr.error(err?.error?.message || 'Failed to save cost rate.');
-      },
+        },
     });
   }
 
@@ -548,7 +545,6 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
         this.savingDelivery = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to update delivery.');
         this.savingDelivery = false;
       },
     });
@@ -609,7 +605,6 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
       },
       error: err => {
         this.savingSkills = false;
-        this.toastr.error(err?.error?.message || 'Failed to update required skills.');
         this.syncSkillSelection();
         this.buildSkillSlots();
       },

@@ -121,7 +121,6 @@ export class AdminSkillDetailPanelComponent implements OnChanges, OnDestroy {
           this.loadSkill();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update skill.');
           this.saving = false;
         },
       });
@@ -151,7 +150,6 @@ export class AdminSkillDetailPanelComponent implements OnChanges, OnDestroy {
           this.loadSkill();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update skill.');
           this.updating = false;
         },
       });

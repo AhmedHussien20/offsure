@@ -109,7 +109,6 @@ export class AdminProjectSalesModalComponent implements OnInit {
           this.activeModal.close(res.data ?? null);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to remove sales assignment.');
           this.saving = false;
         },
       });
@@ -153,7 +152,6 @@ export class AdminProjectSalesModalComponent implements OnInit {
           this.activeModal.close(res.data ?? null);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update sales assignment.');
           this.saving = false;
         },
       });

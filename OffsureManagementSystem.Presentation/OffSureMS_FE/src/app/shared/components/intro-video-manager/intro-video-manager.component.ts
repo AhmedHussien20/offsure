@@ -286,7 +286,6 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
         this.busy = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to remove introduction.');
         this.busy = false;
       },
     });
@@ -318,7 +317,6 @@ export class IntroVideoManagerComponent implements OnInit, OnDestroy {
         this.busy = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to upload introduction.');
         this.busy = false;
       },
     });

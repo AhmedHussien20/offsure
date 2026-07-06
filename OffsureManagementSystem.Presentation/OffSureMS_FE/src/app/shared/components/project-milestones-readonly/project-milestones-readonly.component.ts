@@ -129,8 +129,7 @@ export class ProjectMilestonesReadonlyComponent {
       },
       error: err => {
         this.statusUpdatingId = null;
-        this.toastr.error(err?.error?.message || 'Failed to update phase status.');
-      },
+        },
     });
   }
 

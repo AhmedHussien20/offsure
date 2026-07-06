@@ -214,7 +214,6 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
         item.status = ServiceRequestStatus.PrimaryAccepted;
         this.loadRequests();
       },
-      error: err => this.toastr.error(err?.error?.message || 'Failed to accept request.'),
     });
   }
 
@@ -235,7 +234,6 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
         this.toastr.success('Request rejected.');
         this.loadRequests();
       },
-      error: err => this.toastr.error(err?.error?.message || 'Failed to reject request.'),
     });
   }
 

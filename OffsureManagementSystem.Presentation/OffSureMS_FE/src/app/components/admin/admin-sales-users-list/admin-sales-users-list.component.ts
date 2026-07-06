@@ -103,7 +103,6 @@ export class AdminSalesUsersListComponent implements OnInit {
         this.totalItems = paged?.totalCount ?? 0;
         this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.entries));
       },
-      error: err => this.toastr.error(err?.error?.message || 'Failed to load sales users.'),
     });
   }
 }

@@ -367,7 +367,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
       })
       .subscribe({
         next: res => this.onDaySaved(res.data, 'Time logged successfully.'),
-        error: err => this.onSaveError(err),
+        error: () => this.onSaveError(),
       });
   }
 
@@ -386,7 +386,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
 
     this.timesheetsService.updateEntry(this.editingEntryId, dto).subscribe({
       next: res => this.onDaySaved(res.data, 'Entry updated.'),
-      error: err => this.onSaveError(err),
+      error: () => this.onSaveError(),
     });
   }
 
@@ -402,9 +402,8 @@ export class TeamDailyTimesheetComponent implements OnInit {
     this.syncMonthSummaryForWorkDate();
   }
 
-  private onSaveError(err: { error?: { message?: string } }): void {
+  private onSaveError(): void {
     this.saving = false;
-    this.toastr.error(err?.error?.message || 'Failed to save time entries.');
   }
 
   private syncMonthSummaryForWorkDate(): void {

@@ -162,6 +162,7 @@ export interface TeamMemberDto {
   skillAssignments: TeamMemberSkillDto[];
   certificates?: TeamMemberCertificateDto[];
   experiences?: TeamMemberExperienceDto[];
+  projectNames?: string[];
 }
 
 export interface TeamMemberCertificateDto {

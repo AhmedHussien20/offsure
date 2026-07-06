@@ -107,7 +107,6 @@ export class AdminSkillCategoryDetailPanelComponent implements OnChanges, OnDest
           this.loadCategory();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update category.');
           this.saving = false;
         },
       });
@@ -136,7 +135,6 @@ export class AdminSkillCategoryDetailPanelComponent implements OnChanges, OnDest
           this.loadCategory();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update category.');
           this.updating = false;
         },
       });

@@ -48,10 +48,7 @@ export class ForgotPasswordComponent implements OnInit {
         localStorage.setItem('resetEmail', email);
         this.router.navigate(['/auth/login']);
       },
-      error: (err) => {
-        this.isLoading = false;
-        this.toastr.error(err.message || 'Failed to send reset code');
-      }
+      error: () => { this.isLoading = false; }
     });
   }
 }

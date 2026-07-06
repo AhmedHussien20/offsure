@@ -239,8 +239,7 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
         },
         error: err => {
           this.saving = false;
-          this.toastr.error(err?.error?.message || 'Failed to assign team members.');
-        },
+          },
       });
   }
 

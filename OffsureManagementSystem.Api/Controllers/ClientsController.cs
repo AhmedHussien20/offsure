@@ -110,6 +110,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ClientDto>.Ok(client, "Client deactivated successfully."));
         }
 
+        [HttpPatch("{id:int}/activate")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<ClientDto>>> ActivateClient(int id)
+        {
+            var client = await _clientManagementService.ActivateClientAsync(id);
+            return Ok(ApiResponse<ClientDto>.Ok(client, "Client activated successfully."));
+        }
+
         private int GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

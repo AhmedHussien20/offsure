@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { PROFICIENCY_LABELS } from 'app/components/team/team.constants';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
 import {
   TeamMemberDto,
@@ -13,6 +12,7 @@ import { ResourceManagerPortalService } from 'app/core/services/resource-manager
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { TeamMemberSkillsEditorComponent } from 'app/shared/components/team-member-skills-editor/team-member-skills-editor.component';
 import { TeamMemberResetPasswordModalComponent } from 'app/shared/components/team-member-reset-password-modal/team-member-reset-password-modal.component';
+import { TeamMemberProfileModalComponent } from 'app/shared/components/team-member-profile-modal/team-member-profile-modal.component';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
@@ -73,6 +73,9 @@ export class RmTeamMemberPanelComponent implements OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['memberId'] && this.memberId) {
+      if (this.member?.id === this.memberId && !changes['memberId'].firstChange) {
+        return;
+      }
       this.editing = false;
       this.loadMember();
     }
@@ -86,10 +89,6 @@ export class RmTeamMemberPanelComponent implements OnChanges, OnDestroy {
   display(value: string | number | null | undefined): string {
     if (value === null || value === undefined || value === '') return '—';
     return String(value);
-  }
-
-  proficiencyLabel(level: number): string {
-    return PROFICIENCY_LABELS[level] ?? `Level ${level}`;
   }
 
   startEdit(): void {
@@ -132,6 +131,21 @@ export class RmTeamMemberPanelComponent implements OnChanges, OnDestroy {
     modalRef.componentInstance.useResourceManagerPortal = true;
   }
 
+  openMemberProfile(): void {
+    if (!this.member) {
+      return;
+    }
+
+    const modalRef = this.modalService.open(TeamMemberProfileModalComponent, {
+      centered: true,
+      size: 'lg',
+      scrollable: true,
+    });
+    modalRef.componentInstance.memberId = this.member.id;
+    modalRef.componentInstance.source = 'resource-manager';
+    modalRef.componentInstance.prefetchedTeamMember = this.member;
+  }
+
   saveEdit(): void {
     if (!this.member || this.form.invalid) {
       this.form.markAllAsTouched();
@@ -164,7 +178,6 @@ export class RmTeamMemberPanelComponent implements OnChanges, OnDestroy {
           this.saved.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update team member.');
           this.saving = false;
         },
       });
@@ -198,7 +211,6 @@ export class RmTeamMemberPanelComponent implements OnChanges, OnDestroy {
         this.saved.emit();
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to deactivate team member.');
         this.deactivating = false;
       },
     });
@@ -230,7 +242,6 @@ export class RmTeamMemberPanelComponent implements OnChanges, OnDestroy {
         this.saved.emit();
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to activate team member.');
         this.activating = false;
       },
     });
@@ -260,7 +271,6 @@ export class RmTeamMemberPanelComponent implements OnChanges, OnDestroy {
         this.deleted.emit();
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to delete team member.');
         this.deleting = false;
       },
     });

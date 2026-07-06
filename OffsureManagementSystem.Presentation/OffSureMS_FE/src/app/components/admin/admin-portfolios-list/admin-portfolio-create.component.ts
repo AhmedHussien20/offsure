@@ -201,8 +201,7 @@ export class AdminPortfolioCreateComponent implements OnInit, OnDestroy {
         },
         error: err => {
           this.creating = false;
-          this.toastr.error(err?.error?.message || 'Failed to create portfolio.');
-        },
+          },
       });
   }
 

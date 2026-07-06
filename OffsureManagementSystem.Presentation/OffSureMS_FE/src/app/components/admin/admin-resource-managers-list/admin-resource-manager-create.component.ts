@@ -78,7 +78,6 @@ export class AdminResourceManagerCreateComponent {
           this.activeModal.close(true);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to create resource manager.');
           this.saving = false;
         },
       });

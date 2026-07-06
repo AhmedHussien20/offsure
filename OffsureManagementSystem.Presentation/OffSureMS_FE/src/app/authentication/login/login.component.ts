@@ -88,9 +88,6 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.router.navigate(['/']);
         }
       },
-      error: (error) => {
-        this.toastr.error(error.message || 'Login failed');
-      }
     });
   }
 

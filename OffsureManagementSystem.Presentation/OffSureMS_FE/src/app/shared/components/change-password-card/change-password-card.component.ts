@@ -74,8 +74,7 @@ export class ChangePasswordCardComponent {
         },
         error: err => {
           this.saving = false;
-          this.toastr.error(err?.error?.message || 'Failed to change password.');
-        },
+          },
       });
   }
 }

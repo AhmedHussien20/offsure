@@ -78,7 +78,6 @@ export class AdminSalesUserCreateComponent {
           this.activeModal.close(true);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to create sales user.');
           this.saving = false;
         },
       });

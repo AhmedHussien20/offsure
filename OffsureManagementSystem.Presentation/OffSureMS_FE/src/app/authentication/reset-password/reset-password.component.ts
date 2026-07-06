@@ -88,14 +88,7 @@ export class ResetPasswordComponent implements OnInit {
 
         this.router.navigate(['/auth/login']);
       },
-      error: (err) => {
-        this.isLoading = false;
-
-        this.toastr.error(
-          err?.error?.message ||
-          'Reset password failed'
-        );
-      }
+      error: () => { this.isLoading = false; }
     });
   }
 

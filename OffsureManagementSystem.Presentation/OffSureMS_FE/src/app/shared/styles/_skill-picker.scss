@@ -92,6 +92,11 @@ button.skill-picker__chip {
   color: var(--primary-color, #6259ca);
 }
 
+.skill-picker--readonly {
+  max-height: none;
+  overflow: visible;
+}
+
 .skill-detail-list {
   display: flex;
   flex-direction: column;

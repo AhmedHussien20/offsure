@@ -37,7 +37,7 @@
           <ng-template ngbNavContent>
             @if (member.projectNames.length) {
               <div class="member-profile-section">
-                <h6 class="member-profile-section__title">Shared projects</h6>
+                <h6 class="member-profile-section__title">{{ projectsSectionTitle }}</h6>
                 <div class="d-flex flex-wrap gap-2">
                   @for (project of member.projectNames; track project) {
                     <span class="badge bg-primary-transparent">{{ project }}</span>
@@ -45,7 +45,7 @@
                 </div>
               </div>
             } @else {
-              <p class="text-muted small mb-0">No shared project context for this member.</p>
+              <p class="text-muted small mb-0">{{ projectsEmptyMessage }}</p>
             }
           </ng-template>
         </li>

@@ -20,9 +20,17 @@
           <button
             type="button"
             class="btn btn-sm btn-outline-danger no-expand"
-            [disabled]="deleting"
+            [disabled]="deactivating"
             (click)="deactivateClient()">
-            {{ deleting ? 'Deactivating…' : 'Deactivate client' }}
+            {{ deactivating ? 'Deactivating…' : 'Deactivate client' }}
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-success no-expand"
+            [disabled]="activating"
+            (click)="activateClient()">
+            {{ activating ? 'Activating…' : 'Activate client' }}
           </button>
         }
       </div>

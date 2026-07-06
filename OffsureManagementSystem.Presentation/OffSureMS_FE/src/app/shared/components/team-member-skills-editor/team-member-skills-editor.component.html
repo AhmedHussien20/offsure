@@ -13,30 +13,34 @@
   }
 
   @if (selectedCount > 0) {
-    <div class="skill-selected-group">
-      <span class="skill-selection-bar">
-        {{ selectedCount }} skill{{ selectedCount === 1 ? '' : 's' }} selected
-        @if (mode === 'live' && savingLive) {
-          <span class="text-muted fw-normal"> · saving…</span>
-        }
-      </span>
-      <div class="skill-picker skill-picker--selected">
+    @if (readonly) {
+      <div class="skill-picker skill-picker--readonly">
         @for (d of selectedDrafts; track d.skillId) {
-          @if (!readonly) {
+          <span class="skill-picker__chip skill-picker__chip--on">
+            {{ d.skillName }}
+            <small>({{ d.skillCategoryName }})</small>
+          </span>
+        }
+      </div>
+    } @else {
+      <div class="skill-selected-group">
+        <span class="skill-selection-bar">
+          {{ selectedCount }} skill{{ selectedCount === 1 ? '' : 's' }} selected
+          @if (mode === 'live' && savingLive) {
+            <span class="text-muted fw-normal"> · saving…</span>
+          }
+        </span>
+        <div class="skill-picker skill-picker--selected">
+          @for (d of selectedDrafts; track d.skillId) {
             <button type="button" class="skill-picker__chip skill-picker__chip--on" (click)="removeDraft(d.skillId)">
               {{ d.skillName }}
               <small>({{ d.skillCategoryName }})</small>
               <i class="fe fe-x ms-1"></i>
             </button>
-          } @else {
-            <span class="skill-picker__chip skill-picker__chip--on">
-              {{ d.skillName }}
-              <small>({{ d.skillCategoryName }})</small>
-            </span>
           }
-        }
+        </div>
       </div>
-    </div>
+    }
   }
 
   @if (!readonly) {
@@ -73,7 +77,7 @@
     </div>
   }
 
-  @if (selectedCount > 0) {
+  @if (!readonly && selectedCount > 0) {
     <div class="skill-detail-list">
       @for (d of selectedDrafts; track d.skillId) {
         <div class="skill-detail-card">
@@ -82,11 +86,9 @@
               <div class="skill-detail-card__title">{{ d.skillName }}</div>
               <div class="skill-detail-card__meta">{{ d.skillCategoryName }}</div>
             </div>
-            @if (!readonly) {
-              <button type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeDraft(d.skillId)">
-                Remove
-              </button>
-            }
+            <button type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeDraft(d.skillId)">
+              Remove
+            </button>
           </div>
           <div class="row g-2">
             <div class="col-sm-6">
@@ -96,7 +98,6 @@
                 class="form-control form-control-sm"
                 [(ngModel)]="d.proficiencyLevel"
                 (ngModelChange)="onDraftFieldChange(d)"
-                [readonly]="readonly"
                 min="1"
                 max="5"
                 step="1" />
@@ -109,7 +110,6 @@
                 class="form-control form-control-sm"
                 [(ngModel)]="d.yearsOfExperience"
                 (ngModelChange)="onDraftFieldChange(d)"
-                [readonly]="readonly"
                 min="0"
                 step="1" />
             </div>
@@ -117,9 +117,13 @@
         </div>
       }
     </div>
-  } @else if (readonly) {
-    <p class="text-muted small mb-0">No skills on this profile yet.</p>
-  } @else {
-    <p class="text-muted small mb-0 mt-2">Select skills above, then set proficiency and years for each.</p>
+  }
+
+  @if (selectedCount === 0) {
+    @if (readonly) {
+      <p class="text-muted small mb-0">No skills on this profile yet.</p>
+    } @else {
+      <p class="text-muted small mb-0 mt-2">Select skills above, then set proficiency and years for each.</p>
+    }
   }
 </div>

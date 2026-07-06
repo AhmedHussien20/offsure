@@ -29,5 +29,5 @@
 <ng-template #clientDetail let-item>
   <app-admin-client-detail-panel
     [clientId]="item.id"
-    (deleted)="onClientDeleted()" />
+    (saved)="onClientSaved()" />
 </ng-template>

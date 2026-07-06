@@ -1,26 +1,33 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ClientContextService } from 'app/core/services/client-context.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
-import { ServiceRequestDto } from 'app/core/models/services/service.models';
+import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import {
+  normalizeServiceRequestStatus,
+  serviceRequestStatusKey,
+} from 'app/core/utils/enum-status.util';
+import {
   readServiceRequestPrefill,
   ServiceRequestCreatePrefill,
 } from 'app/core/models/services/service-request-prefill.model';
-import { CLIENT_REQUEST_COLUMNS } from '../client.constants';
+import { CLIENT_REQUEST_COLUMNS, SERVICE_REQUEST_STATUS_BADGES } from '../client.constants';
 import { ClientRequestCreateComponent } from '../client-request-form/client-request-create.component';
+
+type StepState = 'done' | 'active' | 'pending';
 
 @Component({
   selector: 'app-client-requests-list',
   standalone: true,
-  imports: [CommonModule, SharedModule, GenericTableComponent],
+  imports: [CommonModule, SharedModule, GenericTableComponent, RouterModule],
   templateUrl: './client-requests-list.component.html',
+  styleUrl: './client-requests-list.component.scss',
 })
 export class ClientRequestsListComponent implements OnInit {
   columns = CLIENT_REQUEST_COLUMNS;
@@ -54,6 +61,13 @@ export class ClientRequestsListComponent implements OnInit {
       { id: 'Completed', name: 'Completed' },
       { id: 'Cancelled', name: 'Cancelled' },
     ],
+  };
+
+  readonly priorityLabels: Record<number, string> = {
+    1: 'Low',
+    3: 'Medium',
+    4: 'High',
+    5: 'Urgent',
   };
 
   constructor(
@@ -107,6 +121,87 @@ export class ClientRequestsListComponent implements OnInit {
 
   onAdd(): void {
     this.openCreateModal(null);
+  }
+
+  canViewEnteredData(request: ServiceRequestDto): boolean {
+    if (!this.clientId || !request) {
+      return false;
+    }
+
+    return request.clientId === this.clientId;
+  }
+
+  getPriorityLabel(priority: number | null | undefined): string {
+    if (priority == null) {
+      return 'Not specified';
+    }
+
+    return this.priorityLabels[priority] ?? `Priority ${priority}`;
+  }
+
+  hasLinkedProject(item: ServiceRequestDto): boolean {
+    const id = item.projectId;
+    return id != null && id > 0;
+  }
+
+  statusBadgeClass(status: unknown): string {
+    return SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.class ?? 'bg-light';
+  }
+
+  statusLabel(status: unknown): string {
+    return SERVICE_REQUEST_STATUS_BADGES[serviceRequestStatusKey(status)]?.text ?? String(status ?? '');
+  }
+
+  requestSteps(item: ServiceRequestDto): { key: string; label: string; state: StepState }[] {
+    const status = normalizeServiceRequestStatus(item.status);
+    let activeIndex = 0;
+    if (status === ServiceRequestStatus.Cancelled) {
+      activeIndex = 1;
+    } else if (status === ServiceRequestStatus.Completed) {
+      activeIndex = 3;
+    } else if (status === ServiceRequestStatus.AcceptedWithProject || this.hasLinkedProject(item)) {
+      activeIndex = 2;
+    } else if (status === ServiceRequestStatus.PrimaryAccepted) {
+      activeIndex = 1;
+    }
+
+    const step = (key: string, label: string, index: number): { key: string; label: string; state: StepState } => {
+      let state: StepState = 'pending';
+      if (index < activeIndex) state = 'done';
+      else if (index === activeIndex) state = 'active';
+      return { key, label, state };
+    };
+
+    return [
+      step('submitted', 'Submitted', 0),
+      step('accepted', status === ServiceRequestStatus.Cancelled ? 'Cancelled' : 'Accepted', 1),
+      step('project', 'With project', 2),
+      step('done', 'Completed', 3),
+    ];
+  }
+
+  activityLog(item: ServiceRequestDto): { text: string; date?: string }[] {
+    const entries: { text: string; date?: string }[] = [
+      { text: 'Request submitted', date: item.requestedDate },
+    ];
+    const status = normalizeServiceRequestStatus(item.status);
+    if (
+      status === ServiceRequestStatus.PrimaryAccepted ||
+      status === ServiceRequestStatus.AcceptedWithProject ||
+      this.hasLinkedProject(item)
+    ) {
+      entries.push({ text: 'Request accepted' });
+    }
+    if (status === ServiceRequestStatus.AcceptedWithProject || this.hasLinkedProject(item)) {
+      entries.push({ text: 'Project created from request' });
+    }
+    if (status === ServiceRequestStatus.Completed) {
+      entries.push({ text: 'Request completed' });
+    }
+    if (status === ServiceRequestStatus.Cancelled) {
+      entries.push({ text: 'Request cancelled' });
+    }
+    return entries;
   }
 
   private resolveCreatePrefill(): ServiceRequestCreatePrefill | null {

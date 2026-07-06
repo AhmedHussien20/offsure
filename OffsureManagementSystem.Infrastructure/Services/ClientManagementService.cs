@@ -314,6 +314,45 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetClientByIdAsync(id);
         }
 
+        public async Task<ClientDto> ActivateClientAsync(int id)
+        {
+            var client = await _clientRepo
+                .Query()
+                .Include(c => c.ServiceRequests)
+                    .ThenInclude(r => r.Project)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (client is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (client.IsActive)
+                throw new AppException("Client is already active.", 400);
+
+            client.IsActive = true;
+            client.UpdatedAt = DateTime.UtcNow;
+
+            _clientRepo.SaveInclude(
+                client,
+                nameof(client.IsActive),
+                nameof(client.UpdatedAt));
+
+            var user = await _userRepo.GetByIDAsync(client.UserId);
+            if (user is not null)
+            {
+                user.IsActive = true;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                _userRepo.SaveInclude(
+                    user,
+                    nameof(user.IsActive),
+                    nameof(user.UpdatedAt));
+            }
+
+            await _clientRepo.SaveChangesAsync();
+
+            return await GetClientByIdAsync(id);
+        }
+
         private IQueryable<Client> BuildClientQuery()
         {
             return _clientRepo
@@ -349,6 +388,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (request.IsActive.HasValue)
                 query = query.Where(c => c.IsActive == request.IsActive.Value);
+            else
+                query = query.Where(c => c.IsActive);
 
             if (!string.IsNullOrWhiteSpace(request.City))
             {

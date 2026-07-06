@@ -198,7 +198,6 @@ export class TeamProfileComponent implements OnInit {
           this.editingPersonalInfo = false;
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update profile.');
           this.savingProfile = false;
         },
       });
@@ -231,7 +230,6 @@ export class TeamProfileComponent implements OnInit {
         input.value = '';
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to upload photo.');
         this.photoUploading = false;
         input.value = '';
       },
@@ -265,7 +263,6 @@ export class TeamProfileComponent implements OnInit {
         this.cvBusy = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to download CV.');
         this.cvBusy = false;
       },
     });
@@ -288,7 +285,6 @@ export class TeamProfileComponent implements OnInit {
         this.cvBusy = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to remove CV.');
         this.cvBusy = false;
       },
     });
@@ -376,7 +372,6 @@ export class TeamProfileComponent implements OnInit {
         this.cancelCertificateForm();
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to save certificate.');
         this.savingCertificate = false;
       },
     });
@@ -397,8 +392,7 @@ export class TeamProfileComponent implements OnInit {
         this.toastr.success('Certificate removed.');
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to delete certificate.');
-      },
+        },
     });
   }
 
@@ -466,7 +460,6 @@ export class TeamProfileComponent implements OnInit {
         this.cancelExperienceForm();
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to save experience.');
         this.savingExperience = false;
       },
     });
@@ -487,8 +480,7 @@ export class TeamProfileComponent implements OnInit {
         this.toastr.success('Experience removed.');
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to delete experience.');
-      },
+        },
     });
   }
 
@@ -513,7 +505,6 @@ export class TeamProfileComponent implements OnInit {
         this.cvBusy = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to upload CV.');
         this.cvBusy = false;
       },
     });

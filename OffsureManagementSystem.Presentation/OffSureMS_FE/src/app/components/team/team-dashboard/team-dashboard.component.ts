@@ -142,7 +142,6 @@ export class TeamDashboardComponent implements OnInit {
         this.togglingAvailability = false;
       },
       error: err => {
-        this.toastr.error(err?.error?.message || 'Failed to update availability.');
         this.togglingAvailability = false;
       },
     });

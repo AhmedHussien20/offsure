@@ -112,7 +112,6 @@ export class AdminSalesUserPanelComponent implements OnChanges, OnDestroy {
           this.saved.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to update sales user.');
           this.saving = false;
         },
       });
@@ -148,7 +147,6 @@ export class AdminSalesUserPanelComponent implements OnChanges, OnDestroy {
           this.saved.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to deactivate sales user.');
           this.deactivating = false;
         },
       });
@@ -183,7 +181,6 @@ export class AdminSalesUserPanelComponent implements OnChanges, OnDestroy {
           this.saved.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to activate sales user.');
           this.activating = false;
         },
       });
@@ -216,7 +213,6 @@ export class AdminSalesUserPanelComponent implements OnChanges, OnDestroy {
           this.deleted.emit();
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to delete sales user.');
           this.deleting = false;
         },
       });

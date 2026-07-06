@@ -134,7 +134,6 @@ export class AdminTeamCreateComponent {
           this.activeModal.close(true);
         },
         error: err => {
-          this.toastr.error(err?.error?.message || 'Failed to create team member.');
           this.saving = false;
         },
       });

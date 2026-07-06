@@ -65,6 +65,5 @@ export class VerifyEmailComponent implements OnInit {
   private setError(message: string): void {
     this.state = 'error';
     this.message = message;
-    this.toastr.error(message);
-  }
+    }
 }

@@ -69,7 +69,7 @@ export class AdminClientsListComponent implements OnInit {
     this.loadClients();
   }
 
-  onClientDeleted(): void {
+  onClientSaved(): void {
     this.loadClients();
   }
 
@@ -91,7 +91,10 @@ export class AdminClientsListComponent implements OnInit {
       .getAll(buildPagedListQuery(this.searchCriteria) as any)
       .subscribe(res => {
         const paged = res.data;
-        this.data = paged?.data ?? [];
+        this.data = (paged?.data ?? []).map(client => ({
+          ...client,
+          accountStatusLabel: client.isActive ? 'Active' : 'Inactive',
+        }));
         this.totalItems = paged?.totalCount ?? 0;
         this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.entries));
       });
