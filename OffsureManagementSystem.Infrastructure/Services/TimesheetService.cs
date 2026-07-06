@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OffshoreManagementSystem.Domain.Entities;
+using OffsureManagementSystem.Domain.Entities;
 using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.TimesheetDTOs;
@@ -20,6 +21,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly IRepository<ProjectAssignment> _assignmentRepo;
         private readonly IRepository<ProjectResourceManager> _projectResourceManagerRepo;
+        private readonly IRepository<ProjectMilestone> _milestoneRepo;
 
         public TimesheetService(
             IRepository<TimesheetEntity> timesheetRepo,
@@ -27,7 +29,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<Project> projectRepo,
             IRepository<TeamMember> teamMemberRepo,
             IRepository<ProjectAssignment> assignmentRepo,
-            IRepository<ProjectResourceManager> projectResourceManagerRepo)
+            IRepository<ProjectResourceManager> projectResourceManagerRepo,
+            IRepository<ProjectMilestone> milestoneRepo)
         {
             _timesheetRepo = timesheetRepo;
             _entryRepo = entryRepo;
@@ -35,6 +38,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _teamMemberRepo = teamMemberRepo;
             _assignmentRepo = assignmentRepo;
             _projectResourceManagerRepo = projectResourceManagerRepo;
+            _milestoneRepo = milestoneRepo;
         }
 
         public async Task<TimesheetDayDto?> GetTimesheetDayAsync(int userId, int projectId, DateOnly workDate)
@@ -62,7 +66,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var member = await GetTeamMemberForUserAsync(userId);
             var project = await GetHourlyProjectAsync(dto.ProjectId);
             await EnsureAssignedToHourlyProjectAsync(dto.ProjectId, member.Id);
-            EnsureWorkDateAllowed(project, dto.WorkDate);
+            EnsureProjectAllowsTimesheetLogging(project);
+            await EnsureWorkDateAllowedAsync(project, dto.WorkDate);
 
             var parsed = ParseAndValidateEntries(dto.Entries);
             if (parsed.TotalHours > 24m)
@@ -94,7 +99,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var member = await GetTeamMemberForUserAsync(userId);
             var project = await GetHourlyProjectAsync(dto.ProjectId);
             await EnsureAssignedToHourlyProjectAsync(dto.ProjectId, member.Id);
-            EnsureWorkDateAllowed(project, dto.WorkDate);
+            EnsureProjectAllowsTimesheetLogging(project);
+            await EnsureWorkDateAllowedAsync(project, dto.WorkDate);
 
             var parsed = ParseAndValidateEntries(dto.Entries);
             var sheet = await GetOrCreateTimesheetAsync(dto.ProjectId, member.Id, dto.WorkDate);
@@ -140,7 +146,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var project = await GetHourlyProjectAsync(entry.Timesheet.ProjectId);
             await EnsureAssignedToHourlyProjectAsync(entry.Timesheet.ProjectId, member.Id);
-            EnsureWorkDateAllowed(project, entry.Timesheet.WorkDate);
+            EnsureProjectAllowsTimesheetLogging(project);
+            await EnsureWorkDateAllowedAsync(project, entry.Timesheet.WorkDate);
 
             if (string.IsNullOrWhiteSpace(dto.Description))
                 throw new AppException("Each entry needs a description.", 400);
@@ -241,19 +248,24 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ThenInclude(t => t!.User)
                 .ToListAsync();
 
-            var resources = assignments
+            var assignmentMap = assignments
                 .GroupBy(a => a.TeamMemberId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var resources = allEntries
+                .GroupBy(e => e.TeamMemberId)
                 .Select(g =>
                 {
-                    var a = g.First();
-                    var hours = allEntries.Where(e => e.TeamMemberId == g.Key).Sum(e => e.Hours);
+                    assignmentMap.TryGetValue(g.Key, out var assignment);
                     return new HourlyProjectResourceSummaryDto
                     {
                         TeamMemberId = g.Key,
-                        TeamMemberName = UserDisplayName.FromTeamMember(a.TeamMember),
-                        Role = a.Role,
-                        CostRate = a.HourlyRate,
-                        TotalHours = hours
+                        TeamMemberName = assignment is not null
+                            ? UserDisplayName.FromTeamMember(assignment.TeamMember)
+                            : g.First().TeamMemberName,
+                        Role = assignment?.Role ?? "—",
+                        CostRate = assignment?.HourlyRate,
+                        TotalHours = g.Sum(e => e.Hours)
                     };
                 })
                 .Where(r => r.TotalHours > 0)
@@ -344,6 +356,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 var rmAssigned = await _projectResourceManagerRepo
                     .GetAll(r =>
                         r.ProjectId == request.ProjectId
+                        && r.IsActive
                         && !r.IsDeleted
                         && r.ResourceManagerUserId == request.ResourceManagerUserId.Value)
                     .AnyAsync();
@@ -484,7 +497,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
             }
         }
 
-        private static void EnsureWorkDateAllowed(Project project, DateOnly workDate)
+        private static void EnsureProjectAllowsTimesheetLogging(Project project)
+        {
+            switch (project.Status)
+            {
+                case ProjectStatus.Cancelled:
+                    throw new AppException("This project is cancelled. Time logging is not allowed.", 400);
+                case ProjectStatus.Completed:
+                    throw new AppException("This project is completed. Time logging is not allowed.", 400);
+                case ProjectStatus.OnHold:
+                    throw new AppException("This project is on hold. Time logging is not allowed.", 400);
+            }
+        }
+
+        private async Task EnsureWorkDateAllowedAsync(Project project, DateOnly workDate)
         {
             var projectStart = DateOnly.FromDateTime(project.StartDate.Date);
             if (workDate < projectStart)
@@ -493,6 +519,29 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
             if (workDate > today)
                 throw new AppException("Cannot log time for future dates.", 400);
+
+            var projectEnd = await ResolveProjectEndDateAsync(project);
+            if (projectEnd.HasValue && workDate > projectEnd.Value)
+                throw new AppException("Cannot log time after the project end date.", 400);
+        }
+
+        private async Task<DateOnly?> ResolveProjectEndDateAsync(Project project)
+        {
+            if (project.UsesMilestones)
+            {
+                var milestoneEnds = await _milestoneRepo
+                    .GetAll(m => m.ProjectId == project.Id && !m.IsDeleted && m.EndDate.HasValue)
+                    .Select(m => m.EndDate!.Value)
+                    .ToListAsync();
+
+                if (milestoneEnds.Count > 0)
+                    return milestoneEnds.Max(d => DateOnly.FromDateTime(d.Date));
+            }
+
+            if (project.TargetEndDate.HasValue)
+                return DateOnly.FromDateTime(project.TargetEndDate.Value.Date);
+
+            return null;
         }
 
         private async Task<TimesheetEntity?> LoadTimesheetAsync(int projectId, int teamMemberId, DateOnly workDate)
@@ -613,12 +662,28 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Select(t => t.Id)
                 .ToListAsync();
 
+            if (ids.Count == 0)
+                return new HashSet<int>();
+
             var assigned = await _assignmentRepo
                 .GetAll(a => a.ProjectId == projectId && a.IsActive && ids.Contains(a.TeamMemberId))
                 .Select(a => a.TeamMemberId)
                 .ToListAsync();
 
-            return assigned.ToHashSet();
+            var withLoggedHours = await _entryRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .Where(e =>
+                    !e.IsDeleted
+                    && e.Timesheet != null
+                    && !e.Timesheet.IsDeleted
+                    && e.Timesheet.ProjectId == projectId
+                    && ids.Contains(e.Timesheet.TeamMemberId))
+                .Select(e => e.Timesheet!.TeamMemberId)
+                .Distinct()
+                .ToListAsync();
+
+            return assigned.Concat(withLoggedHours).ToHashSet();
         }
 
         private static List<EntryRow> FilterEntriesForRole(List<EntryRow> entries, HashSet<int>? allowedIds)
@@ -634,6 +699,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var isAssignedToProject = await _projectResourceManagerRepo
                 .GetAll(r =>
                     r.ProjectId == projectId
+                    && r.IsActive
                     && !r.IsDeleted
                     && r.ResourceManagerUserId == resourceManagerUserId)
                 .AnyAsync();

@@ -31,9 +31,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<ServiceCategoryDto>> GetServiceCategoriesAsync(ServiceCategoryRequest request)
         {
-            IQueryable<ServiceCategory> query = _serviceCategoryRepo
-                .Query()
-                .Include(c => c.Services);
+            IQueryable<ServiceCategory> query = _serviceCategoryRepo.Query();
 
             if (request.Id.HasValue)
                 query = query.Where(c => c.Id == request.Id.Value);

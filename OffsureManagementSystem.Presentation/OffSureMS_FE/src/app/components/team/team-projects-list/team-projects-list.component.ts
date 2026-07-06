@@ -91,16 +91,11 @@ export class TeamProjectsListComponent implements OnInit {
       .subscribe({
         next: res => {
           const paged = res.data;
-          this.data = (paged?.data ?? [])
-            .filter(p => p.teamMembers?.some(m => m.teamMemberId === this.teamMemberId))
-            .map(p => {
-              const assignment = p.teamMembers!.find(m => m.teamMemberId === this.teamMemberId)!;
-              return {
-                ...p,
-                myRole: assignment.role ?? '—',
-                progressLabel: p.progress != null ? `${p.progress}%` : '—',
-              };
-            });
+          this.data = (paged?.data ?? []).map(p => ({
+            ...p,
+            myRole: p.myRole?.trim() || '—',
+            progressLabel: p.progress != null ? `${p.progress}%` : '—',
+          }));
           this.totalItems = paged?.totalCount ?? 0;
           this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.entries));
         },

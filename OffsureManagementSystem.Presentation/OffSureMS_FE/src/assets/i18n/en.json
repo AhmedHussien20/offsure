@@ -595,6 +595,7 @@
     "EMAIL_ADDRESS": "Email Address",
     "EMAIL_PLACEHOLDER": "Enter your email address",
     "SUBMIT": "Submit",
+    "SENDING": "Sending…",
     "BACK_TO_LOGIN": "Back to Login",
     "RESET_PASSWORD": "New Password",
     "NEW_PASSWORD": "New Password",

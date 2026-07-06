@@ -8,7 +8,6 @@ import { TeamContextService } from 'app/core/services/team-context.service';
 import { TeamPortalService } from 'app/core/services/team-portal.service';
 import { DashboardStatisticsService } from 'app/core/services/dashboard-statistics.service';
 import { projectStatusKey } from 'app/core/utils/enum-status.util';
-import { displayRole } from 'app/core/utils/project-skill.util';
 import {
   buildBarChartOptions,
   buildDonutChartOptions,
@@ -98,19 +97,14 @@ export class TeamDashboardComponent implements OnInit {
               this.buildStatCards(profile);
             }
 
-            const rows = (projects.data?.data ?? []).filter(p =>
-              p.teamMembers?.some(m => m.teamMemberId === profile.id)
-            );
-            this.currentProjects = rows.map(p => {
-              const assignment = p.teamMembers!.find(m => m.teamMemberId === profile.id)!;
-              return {
-                id: p.id,
-                name: p.name,
-                clientName: p.clientName,
-                status: projectStatusKey(p.status),
-                myRole: assignment.role ?? '—',
-              };
-            });
+            const rows = projects.data?.data ?? [];
+            this.currentProjects = rows.map(p => ({
+              id: p.id,
+              name: p.name,
+              clientName: p.clientName,
+              status: projectStatusKey(p.status),
+              myRole: p.myRole?.trim() || '—',
+            }));
 
             this.loading = false;
           },

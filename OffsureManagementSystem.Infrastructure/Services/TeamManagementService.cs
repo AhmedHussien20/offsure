@@ -58,7 +58,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<TeamMemberDto>> GetAllAsync(TeamMemberRequest request)
         {
-            var query = BuildBaseQuery();
+            var query = BuildListQuery();
 
             if (request.Id.HasValue)
                 query = query.Where(t => t.Id == request.Id.Value);
@@ -99,7 +99,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ToListAsync();
 
             return new PagedResponse<TeamMemberDto>(
-                members.Select(MapToDto).ToList(),
+                members.Select(m => MapToListDto(m)).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -550,6 +550,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Team member profile not found for current user.", 404);
 
             return member;
+        }
+
+        private IQueryable<TeamMember> BuildListQuery()
+        {
+            return _teamMemberRepo.Query()
+                .Where(t => !t.IsDeleted && !t.User.IsDeleted)
+                .Include(t => t.User)
+                .Include(t => t.ResourceManager)
+                .AsSplitQuery();
         }
 
         private IQueryable<TeamMember> BuildBaseQuery()
@@ -1052,7 +1061,50 @@ namespace OffsureManagementSystem.Infrastructure.Services
             TeamMemberRequest request)
         {
             request.ResourceManagerId = resourceManagerUserId;
-            return await GetAllAsync(request);
+            var query = BuildListQuery();
+
+            if (request.Id.HasValue)
+                query = query.Where(t => t.Id == request.Id.Value);
+
+            if (request.UserId.HasValue)
+                query = query.Where(t => t.UserId == request.UserId.Value);
+
+            query = query.Where(t => t.ResourceManagerId == resourceManagerUserId);
+
+            if (request.IsAvailable.HasValue)
+                query = query.Where(t => t.IsAvailable == request.IsAvailable.Value);
+
+            if (request.IsActive.HasValue)
+                query = query.Where(t => t.User.IsActive == request.IsActive.Value);
+            else
+                query = query.Where(t => t.User.IsActive);
+
+            if (request.SkillId.HasValue)
+                query = query.Where(t => t.TeamMemberSkills.Any(ts => ts.SkillId == request.SkillId.Value));
+
+            if (!string.IsNullOrWhiteSpace(request.searchKey))
+            {
+                var searchKey = Normalize(request.searchKey);
+                query = query.Where(t =>
+                    t.User.FirstName.ToLower().Contains(searchKey)
+                    || t.User.LastName.ToLower().Contains(searchKey)
+                    || t.Title.ToLower().Contains(searchKey)
+                    || t.PhoneNumber.ToLower().Contains(searchKey)
+                    || t.User.Email.ToLower().Contains(searchKey)
+                    || t.TeamMemberSkills.Any(ts => ts.Skill.Name.ToLower().Contains(searchKey)));
+            }
+
+            var totalCount = await query.CountAsync();
+            var members = await ApplyTeamMemberSorting(query, request)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            return new PagedResponse<TeamMemberDto>(
+                members.Select(m => MapToListDto(m, includeResourceManagerName: false)).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
         }
 
         public Task<TeamMemberDto> GetManagedTeamMemberByIdAsync(int resourceManagerUserId, int teamMemberId)
@@ -1361,7 +1413,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 query = query.Where(a =>
                     a.Project.ProjectResourceManagers.Any(rm =>
-                        !rm.IsDeleted && rm.ResourceManagerUserId == resourceManagerUserId));
+                        !rm.IsDeleted && rm.IsActive && rm.ResourceManagerUserId == resourceManagerUserId));
             }
 
             return await query
@@ -1369,6 +1421,23 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Distinct()
                 .OrderBy(name => name)
                 .ToListAsync();
+        }
+
+        private static TeamMemberDto MapToListDto(TeamMember member, bool includeResourceManagerName = true)
+        {
+            return new TeamMemberDto
+            {
+                Id = member.Id,
+                FullName = UserDisplayName.FromTeamMember(member),
+                Title = member.Title,
+                Email = member.User?.Email ?? string.Empty,
+                ResourceManagerId = member.ResourceManagerId,
+                ResourceManagerName = includeResourceManagerName
+                    ? UserDisplayName.FromUser(member.ResourceManager)
+                    : null,
+                IsAvailable = member.IsAvailable,
+                IsActive = member.User?.IsActive ?? false,
+            };
         }
 
         private static TeamMemberDto MapToDto(

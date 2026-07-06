@@ -583,8 +583,18 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeAssignment(assignment: ProjectAssignmentDto): void {
+  async removeAssignment(assignment: ProjectAssignmentDto): Promise<void> {
     if (!this.project || this.isDeliveryLocked) return;
+
+    const memberName = assignment.teamMemberName?.trim() || 'this team member';
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Unassign team member',
+      message: `Remove ${memberName} from "${this.project.name}"? Logged hours will remain in reports.`,
+      confirmLabel: 'Unassign',
+      variant: 'danger',
+      icon: 'ti-user-minus',
+    });
+    if (!confirmed) return;
 
     this.projectsService.removeAssignment(this.project.id, assignment.id).subscribe({
       next: res => {
@@ -645,6 +655,34 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
         this.patchDeliveryForm();
       }
       return;
+    }
+
+    if (status === ProjectStatus.Cancelled && current !== ProjectStatus.Cancelled) {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Cancel project',
+        message: `Cancel "${this.project.name}"? Team members will no longer be able to log time.`,
+        confirmLabel: 'Cancel project',
+        variant: 'danger',
+        icon: 'ti-ban',
+      });
+      if (!confirmed) {
+        this.patchDeliveryForm();
+        return;
+      }
+    }
+
+    if (status === ProjectStatus.OnHold && current !== ProjectStatus.OnHold) {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Put project on hold',
+        message: `Put "${this.project.name}" on hold? Team members cannot log new time until the project is active again.`,
+        confirmLabel: 'Put on hold',
+        variant: 'warning',
+        icon: 'ti-pause',
+      });
+      if (!confirmed) {
+        this.patchDeliveryForm();
+        return;
+      }
     }
 
     this.savingStatus = true;

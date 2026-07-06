@@ -14,7 +14,10 @@
           <h5 class="mb-1">My logged hours</h5>
           <p class="text-muted small mb-0">{{ project.name }}</p>
         </div>
-        <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
+          <a class="btn btn-sm btn-outline-primary" [routerLink]="dailyTimesheetLink">Log time</a>
+        </div>
       </div>
 
       <div class="report-filter-panel">
@@ -78,7 +81,9 @@
     <div class="card-header border-bottom-0 hours-resource-card-header">
       <div>
         <h5 class="mb-0">Logging history</h5>
-        <p class="text-muted small mb-0 mt-1">Click a row to expand time entries</p>
+        @if (filteredResources.length) {
+          <p class="text-muted small mb-0 mt-1">Click a row to expand time entries</p>
+        }
       </div>
       @if (hasExportData) {
         <div class="hours-resource-card-header__actions">
@@ -308,7 +313,9 @@
     <div class="card-header border-bottom-0 hours-resource-card-header">
       <div>
         <h5 class="mb-0">{{ isRmPortal ? 'My team — logged hours' : 'Logged hours by resource' }}</h5>
-        <p class="text-muted small mb-0 mt-1">Click a resource to expand time entries</p>
+        @if (filteredResources.length) {
+          <p class="text-muted small mb-0 mt-1">Click a resource to expand time entries</p>
+        }
       </div>
       @if (hasExportData) {
         <div class="hours-resource-card-header__actions">
@@ -350,7 +357,7 @@
                     <span class="hours-resource-item__rate">${{ r.costRate | number: '1.0-0' }}/hr cost</span>
                     <span class="hours-resource-item__cost">Line cost: ${{ resourceLineCost(r.totalHours, r.costRate) | number: '1.0-0' }}</span>
                   }
-                  <span class="hours-resource-item__hours">{{ r.totalHours | number: '1.0-0' }}h logged</span>
+                  <span class="hours-resource-item__hours">{{ r.totalHours | number: '1.1-1' }}h logged</span>
                 </div>
               </button>
 

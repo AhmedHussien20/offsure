@@ -36,7 +36,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<PortfolioDto>> GetAllPortfoliosAsync(PortfolioFilterRequest request)
         {
-            var query = BuildPortfolioQuery();
+            var query = BuildPortfolioListQuery();
 
             if (!request.IncludeUnpublished)
                 query = query.Where(p => p.IsPublished);
@@ -49,10 +49,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Take(GetPageSize(request))
                 .ToListAsync();
 
-            var publicView = !request.IncludeUnpublished;
-
             return new PagedResponse<PortfolioDto>(
-                portfolios.Select(p => MapPortfolio(p, publicView)).ToList(),
+                portfolios.Select(MapPortfolioList).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -235,6 +233,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return MapPortfolio(portfolio, publicView: false);
         }
 
+        private IQueryable<PortfolioProject> BuildPortfolioListQuery()
+        {
+            return _portfolioRepo
+                .Query()
+                .Include(p => p.Service);
+        }
+
         private IQueryable<PortfolioProject> BuildPortfolioQuery()
         {
             return _portfolioRepo
@@ -351,6 +356,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static int GetSkipCount(PortfolioFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
+
+        private static PortfolioDto MapPortfolioList(PortfolioProject portfolio)
+        {
+            return new PortfolioDto
+            {
+                Id = portfolio.Id,
+                ServiceId = portfolio.ServiceId,
+                ServiceName = portfolio.Service?.Name ?? string.Empty,
+                Title = portfolio.Title,
+                ClientName = portfolio.ClientName,
+                CompletedDate = portfolio.CompletedDate,
+                IsPublished = portfolio.IsPublished,
+            };
+        }
 
         private static PortfolioDto MapPortfolio(PortfolioProject portfolio, bool publicView)
         {

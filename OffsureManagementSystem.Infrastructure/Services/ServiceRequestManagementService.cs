@@ -32,7 +32,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<ServiceRequestDto>> GetAllRequestsAsync(ServiceRequestFilterRequest request)
         {
-            var query = BuildRequestQuery();
+            var query = BuildRequestListQuery();
             query = ApplyFilters(query, request);
 
             var totalCount = await query.CountAsync();
@@ -42,7 +42,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ToListAsync();
 
             return new PagedResponse<ServiceRequestDto>(
-                requests.Select(MapRequest).ToList(),
+                requests.Select(MapRequestList).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -191,6 +191,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
         public async Task SendNotificationAsync(ServiceRequestDto request)
         {
             await _emailNotificationService.SendStatusUpdateAsync(request);
+        }
+
+        private IQueryable<ServiceRequest> BuildRequestListQuery()
+        {
+            return _serviceRequestRepo
+                .Query()
+                .Include(r => r.Client)
+                .Include(r => r.Service)
+                    .ThenInclude(s => s.ServiceCategory)
+                .Include(r => r.Project);
         }
 
         private IQueryable<ServiceRequest> BuildRequestQuery()
@@ -352,6 +362,28 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static int GetSkipCount(ServiceRequestFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
+
+        private static ServiceRequestDto MapRequestList(ServiceRequest request)
+        {
+            return new ServiceRequestDto
+            {
+                Id = request.Id,
+                ClientId = request.ClientId,
+                ClientName = request.Client?.CompanyName ?? string.Empty,
+                ServiceId = request.ServiceId,
+                ServiceName = request.Service?.Name ?? string.Empty,
+                ServiceCategoryName = request.Service?.ServiceCategory?.Name ?? string.Empty,
+                Title = request.Title,
+                Description = request.Description,
+                Status = request.Status,
+                RequestedDate = request.RequestedDate,
+                DueDate = request.DueDate,
+                Budget = request.Budget,
+                Priority = request.Priority,
+                ProjectId = request.Project?.Id,
+                ProjectStatus = request.Project?.Status,
+            };
+        }
 
         private static ServiceRequestDto MapRequest(ServiceRequest request)
         {

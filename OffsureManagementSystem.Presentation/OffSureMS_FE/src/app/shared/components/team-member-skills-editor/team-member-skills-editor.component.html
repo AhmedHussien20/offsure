@@ -71,7 +71,7 @@
       @if (skillsLoading && skillsList.length > 0) {
         <p class="text-muted small mb-0 py-2">Loading more…</p>
       }
-      @if (skillsHasMore && !skillsLoading && skillsList.length > 0) {
+      @if (skillsHasMore && !skillsLoading && skillsList.length > 0 && !initialSkills.length) {
         <p class="text-muted small mb-0 py-2 w-100">Scroll for more</p>
       }
     </div>

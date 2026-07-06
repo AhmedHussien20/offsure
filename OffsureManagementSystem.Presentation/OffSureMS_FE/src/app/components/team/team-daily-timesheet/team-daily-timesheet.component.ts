@@ -77,6 +77,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
   projectId = 0;
   projectName = '';
   projectStartDate = todayIsoDate();
+  projectEndDate: string | null = null;
   maxWorkDate = todayIsoDate();
   workDate = todayIsoDate();
   calendarView: CalendarView = 'day';
@@ -96,6 +97,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
 
   popupOpen = false;
   popupMode: PopupMode = 'add';
+  popupEditing = false;
   editingEntryId = 0;
   popupForm: FormGroup;
 
@@ -137,6 +139,21 @@ export class TeamDailyTimesheetComponent implements OnInit {
     return ['/team', 'projects', this.projectId];
   }
 
+  get timesheetHistoryLink(): (string | number)[] {
+    return ['/team', 'projects', this.projectId, 'timesheet-report'];
+  }
+
+  get popupFieldsDisabled(): boolean {
+    return this.popupMode === 'edit' && !this.popupEditing;
+  }
+
+  get popupPrimaryLabel(): string {
+    if (this.popupMode === 'edit') {
+      return this.popupEditing ? 'Save changes' : 'Update';
+    }
+    return 'Save new entries';
+  }
+
   get totalLoggedLabel(): string {
     return formatTotalLogged(this.totalHours);
   }
@@ -173,11 +190,12 @@ export class TeamDailyTimesheetComponent implements OnInit {
   }
 
   get popupTitle(): string {
-    return this.popupMode === 'edit' ? 'Edit time entry' : 'Log time';
+    return this.popupMode === 'edit' ? 'Time entry' : 'Log time';
   }
 
-  get popupSaveLabel(): string {
-    return this.popupMode === 'edit' ? 'Save changes' : 'Save new entries';
+  enablePopupEdit(): void {
+    this.popupEditing = true;
+    this.syncPopupFormDisabled();
   }
 
   setView(view: CalendarView): void {
@@ -225,6 +243,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
     event.stopPropagation();
     if (!this.ensureWorkDateAllowed()) return;
     this.popupMode = 'add';
+    this.popupEditing = true;
     this.editingEntryId = 0;
     this.openPopupForNewEntries([defaultRangeForHour(hour)]);
   }
@@ -234,14 +253,23 @@ export class TeamDailyTimesheetComponent implements OnInit {
     const entry = this.dayEntries[index];
     if (!entry) return;
     this.popupMode = 'edit';
+    this.popupEditing = false;
     this.editingEntryId = entry.id;
     this.popupEntries.clear();
     this.popupEntries.push(this.createEntryGroup(entry.startTime, entry.endTime, entry.description));
+    this.syncPopupFormDisabled();
     this.popupOpen = true;
+  }
+
+  monthCellDisabled(isoDate: string): boolean {
+    if (isoDate < this.projectStartDate) return true;
+    if (this.projectEndDate && isoDate > this.projectEndDate) return true;
+    return false;
   }
 
   openMonthCell(cell: MonthCalendarCell, event: MouseEvent): void {
     event.stopPropagation();
+    if (this.monthCellDisabled(cell.isoDate)) return;
     const scrollY = window.scrollY;
     this.workDate = clampIsoDate(cell.isoDate, this.projectStartDate, this.maxWorkDate);
     this.calendarMonthKey = monthKeyFromIso(this.workDate);
@@ -251,6 +279,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
     }
     if (!this.ensureWorkDateAllowed()) return;
     this.popupMode = 'add';
+    this.popupEditing = true;
     this.editingEntryId = 0;
     this.loadDayForPopup(this.workDate, true);
     this.restoreScroll(scrollY);
@@ -306,6 +335,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
   closePopup(): void {
     this.popupOpen = false;
     this.popupMode = 'add';
+    this.popupEditing = false;
     this.editingEntryId = 0;
     this.popupEntries.clear();
   }
@@ -313,6 +343,12 @@ export class TeamDailyTimesheetComponent implements OnInit {
   savePopup(): void {
     if (this.saving) return;
     if (!this.ensureWorkDateAllowed()) return;
+
+    if (this.popupMode === 'edit' && !this.popupEditing) {
+      this.enablePopupEdit();
+      return;
+    }
+
     if (this.popupForm.invalid) {
       this.popupForm.markAllAsTouched();
       return;
@@ -417,6 +453,10 @@ export class TeamDailyTimesheetComponent implements OnInit {
       this.toastr.warning('Cannot log time before the project start date.');
       return false;
     }
+    if (this.projectEndDate && this.workDate > this.projectEndDate) {
+      this.toastr.warning('Cannot log time after the project end date.');
+      return false;
+    }
     if (this.workDate > this.maxWorkDate) {
       this.toastr.warning('Cannot log time for future dates.');
       return false;
@@ -434,7 +474,16 @@ export class TeamDailyTimesheetComponent implements OnInit {
     if (this.popupEntries.length === 0) {
       this.popupEntries.push(this.createEntryGroup('09:00', '10:00', ''));
     }
+    this.syncPopupFormDisabled();
     this.popupOpen = true;
+  }
+
+  private syncPopupFormDisabled(): void {
+    if (this.popupFieldsDisabled) {
+      this.popupForm.disable({ emitEvent: false });
+    } else {
+      this.popupForm.enable({ emitEvent: false });
+    }
   }
 
   private createEntryGroup(start: string, end: string, description: string): FormGroup {
@@ -484,7 +533,13 @@ export class TeamDailyTimesheetComponent implements OnInit {
 
         this.projectName = project.name;
         this.projectStartDate = isoDateFromApi(project.startDate) ?? todayIsoDate();
-        this.maxWorkDate = todayIsoDate();
+        const endFromProject = isoDateFromApi(project.endDate ?? project.targetEndDate);
+        const endFromMilestones = this.resolveMilestoneEndDate(project);
+        const resolvedEnd = endFromMilestones ?? endFromProject;
+        this.projectEndDate = resolvedEnd;
+        const today = todayIsoDate();
+        this.maxWorkDate =
+          resolvedEnd && resolvedEnd < today ? resolvedEnd : today;
         this.workDate = clampIsoDate(this.workDate, this.projectStartDate, this.maxWorkDate);
         this.calendarMonthKey = monthKeyFromIso(this.workDate);
 
@@ -575,5 +630,21 @@ export class TeamDailyTimesheetComponent implements OnInit {
     requestAnimationFrame(() => {
       window.scrollTo({ top: scrollY, left: 0, behavior: 'instant' as ScrollBehavior });
     });
+  }
+
+  private resolveMilestoneEndDate(project: {
+    usesMilestones?: boolean;
+    milestones?: Array<{ endDate?: string | null }>;
+  }): string | null {
+    if (!project.usesMilestones || !project.milestones?.length) {
+      return null;
+    }
+    const dates = project.milestones
+      .map(m => isoDateFromApi(m.endDate))
+      .filter((d): d is string => !!d);
+    if (!dates.length) {
+      return null;
+    }
+    return dates.sort().at(-1) ?? null;
   }
 }

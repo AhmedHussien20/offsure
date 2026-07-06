@@ -13,6 +13,7 @@ import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ResourceManagerPortalService } from 'app/core/services/resource-manager-portal.service';
 import { SkillsService } from 'app/core/services/skills.service';
 import { AuthService } from 'app/core/services/auth.service';
+import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -93,7 +94,8 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private toastr: ToastrService,
     private breadcrumbService: BreadcrumbService,
-    private auth: AuthService
+    private auth: AuthService,
+    private confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -431,8 +433,18 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     this.patchDeliveryForm();
   }
 
-  removeAssignment(assignment: ProjectAssignmentDto): void {
+  async removeAssignment(assignment: ProjectAssignmentDto): Promise<void> {
     if (!this.project || this.isDeliveryLocked || !this.canManageAssignment(assignment)) return;
+
+    const memberName = assignment.teamMemberName?.trim() || 'this team member';
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Unassign team member',
+      message: `Remove ${memberName} from "${this.project.name}"? Logged hours will remain in reports.`,
+      confirmLabel: 'Unassign',
+      variant: 'danger',
+      icon: 'ti-user-minus',
+    });
+    if (!confirmed) return;
 
     this.portal.removeAssignment(this.project.id, assignment.id).subscribe({
       next: res => {
@@ -526,7 +538,7 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     this.setProgressLive((event.target as HTMLInputElement).valueAsNumber);
   }
 
-  saveDelivery(): void {
+  async saveDelivery(): Promise<void> {
     if (!this.project || this.deliveryForm.invalid || this.isDeliveryLocked) {
       this.deliveryForm.markAllAsTouched();
       return;
@@ -534,6 +546,49 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
 
     const progress = this.progressPreview;
     const status = this.deliveryForm.get('status')?.value as ProjectStatus;
+    const current = normalizeProjectStatus(this.project.status);
+
+    if (status === ProjectStatus.Completed && current !== ProjectStatus.Completed) {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Complete project',
+        message: `Mark "${this.project.name}" as completed? Team members will no longer be able to log time.`,
+        confirmLabel: 'Complete',
+        variant: 'primary',
+        icon: 'ti-check',
+      });
+      if (!confirmed) {
+        this.patchDeliveryForm();
+        return;
+      }
+    }
+
+    if (status === ProjectStatus.Cancelled && current !== ProjectStatus.Cancelled) {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Cancel project',
+        message: `Cancel "${this.project.name}"? Team members will no longer be able to log time.`,
+        confirmLabel: 'Cancel project',
+        variant: 'danger',
+        icon: 'ti-ban',
+      });
+      if (!confirmed) {
+        this.patchDeliveryForm();
+        return;
+      }
+    }
+
+    if (status === ProjectStatus.OnHold && current !== ProjectStatus.OnHold) {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Put project on hold',
+        message: `Put "${this.project.name}" on hold? Team members cannot log new time until the project is active again.`,
+        confirmLabel: 'Put on hold',
+        variant: 'warning',
+        icon: 'ti-pause',
+      });
+      if (!confirmed) {
+        this.patchDeliveryForm();
+        return;
+      }
+    }
 
     this.savingDelivery = true;
     this.portal.updateDelivery(this.project.id, { progress, status }).subscribe({

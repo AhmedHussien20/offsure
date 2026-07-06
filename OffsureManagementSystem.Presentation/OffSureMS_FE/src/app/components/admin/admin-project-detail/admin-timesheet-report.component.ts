@@ -68,6 +68,10 @@ export class AdminTimesheetReportComponent implements OnInit {
 
   private projectId = 0;
 
+  get dailyTimesheetLink(): (string | number)[] {
+    return ['/team', 'projects', this.projectId, 'timesheet'];
+  }
+
   constructor(
     private route: ActivatedRoute,
     private projectsService: ProjectsService,

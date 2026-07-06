@@ -191,6 +191,8 @@ export interface ProjectDto {
   milestones?: ProjectMilestoneDto[];
   /** Current RM's cost rate on this hourly project (resource manager portal). */
   myHourlyCostRate?: number | null;
+  /** Current team member's role on this project (team member portal list). */
+  myRole?: string;
   salesId?: number | null;
   salesPersonName?: string;
   commissionType?: CommissionType | null;

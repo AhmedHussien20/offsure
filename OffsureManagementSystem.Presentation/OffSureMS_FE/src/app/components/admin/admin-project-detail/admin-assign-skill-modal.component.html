@@ -4,6 +4,8 @@
     <p class="text-muted small mb-0">
       @if (step === 1) {
         {{ step1Hint }}
+      } @else if (isHourlyTimesheetProject) {
+        Set the role for each member
       } @else if (isHourlyBudget) {
         Set role, rate, and hours for each member
       } @else {
@@ -112,17 +114,27 @@
         <input type="text" class="form-control form-control-sm" [class.mb-2]="isHourlyBudget && !isHourlyTimesheetProject" [(ngModel)]="d.role" />
 
         @if (isHourlyTimesheetProject) {
-          <label class="form-label small fw-semibold mt-2">Cost rate ($/hr)</label>
-          <input
-            type="number"
-            class="form-control form-control-sm"
-            [(ngModel)]="d.costRate"
-            min="0.01"
-            step="0.01"
-            placeholder="Required if no resource manager rate applies" />
-          <p class="text-muted small mb-0 mt-1">
-            If this member belongs to a resource manager, their project rate is used automatically.
-          </p>
+          @if (memberUsesRmCostRate(d.member)) {
+            <p class="text-muted small mb-0 mt-2">
+              Cost rate: <strong>${{ memberRmCostRate(d.member) }}/hr</strong> (from this member's resource manager on the project).
+            </p>
+          } @else if (memberRmOnProjectWithoutRate(d.member)) {
+            <p class="text-warning small mb-0 mt-2">
+              Set a cost rate for this member's resource manager on the project before assigning.
+            </p>
+          } @else {
+            <label class="form-label small fw-semibold mt-2">Cost rate ($/hr)</label>
+            <input
+              type="number"
+              class="form-control form-control-sm"
+              [(ngModel)]="d.costRate"
+              min="0.01"
+              step="0.01"
+              placeholder="Required" />
+            <p class="text-muted small mb-0 mt-1">
+              This member's resource manager is not on the project — enter a cost rate for this assignment.
+            </p>
+          }
         } @else if (isHourlyBudget) {
           <p class="text-muted small mb-2">
             Rate and hours are pre-filled from the project budget. You can change them for this assignment.

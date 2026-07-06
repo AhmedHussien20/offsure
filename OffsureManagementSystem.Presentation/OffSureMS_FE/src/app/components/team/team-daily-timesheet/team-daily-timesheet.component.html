@@ -10,7 +10,10 @@
           <h5 class="mb-1">{{ projectName }}</h5>
           <p class="text-muted small mb-0">Click an hour to log time · switch day or month view below</p>
         </div>
-        <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
+          <a class="btn btn-sm btn-outline-primary" [routerLink]="timesheetHistoryLink">View history</a>
+        </div>
       </div>
 
       <div class="timesheet-shell__toolbar">
@@ -144,6 +147,8 @@
                   [class.timesheet-month__cell--today]="cell.isToday"
                   [class.timesheet-month__cell--selected]="cell.isSelected"
                   [class.timesheet-month__cell--has-logs]="monthCellHasLogs(cell.isoDate)"
+                  [class.timesheet-month__cell--disabled]="monthCellDisabled(cell.isoDate)"
+                  [disabled]="monthCellDisabled(cell.isoDate)"
                   (click)="openMonthCell(cell, $event)">
                   <span class="timesheet-month__day">{{ cell.day }}</span>
                   @if (monthCellHasLogs(cell.isoDate)) {
@@ -190,7 +195,7 @@
                 <span class="timesheet-popup__entry-title">Entry {{ i + 1 }}</span>
                 <div class="d-flex align-items-center gap-2">
                   <span class="timesheet-popup__entry-duration">{{ entryDurationLabel(i) }}</span>
-                  @if (popupEntries.length > 1) {
+                  @if (popupEntries.length > 1 && !popupFieldsDisabled) {
                     <button type="button" class="btn btn-sm btn-link text-danger px-0" (click)="removePopupRow(i)">
                       Remove
                     </button>
@@ -219,7 +224,7 @@
           }
         </div>
 
-        @if (popupMode === 'add') {
+        @if (popupMode === 'add' && !popupFieldsDisabled) {
           <button type="button" class="btn btn-sm btn-outline-primary timesheet-popup__add-more" (click)="addMoreLogs()">
             <i class="fe fe-plus me-1"></i>
             Add more logs
@@ -229,7 +234,7 @@
         <div class="timesheet-popup__actions">
           <button type="button" class="btn btn-light" [disabled]="saving" (click)="closePopup()">Cancel</button>
           <button type="submit" class="btn btn-primary" [disabled]="saving">
-            @if (saving) { Saving… } @else { {{ popupSaveLabel }} }
+            @if (saving) { Saving… } @else { {{ popupPrimaryLabel }} }
           </button>
         </div>
       </form>

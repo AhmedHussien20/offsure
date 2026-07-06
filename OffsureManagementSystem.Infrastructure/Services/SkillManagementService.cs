@@ -27,9 +27,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<SkillCategoryDto>> GetSkillCategoriesAsync(SkillCategoryRequest request)
         {
-            IQueryable<SkillCategory> query = _skillCategoryRepo
-                .Query()
-                .Include(c => c.Skills);
+            IQueryable<SkillCategory> query = _skillCategoryRepo.Query();
 
             if (request.Id.HasValue)
                 query = query.Where(c => c.Id == request.Id.Value);
@@ -134,7 +132,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<SkillDto>> GetSkillsAsync(SkillRequest request)
         {
-            var query = BuildSkillQuery();
+            var query = BuildSkillListQuery();
 
             if (request.Id.HasValue)
                 query = query.Where(s => s.Id == request.Id.Value);
@@ -242,6 +240,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             _skillRepo.SoftDelete(skill);
             await _skillRepo.SaveChangesAsync();
+        }
+
+        private IQueryable<Skill> BuildSkillListQuery()
+        {
+            return _skillRepo
+                .Query()
+                .Include(s => s.SkillCategory);
         }
 
         private IQueryable<Skill> BuildSkillQuery()

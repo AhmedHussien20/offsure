@@ -625,6 +625,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.Property(e => e.HourlyCostRate)
                     .HasPrecision(18, 2);
+
+                entity.Property(e => e.IsActive)
+                    .HasDefaultValue(true);
             });
 
             modelBuilder.Entity<Timesheet>(entity =>

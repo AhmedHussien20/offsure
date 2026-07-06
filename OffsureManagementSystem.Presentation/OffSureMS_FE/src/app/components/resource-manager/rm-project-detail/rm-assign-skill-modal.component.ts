@@ -175,7 +175,10 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
       if (!d.role.trim().length) {
         return false;
       }
-      if (this.isHourlyTimesheetProject || !this.isHourlyBudget) {
+      if (this.isHourlyTimesheetProject) {
+        return (Number(d.hourlyRate) || this.rmProjectCostRate || 0) > 0;
+      }
+      if (!this.isHourlyBudget) {
         return true;
       }
       return (Number(d.allocatedHours) || 0) > 0;
@@ -186,7 +189,7 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
     if (!this.projectId || !this.canSubmit()) {
       this.toastr.warning(
         this.isHourlyTimesheetProject
-          ? 'Set a role for each member.'
+          ? 'Set your project cost rate before assigning team members.'
           : this.isHourlyBudget
             ? 'Set role and allocated hours for each member.'
             : 'Set a role for each member.'
@@ -202,7 +205,9 @@ export class RmAssignSkillModalComponent implements OnInit, OnDestroy {
       if (this.assignBySkill && this.skill) {
         dto.skillId = this.skill.id;
       }
-      if (this.isHourlyBudget && !this.isHourlyTimesheetProject) {
+      if (this.isHourlyTimesheetProject) {
+        dto.hourlyRate = Number(d.hourlyRate) || this.rmProjectCostRate || 0;
+      } else if (this.isHourlyBudget) {
         dto.hourlyRate = Number(d.hourlyRate) || 0;
         dto.allocatedHours = Number(d.allocatedHours);
       }

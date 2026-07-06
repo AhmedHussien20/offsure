@@ -60,7 +60,7 @@ export class ClientDashboardComponent implements OnInit {
           recent: this.clientsService.getProfileRecentRequests(5),
           ongoing: this.projectsService.getMy({
             pageIndex: 1,
-            pageSize: 10,
+            pageSize: 5,
             status: ProjectStatus.InProgress,
           }),
           stats: this.dashboardStatisticsService.getClient(),

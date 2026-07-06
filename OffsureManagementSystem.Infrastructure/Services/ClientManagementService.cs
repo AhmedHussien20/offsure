@@ -32,7 +32,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<ClientDto>> GetAllClientsAsync(ClientFilterRequest request)
         {
-            var query = BuildClientQuery();
+            var query = BuildClientListQuery();
             query = ApplyFilters(query, request);
 
             var totalCount = await query.CountAsync();
@@ -41,8 +41,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Take(GetPageSize(request))
                 .ToListAsync();
 
+            var clientIds = clients.Select(c => c.Id).ToList();
+            var requestCounts = clientIds.Count == 0
+                ? new Dictionary<int, int>()
+                : await _serviceRequestRepo
+                    .Query()
+                    .Where(r => clientIds.Contains(r.ClientId))
+                    .GroupBy(r => r.ClientId)
+                    .Select(g => new { ClientId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.ClientId, x => x.Count);
+
             return new PagedResponse<ClientDto>(
-                clients.Select(MapClient).ToList(),
+                clients.Select(c => MapClientList(c, requestCounts.GetValueOrDefault(c.Id))).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -353,6 +363,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetClientByIdAsync(id);
         }
 
+        private IQueryable<Client> BuildClientListQuery()
+        {
+            return _clientRepo
+                .Query()
+                .Include(c => c.User);
+        }
+
         private IQueryable<Client> BuildClientQuery()
         {
             return _clientRepo
@@ -488,6 +505,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (limit > 50)
                 return 50;
             return limit;
+        }
+
+        private static ClientDto MapClientList(Client client, int requestsCount)
+        {
+            return new ClientDto
+            {
+                Id = client.Id,
+                Email = client.User?.Email ?? string.Empty,
+                CompanyName = client.CompanyName ?? string.Empty,
+                City = client.City ?? string.Empty,
+                Country = client.Country ?? string.Empty,
+                RequestsCount = requestsCount,
+            };
         }
 
         private static ClientDto MapClient(Client client)

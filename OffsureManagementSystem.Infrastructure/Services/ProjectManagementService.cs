@@ -69,7 +69,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<PagedResponse<ProjectDto>> GetAllProjectsAsync(ProjectFilterRequest request)
         {
-            var query = BuildProjectQuery().AsNoTracking();
+            var query = BuildProjectListQuery().AsNoTracking();
             query = await ApplyFiltersAsync(query, request);
 
             var totalCount = await query.CountAsync();
@@ -79,7 +79,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ToListAsync();
 
             return new PagedResponse<ProjectDto>(
-                projects.Select(MapProject).ToList(),
+                projects.Select(MapProjectList).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -135,12 +135,24 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var teamMemberId = await GetTeamMemberIdForUserAsync(userId);
             request.TeamMemberId = teamMemberId;
-            var response = await GetAllProjectsAsync(request);
+
+            var query = BuildProjectListQuery()
+                .Include(p => p.ProjectAssignments.Where(a => a.IsActive && a.TeamMemberId == teamMemberId))
+                .AsNoTracking();
+
+            query = await ApplyFiltersAsync(query, request);
+
+            var totalCount = await query.CountAsync();
+            var projects = await ApplySorting(query, request)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
             return new PagedResponse<ProjectDto>(
-                response.Data.Select(StripTeamMemberFinancials).ToList(),
-                response.TotalCount,
-                response.PageIndex,
-                response.PageSize);
+                projects.Select(p => StripTeamMemberFinancials(MapProjectListForTeamMember(p, teamMemberId))).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
         }
 
         public async Task<ProjectDto> GetTeamMemberProjectByIdAsync(int userId, int projectId)
@@ -157,10 +169,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int userId,
             ProjectFilterRequest request)
         {
-            var query = BuildProjectQuery()
+            var query = BuildProjectListQuery()
+                .Include(p => p.ProjectResourceManagers.Where(rm =>
+                    !rm.IsDeleted && rm.IsActive && rm.ResourceManagerUserId == userId))
                 .AsNoTracking()
                 .Where(p =>
-                    p.ProjectResourceManagers.Any(rm => !rm.IsDeleted && rm.ResourceManagerUserId == userId)
+                    p.ProjectResourceManagers.Any(rm => !rm.IsDeleted && rm.IsActive && rm.ResourceManagerUserId == userId)
                     || p.ProjectAssignments.Any(a =>
                         a.IsActive
                         && a.TeamMember.ResourceManagerId == userId
@@ -175,7 +189,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ToListAsync();
 
             return new PagedResponse<ProjectDto>(
-                projects.Select(p => MapProjectForResourceManagerUser(StripFinancials(MapProject(p)), userId)).ToList(),
+                projects.Select(p => MapProjectListForResourceManager(p, userId)).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -222,10 +236,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .FirstOrDefaultAsync(r =>
                     r.ProjectId == projectId
                     && r.ResourceManagerUserId == userId
+                    && r.IsActive
                     && !r.IsDeleted);
 
             if (row is null)
                 throw new AppException("You are not assigned to this project.", 403);
+
+            if (row.HourlyCostRate is > 0)
+                throw new AppException("Cost rate is already set for this project and cannot be changed.", 400);
 
             row.HourlyCostRate = dto.HourlyCostRate;
             row.UpdatedAt = DateTime.UtcNow;
@@ -402,17 +420,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var target = userIds.ToHashSet();
 
             var removedRmUserIds = existing
-                .Where(r => !r.IsDeleted && !target.Contains(r.ResourceManagerUserId))
+                .Where(r => !r.IsDeleted && r.IsActive && !target.Contains(r.ResourceManagerUserId))
                 .Select(r => r.ResourceManagerUserId)
                 .ToList();
 
-            foreach (var row in existing.Where(r => !r.IsDeleted && !target.Contains(r.ResourceManagerUserId)))
+            foreach (var row in existing.Where(r => !r.IsDeleted && r.IsActive && !target.Contains(r.ResourceManagerUserId)))
             {
-                row.IsDeleted = true;
+                row.IsActive = false;
                 row.UpdatedAt = DateTime.UtcNow;
                 _projectResourceManagerRepo.SaveInclude(
                     row,
-                    nameof(row.IsDeleted),
+                    nameof(row.IsActive),
                     nameof(row.UpdatedAt));
             }
 
@@ -426,11 +444,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     {
                         ProjectId = projectId,
                         ResourceManagerUserId = resourceManagerUserId,
+                        IsActive = true,
                         CreatedAt = DateTime.UtcNow
                     });
                 }
                 else
                 {
+                    row.IsActive = true;
                     if (row.IsDeleted)
                     {
                         row.IsDeleted = false;
@@ -439,6 +459,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     row.UpdatedAt = DateTime.UtcNow;
                     _projectResourceManagerRepo.SaveInclude(
                         row,
+                        nameof(row.IsActive),
                         nameof(row.IsDeleted),
                         nameof(row.UpdatedAt));
                 }
@@ -990,10 +1011,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             ValidateAssignmentInput(dto);
             await EnsureProjectExistsAsync(projectId);
             await EnsureTeamMemberExistsAsync(dto.TeamMemberId);
+            await EnsureTeamMemberAvailableForAssignmentAsync(dto.TeamMemberId);
 
             var project = await _projectRepo.GetByIDAsync(projectId);
             if (project is null)
                 throw new AppException("Resource not found.", 404);
+
+            EnsureProjectAllowsTeamAssignment(project);
 
             var role = dto.Role.Trim();
             int? skillId = dto.SkillId is > 0 ? dto.SkillId : null;
@@ -1135,6 +1159,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetProjectByIdAsync(projectId);
         }
 
+        private IQueryable<Project> BuildProjectListQuery()
+        {
+            return _projectRepo
+                .Query()
+                .Include(p => p.Client)
+                .Include(p => p.Service)
+                .Include(p => p.ServiceRequest)
+                    .ThenInclude(r => r.Client)
+                .Include(p => p.ServiceRequest)
+                    .ThenInclude(r => r.Service);
+        }
+
         private IQueryable<Project> BuildProjectQuery()
         {
             return _projectRepo
@@ -1149,7 +1185,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     .ThenInclude(r => r.Service)
                 .Include(p => p.SalesUser)
                 .Include(p => p.ProjectSkills)
-                .Include(p => p.ProjectResourceManagers.Where(rm => !rm.IsDeleted))
+                .Include(p => p.ProjectResourceManagers.Where(rm => !rm.IsDeleted && rm.IsActive))
                     .ThenInclude(rm => rm.ResourceManager)
                 .Include(p => p.ProjectAssignments.Where(a => a.IsActive))
                     .ThenInclude(a => a.TeamMember)
@@ -1322,6 +1358,29 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Resource not found.", 404);
         }
 
+        private async Task EnsureTeamMemberAvailableForAssignmentAsync(int teamMemberId)
+        {
+            var isAvailable = await _teamMemberRepo
+                .Query()
+                .AnyAsync(t => t.Id == teamMemberId && t.IsAvailable && !t.IsDeleted);
+
+            if (!isAvailable)
+                throw new AppException("This team member is marked as busy and cannot be assigned to a project.", 400);
+        }
+
+        private static void EnsureProjectAllowsTeamAssignment(Project project)
+        {
+            switch (project.Status)
+            {
+                case ProjectStatus.Cancelled:
+                    throw new AppException("Cannot assign team members to a cancelled project.", 400);
+                case ProjectStatus.Completed:
+                    throw new AppException("Cannot assign team members to a completed project.", 400);
+                case ProjectStatus.OnHold:
+                    throw new AppException("Cannot assign team members while the project is on hold.", 400);
+            }
+        }
+
         private static void ValidateCreateProjectInput(CreateProjectDto dto)
         {
             if (dto.ServiceRequestId > 0)
@@ -1478,6 +1537,38 @@ namespace OffsureManagementSystem.Infrastructure.Services
                ?? project.ServiceRequest?.Service?.Name
                ?? string.Empty;
 
+        private static ProjectDto MapProjectList(Project project)
+        {
+            return new ProjectDto
+            {
+                Id = project.Id,
+                Name = project.Name,
+                ClientName = ResolveProjectClientName(project),
+                ServiceName = ResolveProjectServiceName(project),
+                Status = project.Status,
+                BudgetType = project.BudgetType,
+                Progress = project.Progress,
+                TargetEndDate = project.TargetEndDate,
+            };
+        }
+
+        private static ProjectDto MapProjectListForResourceManager(Project project, int userId)
+        {
+            var dto = MapProjectList(project);
+            dto.MyHourlyCostRate = project.ProjectResourceManagers?
+                .FirstOrDefault(rm => rm.ResourceManagerUserId == userId)?.HourlyCostRate;
+            return dto;
+        }
+
+        private static ProjectDto MapProjectListForTeamMember(Project project, int teamMemberId)
+        {
+            var dto = MapProjectList(project);
+            dto.MyRole = project.ProjectAssignments?
+                .FirstOrDefault(a => a.IsActive && a.TeamMemberId == teamMemberId)?.Role
+                ?? string.Empty;
+            return dto;
+        }
+
         private static ProjectDto MapProject(Project project)
         {
             var requiredFromTable = project.ProjectSkills?
@@ -1514,7 +1605,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ExpectedHours = project.ExpectedHours,
                 Progress = project.Progress,
                 ResourceManagers = project.ProjectResourceManagers?
-                    .Where(rm => !rm.IsDeleted)
+                    .Where(rm => !rm.IsDeleted && rm.IsActive)
                     .OrderBy(rm => rm.ResourceManager?.FirstName)
                     .ThenBy(rm => rm.ResourceManager?.LastName)
                     .Select(rm => new ProjectResourceManagerDto
@@ -1835,6 +1926,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var isAssignedToProject = await _projectResourceManagerRepo
                 .GetAll(r =>
                     r.ProjectId == projectId
+                    && r.IsActive
                     && !r.IsDeleted
                     && r.ResourceManagerUserId == resourceManagerUserId)
                 .AnyAsync();
@@ -2194,7 +2286,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var member = await _teamMemberRepo
                 .Query()
-                .Include(t => t.User)
                 .FirstOrDefaultAsync(t => t.Id == teamMemberId && !t.IsDeleted);
 
             if (member is null)
@@ -2204,20 +2295,23 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 var rmRow = await _projectResourceManagerRepo
                     .Query()
-                    .IgnoreQueryFilters()
                     .Include(r => r.ResourceManager)
                     .FirstOrDefaultAsync(r =>
                         r.ProjectId == projectId
                         && r.ResourceManagerUserId == member.ResourceManagerId.Value
+                        && r.IsActive
                         && !r.IsDeleted);
 
-                if (rmRow?.HourlyCostRate is > 0)
-                    return rmRow.HourlyCostRate.Value;
+                if (rmRow is not null)
+                {
+                    if (rmRow.HourlyCostRate is > 0)
+                        return rmRow.HourlyCostRate.Value;
 
-                var rmName = rmRow?.ResourceManager != null
-                    ? UserDisplayName.FromUser(rmRow.ResourceManager)
-                    : "the resource manager";
-                throw new AppException($"Set a rate for {rmName} on this project first.", 400);
+                    var rmName = rmRow.ResourceManager != null
+                        ? UserDisplayName.FromUser(rmRow.ResourceManager)
+                        : "the resource manager";
+                    throw new AppException($"Set a rate for {rmName} on this project first.", 400);
+                }
             }
 
             if (requestedRate is > 0)
