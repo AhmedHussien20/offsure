@@ -147,6 +147,11 @@ export function resolveRmAssignmentDefaults(
 }
 
 /** Cost rate from the member's RM when that RM is assigned to the project. */
+export function memberHasResourceManager(member: { resourceManagerId?: number | null }): boolean {
+  const rmId = Number(member.resourceManagerId);
+  return Number.isFinite(rmId) && rmId > 0;
+}
+
 export function resolveMemberProjectRmCostRate(
   project: { resourceManagers?: { userId: number; hourlyCostRate?: number | null }[] } | null | undefined,
   member: { resourceManagerId?: number | null }
@@ -169,4 +174,11 @@ export function memberHasProjectRmAssigned(
     return false;
   }
   return (project?.resourceManagers ?? []).some(r => Number(r.userId) === rmId);
+}
+
+export function memberRmMissingFromProject(
+  project: { resourceManagers?: { userId: number }[] } | null | undefined,
+  member: { resourceManagerId?: number | null }
+): boolean {
+  return memberHasResourceManager(member) && !memberHasProjectRmAssigned(project, member);
 }

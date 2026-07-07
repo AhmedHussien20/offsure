@@ -63,12 +63,25 @@
         </p>
       }
       @for (m of members; track m.id) {
-        <label class="assign-member-card" [class.assign-member-card--selected]="isSelected(m.id)">
-          <input type="checkbox" class="form-check-input" [checked]="isSelected(m.id)" (change)="toggleMember(m)" />
+        <label
+          class="assign-member-card"
+          [class.assign-member-card--selected]="isSelected(m.id)"
+          [class.assign-member-card--blocked]="memberRmMissingFromProject(m)">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            [checked]="isSelected(m.id)"
+            [disabled]="memberRmMissingFromProject(m)"
+            (change)="toggleMember(m)" />
           <span class="assign-member-card__avatar">{{ memberInitials(m) }}</span>
           <span class="assign-member-card__body">
             <span class="assign-member-card__name">{{ displayName(m) }}</span>
             <span class="assign-member-card__meta">{{ m.title || 'Team member' }}</span>
+            @if (memberRmMissingFromProject(m)) {
+              <span class="assign-member-card__meta text-warning">
+                Assign {{ m.resourceManagerName || 'their resource manager' }} to the project first
+              </span>
+            }
             <span class="assign-member-card__tags">
               @for (tag of skillTags(m); track tag) {
                 <span class="assign-tag">{{ tag }}</span>
@@ -114,13 +127,17 @@
         <input type="text" class="form-control form-control-sm" [class.mb-2]="isHourlyBudget && !isHourlyTimesheetProject" [(ngModel)]="d.role" />
 
         @if (isHourlyTimesheetProject) {
-          @if (memberUsesRmCostRate(d.member)) {
+          @if (memberRmMissingFromProject(d.member)) {
+            <p class="text-warning small mb-0 mt-2">
+              Assign {{ d.member.resourceManagerName || 'this member\'s resource manager' }} to the project before assigning this member.
+            </p>
+          } @else if (memberUsesRmCostRate(d.member)) {
             <p class="text-muted small mb-0 mt-2">
-              Cost rate: <strong>${{ memberRmCostRate(d.member) }}/hr</strong> (from this member's resource manager on the project).
+              Cost rate: <strong>${{ memberRmCostRate(d.member) }}/hr</strong> (from {{ d.member.resourceManagerName || 'resource manager' }} on this project).
             </p>
           } @else if (memberRmOnProjectWithoutRate(d.member)) {
             <p class="text-warning small mb-0 mt-2">
-              Set a cost rate for this member's resource manager on the project before assigning.
+              Set a cost rate for {{ d.member.resourceManagerName || 'this member\'s resource manager' }} on the project before assigning.
             </p>
           } @else {
             <label class="form-label small fw-semibold mt-2">Cost rate ($/hr)</label>
@@ -132,9 +149,13 @@
               step="0.01"
               placeholder="Required" />
             <p class="text-muted small mb-0 mt-1">
-              This member's resource manager is not on the project — enter a cost rate for this assignment.
+              This member has no resource manager — enter a cost rate for this assignment.
             </p>
           }
+        } @else if (memberRmMissingFromProject(d.member)) {
+          <p class="text-warning small mb-0 mt-2">
+            Assign {{ d.member.resourceManagerName || 'this member\'s resource manager' }} to the project before assigning this member.
+          </p>
         } @else if (isHourlyBudget) {
           <p class="text-muted small mb-2">
             Rate and hours are pre-filled from the project budget. You can change them for this assignment.

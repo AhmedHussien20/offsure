@@ -1019,6 +1019,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             EnsureProjectAllowsTeamAssignment(project);
 
+            await EnsureMemberResourceManagerOnProjectAsync(projectId, dto.TeamMemberId);
+
             var role = dto.Role.Trim();
             int? skillId = dto.SkillId is > 0 ? dto.SkillId : null;
             if (skillId.HasValue)
@@ -2279,6 +2281,36 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _projectAssignmentRepo.SaveChangesAsync();
         }
 
+        private async Task EnsureMemberResourceManagerOnProjectAsync(int projectId, int teamMemberId)
+        {
+            var member = await _teamMemberRepo
+                .Query()
+                .Include(t => t.ResourceManager)
+                .FirstOrDefaultAsync(t => t.Id == teamMemberId && !t.IsDeleted);
+
+            if (member is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (!member.ResourceManagerId.HasValue)
+                return;
+
+            var rmRow = await _projectResourceManagerRepo
+                .Query()
+                .FirstOrDefaultAsync(r =>
+                    r.ProjectId == projectId
+                    && r.ResourceManagerUserId == member.ResourceManagerId.Value
+                    && r.IsActive
+                    && !r.IsDeleted);
+
+            if (rmRow is not null)
+                return;
+
+            var rmName = member.ResourceManager != null
+                ? UserDisplayName.FromUser(member.ResourceManager)
+                : "the resource manager";
+            throw new AppException($"Assign {rmName} to this project before assigning their team members.", 400);
+        }
+
         private async Task<decimal> ResolveHourlyAssignmentCostRateAsync(
             int projectId,
             int teamMemberId,
@@ -2312,6 +2344,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         : "the resource manager";
                     throw new AppException($"Set a rate for {rmName} on this project first.", 400);
                 }
+
+                var memberRmName = member.ResourceManager != null
+                    ? UserDisplayName.FromUser(member.ResourceManager)
+                    : "the resource manager";
+                throw new AppException($"Assign {memberRmName} to this project before assigning their team members.", 400);
             }
 
             if (requestedRate is > 0)

@@ -5,7 +5,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { AssignProjectTeamMemberDto, ProjectDto } from 'app/core/models/projects/project.models';
 import { SkillDto } from 'app/core/models/skills/skill.models';
 import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
-import { resolveAssignmentDefaults, isHourlyBudgetProject, memberHasProjectRmAssigned, resolveMemberProjectRmCostRate } from 'app/core/utils/project-budget-form.util';
+import { resolveAssignmentDefaults, isHourlyBudgetProject, memberHasProjectRmAssigned, memberHasResourceManager, memberRmMissingFromProject, resolveMemberProjectRmCostRate } from 'app/core/utils/project-budget-form.util';
 import { isNearScrollEnd } from 'app/core/utils/scroll-pagination.util';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
@@ -138,6 +138,11 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
   }
 
   toggleMember(m: TeamMemberDto): void {
+    if (this.memberRmMissingFromProject(m)) {
+      const rmName = m.resourceManagerName?.trim() || 'their resource manager';
+      this.toastr.warning(`Assign ${rmName} to this project before assigning ${this.displayName(m)}.`);
+      return;
+    }
     this.membersById.set(m.id, m);
     if (this.selectedMemberIds.has(m.id)) {
       this.selectedMemberIds.delete(m.id);
@@ -151,26 +156,8 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
       this.toastr.warning('Select at least one team member.');
       return;
     }
-
-    const openStep2 = (): void => {
-      this.buildMemberDetailsStep2();
-      this.step = 2;
-    };
-
-    if (this.isHourlyTimesheetProject && this.projectId > 0) {
-      this.projectsService.getById(this.projectId).subscribe({
-        next: res => {
-          if (res.data) {
-            this.project = res.data;
-          }
-          openStep2();
-        },
-        error: () => openStep2(),
-      });
-      return;
-    }
-
-    openStep2();
+    this.buildMemberDetailsStep2();
+    this.step = 2;
   }
 
   private buildMemberDetailsStep2(): void {
@@ -193,6 +180,14 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
 
   backToStep1(): void {
     this.step = 1;
+  }
+
+  memberRmMissingFromProject(member: TeamMemberDto): boolean {
+    return memberRmMissingFromProject(this.project, member);
+  }
+
+  memberHasRm(member: TeamMemberDto): boolean {
+    return memberHasResourceManager(member);
   }
 
   memberRmCostRate(member: TeamMemberDto): number | null {
@@ -223,13 +218,22 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
         return false;
       }
       if (this.isHourlyTimesheetProject) {
+        if (this.memberRmMissingFromProject(d.member)) {
+          return false;
+        }
         if (this.memberRmOnProjectWithoutRate(d.member)) {
           return false;
         }
         if (this.memberUsesRmCostRate(d.member)) {
           return true;
         }
+        if (this.memberHasRm(d.member)) {
+          return false;
+        }
         return (Number(d.costRate) || 0) > 0;
+      }
+      if (this.memberRmMissingFromProject(d.member)) {
+        return false;
       }
       if (!this.isHourlyBudget) {
         return true;
@@ -242,10 +246,14 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
     if (!this.projectId || !this.canSubmit()) {
       this.toastr.warning(
         this.isHourlyTimesheetProject
-          ? this.memberDetails.some(d => this.memberRmOnProjectWithoutRate(d.member))
-            ? "Set the resource manager's project cost rate before assigning their team members."
-            : 'Set a role and cost rate for each member who is not covered by a resource manager.'
-          : this.isHourlyBudget
+          ? this.memberDetails.some(d => this.memberRmMissingFromProject(d.member))
+            ? 'Assign each member\'s resource manager to this project before assigning them.'
+            : this.memberDetails.some(d => this.memberRmOnProjectWithoutRate(d.member))
+              ? "Set the resource manager's project cost rate before assigning their team members."
+              : 'Set a role and cost rate for each member without a resource manager.'
+          : this.memberDetails.some(d => this.memberRmMissingFromProject(d.member))
+            ? 'Assign each member\'s resource manager to this project before assigning them.'
+            : this.isHourlyBudget
             ? 'Set role, hourly rate, and allocated hours for each member.'
             : 'Set a role for each member.'
       );
@@ -261,8 +269,7 @@ export class AdminAssignSkillModalComponent implements OnInit, OnDestroy {
         dto.skillId = this.skill.id;
       }
       if (this.isHourlyTimesheetProject) {
-        const rmRate = this.memberRmCostRate(d.member);
-        if (rmRate == null) {
+        if (!this.memberHasRm(d.member)) {
           dto.hourlyRate = Number(d.costRate);
         }
       }
