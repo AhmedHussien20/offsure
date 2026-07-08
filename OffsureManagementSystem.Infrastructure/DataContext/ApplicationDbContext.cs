@@ -603,6 +603,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .IsRequired();
 
                 entity.HasIndex(e => new { e.ProjectId, e.Order });
+
+                entity.HasQueryFilter(m => !m.IsDeleted && !m.Project.IsDeleted);
             });
 
             modelBuilder.Entity<ProjectResourceManager>(entity =>
@@ -628,6 +630,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.Property(e => e.IsActive)
                     .HasDefaultValue(true);
+
+                entity.HasQueryFilter(rm => rm.IsActive && !rm.IsDeleted && !rm.Project.IsDeleted);
             });
 
             modelBuilder.Entity<Timesheet>(entity =>
@@ -647,6 +651,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.HasIndex(e => new { e.ProjectId, e.TeamMemberId, e.WorkDate })
                     .IsUnique()
                     .HasFilter("[IsDeleted] = 0");
+
+                entity.HasQueryFilter(t => !t.IsDeleted && !t.Project.IsDeleted);
             });
 
             modelBuilder.Entity<TimesheetEntry>(entity =>
@@ -664,6 +670,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .WithMany(t => t.Entries)
                     .HasForeignKey(e => e.TimesheetId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(e => !e.IsDeleted && !e.Timesheet.Project.IsDeleted);
             });
 
             // PROJECT SKILL ENTITY CONFIGURATION
@@ -686,6 +694,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.HasIndex(e => new { e.ProjectId, e.SkillId })
                     .IsUnique();
+
+                entity.HasQueryFilter(ps => !ps.IsDeleted && !ps.Project.IsDeleted);
             });
 
             // PROJECT ASSIGNMENT ENTITY CONFIGURATION
@@ -722,7 +732,7 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 entity.HasIndex(e => new { e.ProjectId, e.TeamMemberId, e.SkillId, e.IsActive });
 
-                entity.HasQueryFilter(a => a.IsActive && !a.IsDeleted);
+                entity.HasQueryFilter(a => a.IsActive && !a.IsDeleted && !a.Project.IsDeleted);
             });
 
             // PORTFOLIO PROJECT ENTITY CONFIGURATION
@@ -794,6 +804,10 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
 
                 var clrType = entityType.ClrType;
                 if (!typeof(BaseEntity).IsAssignableFrom(clrType) || clrType.IsAbstract)
+                    continue;
+
+                // Keep explicit per-entity query filters intact.
+                if (entityType.GetQueryFilter() is not null)
                     continue;
 
                 typeof(ApplicationDbContext)
