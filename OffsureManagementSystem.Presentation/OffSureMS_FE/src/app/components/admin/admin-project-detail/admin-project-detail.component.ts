@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   ProjectAssignmentDto,
   ProjectDto,
@@ -39,6 +39,7 @@ import { AdminAssignSkillModalComponent } from './admin-assign-skill-modal.compo
 import { AdminProjectMilestonesComponent } from './admin-project-milestones.component';
 import { AdminHourlyProjectPanelComponent } from './admin-hourly-project-panel.component';
 import { AdminProjectSalesCardComponent } from './admin-project-sales-card.component';
+import { AdminProjectEditModalComponent } from './admin-project-edit-modal.component';
 import { ProjectTeamSummaryModalComponent } from 'app/shared/components/project-team-summary-modal/project-team-summary-modal.component';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
@@ -89,6 +90,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   resourceManagersList: ResourceManagerUserDto[] = [];
   selectedResourceManagerIds = new Set<number>();
   savingResourceManagers = false;
+  deletingProject = false;
   resourceManagersLoading = false;
   resourceManagersPageIndex = 1;
   resourceManagersHasMore = true;
@@ -119,6 +121,7 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private projectsService: ProjectsService,
     private serviceRequestsService: ServiceRequestsService,
     private skillsService: SkillsService,
@@ -337,6 +340,58 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     this.project = project;
     this.buildSkillSlots();
     this.patchDeliveryForm();
+  }
+
+  openEditProjectModal(): void {
+    if (!this.project) return;
+
+    const modalRef = this.modalService.open(AdminProjectEditModalComponent, {
+      centered: true,
+      size: 'lg',
+      backdrop: 'static',
+    });
+    modalRef.componentInstance.project = this.project;
+
+    modalRef.closed.subscribe((updated: ProjectDto | null) => {
+      if (updated) {
+        this.onProjectUpdated(updated);
+        if (updated.name) {
+          this.breadcrumbService.setDynamicLabel(updated.name);
+        }
+      }
+    });
+  }
+
+  async confirmDeleteProject(): Promise<void> {
+    if (!this.project || this.deletingProject) return;
+
+    const linkedRequestId = this.project.serviceRequestId;
+    const hasLinkedRequest = linkedRequestId != null && linkedRequestId > 0;
+    const requestTitle = this.project.serviceRequestTitle?.trim();
+    const linkedRequestNote = hasLinkedRequest
+      ? ` This project was created from service request "${requestTitle || 'linked request'}". Deleting will return that request to Accepted so it can be converted again.`
+      : '';
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete project',
+      message: `Delete "${this.project.name}"? ${linkedRequestNote}`,
+      confirmLabel: 'Delete project',
+      variant: 'danger',
+      icon: 'ti-trash',
+    });
+    if (!confirmed) return;
+
+    this.deletingProject = true;
+    this.projectsService.delete(this.project.id).subscribe({
+      next: () => {
+        this.toastr.success('Project deleted.');
+        this.deletingProject = false;
+        this.router.navigate(['/admin/projects']);
+      },
+      error: () => {
+        this.deletingProject = false;
+      },
+    });
   }
 
   lineCost(assignment: ProjectAssignmentDto): number {

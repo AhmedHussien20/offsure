@@ -69,6 +69,7 @@ export interface SalesProjectSummaryDto {
 export interface UpdateProjectDto {
   name: string;
   description?: string;
+  startDate?: string;
   targetEndDate?: string;
   budget?: number;
   budgetType?: ProjectBudgetType;

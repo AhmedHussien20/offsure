@@ -953,6 +953,48 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _serviceRequestRepo.SaveChangesAsync();
         }
 
+        public async Task DeleteProjectAsync(int projectId, int deletedByUserId)
+        {
+            var project = await _projectRepo.GetByIDAsync(projectId);
+            if (project is null || project.IsDeleted)
+                throw new AppException("Resource not found.", 404);
+
+            ServiceRequest? linkedRequest = null;
+            if (project.ServiceRequestId is int serviceRequestId && serviceRequestId > 0)
+            {
+                linkedRequest = await _serviceRequestRepo.GetByIDAsync(serviceRequestId);
+            }
+
+            project.IsDeleted = true;
+            project.DeletedAt = DateTime.UtcNow;
+            project.DeletedBy = deletedByUserId;
+            project.UpdatedAt = DateTime.UtcNow;
+            project.ServiceRequestId = null;
+
+            _projectRepo.SaveInclude(
+                project,
+                nameof(project.IsDeleted),
+                nameof(project.DeletedAt),
+                nameof(project.DeletedBy),
+                nameof(project.UpdatedAt),
+                nameof(project.ServiceRequestId));
+
+            if (linkedRequest is not null
+                && !linkedRequest.IsDeleted
+                && linkedRequest.Status == ServiceRequestStatus.AcceptedWithProject)
+            {
+                linkedRequest.Status = ServiceRequestStatus.PrimaryAccepted;
+                linkedRequest.UpdatedAt = DateTime.UtcNow;
+
+                _serviceRequestRepo.SaveInclude(
+                    linkedRequest,
+                    nameof(linkedRequest.Status),
+                    nameof(linkedRequest.UpdatedAt));
+            }
+
+            await _projectRepo.SaveChangesAsync();
+        }
+
         public async Task<ProjectDto> UpdateProjectAsync(int id, UpdateProjectDto dto)
         {
             ValidateUpdateProjectInput(dto);
@@ -970,6 +1012,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
             else if (dto.Description is not null)
             {
                 project.Description = ProjectDescriptionSkills.StripSkillsMarker(dto.Description);
+            }
+
+            if (dto.StartDate.HasValue)
+            {
+                project.StartDate = DateTime.SpecifyKind(dto.StartDate.Value.Date, DateTimeKind.Utc);
             }
 
             project.TargetEndDate = dto.TargetEndDate;
@@ -993,6 +1040,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 project,
                 nameof(project.Name),
                 nameof(project.Description),
+                nameof(project.StartDate),
                 nameof(project.TargetEndDate),
                 nameof(project.Budget),
                 nameof(project.BudgetType),

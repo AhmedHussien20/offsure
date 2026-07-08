@@ -74,6 +74,10 @@ export class ProjectsService {
       .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
   }
 
+  delete(id: number): Observable<BaseResponse<null>> {
+    return this.api.delete<BaseResponse<null>>(this.service, `${id}`);
+  }
+
   assignTeamMember(id: number, dto: AssignProjectTeamMemberDto): Observable<BaseResponse<ProjectDto>> {
     return this.api
       .post<BaseResponse<ProjectDto>>(this.service, `${id}/team-members`, dto)
