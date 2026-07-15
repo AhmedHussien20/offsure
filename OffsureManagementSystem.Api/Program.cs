@@ -76,7 +76,10 @@ namespace OffsureManagementSystem.API
                             "https://localhost:4200",
                             "http://localhost:5050",
                             "http://41.38.219.114:5050",
-                            "http://127.0.0.1:4200"
+                            "http://127.0.0.1:4200",
+                            "http://2.25.83.192",
+                            "https://2.25.83.192"
+
 
                             )
                           .AllowAnyHeader()
