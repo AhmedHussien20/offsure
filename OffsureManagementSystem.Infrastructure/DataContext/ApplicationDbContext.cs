@@ -46,7 +46,7 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                
+
                 entity.Property(e => e.Email)
                     .IsRequired()
                     .HasMaxLength(256);
@@ -96,6 +96,22 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                    .WithMany(r => r.Users)
                    .HasForeignKey(e => e.RoleId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+                var userSeededAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                entity.HasData(
+                    new User
+                    {
+                        Id = 1,
+                        Email = "rbasilious@offshoretechx.net",
+                        PasswordHash = "$2a$12$LxgpMTV/ZoaEqx.4S9T7yupxxQZq4SsJ.O6vlOxghnTK3M4gU9.I.",
+                        FirstName = "Admin",
+                        LastName = "Admin",
+                        RoleId = 1,
+                        IsEmailVerified = true,
+                        IsActive = true,
+                        CreatedAt = userSeededAt,
+                        IsDeleted = false
+                    }); 
             });
 
 

@@ -78,7 +78,8 @@ namespace OffsureManagementSystem.API
                             "http://41.38.219.114:5050",
                             "http://127.0.0.1:4200",
                             "http://2.25.83.192",
-                            "https://2.25.83.192"
+                            "https://2.25.83.192",
+                            "https://www.offshoretechx.net"
 
 
                             )

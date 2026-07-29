@@ -1237,6 +1237,21 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "rbasilious@offshoretechx.net",
+                            FirstName = "Admin",
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsEmailVerified = true,
+                            LastName = "Admin",
+                            PasswordHash = "$2a$12$LxgpMTV/ZoaEqx.4S9T7yupxxQZq4SsJ.O6vlOxghnTK3M4gU9.I.",
+                            RoleId = 1
+                        });
                 });
 
             modelBuilder.Entity("OffsureManagementSystem.Domain.Entities.Role", b =>
