@@ -6,6 +6,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
     public interface IPortfolioManagementService
     {
         Task<PagedResponse<PortfolioDto>> GetAllPortfoliosAsync(PortfolioFilterRequest request);
+        Task<List<PortfolioServiceSummaryDto>> GetServiceProjectSummaryAsync();
         Task<PortfolioDto> GetPortfolioByIdAsync(int id, bool includeUnpublished = false);
         Task<PortfolioDto> AddPortfolioAsync(AddPortfolioDto dto);
         Task<PortfolioDto> UpdatePortfolioAsync(int id, UpdatePortfolioDto dto);

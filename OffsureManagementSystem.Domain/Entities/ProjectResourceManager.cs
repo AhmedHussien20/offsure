@@ -8,6 +8,8 @@ namespace OffshoreManagementSystem.Domain.Entities
         public int ResourceManagerUserId { get; set; }
         /// <summary>Cost rate for this RM's team on this hourly project (per hour).</summary>
         public decimal? HourlyCostRate { get; set; }
+        /// <summary>Fixed cost allocation for this RM on a fixed-budget project.</summary>
+        public decimal? FixedCostAmount { get; set; }
 
         public bool IsActive { get; set; } = true;
 

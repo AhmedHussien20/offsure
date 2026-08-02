@@ -73,4 +73,13 @@ namespace OffsureManagementSystem.Application.DTOs.PortfolioManagementDTOs
     {
         public bool IsActive { get; set; }
     }
+
+    /// <summary>Published portfolio project counts grouped by service (services with at least one project).</summary>
+    public class PortfolioServiceSummaryDto
+    {
+        public int ServiceId { get; set; }
+        public string ServiceName { get; set; } = string.Empty;
+        public string ServiceCategoryName { get; set; } = string.Empty;
+        public int ProjectCount { get; set; }
+    }
 }

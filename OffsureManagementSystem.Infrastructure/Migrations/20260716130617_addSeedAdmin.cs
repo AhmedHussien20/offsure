@@ -11,19 +11,35 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "CreatedAt", "CreatedBy", "DeletedAt", "DeletedBy", "Email", "EmailVerificationExpiry", "EmailVerificationToken", "FirstName", "IsActive", "IsDeleted", "IsEmailVerified", "LastLoginAt", "LastName", "PasswordHash", "PasswordResetToken", "PasswordResetTokenExpiry", "RefreshToken", "RefreshTokenExpiry", "RoleId", "UpdatedAt", "UpdatedBy" },
-                values: new object[] { 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "admin@admin.com", null, null, "Admin", true, false, true, null, "Admin", "$2a$12$LxgpMTV/ZoaEqx.4S9T7yupxxQZq4SsJ.O6vlOxghnTK3M4gU9.I.", null, null, null, null, 1, null, null });
+            // Idempotent: DB may already have user Id=1 from manual seed or a partial prior apply.
+            migrationBuilder.Sql("""
+                IF NOT EXISTS (SELECT 1 FROM [Users] WHERE [Id] = 1)
+                BEGIN
+                    SET IDENTITY_INSERT [Users] ON;
+                    INSERT INTO [Users] (
+                        [Id], [CreatedAt], [CreatedBy], [DeletedAt], [DeletedBy], [Email],
+                        [EmailVerificationExpiry], [EmailVerificationToken], [FirstName], [IsActive],
+                        [IsDeleted], [IsEmailVerified], [LastLoginAt], [LastName], [PasswordHash],
+                        [PasswordResetToken], [PasswordResetTokenExpiry], [RefreshToken],
+                        [RefreshTokenExpiry], [RoleId], [UpdatedAt], [UpdatedBy])
+                    VALUES (
+                        1, '2026-01-01T00:00:00.0000000Z', NULL, NULL, NULL, N'admin@admin.com',
+                        NULL, NULL, N'Admin', CAST(1 AS bit),
+                        CAST(0 AS bit), CAST(1 AS bit), NULL, N'Admin',
+                        N'$2a$12$LxgpMTV/ZoaEqx.4S9T7yupxxQZq4SsJ.O6vlOxghnTK3M4gU9.I.',
+                        NULL, NULL, NULL, NULL, 1, NULL, NULL);
+                    SET IDENTITY_INSERT [Users] OFF;
+                END
+                """);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DeleteData(
-                table: "Users",
-                keyColumn: "Id",
-                keyValue: 1);
+            migrationBuilder.Sql("""
+                DELETE FROM [Users]
+                WHERE [Id] = 1 AND [Email] IN (N'admin@admin.com', N'rbasilious@offshoretechx.net');
+                """);
         }
     }
 }

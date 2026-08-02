@@ -412,6 +412,147 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.ToTable("ProjectAssignments");
                 });
 
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectInvoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BillingMonth")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BillingYear")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("InvoiceFileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("InvoiceFileUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MilestoneId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PurchaseOrderFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("PurchaseOrderFileUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MilestoneId")
+                        .IsUnique()
+                        .HasFilter("[MilestoneId] IS NOT NULL AND [IsDeleted] = 0");
+
+                    b.HasIndex("ProjectId")
+                        .IsUnique()
+                        .HasFilter("[MilestoneId] IS NULL AND [BillingYear] IS NULL AND [BillingMonth] IS NULL AND [IsDeleted] = 0");
+
+                    b.HasIndex("ProjectId", "BillingYear", "BillingMonth")
+                        .IsUnique()
+                        .HasFilter("[BillingYear] IS NOT NULL AND [BillingMonth] IS NOT NULL AND [IsDeleted] = 0");
+
+                    b.ToTable("ProjectInvoices");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectInvoiceDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProjectInvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectInvoiceId", "DisplayOrder");
+
+                    b.ToTable("ProjectInvoiceDocuments");
+                });
+
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectMilestone", b =>
                 {
                     b.Property<int>("Id")
@@ -501,6 +642,10 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     b.Property<int?>("DeletedBy")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("FixedCostAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("HourlyCostRate")
                         .HasPrecision(18, 2)
@@ -1554,6 +1699,35 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Navigation("TeamMember");
                 });
 
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectInvoice", b =>
+                {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.ProjectMilestone", "Milestone")
+                        .WithMany()
+                        .HasForeignKey("MilestoneId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectInvoices")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Milestone");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectInvoiceDocument", b =>
+                {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.ProjectInvoice", "ProjectInvoice")
+                        .WithMany("Documents")
+                        .HasForeignKey("ProjectInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectInvoice");
+                });
+
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectMilestone", b =>
                 {
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.Project", "Project")
@@ -1765,11 +1939,18 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                 {
                     b.Navigation("ProjectAssignments");
 
+                    b.Navigation("ProjectInvoices");
+
                     b.Navigation("ProjectMilestones");
 
                     b.Navigation("ProjectResourceManagers");
 
                     b.Navigation("ProjectSkills");
+                });
+
+            modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.ProjectInvoice", b =>
+                {
+                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Service", b =>

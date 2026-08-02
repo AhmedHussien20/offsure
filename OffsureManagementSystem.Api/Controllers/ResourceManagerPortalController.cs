@@ -204,6 +204,18 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ProjectDto>.Ok(project, "Cost rate saved successfully."));
         }
 
+        [HttpPatch("projects/{id:int}/fixed-cost-amount")]
+        public async Task<ActionResult<ApiResponse<ProjectDto>>> UpdateFixedCostAmount(
+            int id,
+            UpdateProjectRmFixedCostAmountDto dto)
+        {
+            var project = await _projectManagementService.UpdateProjectFixedCostAmountForResourceManagerAsync(
+                GetCurrentUserId(),
+                id,
+                dto);
+            return Ok(ApiResponse<ProjectDto>.Ok(project, "Fixed cost saved successfully."));
+        }
+
         private int GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

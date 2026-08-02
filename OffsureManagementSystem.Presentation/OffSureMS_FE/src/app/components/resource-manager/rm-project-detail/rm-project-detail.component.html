@@ -14,6 +14,22 @@
       </span>
       <span class="project-detail-stat__hint">Target end date</span>
     </div>
+    @if (isHourlyBudget || isFixedBudget) {
+      <button
+        type="button"
+        class="project-detail-stat project-detail-stat--action project-detail-stat--cost"
+        [class.project-detail-stat--warning]="!hasCostDetermined"
+        (click)="openCostModal()">
+        <span class="project-detail-stat__label">{{ costCardLabel }}</span>
+        <span class="project-detail-stat__value">{{ costCardValue }}</span>
+        <span
+          class="project-detail-stat__hint"
+          [class.project-detail-stat__hint--action]="hasCostDetermined">
+          {{ costCardHint }}
+        </span>
+        <i class="fe fe-arrow-right project-detail-stat__arrow" aria-hidden="true"></i>
+      </button>
+    }
     @if (usesMilestones) {
       <div class="project-detail-stat project-detail-stat--milestones">
         <span class="project-detail-stat__label">Phases complete</span>
@@ -151,57 +167,10 @@
       </div>
     </div>
     <div class="card-body pt-0">
-      @if (isHourlyBudget) {
-        <section class="staffing-section">
-          <header class="staffing-section__head">
-            <span class="staffing-section__step">!</span>
-            <div>
-              <h6 class="staffing-section__title mb-0">Your cost rate</h6>
-              <p class="staffing-section__hint mb-0">Set what your team costs per hour on this project before assigning members.</p>
-            </div>
-          </header>
-          @if (!hasHourlyCostRate && !isDeliveryLocked) {
-            <div class="project-detail-alert-box mb-3">
-              Enter your cost rate to unlock team assignment.
-            </div>
-          }
-          @if (hasHourlyCostRate || isDeliveryLocked) {
-            <p class="mb-0 small text-muted">
-              Your cost rate:
-              @if (hasHourlyCostRate) {
-                <strong>${{ project.myHourlyCostRate | number: '1.2-2' }}/hr</strong>
-              } @else {
-                <strong>Not set</strong>
-              }
-            </p>
-          } @else {
-            <div class="d-flex flex-wrap align-items-center gap-2">
-              <div class="input-group input-group-sm" style="max-width: 220px">
-                <span class="input-group-text">$</span>
-                <input
-                  type="number"
-                  class="form-control"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="Cost / hr"
-                  [(ngModel)]="hourlyCostRateInput"
-                  [ngModelOptions]="{ standalone: true }" />
-                <span class="input-group-text">/hr</span>
-              </div>
-              <button
-                type="button"
-                class="btn btn-sm btn-primary"
-                [disabled]="savingHourlyCostRate"
-                (click)="saveHourlyCostRate()">
-                @if (savingHourlyCostRate) {
-                  <i class="fe fe-loader me-1"></i> Saving…
-                } @else {
-                  Save cost rate
-                }
-              </button>
-            </div>
-          }
-        </section>
+      @if ((isHourlyBudget || isFixedBudget) && !hasCostDetermined && !isDeliveryLocked) {
+        <div class="project-detail-alert-box mb-3">
+          Set your cost from the top card to unlock team assignment.
+        </div>
       }
 
       <section class="staffing-section">
@@ -514,3 +483,108 @@
     </div>
   </div>
 }
+
+<ng-template #costModal let-modal>
+  <div class="modal-header border-0 pb-0">
+    <div>
+      <h5 class="modal-title mb-1">{{ costCardLabel }}</h5>
+      <p class="text-muted small mb-0">
+        @if (isHourlyBudget) {
+          Set what your team costs per hour on this project.
+        } @else {
+          Set your fixed cost allocation for this project.
+        }
+      </p>
+    </div>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    @if (!hasCostDetermined && !isDeliveryLocked) {
+      <div class="alert alert-warning py-2 small mb-3">
+        Cost is not determined yet. Set it to unlock team assignment.
+      </div>
+    }
+
+    @if (isHourlyBudget) {
+      @if (hasHourlyCostRate || isDeliveryLocked) {
+        <p class="mb-3">
+          Current rate:
+          @if (hasHourlyCostRate) {
+            <strong>${{ project?.myHourlyCostRate | number: '1.2-2' }}/hr</strong>
+          } @else {
+            <strong>Not set</strong>
+          }
+        </p>
+      }
+      @if (!isDeliveryLocked) {
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <div class="input-group" style="max-width: 260px">
+            <span class="input-group-text">$</span>
+            <input
+              type="number"
+              class="form-control"
+              min="0.01"
+              step="0.01"
+              placeholder="Cost / hr"
+              [(ngModel)]="hourlyCostRateInput"
+              [ngModelOptions]="{ standalone: true }" />
+            <span class="input-group-text">/hr</span>
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="savingHourlyCostRate"
+            (click)="saveHourlyCostRate()">
+            @if (savingHourlyCostRate) {
+              Saving…
+            } @else {
+              Save
+            }
+          </button>
+        </div>
+      }
+    }
+
+    @if (isFixedBudget) {
+      @if (hasFixedCostAmount || isDeliveryLocked) {
+        <p class="mb-3">
+          Current fixed cost:
+          @if (hasFixedCostAmount) {
+            <strong>${{ project?.myFixedCostAmount | number: '1.2-2' }}</strong>
+          } @else {
+            <strong>Not set</strong>
+          }
+        </p>
+      }
+      @if (!isDeliveryLocked) {
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <div class="input-group" style="max-width: 260px">
+            <span class="input-group-text">$</span>
+            <input
+              type="number"
+              class="form-control"
+              min="0.01"
+              step="0.01"
+              placeholder="Fixed cost"
+              [(ngModel)]="fixedCostAmountInput"
+              [ngModelOptions]="{ standalone: true }" />
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="savingFixedCostAmount"
+            (click)="saveFixedCostAmount()">
+            @if (savingFixedCostAmount) {
+              Saving…
+            } @else {
+              Save
+            }
+          </button>
+        </div>
+      }
+    }
+  </div>
+  <div class="modal-footer border-0 pt-0">
+    <button type="button" class="btn btn-light" (click)="modal.dismiss()">Close</button>
+  </div>
+</ng-template>

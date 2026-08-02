@@ -43,6 +43,19 @@ export interface ServiceCategoryDto {
   servicesCount: number;
 }
 
+export interface ServiceCatalogItemDto {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export interface ServiceCatalogCategoryDto {
+  id: number;
+  name: string;
+  description: string;
+  services: ServiceCatalogItemDto[];
+}
+
 // --- Service ---
 
 export interface ServiceFilterRequest {

@@ -10,6 +10,7 @@ import {
   UpdateProjectDeliveryDto,
   UpdateProjectMilestoneStatusDto,
   UpdateProjectRequiredSkillsDto,
+  UpdateProjectRmFixedCostAmountDto,
   UpdateProjectRmHourlyCostRateDto,
   UpdateProjectStaffingModeDto,
 } from '../models/projects/project.models';
@@ -112,6 +113,13 @@ export class ResourceManagerPortalService {
     dto: UpdateProjectRmHourlyCostRateDto
   ): Observable<BaseResponse<ProjectDto>> {
     return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/hourly-cost-rate`, dto);
+  }
+
+  updateFixedCostAmount(
+    projectId: number,
+    dto: UpdateProjectRmFixedCostAmountDto
+  ): Observable<BaseResponse<ProjectDto>> {
+    return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/fixed-cost-amount`, dto);
   }
 
   resetTeamMemberPassword(id: number, dto: { newPassword: string }): Observable<BaseResponse<object>> {

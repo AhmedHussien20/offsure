@@ -1,0 +1,235 @@
+@if (embedded) {
+  <div class="project-payment project-payment--embedded">
+    <p class="text-muted small mb-3">{{ modeHint }}</p>
+    <ng-container *ngTemplateOutlet="paymentBody"></ng-container>
+  </div>
+} @else {
+  <div class="card custom-card project-payment mb-3">
+    <div class="card-header border-bottom-0">
+      <h5 class="mb-1">Payment Documentary</h5>
+      <p class="text-muted small mb-0">{{ modeHint }}</p>
+    </div>
+    <div class="card-body pt-0">
+      <ng-container *ngTemplateOutlet="paymentBody"></ng-container>
+    </div>
+  </div>
+}
+
+<ng-template #paymentBody>
+  @if (loading) {
+    <p class="text-muted small mb-0">Loading payment records…</p>
+  } @else {
+    @if (editable && mode === 'monthly') {
+      <div class="project-payment__month-add d-flex flex-wrap align-items-end gap-2 mb-3">
+        <div class="project-payment__year-field">
+          <label class="form-label small mb-1" for="pay-year">Year</label>
+          <input id="pay-year" type="number" class="form-control form-control-sm" [(ngModel)]="monthlyYear" min="2000" max="2100" />
+        </div>
+        <div class="project-payment__month-field">
+          <label class="form-label small mb-1" for="pay-month">Month</label>
+          <select id="pay-month" class="form-select form-select-sm project-payment__month-select" [(ngModel)]="monthlyMonth">
+            @for (m of monthOptions; track m.value) {
+              <option [ngValue]="m.value">{{ m.label }}</option>
+            }
+          </select>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="addMonthlyRow()">Add month</button>
+      </div>
+    }
+
+    @if (rows.length === 0) {
+      <p class="text-muted small mb-0">
+        @if (editable && mode === 'monthly') {
+          Add a billing month to upload invoice documentation.
+        } @else if (editable && mode === 'milestone') {
+          No payment phases are configured yet.
+        } @else {
+          No payment documents have been uploaded yet.
+        }
+      </p>
+    } @else {
+      <div class="project-payment__list">
+        @for (row of rows; track row.key) {
+          <div class="project-payment__row">
+            <div class="project-payment__meta">
+              <div class="project-payment__meta-top">
+                <div class="project-payment__title">{{ row.label }}</div>
+                @if (editable) {
+                  <div class="project-payment__menu" ngbDropdown container="body" display="dynamic">
+                    <button
+                      type="button"
+                      class="project-payment__menu-btn"
+                      ngbDropdownToggle
+                      [disabled]="savingKey === row.key"
+                      aria-label="Payment actions">
+                      <i class="fe fe-more-vertical" aria-hidden="true"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow project-payment__menu-panel" ngbDropdownMenu>
+                      <label class="dropdown-item mb-0 project-payment__menu-file">
+                        <i class="fe fe-plus-circle me-2" aria-hidden="true"></i>
+                        Add invoice docs
+                        <input
+                          type="file"
+                          class="d-none"
+                          multiple
+                          accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                          (change)="onInvoiceSelected(row.key, $event)" />
+                      </label>
+                      <label class="dropdown-item mb-0 project-payment__menu-file">
+                        <i class="fe fe-clipboard me-2" aria-hidden="true"></i>
+                        {{ row.invoice?.purchaseOrderFileUrl ? 'Replace purchase order' : 'Add purchase order' }}
+                        <input
+                          type="file"
+                          class="d-none"
+                          accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                          (change)="onPoSelected(row.key, $event)" />
+                      </label>
+                      @if (row.invoice && row.invoice.paymentStatus !== 'Completed') {
+                        <button
+                          type="button"
+                          class="dropdown-item"
+                          ngbDropdownItem
+                          (click)="markCompleted(row)">
+                          <i class="fe fe-check-circle me-2" aria-hidden="true"></i>
+                          Mark completed
+                        </button>
+                      }
+                      @if (row.invoice) {
+                        <div class="dropdown-divider"></div>
+                        <button
+                          type="button"
+                          class="dropdown-item text-danger"
+                          ngbDropdownItem
+                          (click)="deleteInvoice(row)">
+                          <i class="fe fe-trash-2 me-2" aria-hidden="true"></i>
+                          Delete payment record
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+              @if (row.subLabel) {
+                <div class="project-payment__sub">{{ row.subLabel }}</div>
+              }
+              @if (row.invoice) {
+                <span class="badge" [ngClass]="statusClass(row.invoice.paymentStatus)">
+                  {{ row.invoice.paymentStatus }}
+                </span>
+              } @else {
+                <span class="badge bg-light text-muted">No invoice</span>
+              }
+              @if (row.invoice?.amount != null) {
+                <span class="project-payment__amount ms-2">${{ row.invoice?.amount | number: '1.2-2' }}</span>
+              }
+            </div>
+
+            <div class="project-payment__file-groups">
+              <div class="project-payment__file-group project-payment__file-group--invoice">
+                <div class="project-payment__file-group-label">
+                  <span>
+                    <i class="fe fe-file-text" aria-hidden="true"></i>
+                    Invoice documentation
+                  </span>
+                  @if (editable && hasRemovableDocuments(row.invoice)) {
+                    <div class="project-payment__menu" ngbDropdown container="body" display="dynamic">
+                      <button
+                        type="button"
+                        class="project-payment__menu-btn"
+                        ngbDropdownToggle
+                        [disabled]="savingKey === row.key"
+                        aria-label="Invoice document actions">
+                        <i class="fe fe-more-vertical" aria-hidden="true"></i>
+                      </button>
+                      <div class="dropdown-menu dropdown-menu-end shadow project-payment__menu-panel" ngbDropdownMenu>
+                        <h6 class="dropdown-header">Remove invoice doc</h6>
+                        @for (doc of invoiceDocuments(row.invoice); track doc.id || doc.fileUrl) {
+                          @if (doc.id) {
+                            <button
+                              type="button"
+                              class="dropdown-item text-danger"
+                              ngbDropdownItem
+                              (click)="deleteDocument(row, doc)">
+                              <i class="fe fe-trash-2 me-2" aria-hidden="true"></i>
+                              {{ doc.fileName || 'Document' }}
+                            </button>
+                          }
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+                @if (invoiceDocuments(row.invoice).length) {
+                  <ul class="project-payment__file-list">
+                    @for (doc of invoiceDocuments(row.invoice); track doc.id || doc.fileUrl) {
+                      <li class="project-payment__file-item">
+                        <a class="project-payment__link" [href]="fileUrl(doc.fileUrl)" target="_blank" rel="noopener">
+                          {{ doc.fileName || 'Invoice document' }}
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                } @else if (!editable) {
+                  <span class="text-muted small">Not uploaded</span>
+                } @else {
+                  <span class="text-muted small">No invoice documents yet</span>
+                }
+              </div>
+
+              <div class="project-payment__file-group project-payment__file-group--po">
+                <div class="project-payment__file-group-label">
+                  <i class="fe fe-clipboard" aria-hidden="true"></i>
+                  Purchase order (PO)
+                </div>
+                @if (row.invoice?.purchaseOrderFileUrl) {
+                  <a
+                    class="project-payment__link project-payment__link--po"
+                    [href]="fileUrl(row.invoice?.purchaseOrderFileUrl)"
+                    target="_blank"
+                    rel="noopener">
+                    {{ row.invoice?.purchaseOrderFileName || 'Purchase order' }}
+                  </a>
+                } @else if (!editable) {
+                  <span class="text-muted small">Not uploaded</span>
+                } @else {
+                  <span class="text-muted small">No PO yet</span>
+                }
+              </div>
+            </div>
+
+            @if (editable && (selectedInvoiceLabel(row.key) || selectedPoName(row.key) || canSaveRow(row.key))) {
+              <div class="project-payment__pending">
+                @if (selectedInvoiceLabel(row.key) || selectedPoName(row.key)) {
+                  <span class="small text-muted text-truncate">
+                    @if (selectedInvoiceLabel(row.key)) {
+                      Invoice: {{ selectedInvoiceLabel(row.key) }}
+                    }
+                    @if (selectedInvoiceLabel(row.key) && selectedPoName(row.key)) {
+                      ·
+                    }
+                    @if (selectedPoName(row.key)) {
+                      PO: {{ selectedPoName(row.key) }}
+                    }
+                  </span>
+                }
+                @if (canSaveRow(row.key)) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-primary"
+                    [disabled]="savingKey === row.key"
+                    (click)="saveRow(row)">
+                    @if (savingKey === row.key) {
+                      Saving…
+                    } @else {
+                      Save
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</ng-template>

@@ -16,7 +16,11 @@ import { TimesheetsService } from 'app/core/services/timesheets.service';
 import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
-import { exportTimesheetReport, TimesheetExportFormat } from 'app/core/utils/timesheet-report-export.util';
+import {
+  exportTimesheetReport,
+  TimesheetExportContentMode,
+  TimesheetExportFormat,
+} from 'app/core/utils/timesheet-report-export.util';
 import {
   buildResourceSummariesFromReport,
   sumResourceLineCost,
@@ -54,6 +58,7 @@ export class AdminTimesheetReportComponent implements OnInit {
   expandedResourceIds = new Set<number>();
   exportDialogOpen = false;
   pendingExportFormat: TimesheetExportFormat | null = null;
+  exportContentMode: TimesheetExportContentMode = 'hoursOnly';
   portal: TimesheetPortal = 'admin';
 
   readonly resourcePreviewCount = 3;
@@ -291,11 +296,12 @@ export class AdminTimesheetReportComponent implements OnInit {
     }
 
     if (this.isTeamPortal) {
-      void this.runExport(format, true);
+      void this.runExport(format, true, 'hoursOnly');
       return;
     }
 
     this.pendingExportFormat = format;
+    this.exportContentMode = 'hoursOnly';
     this.exportDialogOpen = true;
   }
 
@@ -304,8 +310,13 @@ export class AdminTimesheetReportComponent implements OnInit {
     this.pendingExportFormat = null;
   }
 
+  selectExportContentMode(mode: TimesheetExportContentMode): void {
+    this.exportContentMode = mode;
+  }
+
   confirmExport(includeTimeEntries: boolean): void {
     const format = this.pendingExportFormat;
+    const contentMode = this.exportContentMode;
     this.closeExportDialog();
     if (!format) return;
 
@@ -319,18 +330,24 @@ export class AdminTimesheetReportComponent implements OnInit {
       return;
     }
 
-    void this.runExport(format, includeTimeEntries);
+    void this.runExport(format, includeTimeEntries, contentMode);
   }
 
-  private runExport(format: TimesheetExportFormat, includeTimeEntries: boolean): void {
+  private runExport(
+    format: TimesheetExportFormat,
+    includeTimeEntries: boolean,
+    contentMode: TimesheetExportContentMode
+  ): void {
     if (!this.report) return;
 
     void exportTimesheetReport(format, this.report, this.isTeamPortal ? null : this.overview, {
+      contentMode,
       hideRevenue: this.isTeamPortal || this.isRmPortal,
       includeTimeEntries,
       includeTimeColumn: this.isTeamPortal,
       resources: this.filteredResources,
-      estimatedCost: this.isTeamPortal ? undefined : this.estimatedCost,
+      estimatedCost:
+        this.isTeamPortal || contentMode === 'hoursOnly' ? undefined : this.estimatedCost,
     })
       .then(() => {
         this.toastr.success(format === 'excel' ? 'Excel file downloaded.' : 'PDF file downloaded.');

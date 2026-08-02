@@ -13,6 +13,7 @@ internal static class LocalStorageBootstrap
     public const string TeamPhotoRootKey = "Storage:TeamPhotoRoot";
     public const string TeamIntroVideoRootKey = "Storage:TeamIntroVideoRoot";
     public const string PortfolioImageRootKey = "Storage:PortfolioImageRoot";
+    public const string ProjectInvoiceRootKey = "Storage:ProjectInvoiceRoot";
 
     public static void Configure(WebApplicationBuilder builder)
     {
@@ -21,11 +22,13 @@ internal static class LocalStorageBootstrap
         var photoRoot = Path.Combine(storageRoot, "team-photos");
         var introVideoRoot = Path.Combine(storageRoot, "team-videos");
         var portfolioRoot = Path.Combine(storageRoot, "portfolio-images");
+        var invoiceRoot = Path.Combine(storageRoot, "project-invoices");
 
         Directory.CreateDirectory(cvRoot);
         Directory.CreateDirectory(photoRoot);
         Directory.CreateDirectory(introVideoRoot);
         Directory.CreateDirectory(portfolioRoot);
+        Directory.CreateDirectory(invoiceRoot);
 
         var overrides = new Dictionary<string, string?>();
         if (string.IsNullOrWhiteSpace(builder.Configuration[StorageRootKey]))
@@ -38,6 +41,8 @@ internal static class LocalStorageBootstrap
             overrides[TeamIntroVideoRootKey] = introVideoRoot;
         if (string.IsNullOrWhiteSpace(builder.Configuration[PortfolioImageRootKey]))
             overrides[PortfolioImageRootKey] = portfolioRoot;
+        if (string.IsNullOrWhiteSpace(builder.Configuration[ProjectInvoiceRootKey]))
+            overrides[ProjectInvoiceRootKey] = invoiceRoot;
 
         if (overrides.Count > 0)
             builder.Configuration.AddInMemoryCollection(overrides);
@@ -49,6 +54,7 @@ internal static class LocalStorageBootstrap
         MapStaticFolder(app, TeamPhotoRootKey, "/storage/team-photos");
         MapStaticFolder(app, TeamIntroVideoRootKey, "/storage/team-videos");
         MapStaticFolder(app, PortfolioImageRootKey, "/portfolio-images");
+        MapStaticFolder(app, ProjectInvoiceRootKey, "/storage/project-invoices");
     }
 
     private static void MapStaticFolder(WebApplication app, string configKey, string requestPath)

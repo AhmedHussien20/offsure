@@ -38,5 +38,6 @@ namespace OffshoreManagementSystem.Domain.Entities
         public virtual ICollection<ProjectSkill> ProjectSkills { get; set; } = new List<ProjectSkill>();
         public virtual ICollection<ProjectResourceManager> ProjectResourceManagers { get; set; } = new List<ProjectResourceManager>();
         public virtual ICollection<ProjectMilestone> ProjectMilestones { get; set; } = new List<ProjectMilestone>();
+        public virtual ICollection<ProjectInvoice> ProjectInvoices { get; set; } = new List<ProjectInvoice>();
     }
 }

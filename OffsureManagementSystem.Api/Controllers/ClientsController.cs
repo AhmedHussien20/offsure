@@ -102,6 +102,24 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ClientTeamMemberDetailDto>.Ok(member));
         }
 
+        [HttpGet("showcase/team-members")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ClientTeamMemberCardDto>>>> BrowseShowcaseTeamMembers(
+            [FromQuery] ClientTeamMemberBrowseRequest request)
+        {
+            var members = await _clientTeamBrowseService.BrowseShowcaseTeamMembersAsync(request);
+            return Ok(ApiResponse<PagedResponse<ClientTeamMemberCardDto>>.Ok(members));
+        }
+
+        [HttpGet("showcase/team-members/{teamMemberId:int}")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<ClientTeamMemberDetailDto>>> GetShowcaseTeamMemberDetail(
+            int teamMemberId)
+        {
+            var member = await _clientTeamBrowseService.GetShowcaseTeamMemberDetailAsync(teamMemberId);
+            return Ok(ApiResponse<ClientTeamMemberDetailDto>.Ok(member));
+        }
+
         [HttpPatch("{id:int}/deactivate")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ClientDto>>> DeactivateClient(int id)

@@ -7,8 +7,11 @@ import {
 import { sumResourceLineCost } from './timesheet-report.util';
 
 export type TimesheetExportFormat = 'excel' | 'pdf';
+/** A = hours only; B = gross hourly rate + gross total cost */
+export type TimesheetExportContentMode = 'hoursOnly' | 'withGrossCost';
 
 export interface TimesheetExportOptions {
+  contentMode?: TimesheetExportContentMode;
   hideRevenue?: boolean;
   includeTimeEntries?: boolean;
   includeTimeColumn?: boolean;
@@ -48,8 +51,9 @@ function formatHours(value: number): string {
   return `${value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h`;
 }
 
-function buildBaseFileName(report: TimesheetReportDto): string {
-  return safeFileName(`${report.projectName}-${report.rangeStart}-${report.rangeEnd}`);
+function buildBaseFileName(report: TimesheetReportDto, contentMode: TimesheetExportContentMode): string {
+  const suffix = contentMode === 'hoursOnly' ? 'hours' : 'gross-cost';
+  return safeFileName(`${report.projectName}-${report.rangeStart}-${report.rangeEnd}-${suffix}`);
 }
 
 function downloadBlob(blob: Blob, fileName: string): void {
@@ -61,8 +65,20 @@ function downloadBlob(blob: Blob, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
-function resourceRows(resources: HourlyProjectResourceSummaryDto[]): (string | number)[][] {
+function resourceHeaders(contentMode: TimesheetExportContentMode): string[] {
+  return contentMode === 'hoursOnly'
+    ? ['Resource', 'Role', 'Hours logged']
+    : ['Resource', 'Role', 'Gross hourly rate', 'Hours logged', 'Gross total cost'];
+}
+
+function resourceRows(
+  resources: HourlyProjectResourceSummaryDto[],
+  contentMode: TimesheetExportContentMode
+): (string | number)[][] {
   return resources.map(r => {
+    if (contentMode === 'hoursOnly') {
+      return [r.teamMemberName, r.role, formatHours(r.totalHours)];
+    }
     const lineCost = r.costRate != null ? r.totalHours * r.costRate : null;
     return [
       r.teamMemberName,
@@ -104,22 +120,31 @@ function summaryItems(
   report: TimesheetReportDto,
   overview: HourlyProjectOverviewDto | null | undefined,
   estimatedCost: number | undefined,
-  hideRevenue: boolean
+  hideRevenue: boolean,
+  contentMode: TimesheetExportContentMode
 ): [string, string][] {
   const items: [string, string][] = [
     ['Project', report.projectName],
     ['Period', `${formatDateLabel(report.rangeStart)} – ${formatDateLabel(report.rangeEnd)}`],
+    [
+      'Export type',
+      contentMode === 'hoursOnly' ? 'Hours only' : 'Gross hourly rate & total cost',
+    ],
     ['Total hours', formatHours(report.totalHours)],
   ];
-  if (!hideRevenue && report.estimatedRevenue != null) {
-    items.push(['Est. revenue', formatCurrency(report.estimatedRevenue)]);
+
+  if (contentMode === 'withGrossCost') {
+    if (!hideRevenue && report.estimatedRevenue != null) {
+      items.push(['Est. revenue', formatCurrency(report.estimatedRevenue)]);
+    }
+    if (estimatedCost != null) {
+      items.push(['Gross total cost', formatCurrency(estimatedCost)]);
+    }
+    if (!hideRevenue && overview?.hourlyRate != null && overview.hourlyRate > 0) {
+      items.push(['Billing rate', `${formatCurrency(overview.hourlyRate)}/hr`]);
+    }
   }
-  if (estimatedCost != null) {
-    items.push([hideRevenue ? 'Team est. cost' : 'Est. cost', formatCurrency(estimatedCost)]);
-  }
-  if (!hideRevenue && overview?.hourlyRate != null && overview.hourlyRate > 0) {
-    items.push(['Billing rate', `${formatCurrency(overview.hourlyRate)}/hr`]);
-  }
+
   items.push(['Generated', new Date().toLocaleString()]);
   return items;
 }
@@ -133,17 +158,39 @@ export async function exportTimesheetReport(
   const resources = options.resources ?? [];
   const includeTimeEntries = options.includeTimeEntries ?? true;
   const includeTimeColumn = options.includeTimeColumn ?? false;
-  const estimatedCost = options.estimatedCost ?? sumResourceLineCost(resources);
-  const hideRevenue = options.hideRevenue ?? false;
+  const contentMode: TimesheetExportContentMode = options.contentMode ?? 'withGrossCost';
+  const hideRevenue = contentMode === 'hoursOnly' ? true : (options.hideRevenue ?? false);
+  const estimatedCost =
+    contentMode === 'hoursOnly'
+      ? undefined
+      : (options.estimatedCost ?? sumResourceLineCost(resources));
 
   if (!resources.length && (!includeTimeEntries || !report.rows.length)) {
     return;
   }
 
   if (format === 'excel') {
-    await exportExcel(report, overview, resources, estimatedCost, hideRevenue, includeTimeEntries, includeTimeColumn);
+    await exportExcel(
+      report,
+      overview,
+      resources,
+      estimatedCost,
+      hideRevenue,
+      includeTimeEntries,
+      includeTimeColumn,
+      contentMode
+    );
   } else {
-    await exportPdf(report, overview, resources, estimatedCost, hideRevenue, includeTimeEntries, includeTimeColumn);
+    await exportPdf(
+      report,
+      overview,
+      resources,
+      estimatedCost,
+      hideRevenue,
+      includeTimeEntries,
+      includeTimeColumn,
+      contentMode
+    );
   }
 }
 
@@ -223,8 +270,28 @@ function styleResourceTotalRow(
   sheet: Worksheet,
   row: number,
   totalHours: number,
-  totalCost: number
+  totalCost: number | undefined,
+  contentMode: TimesheetExportContentMode
 ): void {
+  if (contentMode === 'hoursOnly') {
+    sheet.mergeCells(row, 1, row, 2);
+    const labelCell = sheet.getCell(row, 1);
+    labelCell.value = 'Total hours';
+    labelCell.font = { bold: true, size: 10, color: { argb: TEXT_DARK } };
+    labelCell.fill = fillSolid(PRIMARY_LIGHT);
+    labelCell.alignment = { vertical: 'middle', horizontal: 'right' };
+    labelCell.border = thinBorder();
+
+    const hoursCell = sheet.getCell(row, 3);
+    hoursCell.value = formatHours(totalHours);
+    hoursCell.font = { bold: true, size: 10, color: { argb: PRIMARY } };
+    hoursCell.fill = fillSolid(PRIMARY_LIGHT);
+    hoursCell.alignment = { vertical: 'middle', horizontal: 'right' };
+    hoursCell.border = thinBorder();
+    sheet.getRow(row).height = 22;
+    return;
+  }
+
   sheet.mergeCells(row, 1, row, 3);
   const labelCell = sheet.getCell(row, 1);
   labelCell.value = 'Total';
@@ -241,7 +308,7 @@ function styleResourceTotalRow(
   hoursCell.border = thinBorder();
 
   const costCell = sheet.getCell(row, 5);
-  costCell.value = formatCurrency(totalCost);
+  costCell.value = totalCost != null ? formatCurrency(totalCost) : '—';
   costCell.font = { bold: true, size: 10, color: { argb: PRIMARY } };
   costCell.fill = fillSolid(PRIMARY_LIGHT);
   costCell.alignment = { vertical: 'middle', horizontal: 'right' };
@@ -271,10 +338,11 @@ async function exportExcel(
   report: TimesheetReportDto,
   overview: HourlyProjectOverviewDto | null | undefined,
   resources: HourlyProjectResourceSummaryDto[],
-  estimatedCost: number,
+  estimatedCost: number | undefined,
   hideRevenue: boolean,
   includeTimeEntries: boolean,
-  includeTimeColumn: boolean
+  includeTimeColumn: boolean,
+  contentMode: TimesheetExportContentMode
 ): Promise<void> {
   const ExcelJS = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
@@ -282,9 +350,11 @@ async function exportExcel(
   workbook.created = new Date();
 
   const entryHeaderList = entryHeaders(includeTimeColumn);
-  const colCount = Math.max(5, entryHeaderList.length);
+  const resourceHeaderList = resourceHeaders(contentMode);
+  const colCount = Math.max(resourceHeaderList.length, entryHeaderList.length, 3);
 
-  const sheet = workbook.addWorksheet('Hours & costs', {
+  const sheetTitle = contentMode === 'hoursOnly' ? 'Hours only' : 'Gross cost';
+  const sheet = workbook.addWorksheet(sheetTitle, {
     views: [{ showGridLines: false }],
     properties: { defaultRowHeight: 20 },
   });
@@ -292,31 +362,38 @@ async function exportExcel(
   sheet.columns = [
     { width: 16 },
     { width: 26 },
-    { width: 16 },
+    { width: 18 },
     { width: 44 },
-    { width: 14 },
+    { width: 16 },
   ];
 
   sheet.mergeCells(1, 1, 1, colCount);
   const banner = sheet.getCell(1, 1);
-  banner.value = 'Timesheet Report';
+  banner.value =
+    contentMode === 'hoursOnly' ? 'Timesheet Report — Hours only' : 'Timesheet Report — Gross cost';
   banner.font = { bold: true, size: 16, color: { argb: HEADER_TEXT } };
   banner.fill = fillSolid(PRIMARY);
   banner.alignment = { vertical: 'middle', horizontal: 'center' };
   sheet.getRow(1).height = 34;
 
   let row = 3;
-  for (const [label, value] of summaryItems(report, overview, estimatedCost, hideRevenue)) {
+  for (const [label, value] of summaryItems(
+    report,
+    overview,
+    estimatedCost,
+    hideRevenue,
+    contentMode
+  )) {
     styleSummaryRow(sheet, row, label, value, colCount);
     row += 1;
   }
 
-  const resourceData = resourceRows(resources);
+  const resourceData = resourceRows(resources, contentMode);
   if (resourceData.length) {
     row += 1;
     styleTitleRow(sheet, row, 'Logged hours by resource', colCount);
     row += 1;
-    styleHeaderRow(sheet, row, ['Resource', 'Role', 'Cost rate', 'Hours logged', 'Line cost']);
+    styleHeaderRow(sheet, row, resourceHeaderList);
     row += 1;
     resourceData.forEach((data, index) => {
       styleDataRow(sheet, row, data, index % 2 === 1);
@@ -326,7 +403,8 @@ async function exportExcel(
       sheet,
       row,
       resources.reduce((sum, r) => sum + r.totalHours, 0),
-      estimatedCost
+      estimatedCost,
+      contentMode
     );
     row += 1;
   }
@@ -358,19 +436,27 @@ async function exportExcel(
     new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
-    `${buildBaseFileName(report)}.xlsx`
+    `${buildBaseFileName(report, contentMode)}.xlsx`
   );
 }
 
 type JsPdfDoc = import('jspdf').jsPDF & { lastAutoTable: { finalY: number } };
 
-function drawPdfBanner(doc: import('jspdf').jsPDF, pageWidth: number): void {
+function drawPdfBanner(
+  doc: import('jspdf').jsPDF,
+  pageWidth: number,
+  contentMode: TimesheetExportContentMode
+): void {
   doc.setFillColor(...PDF_PRIMARY);
   doc.rect(0, 0, pageWidth, 20, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Timesheet Report', 14, 13);
+  doc.text(
+    contentMode === 'hoursOnly' ? 'Timesheet Report — Hours only' : 'Timesheet Report — Gross cost',
+    14,
+    13
+  );
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(30, 41, 59);
 }
@@ -400,10 +486,11 @@ async function exportPdf(
   report: TimesheetReportDto,
   overview: HourlyProjectOverviewDto | null | undefined,
   resources: HourlyProjectResourceSummaryDto[],
-  estimatedCost: number,
+  estimatedCost: number | undefined,
   hideRevenue: boolean,
   includeTimeEntries: boolean,
-  includeTimeColumn: boolean
+  includeTimeColumn: boolean,
+  contentMode: TimesheetExportContentMode
 ): Promise<void> {
   const [{ jsPDF }, autoTableModule] = await Promise.all([
     import('jspdf'),
@@ -414,7 +501,7 @@ async function exportPdf(
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const marginX = 14;
-  drawPdfBanner(doc, pageWidth);
+  drawPdfBanner(doc, pageWidth, contentMode);
 
   let y = 28;
 
@@ -422,7 +509,7 @@ async function exportPdf(
     startY: y,
     margin: { left: marginX, right: marginX },
     theme: 'plain',
-    body: summaryItems(report, overview, estimatedCost, hideRevenue),
+    body: summaryItems(report, overview, estimatedCost, hideRevenue, contentMode),
     styles: {
       fontSize: 9,
       cellPadding: 2.5,
@@ -432,7 +519,7 @@ async function exportPdf(
     columnStyles: {
       0: {
         fontStyle: 'bold',
-        cellWidth: 38,
+        cellWidth: 42,
         fillColor: PDF_LABEL_BG,
         textColor: [100, 116, 139],
       },
@@ -442,7 +529,7 @@ async function exportPdf(
 
   y = (doc as JsPdfDoc).lastAutoTable.finalY + 10;
 
-  const resourceData = resourceRows(resources);
+  const resourceData = resourceRows(resources, contentMode);
   if (resourceData.length) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
@@ -451,20 +538,36 @@ async function exportPdf(
     y += 4;
 
     const totalHours = resources.reduce((sum, r) => sum + r.totalHours, 0);
+    const headers = resourceHeaders(contentMode);
+    const foot =
+      contentMode === 'hoursOnly'
+        ? [['Total hours', '', formatHours(totalHours)]]
+        : [
+            [
+              'Total',
+              '',
+              '',
+              formatHours(totalHours),
+              estimatedCost != null ? formatCurrency(estimatedCost) : '—',
+            ],
+          ];
 
     autoTable(doc, {
       startY: y,
       margin: { left: marginX, right: marginX },
-      head: [['Resource', 'Role', 'Cost rate', 'Hours logged', 'Line cost']],
+      head: [headers],
       body: resourceData.map(row => row.map(cell => String(cell))),
-      foot: [['Total', '', '', formatHours(totalHours), formatCurrency(estimatedCost)]],
+      foot,
       showFoot: 'lastPage',
       ...pdfTableTheme(),
-      columnStyles: {
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-      },
+      columnStyles:
+        contentMode === 'hoursOnly'
+          ? { 2: { halign: 'right' } }
+          : {
+              2: { halign: 'right' },
+              3: { halign: 'right' },
+              4: { halign: 'right' },
+            },
       didParseCell: data => {
         if (data.section === 'foot') {
           data.cell.styles.fillColor = PDF_PRIMARY_LIGHT;
@@ -526,5 +629,5 @@ async function exportPdf(
     );
   }
 
-  doc.save(`${buildBaseFileName(report)}.pdf`);
+  doc.save(`${buildBaseFileName(report, contentMode)}.pdf`);
 }

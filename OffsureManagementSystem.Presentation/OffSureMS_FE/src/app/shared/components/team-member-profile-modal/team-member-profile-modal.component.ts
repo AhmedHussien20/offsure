@@ -15,7 +15,7 @@ import { SalesService } from 'app/core/services/sales.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { Observable, map } from 'rxjs';
 
-export type TeamMemberProfileSource = 'client' | 'admin' | 'resource-manager' | 'sales';
+export type TeamMemberProfileSource = 'client' | 'client-showcase' | 'admin' | 'resource-manager' | 'sales';
 
 export interface TeamMemberProfileView {
   fullName: string;
@@ -77,14 +77,12 @@ export class TeamMemberProfileModalComponent implements OnInit {
 
   get projectsSectionTitle(): string {
     const source = this.source ?? this.inferSource();
+    if (source === 'client-showcase') return 'Experience highlights';
     return source === 'client' || source === 'sales' ? 'Shared projects' : 'Assigned projects';
   }
 
-  get projectsEmptyMessage(): string {
-    const source = this.source ?? this.inferSource();
-    return source === 'client' || source === 'sales'
-      ? 'No shared project context for this member.'
-      : 'No active project assignments for this member.';
+  get showOverviewTab(): boolean {
+    return (this.member?.projectNames.length ?? 0) > 0;
   }
 
   formatDate(value: string | null | undefined): string {
@@ -112,6 +110,9 @@ export class TeamMemberProfileModalComponent implements OnInit {
       (source === 'admin' || source === 'resource-manager')
     ) {
       this.member = this.mapTeamMember(this.prefetchedTeamMember);
+      if (!this.member.projectNames.length && this.activeTab === 'overview') {
+        this.activeTab = 'skills';
+      }
       this.loading = false;
       this.loadError = null;
       return;
@@ -125,6 +126,8 @@ export class TeamMemberProfileModalComponent implements OnInit {
         this.member = member;
         if (!member) {
           this.loadError = 'Team member not found.';
+        } else if (!member.projectNames.length && this.activeTab === 'overview') {
+          this.activeTab = 'skills';
         }
         this.loading = false;
       },
@@ -148,6 +151,10 @@ export class TeamMemberProfileModalComponent implements OnInit {
         );
       case 'sales':
         return this.salesService.getTeamMemberDetail(this.memberId).pipe(
+          map(res => (res.data ? this.mapClientMember(res.data) : null))
+        );
+      case 'client-showcase':
+        return this.clientsService.getShowcaseTeamMemberDetail(this.memberId).pipe(
           map(res => (res.data ? this.mapClientMember(res.data) : null))
         );
       default:

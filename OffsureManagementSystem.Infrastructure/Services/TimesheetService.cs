@@ -79,6 +79,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 existing.IsDeleted = true;
                 existing.DeletedAt = DateTime.UtcNow;
+                existing.DeletedBy = userId;
                 existing.UpdatedAt = DateTime.UtcNow;
             }
 
@@ -193,6 +194,41 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 entry.Timesheet.ProjectId,
                 member.Id,
                 entry.Timesheet.WorkDate);
+            return MapTimesheetDay(reloaded!);
+        }
+
+        public async Task<TimesheetDayDto> DeleteTimesheetEntryAsync(int userId, int entryId)
+        {
+            var member = await GetTeamMemberForUserAsync(userId);
+
+            var entry = await _entryRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .Include(e => e.Timesheet)
+                .FirstOrDefaultAsync(e => e.Id == entryId && !e.IsDeleted);
+
+            if (entry?.Timesheet is null || entry.Timesheet.IsDeleted)
+                throw new AppException("Time entry not found.", 404);
+
+            if (entry.Timesheet.TeamMemberId != member.Id)
+                throw new AppException("You can only delete your own time entries.", 403);
+
+            var project = await GetHourlyProjectAsync(entry.Timesheet.ProjectId);
+            await EnsureAssignedToHourlyProjectAsync(entry.Timesheet.ProjectId, member.Id);
+            EnsureProjectAllowsTimesheetLogging(project);
+
+            var projectId = entry.Timesheet.ProjectId;
+            var workDate = entry.Timesheet.WorkDate;
+
+            entry.IsDeleted = true;
+            entry.DeletedAt = DateTime.UtcNow;
+            entry.DeletedBy = userId;
+            entry.UpdatedAt = DateTime.UtcNow;
+            entry.Timesheet.UpdatedAt = DateTime.UtcNow;
+
+            await _timesheetRepo.SaveChangesAsync();
+
+            var reloaded = await LoadTimesheetAsync(projectId, member.Id, workDate);
             return MapTimesheetDay(reloaded!);
         }
 

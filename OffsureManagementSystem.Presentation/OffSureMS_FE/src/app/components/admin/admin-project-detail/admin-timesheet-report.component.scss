@@ -195,8 +195,55 @@
 }
 
 .export-dialog {
-  width: min(100%, 28rem);
+  width: min(100%, 32rem);
   margin: 0;
+}
+
+.export-dialog__modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.export-dialog__mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  text-align: left;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+
+  strong {
+    font-size: 0.88rem;
+    color: #1e293b;
+  }
+
+  span {
+    font-size: 0.72rem;
+    color: #64748b;
+    line-height: 1.3;
+  }
+
+  &:hover {
+    border-color: #cbd5e1;
+  }
+
+  &--active {
+    border-color: rgba(var(--primary-rgb, 98, 89, 202), 0.55);
+    background: rgba(var(--primary-rgb, 98, 89, 202), 0.06);
+    box-shadow: 0 0 0 1px rgba(var(--primary-rgb, 98, 89, 202), 0.2);
+  }
+}
+
+@media (max-width: 576px) {
+  .export-dialog__modes {
+    grid-template-columns: 1fr;
+  }
 }
 
 .timesheet-report-total {

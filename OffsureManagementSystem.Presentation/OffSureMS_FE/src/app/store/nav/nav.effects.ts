@@ -199,6 +199,13 @@ private CLIENT_MENUITEMS: MenuItem[] = [
     icon: 'ti-id-badge',
     requiredRole: 'Client',
   },
+  {
+    title: 'Offshore TechX',
+    path: '/client/offshore-techx',
+    type: 'link',
+    icon: 'ti-briefcase',
+    requiredRole: 'Client',
+  },
   // {
   //   title: 'Company Profile',
   //   path: '/client/profile',

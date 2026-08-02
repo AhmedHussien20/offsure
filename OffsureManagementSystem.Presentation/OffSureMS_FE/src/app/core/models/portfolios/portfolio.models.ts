@@ -3,6 +3,7 @@ export interface PortfolioFilterRequest {
   completedFrom?: string;
   completedTo?: string;
   includeUnpublished?: boolean;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }
@@ -61,4 +62,11 @@ export interface PortfolioDto {
   completedDate: string | null;
   isPublished: boolean;
   images: PortfolioImageDto[];
+}
+
+export interface PortfolioServiceSummaryDto {
+  serviceId: number;
+  serviceName: string;
+  serviceCategoryName: string;
+  projectCount: number;
 }

@@ -37,6 +37,15 @@
     <app-admin-project-sales-card [project]="project" (projectChange)="onProjectUpdated($event)" />
     <button
       type="button"
+      class="project-detail-stat project-detail-stat--action project-detail-stat--payment"
+      (click)="openPaymentModal()">
+      <span class="project-detail-stat__label">Payment Documentary</span>
+      <span class="project-detail-stat__value">Invoices</span>
+      <span class="project-detail-stat__hint project-detail-stat__hint--action">Manage invoices &amp; POs</span>
+      <i class="fe fe-arrow-right project-detail-stat__arrow" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
       class="project-detail-stat project-detail-stat--action project-detail-stat--team"
       (click)="openTeamSummaryModal()">
       <span class="project-detail-stat__label">Assigned team</span>
@@ -265,6 +274,8 @@
             <p class="staffing-section__hint mb-0">Who can staff this project (max {{ maxResourceManagers }}).</p>
             @if (isHourlyBudget) {
               <p class="staffing-section__hint mb-0 mt-1 text-muted">Each resource manager sets their own cost rate on this project.</p>
+            } @else {
+              <p class="staffing-section__hint mb-0 mt-1 text-muted">Each resource manager sets their own fixed cost on this project.</p>
             }
           </div>
         </header>
@@ -280,6 +291,12 @@
                       <span class="badge bg-success-transparent ms-1">${{ rm.hourlyCostRate }}/hr</span>
                     } @else {
                       <span class="badge bg-warning-transparent ms-1">Rate pending</span>
+                    }
+                  } @else {
+                    @if (rm.fixedCostAmount != null && rm.fixedCostAmount > 0) {
+                      <span class="badge bg-success-transparent ms-1">${{ rm.fixedCostAmount | number: '1.0-0' }} fixed</span>
+                    } @else {
+                      <span class="badge bg-warning-transparent ms-1">Cost pending</span>
                     }
                   }
                 </span>
@@ -308,6 +325,12 @@
                       <span class="badge bg-success-transparent">${{ getRmHourlyCostRateDisplay(rm.id) }}/hr cost</span>
                     } @else {
                       <span class="badge bg-warning-transparent">Awaiting RM cost rate</span>
+                    }
+                  } @else {
+                    @if (getRmFixedCostStatus(rm.id) === 'set') {
+                      <span class="badge bg-success-transparent">${{ getRmFixedCostDisplay(rm.id) | number: '1.0-0' }} fixed</span>
+                    } @else {
+                      <span class="badge bg-warning-transparent">Awaiting RM fixed cost</span>
                     }
                   }
                 </span>

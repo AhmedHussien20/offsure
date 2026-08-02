@@ -15,6 +15,7 @@ import {
   usesSkillBasedStaffing,
 } from 'app/core/utils/project-skill.util';
 import { ProjectMilestonesReadonlyComponent } from '../project-milestones-readonly/project-milestones-readonly.component';
+import { ProjectPaymentModalComponent } from '../project-payment-modal/project-payment-modal.component';
 import { ProjectTeamSummaryModalComponent } from '../project-team-summary-modal/project-team-summary-modal.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -77,6 +78,11 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
   /** Milestone phases are internal (admin/RM); never shown to clients. */
   get showMilestones(): boolean {
     return this.usesMilestones && !this.isClient;
+  }
+
+  /** Payment invoices/PO are visible to clients only (not team members). */
+  get showPayments(): boolean {
+    return this.isClient;
   }
 
   get headerSubtitle(): string {
@@ -156,6 +162,16 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
       : 'Your colleagues on this project.';
     modalRef.componentInstance.profileSource = this.isClient ? 'client' : undefined;
     modalRef.componentInstance.allowMemberProfile = this.isClient;
+  }
+
+  openPaymentModal(): void {
+    const modalRef = this.modalService.open(ProjectPaymentModalComponent, {
+      centered: true,
+      size: 'xl',
+      scrollable: true,
+    });
+    modalRef.componentInstance.project = this.project;
+    modalRef.componentInstance.editable = false;
   }
 
   onLogTimeClick(): void {

@@ -27,6 +27,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<PagedResponse<PortfolioDto>>.Ok(portfolios));
         }
 
+        [HttpGet("service-summary")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<List<PortfolioServiceSummaryDto>>>> GetServiceProjectSummary()
+        {
+            var summary = await _portfolioManagementService.GetServiceProjectSummaryAsync();
+            return Ok(ApiResponse<List<PortfolioServiceSummaryDto>>.Ok(summary));
+        }
+
         [HttpGet("{id:int}")]
         [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<PortfolioDto>>> GetPortfolioById(

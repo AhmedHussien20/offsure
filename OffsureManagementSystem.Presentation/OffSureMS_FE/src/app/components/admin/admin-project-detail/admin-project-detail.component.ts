@@ -41,6 +41,7 @@ import { AdminHourlyProjectPanelComponent } from './admin-hourly-project-panel.c
 import { AdminProjectSalesCardComponent } from './admin-project-sales-card.component';
 import { AdminProjectEditModalComponent } from './admin-project-edit-modal.component';
 import { ProjectTeamSummaryModalComponent } from 'app/shared/components/project-team-summary-modal/project-team-summary-modal.component';
+import { ProjectPaymentModalComponent } from 'app/shared/components/project-payment-modal/project-payment-modal.component';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
@@ -61,7 +62,16 @@ const MAX_PROJECT_RESOURCE_MANAGERS = 2;
 @Component({
   selector: 'app-admin-project-detail',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule, ReactiveFormsModule, FormsModule, AdminProjectMilestonesComponent, AdminHourlyProjectPanelComponent, AdminProjectSalesCardComponent],
+  imports: [
+    CommonModule,
+    SharedModule,
+    RouterModule,
+    ReactiveFormsModule,
+    FormsModule,
+    AdminProjectMilestonesComponent,
+    AdminHourlyProjectPanelComponent,
+    AdminProjectSalesCardComponent,
+  ],
   templateUrl: './admin-project-detail.component.html',
   styleUrl: './admin-project-detail.component.scss',
 })
@@ -336,6 +346,19 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
     modalRef.componentInstance.profileSource = 'admin';
   }
 
+  openPaymentModal(): void {
+    if (!this.project) return;
+
+    const modalRef = this.modalService.open(ProjectPaymentModalComponent, {
+      centered: true,
+      size: 'xl',
+      scrollable: true,
+      backdrop: 'static',
+    });
+    modalRef.componentInstance.project = this.project;
+    modalRef.componentInstance.editable = true;
+  }
+
   onProjectUpdated(project: ProjectDto): void {
     this.project = project;
     this.buildSkillSlots();
@@ -565,6 +588,16 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
   getRmHourlyCostRateDisplay(userId: number): number | null {
     const rm = (this.project?.resourceManagers ?? []).find(r => r.userId === userId);
     return rm?.hourlyCostRate != null && rm.hourlyCostRate > 0 ? rm.hourlyCostRate : null;
+  }
+
+  getRmFixedCostStatus(userId: number): 'set' | 'pending' {
+    const rm = (this.project?.resourceManagers ?? []).find(r => r.userId === userId);
+    return rm?.fixedCostAmount != null && rm.fixedCostAmount > 0 ? 'set' : 'pending';
+  }
+
+  getRmFixedCostDisplay(userId: number): number | null {
+    const rm = (this.project?.resourceManagers ?? []).find(r => r.userId === userId);
+    return rm?.fixedCostAmount != null && rm.fixedCostAmount > 0 ? rm.fixedCostAmount : null;
   }
 
   toggleResourceManager(manager: ResourceManagerUserDto): void {

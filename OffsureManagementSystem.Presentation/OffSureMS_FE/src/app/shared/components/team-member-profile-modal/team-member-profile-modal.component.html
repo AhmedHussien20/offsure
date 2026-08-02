@@ -32,10 +32,10 @@
 
     <section class="member-profile-tabs-card">
       <ul ngbNav #memberNav="ngbNav" [(activeId)]="activeTab" class="nav profile-tabs member-profile-tabs">
-        <li [ngbNavItem]="'overview'">
-          <a ngbNavLink class="nav-link">Overview</a>
-          <ng-template ngbNavContent>
-            @if (member.projectNames.length) {
+        @if (showOverviewTab) {
+          <li [ngbNavItem]="'overview'">
+            <a ngbNavLink class="nav-link">Overview</a>
+            <ng-template ngbNavContent>
               <div class="member-profile-section">
                 <h6 class="member-profile-section__title">{{ projectsSectionTitle }}</h6>
                 <div class="d-flex flex-wrap gap-2">
@@ -44,11 +44,9 @@
                   }
                 </div>
               </div>
-            } @else {
-              <p class="text-muted small mb-0">{{ projectsEmptyMessage }}</p>
-            }
-          </ng-template>
-        </li>
+            </ng-template>
+          </li>
+        }
 
         <li [ngbNavItem]="'skills'">
           <a ngbNavLink class="nav-link">Skills & experience</a>

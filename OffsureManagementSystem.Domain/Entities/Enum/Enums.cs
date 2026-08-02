@@ -60,4 +60,10 @@ namespace OffsureManagementSystem.Domain.Entities.Enum
         Fixed = 0,
         Percentage = 1
     }
+
+    public enum PaymentStatus
+    {
+        Pending = 0,
+        Completed = 1
+    }
 }

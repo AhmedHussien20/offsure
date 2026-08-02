@@ -37,6 +37,10 @@ export class TimesheetsService {
     return this.api.put<BaseResponse<TimesheetDayDto>>(this.service, `day/entries/${entryId}`, dto);
   }
 
+  deleteEntry(entryId: number): Observable<BaseResponse<TimesheetDayDto>> {
+    return this.api.delete<BaseResponse<TimesheetDayDto>>(this.service, `day/entries/${entryId}`);
+  }
+
   getProjectOverview(projectId: number): Observable<BaseResponse<HourlyProjectOverviewDto>> {
     return this.api.get<BaseResponse<HourlyProjectOverviewDto>>(
       this.service,

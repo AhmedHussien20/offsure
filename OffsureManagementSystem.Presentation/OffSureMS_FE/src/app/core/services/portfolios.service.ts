@@ -8,6 +8,7 @@ import {
   LinkPortfolioToServiceDto,
   PortfolioDto,
   PortfolioFilterRequest,
+  PortfolioServiceSummaryDto,
   UpdatePortfolioDto,
   UpdatePortfolioImageDto,
 } from '../models/portfolios/portfolio.models';
@@ -20,6 +21,10 @@ export class PortfoliosService {
 
   getAll(request?: PortfolioFilterRequest): Observable<BaseResponse<PagedResponse<PortfolioDto>>> {
     return this.api.get<BaseResponse<PagedResponse<PortfolioDto>>>(this.service, '', request as Record<string, any>);
+  }
+
+  getServiceSummary(): Observable<BaseResponse<PortfolioServiceSummaryDto[]>> {
+    return this.api.get<BaseResponse<PortfolioServiceSummaryDto[]>>(this.service, 'service-summary');
   }
 
   getById(id: number, includeUnpublished = false): Observable<BaseResponse<PortfolioDto>> {

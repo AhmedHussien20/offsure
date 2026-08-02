@@ -58,6 +58,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<TimesheetDayDto>.Ok(sheet));
         }
 
+        [HttpDelete("day/entries/{entryId:int}")]
+        [Authorize(Roles = "TeamMember")]
+        public async Task<ActionResult<ApiResponse<TimesheetDayDto>>> DeleteEntry(int entryId)
+        {
+            var sheet = await _timesheetService.DeleteTimesheetEntryAsync(GetCurrentUserId(), entryId);
+            return Ok(ApiResponse<TimesheetDayDto>.Ok(sheet));
+        }
+
         [HttpGet("projects/{projectId:int}/overview")]
         [Authorize(Roles = "Administrator,ResourceManager")]
         public async Task<ActionResult<ApiResponse<HourlyProjectOverviewDto>>> GetProjectOverview(int projectId)

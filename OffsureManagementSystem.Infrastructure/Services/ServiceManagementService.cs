@@ -91,6 +91,91 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 GetPageSize(request));
         }
 
+        public async Task<PagedResponse<ServiceCatalogCategoryDto>> GetPublicServiceCatalogAsync(
+            ServiceCategoryRequest request)
+        {
+            var searchKey = string.IsNullOrWhiteSpace(request.searchKey)
+                ? null
+                : Normalize(request.searchKey);
+
+            IQueryable<ServiceCategory> query = _serviceCategoryRepo
+                .Query()
+                .AsNoTracking()
+                .Where(c => c.IsActive)
+                .Where(c => c.Services.Any(s => s.IsVisible && !s.IsDeleted));
+
+            if (searchKey is not null)
+            {
+                query = query.Where(c =>
+                    c.Name.ToLower().Contains(searchKey)
+                    || (c.Description != null && c.Description.ToLower().Contains(searchKey))
+                    || c.Services.Any(s =>
+                        s.IsVisible
+                        && !s.IsDeleted
+                        && (s.Name.ToLower().Contains(searchKey)
+                            || (s.Description != null && s.Description.ToLower().Contains(searchKey)))));
+            }
+
+            var totalCount = await query.CountAsync();
+            var pageIndex = GetPageIndex(request);
+            var pageSize = GetPageSize(request);
+
+            var categories = await query
+                .OrderBy(c => c.Name)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new
+                {
+                    c.Id,
+                    c.Name,
+                    c.Description,
+                    CategoryMatches = searchKey == null
+                        || c.Name.ToLower().Contains(searchKey)
+                        || (c.Description != null && c.Description.ToLower().Contains(searchKey)),
+                    Services = c.Services
+                        .Where(s => s.IsVisible && !s.IsDeleted)
+                        .Select(s => new
+                        {
+                            s.Id,
+                            s.Name,
+                            s.Description
+                        })
+                        .ToList()
+                })
+                .ToListAsync();
+
+            var items = categories
+                .Select(c =>
+                {
+                    var services = c.Services
+                        .Where(s =>
+                            c.CategoryMatches
+                            || searchKey == null
+                            || s.Name.ToLower().Contains(searchKey)
+                            || (s.Description != null && s.Description.ToLower().Contains(searchKey)))
+                        .OrderBy(s => s.Name)
+                        .Select(s => new ServiceCatalogItemDto
+                        {
+                            Id = s.Id,
+                            Name = s.Name,
+                            Description = s.Description
+                        })
+                        .ToList();
+
+                    return new ServiceCatalogCategoryDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Description = c.Description,
+                        Services = services
+                    };
+                })
+                .Where(c => c.Services.Count > 0)
+                .ToList();
+
+            return new PagedResponse<ServiceCatalogCategoryDto>(items, totalCount, pageIndex, pageSize);
+        }
+
         public async Task<ServiceCategoryDto> GetServiceCategoryByIdAsync(int id)
         {
             var category = await _serviceCategoryRepo

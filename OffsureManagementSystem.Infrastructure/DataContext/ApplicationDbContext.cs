@@ -29,6 +29,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<ProjectSkill> ProjectSkills { get; set; }
         public DbSet<ProjectResourceManager> ProjectResourceManagers { get; set; }
         public DbSet<ProjectMilestone> ProjectMilestones { get; set; }
+        public DbSet<ProjectInvoice> ProjectInvoices { get; set; }
+        public DbSet<ProjectInvoiceDocument> ProjectInvoiceDocuments { get; set; }
         public DbSet<Timesheet> Timesheets { get; set; }
         public DbSet<TimesheetEntry> TimesheetEntries { get; set; }
         public DbSet<PortfolioProject> PortfolioProjects { get; set; }
@@ -594,6 +596,11 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .WithOne(m => m.Project)
                     .HasForeignKey(m => m.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.ProjectInvoices)
+                    .WithOne(i => i.Project)
+                    .HasForeignKey(i => i.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<ProjectMilestone>(entity =>
@@ -623,6 +630,82 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.HasQueryFilter(m => !m.IsDeleted && !m.Project.IsDeleted);
             });
 
+            modelBuilder.Entity<ProjectInvoice>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.InvoiceFileName)
+                    .IsRequired()
+                    .HasMaxLength(260);
+
+                entity.Property(e => e.InvoiceFileUrl)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.PurchaseOrderFileName)
+                    .HasMaxLength(260);
+
+                entity.Property(e => e.PurchaseOrderFileUrl)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.PaymentStatus)
+                    .HasConversion<string>()
+                    .HasMaxLength(30)
+                    .IsRequired();
+
+                entity.Property(e => e.Amount)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Notes)
+                    .HasMaxLength(1000);
+
+                entity.HasOne(e => e.Project)
+                    .WithMany(p => p.ProjectInvoices)
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Milestone)
+                    .WithMany()
+                    .HasForeignKey(e => e.MilestoneId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.MilestoneId)
+                    .IsUnique()
+                    .HasFilter("[MilestoneId] IS NOT NULL AND [IsDeleted] = 0");
+
+                entity.HasIndex(e => new { e.ProjectId, e.BillingYear, e.BillingMonth })
+                    .IsUnique()
+                    .HasFilter("[BillingYear] IS NOT NULL AND [BillingMonth] IS NOT NULL AND [IsDeleted] = 0");
+
+                entity.HasIndex(e => e.ProjectId)
+                    .IsUnique()
+                    .HasFilter("[MilestoneId] IS NULL AND [BillingYear] IS NULL AND [BillingMonth] IS NULL AND [IsDeleted] = 0");
+
+                entity.HasMany(e => e.Documents)
+                    .WithOne(d => d.ProjectInvoice)
+                    .HasForeignKey(d => d.ProjectInvoiceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(i => !i.IsDeleted && !i.Project.IsDeleted);
+            });
+
+            modelBuilder.Entity<ProjectInvoiceDocument>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.FileName)
+                    .IsRequired()
+                    .HasMaxLength(260);
+
+                entity.Property(e => e.FileUrl)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.HasIndex(e => new { e.ProjectInvoiceId, e.DisplayOrder });
+
+                entity.HasQueryFilter(d => !d.IsDeleted && !d.ProjectInvoice.IsDeleted);
+            });
+
             modelBuilder.Entity<ProjectResourceManager>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -642,6 +725,9 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasFilter("[IsDeleted] = 0");
 
                 entity.Property(e => e.HourlyCostRate)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.FixedCostAmount)
                     .HasPrecision(18, 2);
 
                 entity.Property(e => e.IsActive)
@@ -687,7 +773,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey(e => e.TimesheetId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasQueryFilter(e => !e.IsDeleted && !e.Timesheet.Project.IsDeleted);
+                entity.HasQueryFilter(e =>
+                    !e.IsDeleted && !e.Timesheet.IsDeleted && !e.Timesheet.Project.IsDeleted);
             });
 
             // PROJECT SKILL ENTITY CONFIGURATION

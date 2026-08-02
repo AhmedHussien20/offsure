@@ -10,5 +10,11 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
             ClientTeamMemberBrowseRequest request);
 
         Task<ClientTeamMemberDetailDto> GetTeamMemberDetailAsync(int clientUserId, int teamMemberId);
+
+        /// <summary>Org showcase: all active team members (not limited to the client's projects).</summary>
+        Task<PagedResponse<ClientTeamMemberCardDto>> BrowseShowcaseTeamMembersAsync(
+            ClientTeamMemberBrowseRequest request);
+
+        Task<ClientTeamMemberDetailDto> GetShowcaseTeamMemberDetailAsync(int teamMemberId);
     }
 }

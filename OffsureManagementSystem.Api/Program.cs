@@ -80,7 +80,9 @@ namespace OffsureManagementSystem.API
                             "http://2.25.83.192",
                             "https://2.25.83.192",
                             "https://www.offshoretechx.net",
-                            "https://www.offshoretechx.net:8443"
+                            "https://www.offshoretechx.net:8443",
+                            "https://offshoretechx.net",
+                            "https://offshoretechx.net:8443"
 
 
                             )

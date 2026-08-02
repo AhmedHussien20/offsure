@@ -43,6 +43,17 @@
       <span class="project-detail-stat__hint project-detail-stat__hint--action">View your time entries</span>
     </a>
   }
+  @if (showPayments) {
+    <button
+      type="button"
+      class="project-detail-stat project-detail-stat--action project-detail-stat--payment"
+      (click)="openPaymentModal()">
+      <span class="project-detail-stat__label">Payment Documentary</span>
+      <span class="project-detail-stat__value">Invoices</span>
+      <span class="project-detail-stat__hint project-detail-stat__hint--action">View invoices &amp; POs</span>
+      <i class="fe fe-arrow-right project-detail-stat__arrow" aria-hidden="true"></i>
+    </button>
+  }
   <button
     type="button"
     class="project-detail-stat project-detail-stat--action project-detail-stat--team"

@@ -49,11 +49,41 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Take(GetPageSize(request))
                 .ToListAsync();
 
+            // Public lists hide inactive gallery images; admin (IncludeUnpublished) sees all.
+            var publicView = !request.IncludeUnpublished;
+
             return new PagedResponse<PortfolioDto>(
-                portfolios.Select(MapPortfolioList).ToList(),
+                portfolios.Select(p => MapPortfolio(p, publicView)).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
+        }
+
+        public async Task<List<PortfolioServiceSummaryDto>> GetServiceProjectSummaryAsync()
+        {
+            // Count all portfolio projects for the service (published and unpublished).
+            return await _portfolioRepo
+                .Query()
+                .AsNoTracking()
+                .Where(p => !p.IsDeleted && p.Service != null && !p.Service.IsDeleted)
+                .GroupBy(p => new
+                {
+                    p.ServiceId,
+                    ServiceName = p.Service.Name,
+                    CategoryName = p.Service.ServiceCategory != null
+                        ? p.Service.ServiceCategory.Name
+                        : string.Empty
+                })
+                .Select(g => new PortfolioServiceSummaryDto
+                {
+                    ServiceId = g.Key.ServiceId,
+                    ServiceName = g.Key.ServiceName,
+                    ServiceCategoryName = g.Key.CategoryName,
+                    ProjectCount = g.Count()
+                })
+                .Where(s => s.ProjectCount > 0)
+                .OrderBy(s => s.ServiceName)
+                .ToListAsync();
         }
 
         public async Task<PortfolioDto> GetPortfolioByIdAsync(int id, bool includeUnpublished = false)
@@ -234,11 +264,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         }
 
         private IQueryable<PortfolioProject> BuildPortfolioListQuery()
-        {
-            return _portfolioRepo
-                .Query()
-                .Include(p => p.Service);
-        }
+            => BuildPortfolioQuery();
 
         private IQueryable<PortfolioProject> BuildPortfolioQuery()
         {
@@ -357,23 +383,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static int GetSkipCount(PortfolioFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
-        private static PortfolioDto MapPortfolioList(PortfolioProject portfolio)
-        {
-            return new PortfolioDto
-            {
-                Id = portfolio.Id,
-                ServiceId = portfolio.ServiceId,
-                ServiceName = portfolio.Service?.Name ?? string.Empty,
-                Title = portfolio.Title,
-                ClientName = portfolio.ClientName,
-                CompletedDate = portfolio.CompletedDate,
-                IsPublished = portfolio.IsPublished,
-            };
-        }
-
         private static PortfolioDto MapPortfolio(PortfolioProject portfolio, bool publicView)
         {
-            var images = portfolio.PortfolioProjectImages
+            var images = (portfolio.PortfolioProjectImages ?? Enumerable.Empty<PortfolioProjectImage>())
+                .Where(i => !i.IsDeleted)
                 .OrderBy(i => i.DisplayOrder)
                 .AsEnumerable();
 

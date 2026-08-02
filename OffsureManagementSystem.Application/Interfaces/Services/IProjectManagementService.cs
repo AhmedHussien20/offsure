@@ -28,6 +28,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<ProjectDto> UpdateProjectRequiredSkillsForResourceManagerAsync(int userId, int projectId, UpdateProjectRequiredSkillsDto dto);
         Task<ProjectDto> UpdateProjectMilestoneStatusForResourceManagerAsync(int userId, int projectId, int milestoneId, UpdateProjectMilestoneStatusDto dto);
         Task<ProjectDto> UpdateProjectHourlyCostRateForResourceManagerAsync(int userId, int projectId, UpdateProjectRmHourlyCostRateDto dto);
+        Task<ProjectDto> UpdateProjectFixedCostAmountForResourceManagerAsync(int userId, int projectId, UpdateProjectRmFixedCostAmountDto dto);
         Task<ProjectDto> SetProjectResourceManagersAsync(int projectId, SetProjectResourceManagersDto dto);
         Task<ProjectDto> UpsertProjectMilestonesAsync(int projectId, UpsertProjectMilestonesDto dto);
         Task<ProjectDto> UpdateProjectMilestoneStatusAsync(int projectId, int milestoneId, UpdateProjectMilestoneStatusDto dto);

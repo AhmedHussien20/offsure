@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ClientRequestCreateComponent } from 'app/components/client/client-request-form/client-request-create.component';
 import {
   ServiceRequestCreatePrefill,
   writeServiceRequestPrefill,
@@ -23,6 +24,7 @@ export class LandingPortfolioDetailModalComponent {
 
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly modalService = inject(NgbModal);
 
   constructor(public activeModal: NgbActiveModal) {}
 
@@ -69,6 +71,19 @@ export class LandingPortfolioDetailModalComponent {
 
   requestService(): void {
     const prefill = this.buildRequestPrefill();
+
+    // Logged-in clients: open create modal in place (stay on current page).
+    if (this.authService.isAuthenticated() && this.authService.isClient()) {
+      this.activeModal.close('request');
+      const modalRef = this.modalService.open(ClientRequestCreateComponent, {
+        centered: true,
+        size: 'lg',
+      });
+      modalRef.componentInstance.prefill = prefill;
+      return;
+    }
+
+    // Guests: stash prefill and route through requests (auth gate + create flow).
     writeServiceRequestPrefill(prefill);
 
     const queryParams: Record<string, string> = { new: '1' };

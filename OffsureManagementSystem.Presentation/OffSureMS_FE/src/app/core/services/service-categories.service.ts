@@ -5,6 +5,7 @@ import { BaseResponse } from '../models/base.response';
 import { PagedResponse } from '../models/paged-response.model';
 import {
   CreateServiceCategoryDto,
+  ServiceCatalogCategoryDto,
   ServiceCategoryDto,
   ServiceCategoryRequest,
   UpdateServiceCategoryDto,
@@ -22,6 +23,16 @@ export class ServiceCategoriesService {
 
   getPublic(request?: ServiceCategoryRequest): Observable<BaseResponse<PagedResponse<ServiceCategoryDto>>> {
     return this.api.get<BaseResponse<PagedResponse<ServiceCategoryDto>>>(this.service, 'public', request as Record<string, any>);
+  }
+
+  getPublicCatalog(
+    request?: ServiceCategoryRequest
+  ): Observable<BaseResponse<PagedResponse<ServiceCatalogCategoryDto>>> {
+    return this.api.get<BaseResponse<PagedResponse<ServiceCatalogCategoryDto>>>(
+      this.service,
+      'public/catalog',
+      request as Record<string, any>
+    );
   }
 
   getById(id: number): Observable<BaseResponse<ServiceCategoryDto>> {

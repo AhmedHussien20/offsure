@@ -119,6 +119,7 @@ export interface ProjectResourceManagerDto {
   fullName: string;
   email: string;
   hourlyCostRate?: number | null;
+  fixedCostAmount?: number | null;
 }
 
 export interface SetProjectResourceManagersDto {
@@ -127,6 +128,10 @@ export interface SetProjectResourceManagersDto {
 
 export interface UpdateProjectRmHourlyCostRateDto {
   hourlyCostRate: number;
+}
+
+export interface UpdateProjectRmFixedCostAmountDto {
+  fixedCostAmount: number;
 }
 
 export interface ProjectMilestoneDto {
@@ -192,6 +197,8 @@ export interface ProjectDto {
   milestones?: ProjectMilestoneDto[];
   /** Current RM's cost rate on this hourly project (resource manager portal). */
   myHourlyCostRate?: number | null;
+  /** Current RM's fixed cost allocation on a fixed-budget project (resource manager portal). */
+  myFixedCostAmount?: number | null;
   /** Current team member's role on this project (team member portal list). */
   myRole?: string;
   salesId?: number | null;

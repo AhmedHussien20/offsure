@@ -34,6 +34,7 @@ import {
 } from 'app/core/utils/timesheet-time.util';
 import { SharedModule } from 'app/shared/shared.module';
 import { TimeStepperInputComponent } from 'app/shared/components/time-stepper-input/time-stepper-input.component';
+import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { ToastrService } from 'ngx-toastr';
 
 type CalendarView = 'day' | 'month';
@@ -112,6 +113,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
     private projectsService: ProjectsService,
     private timesheetsService: TimesheetsService,
     private breadcrumbService: BreadcrumbService,
+    private confirmDialog: ConfirmDialogService,
     private fb: FormBuilder,
     private toastr: ToastrService
   ) {
@@ -196,6 +198,25 @@ export class TeamDailyTimesheetComponent implements OnInit {
   enablePopupEdit(): void {
     this.popupEditing = true;
     this.syncPopupFormDisabled();
+  }
+
+  async confirmDeleteEntry(): Promise<void> {
+    if (this.popupMode !== 'edit' || !this.editingEntryId || this.saving) return;
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete time entry',
+      message: 'Delete this time log? It will be removed from your day total and project reports.',
+      confirmLabel: 'Delete entry',
+      variant: 'danger',
+      icon: 'ti-trash',
+    });
+    if (!confirmed) return;
+
+    this.saving = true;
+    this.timesheetsService.deleteEntry(this.editingEntryId).subscribe({
+      next: res => this.onDaySaved(res.data, 'Entry deleted.'),
+      error: () => this.onSaveError(),
+    });
   }
 
   setView(view: CalendarView): void {

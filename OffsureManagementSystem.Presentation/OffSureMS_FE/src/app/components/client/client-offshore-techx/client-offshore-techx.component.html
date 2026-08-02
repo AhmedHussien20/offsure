@@ -1,0 +1,301 @@
+<app-page-header></app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading {{ providerName }} content...</div>
+} @else if (loadError) {
+  <div class="alert alert-warning mb-0">{{ loadError }}</div>
+} @else {
+
+  <div class="card custom-card profile-tabs-card client-techx">
+    <ul
+      ngbNav
+      #techxNav="ngbNav"
+      [(activeId)]="activeTab"
+      (navChange)="onTabChange($event.nextId)"
+      class="nav profile-tabs">
+      <li [ngbNavItem]="'services'">
+        <a ngbNavLink class="nav-link">Services &amp; categories</a>
+        <ng-template ngbNavContent>
+          <div class="profile-tab-content">
+            <div class="client-techx__toolbar mb-3">
+              <div class="client-techx__search">
+                <i class="fe fe-search client-techx__search-icon"></i>
+                <input
+                  type="text"
+                  class="form-control client-techx__search-input"
+                  placeholder="Search categories or services"
+                  [(ngModel)]="serviceSearch"
+                  (ngModelChange)="onServiceSearchInput()" />
+              </div>
+            </div>
+
+            @if (categoriesLoading && !categoriesHasLoaded) {
+              <div class="text-center py-5 text-muted">Loading services...</div>
+            } @else if (!categoriesRefreshing && categoriesHasLoaded && visibleCategories.length === 0) {
+              <div class="client-techx__empty text-center py-5">
+                <i class="ti ti-layers-intersect client-techx__empty-icon"></i>
+                <p class="mb-0 text-muted">
+                  No published services match your search.
+                </p>
+              </div>
+            } @else {
+              <div
+                class="client-techx__category-grid"
+                [class.client-techx__grid--refreshing]="categoriesRefreshing">
+                @for (category of visibleCategories; track category.id) {
+                  <div
+                    class="client-techx__category-card"
+                    [class.client-techx__category-card--open]="isCategoryExpanded(category.id)">
+                    <button
+                      type="button"
+                      class="client-techx__category-toggle"
+                      (click)="toggleCategory(category.id)">
+                      <span class="client-techx__category-avatar">
+                        {{ category.name.charAt(0).toUpperCase() }}
+                      </span>
+                      <span class="client-techx__category-body">
+                        <span class="client-techx__category-name">{{ category.name }}</span>
+                        @if (category.description) {
+                          <span class="client-techx__category-desc">{{ category.description }}</span>
+                        }
+                        <span class="client-techx__category-meta">
+                          {{ serviceCountLabel(category.services.length) }}
+                          @if (category.totalProjects > 0) {
+                            · {{ projectCountLabel(category.totalProjects) }}
+                          }
+                        </span>
+                      </span>
+                      <i
+                        class="fe"
+                        [class.fe-chevron-down]="!isCategoryExpanded(category.id)"
+                        [class.fe-chevron-up]="isCategoryExpanded(category.id)"
+                        aria-hidden="true"></i>
+                    </button>
+
+                    @if (isCategoryExpanded(category.id)) {
+                      <ul class="client-techx__service-list">
+                        @for (service of category.services; track service.id) {
+                          <li class="client-techx__service-item">
+                            <div class="client-techx__service-main">
+                              <div class="client-techx__service-name">{{ service.name }}</div>
+                              @if (service.description) {
+                                <p class="client-techx__service-desc">{{ service.description }}</p>
+                              }
+                              @if (service.projectCount > 0) {
+                                <span class="client-techx__service-count">
+                                  {{ projectCountLabel(service.projectCount) }}
+                                </span>
+                              }
+                            </div>
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-primary"
+                              (click)="requestService(service)">
+                              Request
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                }
+              </div>
+              @if (categoriesRefreshing) {
+                <p class="client-techx__scroll-hint text-muted small mb-0">Updating results…</p>
+              } @else if (categoriesLoading) {
+                <p class="client-techx__scroll-hint text-muted small mb-0">Loading more…</p>
+              } @else if (categoriesHasMore) {
+                <div
+                  #categoriesSentinel
+                  class="client-techx__scroll-sentinel"
+                  aria-hidden="true"></div>
+                <p class="client-techx__scroll-hint text-muted small mb-0">Scroll for more…</p>
+              }
+            }
+          </div>
+        </ng-template>
+      </li>
+
+      <li [ngbNavItem]="'team'">
+        <a ngbNavLink class="nav-link">Offshore team</a>
+        <ng-template ngbNavContent>
+          <div class="profile-tab-content">
+            <p class="text-muted small mb-3">
+              Browse our full specialist roster. Search by name, skills, or experience, then open a
+              profile for skills, experience, certificates, and introduction.
+            </p>
+
+            <div class="client-team-members__toolbar row g-3 align-items-end mb-3">
+              <div class="col-lg-4 col-md-6">
+                <label class="form-label mb-1" for="otxNameSearch">Search by name</label>
+                <div class="client-team-members__search">
+                  <i class="fe fe-user client-team-members__search-icon"></i>
+                  <input
+                    id="otxNameSearch"
+                    type="text"
+                    class="form-control client-team-members__search-input"
+                    placeholder="Team member name"
+                    [(ngModel)]="teamNameSearch"
+                    (ngModelChange)="onTeamNameSearchInput()" />
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-6">
+                <label class="form-label mb-1" for="otxSkillSearch">Search by skill</label>
+                <div class="client-team-members__search">
+                  <i class="fe fe-search client-team-members__search-icon"></i>
+                  <input
+                    id="otxSkillSearch"
+                    type="text"
+                    class="form-control client-team-members__search-input"
+                    placeholder="e.g. Angular, Cisco, DevOps"
+                    [(ngModel)]="teamSkillSearch"
+                    (ngModelChange)="onTeamSkillSearchInput()" />
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-6">
+                <app-toolbar-select
+                  inputId="otxExperienceBand"
+                  label="Experience"
+                  [options]="experienceOptions"
+                  [(ngModel)]="teamExperienceBand"
+                  (selectionChange)="onTeamExperienceChange()" />
+              </div>
+            </div>
+
+            @if (teamLoading && !teamHasLoaded) {
+              <div class="text-center py-5 text-muted">Loading team...</div>
+            } @else if (!teamRefreshing && teamHasLoaded && teamMembers.length === 0) {
+              <div class="client-techx__empty text-center py-5">
+                <i class="ti ti-users client-techx__empty-icon"></i>
+                <p class="mb-0 text-muted">No team members match your filters.</p>
+              </div>
+            } @else {
+              <div
+                class="client-team-members__grid"
+                [class.client-techx__grid--refreshing]="teamRefreshing">
+                @for (member of teamMembers; track member.id) {
+                  <button type="button" class="client-member-card" (click)="openMemberProfile(member)">
+                    @if (photoUrl(member)) {
+                      <img
+                        [src]="photoUrl(member)!"
+                        [alt]="member.fullName"
+                        class="client-member-card__photo" />
+                    } @else {
+                      <span class="client-member-card__avatar">{{ memberInitials(member) }}</span>
+                    }
+                    <div class="client-member-card__body">
+                      <p class="client-member-card__name mb-0">{{ member.fullName }}</p>
+                      <p class="client-member-card__meta mb-1">{{ member.title || 'Specialist' }}</p>
+                      <p class="client-member-card__years mb-2">
+                        {{ member.yearsOfExperience }} years experience
+                      </p>
+                      @if (member.skills.length) {
+                        <div class="client-member-card__tags">
+                          @for (skill of member.skills.slice(0, 4); track skill) {
+                            <span class="badge bg-light text-dark">{{ skill }}</span>
+                          }
+                          @if (member.skills.length > 4) {
+                            <span class="badge bg-secondary-transparent">
+                              +{{ member.skills.length - 4 }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+              @if (teamRefreshing) {
+                <p class="client-techx__scroll-hint text-muted small mb-0">Updating results…</p>
+              } @else if (teamLoading) {
+                <p class="client-techx__scroll-hint text-muted small mb-0">Loading more…</p>
+              } @else if (teamHasMore) {
+                <div #teamSentinel class="client-techx__scroll-sentinel" aria-hidden="true"></div>
+                <p class="client-techx__scroll-hint text-muted small mb-0">Scroll for more…</p>
+              }
+            }
+          </div>
+        </ng-template>
+      </li>
+
+      <li [ngbNavItem]="'projects'">
+        <a ngbNavLink class="nav-link">Published projects</a>
+        <ng-template ngbNavContent>
+          <div class="profile-tab-content">
+            <p class="text-muted small mb-3">
+              Selected completed work with the service used for each engagement.
+            </p>
+
+            <div class="client-techx__toolbar mb-3">
+              <div class="client-techx__search">
+                <i class="fe fe-search client-techx__search-icon"></i>
+                <input
+                  type="text"
+                  class="form-control client-techx__search-input"
+                  placeholder="Search projects or services"
+                  [(ngModel)]="projectSearch"
+                  (ngModelChange)="onProjectSearchInput()" />
+              </div>
+            </div>
+
+            @if (projectsLoading && !projectsHasLoaded) {
+              <div class="text-center py-5 text-muted">Loading projects...</div>
+            } @else if (!projectsRefreshing && projectsHasLoaded && publishedProjects.length === 0) {
+              <div class="client-techx__empty text-center py-5">
+                <i class="ti ti-briefcase client-techx__empty-icon"></i>
+                <p class="mb-0 text-muted">No published projects match your search.</p>
+              </div>
+            } @else {
+              <div
+                class="client-techx__project-grid"
+                [class.client-techx__grid--refreshing]="projectsRefreshing">
+                @for (project of publishedProjects; track project.id) {
+                  <button
+                    type="button"
+                    class="client-techx__project-card"
+                    (click)="openProjectDetail(project)">
+                    @if (projectThumb(project)) {
+                      <img
+                        [src]="projectThumb(project)!"
+                        [alt]="project.title"
+                        class="client-techx__project-thumb" />
+                    } @else {
+                      <div class="client-techx__project-thumb client-techx__project-thumb--empty">
+                        <i class="ti ti-photo"></i>
+                      </div>
+                    }
+                    <div class="client-techx__project-card-body">
+                      <span class="client-techx__project-service">
+                        {{ project.serviceName || 'Service' }}
+                        @if (project.serviceCategoryName) {
+                          · {{ project.serviceCategoryName }}
+                        }
+                      </span>
+                      <h3 class="client-techx__project-title">{{ project.title }}</h3>
+                      @if (project.description) {
+                        <p class="client-techx__project-summary">{{ project.description }}</p>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+              @if (projectsRefreshing) {
+                <p class="client-techx__scroll-hint text-muted small mb-0">Updating results…</p>
+              } @else if (projectsLoading) {
+                <p class="client-techx__scroll-hint text-muted small mb-0">Loading more…</p>
+              } @else if (projectsHasMore) {
+                <div
+                  #projectsSentinel
+                  class="client-techx__scroll-sentinel"
+                  aria-hidden="true"></div>
+                <p class="client-techx__scroll-hint text-muted small mb-0">Scroll for more…</p>
+              }
+            }
+          </div>
+        </ng-template>
+      </li>
+    </ul>
+
+    <div class="profile-tabs__outlet" [ngbNavOutlet]="techxNav"></div>
+  </div>
+}

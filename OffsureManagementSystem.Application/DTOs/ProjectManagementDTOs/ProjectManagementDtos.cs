@@ -93,6 +93,11 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public decimal HourlyCostRate { get; set; }
     }
 
+    public class UpdateProjectRmFixedCostAmountDto
+    {
+        public decimal FixedCostAmount { get; set; }
+    }
+
     public class UpdateProjectSalesAssignmentDto
     {
         public int? SalesId { get; set; }
@@ -106,6 +111,7 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public decimal? HourlyCostRate { get; set; }
+        public decimal? FixedCostAmount { get; set; }
     }
 
     public class ProjectDto
@@ -137,6 +143,8 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public List<ProjectMilestoneDto> Milestones { get; set; } = new();
         /// <summary>Current RM's cost rate on this hourly project (resource manager portal only).</summary>
         public decimal? MyHourlyCostRate { get; set; }
+        /// <summary>Current RM's fixed cost allocation on a fixed-budget project (resource manager portal only).</summary>
+        public decimal? MyFixedCostAmount { get; set; }
         /// <summary>Current team member's role on this project (team member portal list).</summary>
         public string MyRole { get; set; } = string.Empty;
         public int? SalesId { get; set; }

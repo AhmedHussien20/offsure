@@ -1,0 +1,175 @@
+.project-payment__year-field {
+  width: 6.5rem;
+}
+
+.project-payment__month-field {
+  min-width: 11rem;
+}
+
+.project-payment__month-select {
+  min-width: 11rem;
+  padding-right: 2.25rem;
+  background-position: right 0.65rem center;
+  background-size: 12px 8px;
+}
+
+.project-payment__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.project-payment__row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+  gap: 0.75rem 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.project-payment__meta-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.project-payment__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.project-payment__menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #64748b;
+  line-height: 1;
+
+  &:hover,
+  &:focus {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  &::after {
+    display: none;
+  }
+}
+
+.project-payment__menu-panel {
+  min-width: 14rem;
+  max-width: 18rem;
+}
+
+.project-payment__menu-file {
+  cursor: pointer;
+}
+
+.project-payment__sub {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0.15rem 0 0.35rem;
+}
+
+.project-payment__file-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.project-payment__file-group {
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  min-width: 0;
+}
+
+.project-payment__file-group--invoice {
+  background: rgba(var(--primary-rgb), 0.06);
+  border: 1px solid rgba(var(--primary-rgb), 0.18);
+}
+
+.project-payment__file-group--po {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.project-payment__file-group-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #475569;
+  margin-bottom: 0.35rem;
+}
+
+.project-payment__file-group--invoice .project-payment__file-group-label {
+  color: rgb(var(--primary-rgb));
+}
+
+.project-payment__file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.project-payment__file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.project-payment__link {
+  font-size: 0.875rem;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.project-payment__link--po {
+  color: #334155;
+}
+
+.project-payment__amount {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgb(var(--primary-rgb));
+}
+
+.project-payment__pending {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+@media (max-width: 768px) {
+  .project-payment__row {
+    grid-template-columns: 1fr;
+  }
+
+  .project-payment__file-groups {
+    grid-template-columns: 1fr;
+  }
+}

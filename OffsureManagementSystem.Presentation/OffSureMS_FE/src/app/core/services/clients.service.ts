@@ -100,6 +100,23 @@ export class ClientsService {
     return this.api.get<BaseResponse<ClientTeamMemberDetailDto>>(this.service, `team-members/${id}`);
   }
 
+  browseShowcaseTeamMembers(
+    request?: ClientTeamMemberBrowseRequest
+  ): Observable<BaseResponse<PagedResponse<ClientTeamMemberCardDto>>> {
+    return this.api.get<BaseResponse<PagedResponse<ClientTeamMemberCardDto>>>(
+      this.service,
+      'showcase/team-members',
+      request as Record<string, unknown>
+    );
+  }
+
+  getShowcaseTeamMemberDetail(id: number): Observable<BaseResponse<ClientTeamMemberDetailDto>> {
+    return this.api.get<BaseResponse<ClientTeamMemberDetailDto>>(
+      this.service,
+      `showcase/team-members/${id}`
+    );
+  }
+
   private mapPagedClients(res: BaseResponse<PagedResponse<ClientDto>>): BaseResponse<PagedResponse<ClientDto>> {
     if (!res.data) {
       return res;

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
@@ -16,7 +16,7 @@ import { AuthService } from 'app/core/services/auth.service';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { SharedModule } from 'app/shared/shared.module';
 import { ToastrService } from 'ngx-toastr';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { normalizeProjectStatus, projectStatusKey } from 'app/core/utils/enum-status.util';
 import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
 import { assignmentsForSkill, displayRole, directProjectAssignments, summaryProjectAssignments } from 'app/core/utils/project-skill.util';
@@ -47,10 +47,13 @@ export interface RmProjectSkillSlot {
   styleUrl: '../../admin/admin-project-detail/admin-project-detail.component.scss',
 })
 export class RmProjectDetailComponent implements OnInit, OnDestroy {
+  @ViewChild('costModal') costModalTpl?: TemplateRef<unknown>;
+
   project: ProjectDto | null = null;
   loading = true;
   savingDelivery = false;
   progressPreview = 0;
+  private costModalRef: NgbModalRef | null = null;
 
   skillSlots: RmProjectSkillSlot[] = [];
   deliveryForm!: FormGroup;
@@ -63,6 +66,8 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   savingSkills = false;
   savingHourlyCostRate = false;
   hourlyCostRateInput = '';
+  savingFixedCostAmount = false;
+  fixedCostAmountInput = '';
   skillSearchQuery = '';
   skillsList: SkillDto[] = [];
   skillsPageIndex = 1;
@@ -151,8 +156,47 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     return (this.project?.myHourlyCostRate ?? 0) > 0;
   }
 
+  get isFixedBudget(): boolean {
+    return !!this.project && !isHourlyBudgetProject(this.project);
+  }
+
+  get hasFixedCostAmount(): boolean {
+    return (this.project?.myFixedCostAmount ?? 0) > 0;
+  }
+
+  get hasCostDetermined(): boolean {
+    if (this.isHourlyBudget) return this.hasHourlyCostRate;
+    if (this.isFixedBudget) return this.hasFixedCostAmount;
+    return true;
+  }
+
+  get costCardLabel(): string {
+    return this.isHourlyBudget ? 'Your cost rate' : 'Your fixed cost';
+  }
+
+  get costCardValue(): string {
+    if (this.isHourlyBudget) {
+      return this.hasHourlyCostRate
+        ? `$${Number(this.project!.myHourlyCostRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/hr`
+        : 'Not set';
+    }
+    if (this.isFixedBudget) {
+      return this.hasFixedCostAmount
+        ? `$${Number(this.project!.myFixedCostAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : 'Not set';
+    }
+    return '—';
+  }
+
+  get costCardHint(): string {
+    if (!this.hasCostDetermined) return 'Cost not determined — tap to set';
+    return this.isHourlyBudget ? 'Per hour for this project' : 'Fixed allocation for this project';
+  }
+
   get canAssignTeam(): boolean {
-    return !this.isHourlyBudget || this.hasHourlyCostRate;
+    if (this.isHourlyBudget) return this.hasHourlyCostRate;
+    if (this.isFixedBudget) return this.hasFixedCostAmount;
+    return true;
   }
 
   get progressPercent(): number {
@@ -459,7 +503,11 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   openAssignModal(slot: RmProjectSkillSlot): void {
     if (!this.project || this.isDeliveryLocked) return;
     if (!this.canAssignTeam) {
-      this.toastr.warning('Set your cost rate on this project before assigning team members.');
+      this.toastr.warning(
+        this.isHourlyBudget
+          ? 'Set your cost rate on this project before assigning team members.'
+          : 'Set your fixed cost on this project before assigning team members.'
+      );
       return;
     }
 
@@ -473,7 +521,11 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
   openDirectAssignModal(): void {
     if (!this.project || this.isDeliveryLocked) return;
     if (!this.canAssignTeam) {
-      this.toastr.warning('Set your cost rate on this project before assigning team members.');
+      this.toastr.warning(
+        this.isHourlyBudget
+          ? 'Set your cost rate on this project before assigning team members.'
+          : 'Set your fixed cost on this project before assigning team members.'
+      );
       return;
     }
 
@@ -511,6 +563,23 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  openCostModal(): void {
+    if (!this.project || !this.costModalTpl) return;
+    this.syncHourlyCostRateInput();
+    this.syncFixedCostAmountInput();
+    this.costModalRef = this.modalService.open(this.costModalTpl, {
+      centered: true,
+      size: 'md',
+      backdrop: 'static',
+    });
+    this.costModalRef.closed.subscribe(() => {
+      this.costModalRef = null;
+    });
+    this.costModalRef.dismissed.subscribe(() => {
+      this.costModalRef = null;
+    });
+  }
+
   saveHourlyCostRate(): void {
     if (!this.project || this.isDeliveryLocked || !this.isHourlyBudget) return;
 
@@ -527,10 +596,35 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
         this.syncHourlyCostRateInput();
         this.toastr.success('Cost rate saved.');
         this.savingHourlyCostRate = false;
+        this.costModalRef?.close();
       },
-      error: err => {
+      error: () => {
         this.savingHourlyCostRate = false;
-        },
+      },
+    });
+  }
+
+  saveFixedCostAmount(): void {
+    if (!this.project || this.isDeliveryLocked || !this.isFixedBudget) return;
+
+    const amount = Number(this.fixedCostAmountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.toastr.warning('Enter a valid fixed cost amount.');
+      return;
+    }
+
+    this.savingFixedCostAmount = true;
+    this.portal.updateFixedCostAmount(this.project.id, { fixedCostAmount: amount }).subscribe({
+      next: res => {
+        this.project = res.data ?? this.project;
+        this.syncFixedCostAmountInput();
+        this.toastr.success('Fixed cost saved.');
+        this.savingFixedCostAmount = false;
+        this.costModalRef?.close();
+      },
+      error: () => {
+        this.savingFixedCostAmount = false;
+      },
     });
   }
 
@@ -610,6 +704,11 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
     this.hourlyCostRateInput = rate != null && rate > 0 ? String(rate) : '';
   }
 
+  private syncFixedCostAmountInput(): void {
+    const amount = this.project?.myFixedCostAmount;
+    this.fixedCostAmountInput = amount != null && amount > 0 ? String(amount) : '';
+  }
+
   private loadProject(): void {
     this.loading = true;
     this.portal.getProjectById(this.projectId).subscribe({
@@ -629,6 +728,7 @@ export class RmProjectDetailComponent implements OnInit, OnDestroy {
         }
         this.patchDeliveryForm();
         this.syncHourlyCostRateInput();
+        this.syncFixedCostAmountInput();
         this.loading = false;
       },
       error: () => {

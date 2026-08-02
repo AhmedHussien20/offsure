@@ -31,6 +31,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             services.AddScoped<IServiceManagementService, ServiceManagementService>();
             services.AddScoped<IServiceRequestManagementService, ServiceRequestManagementService>();
             services.AddScoped<IProjectManagementService, ProjectManagementService>();
+            services.AddScoped<IProjectInvoiceStorageService, ProjectInvoiceStorageService>();
+            services.AddScoped<IProjectInvoiceService, ProjectInvoiceService>();
             services.AddScoped<ITimesheetService, TimesheetService>();
             services.AddScoped<IClientManagementService, ClientManagementService>();
             services.AddScoped<IPortfolioManagementService, PortfolioManagementService>();

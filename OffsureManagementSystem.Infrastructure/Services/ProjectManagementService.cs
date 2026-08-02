@@ -209,6 +209,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
             await EnsureTeamMemberManagedByUserAsync(userId, dto.TeamMemberId);
+            await EnsureResourceManagerCostConfiguredAsync(userId, projectId);
 
             await AssignTeamMemberAsync(projectId, dto);
             return await GetResourceManagerProjectByIdAsync(userId, projectId);
@@ -250,6 +251,48 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _projectResourceManagerRepo.SaveInclude(
                 row,
                 nameof(row.HourlyCostRate),
+                nameof(row.UpdatedAt));
+            await _projectResourceManagerRepo.SaveChangesAsync();
+
+            return await GetResourceManagerProjectByIdAsync(userId, projectId);
+        }
+
+        public async Task<ProjectDto> UpdateProjectFixedCostAmountForResourceManagerAsync(
+            int userId,
+            int projectId,
+            UpdateProjectRmFixedCostAmountDto dto)
+        {
+            await EnsureProjectAccessibleToResourceManagerAsync(userId, projectId);
+
+            var projectEntity = await _projectRepo.GetByIDAsync(projectId)
+                ?? throw new AppException("Project not found.", 404);
+
+            if (projectEntity.BudgetType != ProjectBudgetType.Total)
+                throw new AppException("Fixed cost applies only to fixed budget projects.", 400);
+
+            if (dto.FixedCostAmount <= 0)
+                throw new AppException("Enter a valid fixed cost amount.", 400);
+
+            var row = await _projectResourceManagerRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(r =>
+                    r.ProjectId == projectId
+                    && r.ResourceManagerUserId == userId
+                    && r.IsActive
+                    && !r.IsDeleted);
+
+            if (row is null)
+                throw new AppException("You are not assigned to this project.", 403);
+
+            if (row.FixedCostAmount is > 0)
+                throw new AppException("Fixed cost is already set for this project and cannot be changed.", 400);
+
+            row.FixedCostAmount = dto.FixedCostAmount;
+            row.UpdatedAt = DateTime.UtcNow;
+            _projectResourceManagerRepo.SaveInclude(
+                row,
+                nameof(row.FixedCostAmount),
                 nameof(row.UpdatedAt));
             await _projectResourceManagerRepo.SaveChangesAsync();
 
@@ -413,8 +456,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (userIds.Count > 2)
                 throw new AppException("A project can have at most 2 resource managers.", 400);
 
+            // Include inactive/soft-deleted rows. Query filters hide IsActive=false,
+            // which previously caused re-adding an RM to INSERT and hit the unique index.
             var existing = await _projectResourceManagerRepo
-                .GetAll(r => r.ProjectId == projectId)
+                .Query()
+                .IgnoreQueryFilters()
+                .Where(r => r.ProjectId == projectId)
                 .ToListAsync();
 
             var target = userIds.ToHashSet();
@@ -436,7 +483,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             foreach (var resourceManagerUserId in userIds)
             {
-                var row = existing.FirstOrDefault(r => r.ResourceManagerUserId == resourceManagerUserId);
+                var row = existing
+                    .Where(r => r.ResourceManagerUserId == resourceManagerUserId)
+                    .OrderBy(r => r.IsDeleted)
+                    .ThenByDescending(r => r.IsActive)
+                    .ThenByDescending(r => r.Id)
+                    .FirstOrDefault();
 
                 if (row is null)
                 {
@@ -451,16 +503,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 else
                 {
                     row.IsActive = true;
-                    if (row.IsDeleted)
-                    {
-                        row.IsDeleted = false;
-                    }
-
+                    row.IsDeleted = false;
+                    row.DeletedAt = null;
                     row.UpdatedAt = DateTime.UtcNow;
                     _projectResourceManagerRepo.SaveInclude(
                         row,
                         nameof(row.IsActive),
                         nameof(row.IsDeleted),
+                        nameof(row.DeletedAt),
                         nameof(row.UpdatedAt));
                 }
             }
@@ -1605,9 +1655,35 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static ProjectDto MapProjectListForResourceManager(Project project, int userId)
         {
             var dto = MapProjectList(project);
-            dto.MyHourlyCostRate = project.ProjectResourceManagers?
-                .FirstOrDefault(rm => rm.ResourceManagerUserId == userId)?.HourlyCostRate;
+            var rm = project.ProjectResourceManagers?
+                .FirstOrDefault(r => r.ResourceManagerUserId == userId);
+            dto.MyHourlyCostRate = rm?.HourlyCostRate;
+            dto.MyFixedCostAmount = rm?.FixedCostAmount;
             return dto;
+        }
+
+        private async Task EnsureResourceManagerCostConfiguredAsync(int userId, int projectId)
+        {
+            var project = await _projectRepo.GetByIDAsync(projectId)
+                ?? throw new AppException("Project not found.", 404);
+
+            var row = await _projectResourceManagerRepo
+                .Query()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(r =>
+                    r.ProjectId == projectId
+                    && r.ResourceManagerUserId == userId
+                    && r.IsActive
+                    && !r.IsDeleted);
+
+            if (row is null)
+                throw new AppException("You are not assigned to this project.", 403);
+
+            if (project.BudgetType == ProjectBudgetType.Hourly && row.HourlyCostRate is not > 0)
+                throw new AppException("Set your cost rate for this project before assigning team members.", 400);
+
+            if (project.BudgetType == ProjectBudgetType.Total && row.FixedCostAmount is not > 0)
+                throw new AppException("Set your fixed cost for this project before assigning team members.", 400);
         }
 
         private static ProjectDto MapProjectListForTeamMember(Project project, int teamMemberId)
@@ -1663,7 +1739,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         UserId = rm.ResourceManagerUserId,
                         FullName = UserDisplayName.FromUser(rm.ResourceManager),
                         Email = rm.ResourceManager?.Email ?? string.Empty,
-                        HourlyCostRate = rm.HourlyCostRate
+                        HourlyCostRate = rm.HourlyCostRate,
+                        FixedCostAmount = rm.FixedCostAmount
                     })
                     .ToList() ?? new List<ProjectResourceManagerDto>(),
                 TeamMembers = project.ProjectAssignments
@@ -2020,12 +2097,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var dto = StripFinancials(project);
             var rm = dto.ResourceManagers?.FirstOrDefault(r => r.UserId == userId);
             dto.MyHourlyCostRate = rm?.HourlyCostRate;
+            dto.MyFixedCostAmount = rm?.FixedCostAmount;
 
             if (dto.ResourceManagers is null)
                 return dto;
 
             foreach (var other in dto.ResourceManagers.Where(r => r.UserId != userId))
+            {
                 other.HourlyCostRate = null;
+                other.FixedCostAmount = null;
+            }
 
             return dto;
         }
@@ -2056,9 +2137,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             StripAssignmentFinancials(project);
             StripMilestoneFinancials(project);
+            // Keep UsesMilestones so client payment UI can scope invoices per phase.
             project.Milestones = new List<ProjectMilestoneDto>();
-            project.UsesMilestones = false;
-            project.MilestoneCount = null;
             StripResourceManagers(project);
             StripAssignmentResourceManagerIds(project);
             return project;
@@ -2068,6 +2148,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             project.ResourceManagers = new List<ProjectResourceManagerDto>();
             project.MyHourlyCostRate = null;
+            project.MyFixedCostAmount = null;
         }
 
         private static void StripAssignmentResourceManagerIds(ProjectDto project)

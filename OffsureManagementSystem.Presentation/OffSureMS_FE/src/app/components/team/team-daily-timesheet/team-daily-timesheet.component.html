@@ -232,6 +232,15 @@
         }
 
         <div class="timesheet-popup__actions">
+          @if (popupMode === 'edit') {
+            <button
+              type="button"
+              class="btn btn-outline-danger me-auto"
+              [disabled]="saving"
+              (click)="confirmDeleteEntry()">
+              Delete
+            </button>
+          }
           <button type="button" class="btn btn-light" [disabled]="saving" (click)="closePopup()">Cancel</button>
           <button type="submit" class="btn btn-primary" [disabled]="saving">
             @if (saving) { Saving… } @else { {{ popupPrimaryLabel }} }

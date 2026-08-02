@@ -167,19 +167,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (!hasAccess)
                 throw new AppException("Team member not found on your projects.", 404);
 
-            var member = await _teamMemberRepo
-                .Query()
-                .AsNoTracking()
-                .Include(t => t.User)
-                .Include(t => t.TeamMemberSkills)
-                    .ThenInclude(ts => ts.Skill)
-                .Include(t => t.Certificates.Where(c => !c.IsDeleted))
-                .Include(t => t.Experiences.Where(e => !e.IsDeleted))
-                .FirstOrDefaultAsync(t => t.Id == teamMemberId && !t.IsDeleted);
-
-            if (member is null)
-                throw new AppException("Team member not found.", 404);
-
             var projectNames = await _assignmentRepo
                 .Query()
                 .AsNoTracking()
@@ -194,6 +181,80 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Distinct()
                 .OrderBy(name => name)
                 .ToListAsync();
+
+            return await MapMemberDetailAsync(teamMemberId, projectNames);
+        }
+
+        public async Task<PagedResponse<ClientTeamMemberCardDto>> BrowseShowcaseTeamMembersAsync(
+            ClientTeamMemberBrowseRequest request)
+        {
+            var query = _teamMemberRepo
+                .Query()
+                .AsNoTracking()
+                .Include(t => t.User)
+                .Include(t => t.TeamMemberSkills)
+                    .ThenInclude(ts => ts.Skill)
+                .Where(t => !t.IsDeleted && t.User.IsActive && !t.User.IsDeleted);
+
+            query = TeamMemberBrowseFilters.ApplyNameSearch(query, request.NameSearch);
+            query = TeamMemberBrowseFilters.ApplySkillSearch(query, request.SkillSearch);
+            query = TeamMemberBrowseFilters.ApplyExperienceBand(query, request.ExperienceBand);
+
+            var total = await query.CountAsync();
+            var members = await query
+                .OrderBy(t => t.User.LastName)
+                .ThenBy(t => t.User.FirstName)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            var cards = members.Select(member => new ClientTeamMemberCardDto
+            {
+                Id = member.Id,
+                FullName = UserDisplayName.FromTeamMember(member),
+                Title = member.Title,
+                YearsOfExperience = member.YearsOfExperience,
+                ProfilePhotoUrl = string.IsNullOrWhiteSpace(member.ProfilePhoto)
+                    ? null
+                    : _photoStorage.GetPhotoPublicUrl(member.ProfilePhoto),
+                Skills = member.TeamMemberSkills
+                    .OrderBy(s => s.Skill?.Name)
+                    .Select(s => s.Skill?.Name ?? string.Empty)
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Distinct()
+                    .ToList(),
+                // Showcase hides other clients' project names.
+                ProjectNames = new List<string>()
+            }).ToList();
+
+            return new PagedResponse<ClientTeamMemberCardDto>(
+                cards,
+                total,
+                GetPageIndex(request),
+                GetPageSize(request));
+        }
+
+        public async Task<ClientTeamMemberDetailDto> GetShowcaseTeamMemberDetailAsync(int teamMemberId)
+        {
+            return await MapMemberDetailAsync(teamMemberId, new List<string>());
+        }
+
+        private async Task<ClientTeamMemberDetailDto> MapMemberDetailAsync(
+            int teamMemberId,
+            List<string> projectNames)
+        {
+            var member = await _teamMemberRepo
+                .Query()
+                .AsNoTracking()
+                .Include(t => t.User)
+                .Include(t => t.TeamMemberSkills)
+                    .ThenInclude(ts => ts.Skill)
+                .Include(t => t.Certificates.Where(c => !c.IsDeleted))
+                .Include(t => t.Experiences.Where(e => !e.IsDeleted))
+                .FirstOrDefaultAsync(t => t.Id == teamMemberId && !t.IsDeleted && t.User.IsActive);
+
+            if (member is null)
+                throw new AppException("Team member not found.", 404);
 
             return new ClientTeamMemberDetailDto
             {

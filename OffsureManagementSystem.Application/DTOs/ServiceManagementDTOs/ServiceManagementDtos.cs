@@ -49,6 +49,21 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public int ServicesCount { get; set; }
     }
 
+    public class ServiceCatalogCategoryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public List<ServiceCatalogItemDto> Services { get; set; } = new();
+    }
+
+    public class ServiceCatalogItemDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
     public class CreateServiceDto
     {
         public string Name { get; set; } = string.Empty;

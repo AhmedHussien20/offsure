@@ -414,18 +414,51 @@
     <div class="export-dialog card custom-card shadow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="card-header border-bottom-0">
         <h5 class="mb-1">Export report</h5>
-        <p class="text-muted small mb-0">Choose what to include in the {{ pendingExportFormat === 'excel' ? 'Excel' : 'PDF' }} file.</p>
+        <p class="text-muted small mb-0">
+          Choose format and detail for the {{ pendingExportFormat === 'excel' ? 'Excel' : 'PDF' }} file.
+        </p>
       </div>
-      <div class="card-body pt-0 d-grid gap-2">
-        <button type="button" class="btn btn-outline-primary" (click)="confirmExport(false)">
-          Resource summary only
-          <span class="d-block small text-muted fw-normal">Logged hours by resource with total cost</span>
-        </button>
-        <button type="button" class="btn btn-primary" (click)="confirmExport(true)">
-          Include time entries
-          <span class="d-block small opacity-75 fw-normal">Resource summary plus detailed entries (hours only)</span>
-        </button>
-        <button type="button" class="btn btn-light" (click)="closeExportDialog()">Cancel</button>
+      <div class="card-body pt-0">
+        <p class="small text-muted mb-2">Content format</p>
+        <div class="export-dialog__modes mb-3">
+          <button
+            type="button"
+            class="export-dialog__mode"
+            [class.export-dialog__mode--active]="exportContentMode === 'hoursOnly'"
+            (click)="selectExportContentMode('hoursOnly')">
+            <strong>Hours only</strong>
+            <span>Total hours by resource — no cost or rates</span>
+          </button>
+          <button
+            type="button"
+            class="export-dialog__mode"
+            [class.export-dialog__mode--active]="exportContentMode === 'withGrossCost'"
+            (click)="selectExportContentMode('withGrossCost')">
+            <strong>Gross cost</strong>
+            <span>Gross hourly rate and gross total cost</span>
+          </button>
+        </div>
+
+        <p class="small text-muted mb-2">Detail level</p>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-primary" (click)="confirmExport(false)">
+            Resource summary only
+            <span class="d-block small text-muted fw-normal">
+              @if (exportContentMode === 'hoursOnly') {
+                Resources with hours and total hours
+              } @else {
+                Resources with gross rate, hours, and gross total cost
+              }
+            </span>
+          </button>
+          <button type="button" class="btn btn-primary" (click)="confirmExport(true)">
+            Include time entries
+            <span class="d-block small opacity-75 fw-normal">
+              Resource summary plus detailed entry lines (hours)
+            </span>
+          </button>
+          <button type="button" class="btn btn-light" (click)="closeExportDialog()">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
