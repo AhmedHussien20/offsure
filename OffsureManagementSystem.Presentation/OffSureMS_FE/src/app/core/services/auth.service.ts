@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
 import { AuthRepository } from '../repositories/auth.repository';
 import { AppState } from 'app/store/app.state';
@@ -21,6 +21,7 @@ import {
 import { ClientContextService } from './client-context.service';
 import { TeamContextService } from './team-context.service';
 import { AuthTokenRefreshService } from './auth-token-refresh.service';
+import { isJwtExpired } from '../utils/jwt.util';
 
 @Injectable({
   providedIn: 'root',
@@ -76,6 +77,12 @@ export class AuthService {
     }
 
   logout() {
+    this.clearLocalSession();
+    this.router.navigate(['/auth/login'], { replaceUrl: true });
+  }
+
+  /** Clears stored auth without navigating (used on public pages when the session is stale). */
+  clearLocalSession(): void {
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userData');
@@ -87,12 +94,47 @@ export class AuthService {
     this.teamContext.clear();
     this.store.dispatch(logout());
     this.store.dispatch(NavActions.clearMenu());
-    this.router.navigate(['/auth/login'], { replaceUrl: true });
   }
 
   /** Manual refresh (e.g. before a long-running action). Normally handled by the interceptor. */
   refreshSession(): Observable<string> {
     return this.tokenRefresh.refreshAccessToken();
+  }
+
+  /**
+   * Validates the saved session for UI/guards.
+   * Refreshes when the access token is expired; clears local auth when refresh fails
+   * or user profile data is incomplete.
+   */
+  ensureSession(): Observable<boolean> {
+    const token = this.tokenRefresh.getAccessToken();
+    if (!token) {
+      return of(false);
+    }
+
+    const hasRole = !!this.getCurrentUser()?.role;
+    if (!isJwtExpired(token) && hasRole) {
+      return of(true);
+    }
+
+    if (!this.tokenRefresh.getRefreshToken()) {
+      this.clearLocalSession();
+      return of(false);
+    }
+
+    return this.tokenRefresh.refreshAccessToken().pipe(
+      map(() => {
+        if (!this.getCurrentUser()?.role) {
+          this.clearLocalSession();
+          return false;
+        }
+        return true;
+      }),
+      catchError(() => {
+        this.clearLocalSession();
+        return of(false);
+      })
+    );
   }
 
   forgotPassword(email: string): Observable<BaseResponse<null>> {
@@ -112,7 +154,12 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('authToken');
+    const token = localStorage.getItem('authToken');
+    if (!token || isJwtExpired(token)) {
+      return false;
+    }
+    // Token without role/profile leaves the logo linking to "/" with Login hidden.
+    return !!this.getCurrentUser()?.role;
   }
 
   getUser(): AuthUser | null {

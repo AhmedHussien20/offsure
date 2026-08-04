@@ -148,6 +148,7 @@
       },
       "sales": {
         "dashboard": "Dashboard",
+        "offshoreTechx": "Offshore TechX",
         "browseTeam": "Team Members",
         "addClient": "Add client",
         "clients": "My clients",

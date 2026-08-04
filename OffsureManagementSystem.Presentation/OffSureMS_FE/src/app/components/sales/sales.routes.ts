@@ -14,11 +14,15 @@ export const salesRoutes: Routes = [
           import('./sales-dashboard/sales-dashboard.component').then(m => m.SalesDashboardComponent),
       },
       {
-        path: 'team-members',
-        data: { breadcrumb: 'Team Members', title: 'Team Members' },
+        path: 'offshore-techx',
+        data: {
+          breadcrumb: 'Offshore TechX',
+          title: 'Offshore TechX',
+          hidePageHeader: true,
+        },
         loadComponent: () =>
-          import('./sales-team-members-list/sales-team-members-list.component').then(
-            m => m.SalesTeamMembersListComponent
+          import('./sales-offshore-techx/sales-offshore-techx.component').then(
+            m => m.SalesOffshoreTechxComponent
           ),
       },
       {

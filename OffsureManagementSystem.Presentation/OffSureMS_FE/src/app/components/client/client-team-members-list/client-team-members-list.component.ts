@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgbModal, NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import {
   CLIENT_TEAM_EXPERIENCE_BANDS,
@@ -12,6 +13,7 @@ import { resolveStorageAssetUrl } from 'app/core/models/team-members/team-member
 import { ClientsService } from 'app/core/services/clients.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { ProjectFilterRequest } from 'app/core/models/projects/project.models';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { ToolbarSelectComponent } from 'app/shared/components/toolbar-select/toolbar-select.component';
 import { ToolbarSelectLoader, ToolbarSelectOption } from 'app/shared/components/toolbar-select/toolbar-select.models';
 import { SharedModule } from 'app/shared/shared.module';
@@ -55,7 +57,9 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
   constructor(
     private clientsService: ClientsService,
     private projectsService: ProjectsService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private router: Router,
+    private viewState: RouteViewStateService
   ) {}
 
   loadProjectsPage: ToolbarSelectLoader = (search, pageIndex) => {
@@ -87,6 +91,16 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
         this.loadMembers();
       });
 
+    const restored = this.viewState.restorePageIfPop(this.router.url);
+    if (restored) {
+      this.page = restored.page;
+      if (restored.pageSize) {
+        this.pageSize = restored.pageSize;
+      }
+    } else {
+      this.viewState.savePage(this.router.url, this.page, this.pageSize);
+    }
+
     this.loadMembers();
   }
 
@@ -113,16 +127,19 @@ export class ClientTeamMembersListComponent implements OnInit, OnDestroy {
 
   onExperienceBandChange(): void {
     this.page = 1;
+    this.viewState.savePage(this.router.url, this.page, this.pageSize);
     this.loadMembers();
   }
 
   onProjectChange(): void {
     this.page = 1;
+    this.viewState.savePage(this.router.url, this.page, this.pageSize);
     this.loadMembers();
   }
 
   onPageChange(page: number): void {
     this.page = page;
+    this.viewState.savePage(this.router.url, this.page, this.pageSize);
     this.loadMembers();
   }
 

@@ -94,6 +94,15 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<object>.Ok(null!, "Resource manager deleted successfully."));
         }
 
+        [HttpPost("resource-managers/{id:int}/reset-password")]
+        public async Task<ActionResult<ApiResponse<object>>> ResetResourceManagerPassword(
+            int id,
+            ResetTeamMemberPasswordDto dto)
+        {
+            await _teamManagementService.ResetResourceManagerPasswordAsync(id, dto);
+            return Ok(ApiResponse<object>.Ok(null!, "Resource manager password reset successfully."));
+        }
+
         [HttpGet("sales-users")]
         public async Task<ActionResult<ApiResponse<PagedResponse<SalesUserDto>>>> GetSalesUsers(
             [FromQuery] SalesUserRequest request)
@@ -142,6 +151,15 @@ namespace OffsureManagementSystem.API.Controllers
         {
             await _teamManagementService.DeleteSalesUserAsync(id);
             return Ok(ApiResponse<object>.Ok(null!, "Sales user deleted successfully."));
+        }
+
+        [HttpPost("sales-users/{id:int}/reset-password")]
+        public async Task<ActionResult<ApiResponse<object>>> ResetSalesUserPassword(
+            int id,
+            ResetTeamMemberPasswordDto dto)
+        {
+            await _teamManagementService.ResetSalesUserPasswordAsync(id, dto);
+            return Ok(ApiResponse<object>.Ok(null!, "Sales user password reset successfully."));
         }
 
         [HttpPost]

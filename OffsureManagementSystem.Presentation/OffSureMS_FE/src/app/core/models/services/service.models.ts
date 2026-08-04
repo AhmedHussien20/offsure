@@ -68,6 +68,7 @@ export interface ServiceFilterRequest {
 
 export interface PublicServiceFilterRequest {
   serviceCategoryId?: number;
+  searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
 }

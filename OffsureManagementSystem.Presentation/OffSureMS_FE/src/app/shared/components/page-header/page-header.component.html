@@ -1,23 +1,25 @@
-<!-- Page Header -->
-<div class="d-md-flex d-block align-items-center justify-content-between page-header-breadcrumb">
-  <div>
-    <h2 class="main-content-title fs-24 mb-1">{{ displayTitle | translate }}</h2>
-    @if (breadcrumbs.length > 0) {
-      <ol class="breadcrumb mb-0">
-        @for (crumb of breadcrumbs; track $index; let last = $last) {
-          <li class="breadcrumb-item" [class.active]="last" [attr.aria-current]="last ? 'page' : null">
-            @if (isLinkCrumb(crumb, last)) {
-              <a (click)="navigateCrumb(crumb)" style="cursor: pointer">
+@if (isVisible) {
+  <!-- Page Header -->
+  <div class="d-md-flex d-block align-items-center justify-content-between page-header-breadcrumb">
+    <div>
+      <h2 class="main-content-title fs-24 mb-1">{{ displayTitle | translate }}</h2>
+      @if (breadcrumbs.length > 0) {
+        <ol class="breadcrumb mb-0">
+          @for (crumb of breadcrumbs; track $index; let last = $last) {
+            <li class="breadcrumb-item" [class.active]="last" [attr.aria-current]="last ? 'page' : null">
+              @if (isLinkCrumb(crumb, last)) {
+                <a (click)="navigateCrumb(crumb)" style="cursor: pointer">
+                  {{ getCrumbLabel(crumb) | translate }}
+                </a>
+              } @else {
                 {{ getCrumbLabel(crumb) | translate }}
-              </a>
-            } @else {
-              {{ getCrumbLabel(crumb) | translate }}
-            }
-          </li>
-        }
-      </ol>
-    }
+              }
+            </li>
+          }
+        </ol>
+      }
+    </div>
+    <div class="d-flex align-items-center gap-3 flex-wrap mt-3 mt-md-0"></div>
   </div>
-  <div class="d-flex align-items-center gap-3 flex-wrap mt-3 mt-md-0"></div>
-</div>
-<!-- End Page Header -->
+  <!-- End Page Header -->
+}

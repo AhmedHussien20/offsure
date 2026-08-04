@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TeamMemberDto, teamMemberDisplayName } from 'app/core/models/team-members/team-member.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
@@ -51,14 +52,15 @@ export class AdminTeamListComponent implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
-  constructor(
-    private teamMembersService: TeamMembersService,
+  constructor(private teamMembersService: TeamMembersService,
     private modalService: NgbModal,
-    private route: ActivatedRoute
-  ) {}
+    private route: ActivatedRoute,
+    private router: Router,
+    private viewState: RouteViewStateService) {}
 
   ngOnInit(): void {
-        this.loadResourceManagers();
+    this.viewState.seedListPaging(this.router.url, this);
+    this.loadResourceManagers();
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = Number(params.get('id'));
       this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;

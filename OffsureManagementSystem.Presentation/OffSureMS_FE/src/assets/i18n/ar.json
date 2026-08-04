@@ -126,6 +126,7 @@
       },
       "sales": {
         "dashboard": "لوحة التحكم",
+        "offshoreTechx": "Offshore TechX",
         "browseTeam": "أعضاء الفريق",
         "addClient": "إضافة عميل",
         "clients": "عملائي",

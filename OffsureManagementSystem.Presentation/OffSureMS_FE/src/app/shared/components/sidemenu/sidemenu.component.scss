@@ -39,6 +39,27 @@ $sidebar-menu-icon: #ffffff;
   min-height: 100vh;
 }
 
+// Horizontal nav uses a 3rem top bar; account-dock min-height must not stretch it full viewport.
+:host-context([data-nav-layout='horizontal']) {
+  @media (min-width: 992px) {
+    .sidebar-with-account {
+      min-height: 0;
+      height: auto;
+    }
+
+    .sidebar-account-dock {
+      display: none;
+    }
+  }
+}
+
+:host-context([data-nav-layout='horizontal']) ::ng-deep .sidebar-layout {
+  @media (min-width: 992px) {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+}
+
 .text-logo {
   display: flex;
   align-items: center;

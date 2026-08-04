@@ -143,4 +143,12 @@ export class TeamMembersService {
   resetPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {
     return this.api.post<BaseResponse<object>>(this.service, `${id}/reset-password`, dto);
   }
+
+  resetSalesUserPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {
+    return this.api.post<BaseResponse<object>>(this.service, `sales-users/${id}/reset-password`, dto);
+  }
+
+  resetResourceManagerPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {
+    return this.api.post<BaseResponse<object>>(this.service, `resource-managers/${id}/reset-password`, dto);
+  }
 }

@@ -9,11 +9,11 @@
   <section class="client-techx-hero card custom-card mb-3">
     <div class="client-techx-hero__inner">
       <div class="client-techx-hero__copy">
-        <p class="client-techx-hero__eyebrow mb-1">Organization catalog</p>
+        <p class="client-techx-hero__eyebrow mb-1">Sales catalog</p>
         <h2 class="client-techx-hero__title mb-2">{{ providerName }}</h2>
         <p class="client-techx-hero__text mb-0">
-          Explore what we deliver, who delivers it, and proof from published work — browse like a
-          living catalog of our organization.
+          Browse available services, offshore specialists, and published project proof to support
+          client conversations.
         </p>
       </div>
       <div class="client-techx-hero__paths" role="navigation" aria-label="Browse sections">
@@ -69,7 +69,7 @@
               <div>
                 <h3 class="client-techx__panel-title">Browse capabilities</h3>
                 <p class="client-techx__panel-text mb-0">
-                  Open a category to see its services, then request the one that fits your need.
+                  Open a category to review its services and project counts.
                 </p>
               </div>
               @if (categoriesHasLoaded && categoryTotalCount > 0) {
@@ -147,12 +147,6 @@
                                 </span>
                               }
                             </div>
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-primary"
-                              (click)="requestService(service)">
-                              Request
-                            </button>
                           </li>
                         }
                       </ul>

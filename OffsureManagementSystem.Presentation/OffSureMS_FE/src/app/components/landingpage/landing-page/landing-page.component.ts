@@ -456,6 +456,9 @@ export class LandingPageComponent {
     if (this.authService.isAdministrator()) {
       return '/admin/dashboard';
     }
+    if (this.authService.isSales()) {
+      return '/sales/dashboard';
+    }
     if (this.authService.isTeamMember()) {
       return '/team/dashboard';
     }
@@ -503,6 +506,10 @@ export class LandingPageComponent {
     this.loadPublicServices();
     this.loadPortfolioHighlights();
     // switcher.localStorageBackUp();
+
+    // Drop stale/invalid saved tokens so Login reappears and the logo does not
+    // point at a dashboard the user can no longer open.
+    this.authService.ensureSession().subscribe(() => this.cdr.markForCheck());
 
     const ltr = this.elementRef.nativeElement.querySelectorAll('#switcher-ltr');
     const rtl = this.elementRef.nativeElement.querySelectorAll('#switcher-rtl');

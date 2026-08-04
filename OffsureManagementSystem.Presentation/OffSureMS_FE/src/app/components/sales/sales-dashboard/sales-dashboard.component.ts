@@ -83,7 +83,7 @@ export class SalesDashboardComponent implements OnInit {
               icon: 'ti-id-badge',
               description: 'Members to browse',
               subValue: '',
-              link: '/sales/team-members',
+              link: '/sales/offshore-techx',
             },
           ];
 

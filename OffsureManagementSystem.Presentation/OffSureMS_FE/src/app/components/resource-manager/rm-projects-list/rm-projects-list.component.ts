@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectDto } from 'app/core/models/projects/project.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { ResourceManagerPortalService } from 'app/core/services/resource-manager-portal.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
@@ -42,13 +43,13 @@ export class RmProjectsListComponent implements OnInit {
     ],
   };
 
-  constructor(
-    private portal: ResourceManagerPortalService,
-    private router: Router
-  ) {}
+  constructor(private portal: ResourceManagerPortalService,
+    private router: Router,
+    private viewState: RouteViewStateService) {}
 
   ngOnInit(): void {
-        this.loadProjects();
+    this.viewState.seedListPaging(this.router.url, this);
+    this.loadProjects();
   }
 
   onSearch = (): void => {

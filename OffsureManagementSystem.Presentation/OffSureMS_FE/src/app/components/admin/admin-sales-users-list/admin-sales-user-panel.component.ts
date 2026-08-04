@@ -5,7 +5,9 @@ import { FormFieldConfig } from 'app/core/models/form-field-config';
 import { SalesUserDto } from 'app/core/models/team-members/team-member.models';
 import { TeamMembersService } from 'app/core/services/team-members.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
+import { TeamMemberResetPasswordModalComponent } from 'app/shared/components/team-member-reset-password-modal/team-member-reset-password-modal.component';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -44,7 +46,8 @@ export class AdminSalesUserPanelComponent implements OnChanges, OnDestroy {
     private fb: FormBuilder,
     private teamMembersService: TeamMembersService,
     private toastr: ToastrService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private modalService: NgbModal
   ) {
     this.form = this.fb.group({
       firstName: ['', Validators.required],
@@ -78,6 +81,21 @@ export class AdminSalesUserPanelComponent implements OnChanges, OnDestroy {
     }
     this.patchForm(this.salesUser);
     this.editing = true;
+  }
+
+  openResetPasswordModal(): void {
+    if (!this.salesUser?.isActive) {
+      return;
+    }
+    const modalRef = this.modalService.open(TeamMemberResetPasswordModalComponent, {
+      centered: true,
+      size: 'lg',
+    });
+    modalRef.componentInstance.memberId = this.salesUser.id;
+    modalRef.componentInstance.memberName =
+      this.salesUser.fullName?.trim() ||
+      `${this.salesUser.firstName} ${this.salesUser.lastName}`.trim();
+    modalRef.componentInstance.accountType = 'salesUser';
   }
 
   cancelEdit(): void {

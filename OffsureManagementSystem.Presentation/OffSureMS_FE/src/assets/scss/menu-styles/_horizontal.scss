@@ -90,6 +90,7 @@
         .app-sidebar {
             width: 100% !important;
             height: 3rem;
+            min-height: 0 !important;
             inset-block-start: 4rem;
             border-block-end: 1px solid var(--menu-border-color);
             .slide-menu.child1,

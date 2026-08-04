@@ -147,10 +147,10 @@ private SALES_MENUITEMS: MenuItem[] = [
     requiredRole: 'Sales',
   },
   {
-    title: 'Team Members',
-    path: '/sales/team-members',
+    title: 'Offshore TechX',
+    path: '/sales/offshore-techx',
     type: 'link',
-    icon: 'ti-id-badge',
+    icon: 'ti-briefcase',
     requiredRole: 'Sales',
   },
   {
@@ -179,6 +179,13 @@ private CLIENT_MENUITEMS: MenuItem[] = [
     requiredRole: 'Client',
   },
   {
+    title: 'Offshore TechX',
+    path: '/client/offshore-techx',
+    type: 'link',
+    icon: 'ti-briefcase',
+    requiredRole: 'Client',
+  },
+  {
     title: 'My Requests',
     path: '/client/requests',
     type: 'link',
@@ -193,19 +200,13 @@ private CLIENT_MENUITEMS: MenuItem[] = [
     requiredRole: 'Client',
   },
   {
-    title: 'Team Members',
+    title: 'MY Team Members',
     path: '/client/team-members',
     type: 'link',
     icon: 'ti-id-badge',
     requiredRole: 'Client',
   },
-  {
-    title: 'Offshore TechX',
-    path: '/client/offshore-techx',
-    type: 'link',
-    icon: 'ti-briefcase',
-    requiredRole: 'Client',
-  },
+  
   // {
   //   title: 'Company Profile',
   //   path: '/client/profile',

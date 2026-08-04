@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ClientContextService } from 'app/core/services/client-context.service';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
@@ -75,11 +76,15 @@ export class ClientRequestsListComponent implements OnInit {
     private serviceRequestsService: ServiceRequestsService,
     private modalService: NgbModal,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private viewState: RouteViewStateService
   ) {}
 
   ngOnInit(): void {
-        this.clientContext.loadProfile().subscribe(profile => {
+    // Apply back-navigation page before the first fetch (table restore alone loses the race).
+    this.viewState.seedListPaging(this.router.url, this);
+
+    this.clientContext.loadProfile().subscribe(profile => {
       this.clientId = profile?.id ?? null;
       if (this.clientId) {
         this.loadRequests();

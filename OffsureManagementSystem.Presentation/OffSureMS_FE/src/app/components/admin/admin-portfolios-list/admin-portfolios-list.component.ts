@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PortfolioDto } from 'app/core/models/portfolios/portfolio.models';
 import { ServiceDto } from 'app/core/models/services/service.models';
-import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { PortfoliosService } from 'app/core/services/portfolios.service';
 import { ServicesService } from 'app/core/services/services.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
@@ -53,13 +55,14 @@ export class AdminPortfoliosListComponent implements OnInit {
     serviceId: [],
   };
 
-  constructor(
-    private portfoliosService: PortfoliosService,
+  constructor(private portfoliosService: PortfoliosService,
     private servicesService: ServicesService,
-    private modalService: NgbModal
-  ) {}
+    private modalService: NgbModal,
+    private router: Router,
+    private viewState: RouteViewStateService) {}
 
-  ngOnInit(): void {
+  ngOnInit(): void {
+    this.viewState.seedListPaging(this.router.url, this);
     this.loadServices();
     this.loadPortfolios();
   }

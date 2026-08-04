@@ -11,17 +11,15 @@ import {
   ClientTeamMemberCardDto,
 } from 'app/core/models/clients/client-team-member.models';
 import { PortfolioDto } from 'app/core/models/portfolios/portfolio.models';
-import { ServiceRequestCreatePrefill } from 'app/core/models/services/service-request-prefill.model';
 import {
   ServiceCatalogCategoryDto,
   ServiceCategoryRequest,
 } from 'app/core/models/services/service.models';
 import { resolveStorageAssetUrl } from 'app/core/models/team-members/team-member.models';
-import { ClientsService } from 'app/core/services/clients.service';
 import { PortfoliosService } from 'app/core/services/portfolios.service';
 import { RouteViewStateService } from 'app/core/services/route-view-state.service';
+import { SalesService } from 'app/core/services/sales.service';
 import { ServiceCategoriesService } from 'app/core/services/service-categories.service';
-import { ClientRequestCreateComponent } from 'app/components/client/client-request-form/client-request-create.component';
 import { LandingPortfolioCard } from 'app/components/landingpage/landing-page/landing-portfolio.models';
 import { LandingPortfolioDetailModalComponent } from 'app/components/landingpage/landing-page/landing-portfolio-detail-modal.component';
 import { TeamMemberProfileModalComponent } from 'app/shared/components/team-member-profile-modal/team-member-profile-modal.component';
@@ -52,7 +50,7 @@ const PROJECT_PAGE_SIZE = 12;
 const TEAM_PAGE_SIZE = 12;
 
 @Component({
-  selector: 'app-client-offshore-techx',
+  selector: 'app-sales-offshore-techx',
   standalone: true,
   imports: [
     CommonModule,
@@ -61,10 +59,10 @@ const TEAM_PAGE_SIZE = 12;
     NgbNavModule,
     ToolbarSelectComponent,
   ],
-  templateUrl: './client-offshore-techx.component.html',
-  styleUrl: './client-offshore-techx.component.scss',
+  templateUrl: './sales-offshore-techx.component.html',
+  styleUrl: './sales-offshore-techx.component.scss',
 })
-export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
+export class SalesOffshoreTechxComponent implements OnInit, OnDestroy {
   readonly providerName = SERVICE_PROVIDER_NAME;
   readonly experienceOptions: ToolbarSelectOption<ClientTeamExperienceBand>[] =
     CLIENT_TEAM_EXPERIENCE_BANDS.map(b => ({ label: b.label, value: b.value }));
@@ -140,7 +138,7 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
   constructor(
     private portfoliosService: PortfoliosService,
     private serviceCategoriesService: ServiceCategoriesService,
-    private clientsService: ClientsService,
+    private salesService: SalesService,
     private modalService: NgbModal,
     private router: Router,
     private viewState: RouteViewStateService
@@ -196,7 +194,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /** True while a search/filter reload is in flight (keep old cards; don't jump scroll). */
   get categoriesRefreshing(): boolean {
     return this.categoriesLoading && this.categoriesHasLoaded && this.categoryPage === 1;
   }
@@ -221,7 +218,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Hero path buttons — same behavior as clicking a tab. */
   goToTab(tab: 'services' | 'team' | 'projects'): void {
     if (this.activeTab === tab) return;
     this.onTabChange(tab);
@@ -283,19 +279,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     return this.expandedCategoryIds.has(categoryId);
   }
 
-  requestService(service: ShowcaseService): void {
-    const prefill: ServiceRequestCreatePrefill = {
-      serviceId: service.id,
-      title: `${service.name} engagement`,
-      description: service.description?.trim() || undefined,
-    };
-    const modalRef = this.modalService.open(ClientRequestCreateComponent, {
-      centered: true,
-      size: 'lg',
-    });
-    modalRef.componentInstance.prefill = prefill;
-  }
-
   openMemberProfile(member: ClientTeamMemberCardDto): void {
     const modalRef = this.modalService.open(TeamMemberProfileModalComponent, {
       centered: true,
@@ -303,7 +286,7 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
       scrollable: true,
     });
     modalRef.componentInstance.memberId = member.id;
-    modalRef.componentInstance.source = 'client-showcase';
+    modalRef.componentInstance.source = 'sales';
   }
 
   openProjectDetail(project: PortfolioDto): void {
@@ -394,7 +377,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
           this.expandedCategoryIds = new Set();
         }
 
-        // Autofill only for initial load / append — not search resets (avoids scroll jump).
         if (!keepStale) {
           queueMicrotask(() => this.loadMoreCategoriesIfNeeded());
         }
@@ -580,7 +562,7 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     if (skill) request.skillSearch = skill;
     if (this.teamExperienceBand) request.experienceBand = this.teamExperienceBand;
 
-    this.clientsService.browseShowcaseTeamMembers(request).subscribe({
+    this.salesService.browseTeamMembers(request).subscribe({
       next: res => {
         if (requestId !== this.teamLoadRequestId) return;
         const pageItems = res.data?.data ?? [];

@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { SalesProjectSummaryDto } from 'app/core/models/projects/project.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { SalesService } from 'app/core/services/sales.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
@@ -44,10 +46,13 @@ export class SalesProjectsListComponent implements OnInit {
   labels: Record<string, string> = { ...LIST_FILTER_LABELS };
   dropdownOptions = { status: PROJECT_STATUS_FILTER_OPTIONS };
 
-  constructor(private salesService: SalesService) {}
+  constructor(private salesService: SalesService,
+    private router: Router,
+    private viewState: RouteViewStateService) {}
 
   ngOnInit(): void {
-        this.load();
+    this.viewState.seedListPaging(this.router.url, this);
+    this.load();
   }
 
   onSearch = (): void => {

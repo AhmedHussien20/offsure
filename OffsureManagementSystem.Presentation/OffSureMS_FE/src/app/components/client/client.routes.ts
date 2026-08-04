@@ -36,7 +36,11 @@ export const clientRoutes: Routes = [
       },
       {
         path: 'offshore-techx',
-        data: { breadcrumb: 'Offshore TechX', title: 'Offshore TechX' },
+        data: {
+          breadcrumb: 'Offshore TechX',
+          title: 'Offshore TechX',
+          hidePageHeader: true,
+        },
         loadComponent: () =>
           import('./client-offshore-techx/client-offshore-techx.component').then(
             m => m.ClientOffshoreTechxComponent

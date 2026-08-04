@@ -140,7 +140,10 @@ export class AuthTokenRefreshService {
       { timeOut: 4000, positionClass: 'toast-top-right' }
     );
 
-    if (!this.router.url.startsWith('/auth/')) {
+    const url = this.router.url.split('?')[0] || '/';
+    const onPublicLanding = url === '/' || url.startsWith('/landing');
+    // Stay on the marketing page so Login becomes visible again.
+    if (!onPublicLanding && !url.startsWith('/auth/')) {
       this.router.navigate(['/auth/login'], { replaceUrl: true });
     }
   }

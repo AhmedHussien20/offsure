@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ClientDto } from 'app/core/models/clients/client.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { SalesService } from 'app/core/services/sales.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
@@ -42,14 +44,15 @@ export class SalesClientsListComponent implements OnInit {
   labels: Record<string, string> = { ...LIST_FILTER_LABELS };
   dropdownOptions = { isActive: ACTIVE_FILTER_OPTIONS };
 
-  constructor(
-    private salesService: SalesService,
+  constructor(private salesService: SalesService,
     private modalService: NgbModal,
-    private toastr: ToastrService
-  ) {}
+    private toastr: ToastrService,
+    private router: Router,
+    private viewState: RouteViewStateService) {}
 
   ngOnInit(): void {
-        this.load();
+    this.viewState.seedListPaging(this.router.url, this);
+    this.load();
   }
 
   onSearch = (): void => {

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProjectStatus } from 'app/core/models/projects/project.models';
 import { ServiceRequestDto, ServiceRequestStatus } from 'app/core/models/services/service.models';
@@ -10,6 +10,7 @@ import {
   serviceRequestStatusKey,
 } from 'app/core/utils/enum-status.util';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
@@ -57,16 +58,17 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
-  constructor(
-    private serviceRequestsService: ServiceRequestsService,
+  constructor(private serviceRequestsService: ServiceRequestsService,
     private modalService: NgbModal,
     private toastr: ToastrService,
     private route: ActivatedRoute,
-    private confirmDialog: ConfirmDialogService
-  ) {}
+    private confirmDialog: ConfirmDialogService,
+    private router: Router,
+    private viewState: RouteViewStateService) {}
 
   ngOnInit(): void {
-        this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+    this.viewState.seedListPaging(this.router.url, this);
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = Number(params.get('id'));
       this.expandedRowId = Number.isFinite(id) && id > 0 ? id : null;
       this.loadRequests();

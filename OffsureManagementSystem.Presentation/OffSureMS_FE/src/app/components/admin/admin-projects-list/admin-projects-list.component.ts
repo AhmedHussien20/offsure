@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProjectDto } from 'app/core/models/projects/project.models';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { ProjectsService } from 'app/core/services/projects.service';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
@@ -47,14 +48,14 @@ export class AdminProjectsListComponent implements OnInit {
     budgetType: PROJECT_BUDGET_TYPE_FILTER_OPTIONS,
   };
 
-  constructor(
-    private projectsService: ProjectsService,
+  constructor(private projectsService: ProjectsService,
     private router: Router,
-    private modalService: NgbModal
-  ) {}
+    private modalService: NgbModal,
+    private viewState: RouteViewStateService) {}
 
   ngOnInit(): void {
-        this.loadProjects();
+    this.viewState.seedListPaging(this.router.url, this);
+    this.loadProjects();
   }
 
   onSearch = (): void => {

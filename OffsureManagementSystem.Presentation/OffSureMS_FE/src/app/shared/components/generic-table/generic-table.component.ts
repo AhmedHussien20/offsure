@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, Output, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgbPaginationModule, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { TranslateModule } from '@ngx-translate/core';
 import { MyDatePipe } from 'app/components/utilities/pipline/MyDatePipe';
 import { SearchCriteria } from 'app/core/models/search-criteria.model';
+import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import {
   isKnownServiceRequestStatusName,
   projectStatusKey,
@@ -172,8 +174,21 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   private readonly destroy$ = new Subject<void>();
   private readonly filterChanged$ = new Subject<void>();
 
+  constructor(
+    private router: Router,
+    private viewState: RouteViewStateService
+  ) {}
+
   ngOnInit(): void {
     this.restoreFiltersPanelOpen();
+    const restored = this.tryRestoreListPage();
+    // After restore, persist the restored page (not the default page 1).
+    queueMicrotask(() => this.persistListPage());
+    if (restored) {
+      // Beat parent ngOnInit races that reload page 1.
+      setTimeout(() => this.reemitRestoredPage(restored), 0);
+      setTimeout(() => this.reemitRestoredPage(restored), 100);
+    }
 
     this.filterChanged$
       .pipe(debounceTime(300), takeUntil(this.destroy$))
@@ -382,13 +397,58 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
 
   onPageChangeInternal(page: number) {
     this.page = page;
+    this.persistListPage();
     this.pageChange.emit(page);
     this.scrollTableIntoView();
   }
 
   onEntriesChangeInternal() {
+    this.page = 1;
+    this.persistListPage();
     this.entriesChange.emit(this.entries);
     this.scrollTableIntoView();
+  }
+
+  private persistListPage(): void {
+    this.viewState.patch(this.router.url, {
+      page: this.page,
+      pageSize: this.entries,
+    });
+  }
+
+  /**
+   * On browser back, re-emit the saved page so the parent reloads that page.
+   * Applies synchronously — deferred restore lost to parent page-1 loads.
+   */
+  private tryRestoreListPage(): { page: number; pageSize?: number } | null {
+    if (!this.showPagination) {
+      return null;
+    }
+    const restored = this.viewState.consumeListRestore(this.router.url);
+    if (!restored || restored.page < 1) {
+      return null;
+    }
+    this.applyRestoredPage(restored);
+    return restored;
+  }
+
+  private reemitRestoredPage(restored: { page: number; pageSize?: number }): void {
+    if (this.page !== restored.page || (restored.pageSize != null && this.entries !== restored.pageSize)) {
+      this.applyRestoredPage(restored);
+    } else if (this.page === restored.page) {
+      // Parent may still be showing page-1 data from an earlier fetch.
+      this.pageChange.emit(restored.page);
+    }
+  }
+
+  private applyRestoredPage(restored: { page: number; pageSize?: number }): void {
+    if (restored.pageSize != null && restored.pageSize > 0 && restored.pageSize !== this.entries) {
+      this.entries = restored.pageSize;
+      this.entriesChange.emit(this.entries);
+    }
+    this.page = restored.page;
+    this.pageChange.emit(restored.page);
+    this.persistListPage();
   }
 
   trackByRow(index: number, item: T): unknown {

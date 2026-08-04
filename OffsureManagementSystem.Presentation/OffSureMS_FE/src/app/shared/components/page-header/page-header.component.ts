@@ -22,9 +22,16 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   @Input() activeitem = '';
   /** When true, always build crumbs from the current route. */
   @Input() autoBreadcrumbs = false;
+  /**
+   * Show/hide title + breadcrumb.
+   * Leave unset to honor route data `hidePageHeader: true`.
+   * Explicit `false`/`true` overrides the route.
+   */
+  @Input() visible: boolean | null = null;
 
   breadcrumbs: BreadcrumbItem[] = [];
   displayTitle = '';
+  isVisible = true;
   private routePageTitle = '';
 
   private readonly destroy$ = new Subject<void>();
@@ -36,6 +43,11 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.isVisible = this.resolveVisibility();
+    if (!this.isVisible) {
+      return;
+    }
+
     if (this.shouldUseAutoBreadcrumbs()) {
       this.breadcrumbService.breadcrumbs$
         .pipe(takeUntil(this.destroy$))
@@ -86,6 +98,29 @@ export class PageHeaderComponent implements OnInit, OnDestroy {
     if (crumb.route?.length) {
       this.router.navigate(crumb.route);
     }
+  }
+
+  private resolveVisibility(): boolean {
+    if (this.visible !== null && this.visible !== undefined) {
+      return this.visible;
+    }
+    return !this.routeRequestsHiddenHeader();
+  }
+
+  /** True when any active route segment sets `data.hidePageHeader`. */
+  private routeRequestsHiddenHeader(): boolean {
+    let route = this.router.routerState.snapshot.root;
+    let hide = false;
+    while (route) {
+      if (route.data?.['hidePageHeader'] === true) {
+        hide = true;
+      }
+      if (!route.firstChild) {
+        break;
+      }
+      route = route.firstChild;
+    }
+    return hide;
   }
 
   private shouldUseAutoBreadcrumbs(): boolean {

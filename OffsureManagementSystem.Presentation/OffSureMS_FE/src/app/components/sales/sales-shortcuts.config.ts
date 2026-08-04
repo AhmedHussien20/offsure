@@ -10,10 +10,10 @@ export const SALES_HEADER_SHORTCUTS: HeaderShortcut[] = [
     alwaysEnabled: true,
   },
   {
-    title: 'nav.shortcuts.sales.browseTeam',
-    icon: 'ti-id-badge',
+    title: 'nav.shortcuts.sales.offshoreTechx',
+    icon: 'ti-briefcase',
     action: 'navigate',
-    path: '/sales/team-members',
+    path: '/sales/offshore-techx',
     alwaysEnabled: true,
   },
   {

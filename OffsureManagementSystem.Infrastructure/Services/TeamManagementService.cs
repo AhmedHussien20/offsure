@@ -1180,6 +1180,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await ResetTeamMemberPasswordInternalAsync(teamMemberId, dto);
         }
 
+        public Task ResetSalesUserPasswordAsync(int userId, ResetTeamMemberPasswordDto dto)
+            => ResetUserPasswordByRoleAsync(userId, dto, nameof(UserRole.Sales), "Sales user");
+
+        public Task ResetResourceManagerPasswordAsync(int userId, ResetTeamMemberPasswordDto dto)
+            => ResetUserPasswordByRoleAsync(userId, dto, nameof(UserRole.ResourceManager), "Resource manager");
+
         private async Task ResetTeamMemberPasswordInternalAsync(int teamMemberId, ResetTeamMemberPasswordDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
@@ -1200,21 +1206,52 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (member.User.Role?.Name != nameof(UserRole.TeamMember))
                 throw new AppException("Password can only be reset for team member accounts.", 400);
 
-            member.User.PasswordHash = HashPassword(dto.NewPassword);
-            member.User.RefreshToken = null;
-            member.User.RefreshTokenExpiry = null;
-            member.User.PasswordResetToken = null;
-            member.User.PasswordResetTokenExpiry = null;
-            member.User.UpdatedAt = DateTime.UtcNow;
+            await ApplyPasswordResetAsync(member.User, dto.NewPassword);
+        }
+
+        private async Task ResetUserPasswordByRoleAsync(
+            int userId,
+            ResetTeamMemberPasswordDto dto,
+            string expectedRole,
+            string accountLabel)
+        {
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
+                throw new AppException("Password must be at least 8 characters.", 400);
+
+            var user = await _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+
+            if (user is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (user.Role?.Name != expectedRole)
+                throw new AppException($"Password can only be reset for {accountLabel.ToLowerInvariant()} accounts.", 400);
+
+            if (!user.IsActive)
+                throw new AppException($"{accountLabel} account is not active.", 400);
+
+            await ApplyPasswordResetAsync(user, dto.NewPassword);
+        }
+
+        private async Task ApplyPasswordResetAsync(User user, string newPassword)
+        {
+            user.PasswordHash = HashPassword(newPassword);
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
+            user.UpdatedAt = DateTime.UtcNow;
 
             _userRepo.SaveInclude(
-                member.User,
-                nameof(member.User.PasswordHash),
-                nameof(member.User.RefreshToken),
-                nameof(member.User.RefreshTokenExpiry),
-                nameof(member.User.PasswordResetToken),
-                nameof(member.User.PasswordResetTokenExpiry),
-                nameof(member.User.UpdatedAt));
+                user,
+                nameof(user.PasswordHash),
+                nameof(user.RefreshToken),
+                nameof(user.RefreshTokenExpiry),
+                nameof(user.PasswordResetToken),
+                nameof(user.PasswordResetTokenExpiry),
+                nameof(user.UpdatedAt));
 
             await _userRepo.SaveChangesAsync();
         }
