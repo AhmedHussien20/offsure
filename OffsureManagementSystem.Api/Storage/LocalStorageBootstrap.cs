@@ -88,7 +88,10 @@ internal static class LocalStorageBootstrap
     {
         var configuredRoot = config[StorageRootKey];
         if (!string.IsNullOrWhiteSpace(configuredRoot))
-            return configuredRoot;
+        {
+            // Resolve relative paths against ContentRoot (e.g. "../storage").
+            return Path.GetFullPath(configuredRoot, env.ContentRootPath);
+        }
 
         if (env.IsDevelopment())
         {
@@ -97,6 +100,13 @@ internal static class LocalStorageBootstrap
                 "OffsureManagementSystem",
                 "storage");
         }
+
+        // Store next to the publish/output folder — not inside it — so
+        // `rm -rf publish` + republish does not delete uploaded files.
+        // Example: ContentRoot=/var/www/offsure/publish → /var/www/offsure/storage
+        var parent = Directory.GetParent(env.ContentRootPath)?.FullName;
+        if (!string.IsNullOrWhiteSpace(parent))
+            return Path.Combine(parent, "storage");
 
         return Path.Combine(env.ContentRootPath, "storage");
     }
