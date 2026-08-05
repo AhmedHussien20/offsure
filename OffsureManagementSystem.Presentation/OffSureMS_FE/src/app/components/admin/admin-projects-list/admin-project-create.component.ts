@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { ClientDto } from 'app/core/models/clients/client.models';
 import { CreateProjectDto } from 'app/core/models/projects/project.models';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
 import { ClientsService } from 'app/core/services/clients.service';
@@ -22,7 +23,7 @@ import { ProjectMilestoneCreateFieldsComponent } from 'app/shared/components/pro
 import { ProjectRmAssignmentFieldsComponent } from 'app/shared/components/project-rm-assignment-fields/project-rm-assignment-fields.component';
 import { ProjectSalesAssignmentFieldsComponent } from 'app/shared/components/project-sales-assignment-fields/project-sales-assignment-fields.component';
 import { ToastrService } from 'ngx-toastr';
-import { map, Observable, of, Subject, takeUntil } from 'rxjs';
+import { forkJoin, map, of, Subject, takeUntil } from 'rxjs';
 import { Router } from '@angular/router';
 import {
   buildProjectSalesFields,
@@ -52,10 +53,13 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
   serviceResetToken = 0;
   salesBudgetPreview: number | null = null;
   currentStep = 1;
+  companyMembers: ClientDto[] = [];
+  loadingMembers = false;
 
   private minDate = new Date().toISOString().split('T')[0];
-  private clientNameById = new Map<number, string>();
+  private companyNameById = new Map<number, string>();
   private serviceNameById = new Map<number, string>();
+  private membersLoadId = 0;
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -118,13 +122,18 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     return v != null ? Number(v) : null;
   }
 
-  loadClients: PaginatedSelectLoader = (search, pageIndex) =>
+  get companyClientId(): number | null {
+    const v = this.form?.get('companyClientId')?.value;
+    return v != null && v !== '' ? Number(v) : null;
+  }
+
+  loadCompanies: PaginatedSelectLoader = (search, pageIndex) =>
     this.clientsService
       .getAll({ pageIndex, pageSize: 20, searchKey: search.trim() || undefined })
       .pipe(
         map(res => {
           const rows = res.data?.data ?? [];
-          rows.forEach(c => this.clientNameById.set(c.id, c.companyName));
+          rows.forEach(c => this.companyNameById.set(c.id, c.companyName));
           return {
             items: rows.map(c => ({ label: c.companyName, value: c.id })),
             totalCount: res.data?.totalCount ?? 0,
@@ -168,6 +177,7 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.form = this.fb.group({
+      companyClientId: [null, Validators.required],
       clientId: [null, Validators.required],
       serviceCategoryId: [null, Validators.required],
       serviceId: [null, Validators.required],
@@ -218,6 +228,14 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     ];
 
     this.form
+      .get('companyClientId')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(companyId => {
+        this.loadCompanyMembers(companyId != null ? Number(companyId) : null);
+        this.suggestName();
+      });
+
+    this.form
       .get('clientId')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe(() => this.suggestName());
@@ -251,7 +269,14 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
       });
 
     updateProjectBudgetValidators(this.form, 'standalone');
+    this.form.get('clientId')?.disable({ emitEvent: false });
     this.refreshDerivedState();
+  }
+
+  memberLabel(member: ClientDto): string {
+    const name = `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email || '—';
+    const role = member.accountRole === 'Member' || member.accountRole === 2 ? 'Member' : 'Owner';
+    return `${name} (${role})`;
   }
 
   ngOnDestroy(): void {
@@ -266,18 +291,31 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
   private validateCurrentStep(): boolean {
     switch (this.activeStepId) {
       case 'project': {
+        const companyClientId = this.form.get('companyClientId');
         const clientId = this.form.get('clientId');
         const serviceCategoryId = this.form.get('serviceCategoryId');
         const serviceId = this.form.get('serviceId');
         const name = this.form.get('name');
         const startDate = this.form.get('startDate');
+        companyClientId?.markAsTouched();
         clientId?.markAsTouched();
         serviceCategoryId?.markAsTouched();
         serviceId?.markAsTouched();
         name?.markAsTouched();
         startDate?.markAsTouched();
-        if (clientId?.invalid || serviceCategoryId?.invalid || serviceId?.invalid) {
-          this.toastr.warning('Select a client, service category, and service.');
+        if (this.loadingMembers) {
+          this.toastr.warning('Wait for company members to finish loading.');
+          return false;
+        }
+        if (
+          companyClientId?.invalid ||
+          clientId?.disabled ||
+          clientId?.invalid ||
+          !clientId?.value ||
+          serviceCategoryId?.invalid ||
+          serviceId?.invalid
+        ) {
+          this.toastr.warning('Select a company, member, service category, and service.');
           return false;
         }
         if (name?.invalid || startDate?.invalid) {
@@ -412,14 +450,59 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
     });
   }
 
+  private loadCompanyMembers(companyId: number | null): void {
+    const loadId = ++this.membersLoadId;
+    this.companyMembers = [];
+    const memberControl = this.form.get('clientId');
+    memberControl?.patchValue(null, { emitEvent: false });
+
+    if (!companyId) {
+      this.loadingMembers = false;
+      memberControl?.disable({ emitEvent: false });
+      return;
+    }
+
+    this.loadingMembers = true;
+    memberControl?.disable({ emitEvent: false });
+    forkJoin({
+      owner: this.clientsService.getById(companyId),
+      members: this.clientsService.getOrganizationMembers(companyId),
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ owner, members }) => {
+          if (loadId !== this.membersLoadId) {
+            return;
+          }
+          const ownerClient = owner.data;
+          const memberClients = members.data ?? [];
+          this.companyMembers = ownerClient ? [ownerClient, ...memberClients] : memberClients;
+          this.loadingMembers = false;
+          memberControl?.enable({ emitEvent: false });
+          const defaultId = ownerClient?.id ?? this.companyMembers[0]?.id ?? null;
+          memberControl?.patchValue(defaultId, { emitEvent: true });
+        },
+        error: () => {
+          if (loadId !== this.membersLoadId) {
+            return;
+          }
+          this.loadingMembers = false;
+          this.companyMembers = [];
+          memberControl?.disable({ emitEvent: false });
+          memberControl?.patchValue(null, { emitEvent: false });
+          this.toastr.error('Unable to load company members.');
+        },
+      });
+  }
+
   private suggestName(): void {
     if (this.form.get('name')?.dirty) return;
-    const clientId = Number(this.form.get('clientId')?.value);
+    const companyId = Number(this.form.get('companyClientId')?.value);
     const serviceId = Number(this.form.get('serviceId')?.value);
-    const client = this.clientNameById.get(clientId);
+    const company = this.companyNameById.get(companyId);
     const service = this.serviceNameById.get(serviceId);
-    if (client && service) {
-      this.form.patchValue({ name: `${client} — ${service}` }, { emitEvent: false });
+    if (company && service) {
+      this.form.patchValue({ name: `${company} — ${service}` }, { emitEvent: false });
     }
   }
 }

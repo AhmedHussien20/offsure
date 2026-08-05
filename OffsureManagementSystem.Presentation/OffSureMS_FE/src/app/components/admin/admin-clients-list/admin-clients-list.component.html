@@ -49,7 +49,8 @@
     } @else {
       <div class="admin-companies__grid" [class.admin-companies__grid--dim]="refreshing">
         @for (company of companies; track company.id) {
-          <button type="button" class="admin-company-card" (click)="openCompany(company)">
+          <!-- TEMP: cards not clickable — restore (click)="openCompany(company)" and button tag later -->
+          <div class="admin-company-card admin-company-card--static">
             <span class="admin-company-card__avatar">{{ companyInitials(company) }}</span>
             <div class="admin-company-card__body">
               <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
@@ -68,7 +69,7 @@
                 <span>{{ company.requestsCount ?? 0 }} requests</span>
               </div>
             </div>
-          </button>
+          </div>
         }
       </div>
 

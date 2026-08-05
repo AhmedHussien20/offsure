@@ -8,6 +8,7 @@ using OffsureManagementSystem.Domain.Entities.Enum;
 using TaskMangment.Application.Common.Responses;
 using Client = OffshoreManagementSystem.Domain.Entities.Client;
 using OffsureManagementSystem.Domain.Entities;
+using Project = OffshoreManagementSystem.Domain.Entities.Project;
 using ServiceRequest = OffshoreManagementSystem.Domain.Entities.ServiceRequest;
 using User = OffshoreManagementSystem.Domain.Entities.User;
 
@@ -19,6 +20,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<User> _userRepo;
         private readonly IRepository<Role> _roleRepo;
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
+        private readonly IRepository<Project> _projectRepo;
         private readonly IClientAccessService _clientAccess;
 
         public ClientManagementService(
@@ -26,12 +28,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<User> userRepo,
             IRepository<Role> roleRepo,
             IRepository<ServiceRequest> serviceRequestRepo,
+            IRepository<Project> projectRepo,
             IClientAccessService clientAccess)
         {
             _clientRepo = clientRepo;
             _userRepo = userRepo;
             _roleRepo = roleRepo;
             _serviceRequestRepo = serviceRequestRepo;
+            _projectRepo = projectRepo;
             _clientAccess = clientAccess;
         }
 
@@ -800,9 +804,21 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private async Task<ClientDto> MapClientProfileAsync(Client client)
         {
             var orgClientIds = await GetOrganizationClientIdsAsync(client.Id);
-            var requestQuery = _serviceRequestRepo.Query().Where(r => orgClientIds.Contains(r.ClientId));
-            var requestsCount = await requestQuery.CountAsync();
-            var projectsCount = await requestQuery.CountAsync(r => r.Project != null);
+            var requestsCount = await _serviceRequestRepo
+                .Query()
+                .CountAsync(r => !r.IsDeleted && orgClientIds.Contains(r.ClientId));
+
+            // Include request-linked and standalone projects for anyone in the organization.
+            var projectsCount = orgClientIds.Count == 0
+                ? 0
+                : await _projectRepo
+                    .Query()
+                    .CountAsync(p =>
+                        !p.IsDeleted
+                        && ((p.ClientId.HasValue && orgClientIds.Contains(p.ClientId.Value))
+                            || (p.ServiceRequest != null
+                                && !p.ServiceRequest.IsDeleted
+                                && orgClientIds.Contains(p.ServiceRequest.ClientId))));
 
             var membersCount = 0;
             if (client.AccountRole == ClientAccountRole.Owner)

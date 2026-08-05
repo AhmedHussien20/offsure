@@ -30,18 +30,42 @@
       @case ('project') {
         <div class="project-form-modal">
           <div class="row gy-3 gx-3 align-items-start mb-2">
-            <div class="col-md-4">
+            <div class="col-md-6">
               <app-paginated-select
-                formControlName="clientId"
-                label="Client"
+                formControlName="companyClientId"
+                label="Company"
                 fieldIcon="fe fe-briefcase"
                 appendTo=".project-flow-modal__body"
                 [required]="true"
-                placeholder="Search clients..."
+                placeholder="Search companies..."
                 [pageSize]="20"
-                [loadPage]="loadClients" />
+                [loadPage]="loadCompanies" />
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
+              <label class="form-label" for="projectMemberClientId">
+                Company member <span class="required">*</span>
+              </label>
+              <div class="generic-form__control generic-form__select-wrap">
+                <div class="gf-select-icon-wrap">
+                  <i class="fe fe-user"></i>
+                  <select id="projectMemberClientId" class="form-select" formControlName="clientId">
+                    @if (!companyClientId) {
+                      <option [ngValue]="null">Select a company first…</option>
+                    } @else if (loadingMembers) {
+                      <option [ngValue]="null">Loading members…</option>
+                    } @else {
+                      @for (member of companyMembers; track member.id) {
+                        <option [ngValue]="member.id">{{ memberLabel(member) }}</option>
+                      }
+                    }
+                  </select>
+                </div>
+              </div>
+              @if (form.get('clientId')?.touched && form.get('clientId')?.invalid) {
+                <div class="text-danger small mt-1">Select a company member.</div>
+              }
+            </div>
+            <div class="col-md-6">
               <app-paginated-select
                 formControlName="serviceCategoryId"
                 label="Service category"
@@ -51,7 +75,7 @@
                 placeholder="Search categories..."
                 [loadPage]="loadCategories" />
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
               <app-paginated-select
                 formControlName="serviceId"
                 label="Service"

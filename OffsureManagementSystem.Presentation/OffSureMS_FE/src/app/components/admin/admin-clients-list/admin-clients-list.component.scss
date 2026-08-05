@@ -53,6 +53,17 @@
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
     transform: translateY(-1px);
   }
+
+  // TEMP: non-clickable cards
+  &--static {
+    cursor: default;
+
+    &:hover {
+      border-color: #e2e8f0;
+      box-shadow: none;
+      transform: none;
+    }
+  }
 }
 
 .admin-company-card__avatar {

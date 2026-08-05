@@ -12,4 +12,26 @@
     display: block;
     margin-top: 0.5rem;
   }
+
+  .required {
+    color: var(--danger-color, #dc3545);
+  }
+
+  .gf-select-icon-wrap {
+    position: relative;
+
+    > i {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+      pointer-events: none;
+      color: #94a3b8;
+    }
+
+    .form-select {
+      padding-left: 2.25rem;
+    }
+  }
 }
