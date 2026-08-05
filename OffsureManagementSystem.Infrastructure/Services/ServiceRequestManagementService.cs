@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
@@ -17,17 +18,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<Client> _clientRepo;
         private readonly IRepository<DomainService> _serviceRepo;
         private readonly IEmailNotificationService _emailNotificationService;
+        private readonly IClientAccessService _clientAccess;
 
         public ServiceRequestManagementService(
             IRepository<ServiceRequest> serviceRequestRepo,
             IRepository<Client> clientRepo,
             IRepository<DomainService> serviceRepo,
-            IEmailNotificationService emailNotificationService)
+            IEmailNotificationService emailNotificationService,
+            IClientAccessService clientAccess)
         {
             _serviceRequestRepo = serviceRequestRepo;
             _clientRepo = clientRepo;
             _serviceRepo = serviceRepo;
             _emailNotificationService = emailNotificationService;
+            _clientAccess = clientAccess;
         }
 
         public async Task<PagedResponse<ServiceRequestDto>> GetAllRequestsAsync(ServiceRequestFilterRequest request)
@@ -62,8 +66,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int userId,
             ServiceRequestFilterRequest request)
         {
-            var client = await GetClientByUserIdAsync(userId);
-            return await GetClientRequestsAsync(client.Id, request);
+            var accessibleClientIds = await _clientAccess.GetAccessibleClientIdsForUserAsync(userId);
+            request.ClientIds = accessibleClientIds.ToList();
+            request.ClientId = null;
+            return await GetAllRequestsAsync(request);
         }
 
         public async Task<ServiceRequestDto> GetRequestByIdAsync(int id)
@@ -198,6 +204,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return _serviceRequestRepo
                 .Query()
                 .Include(r => r.Client)
+                    .ThenInclude(c => c.User)
                 .Include(r => r.Service)
                     .ThenInclude(s => s.ServiceCategory)
                 .Include(r => r.Project);
@@ -227,7 +234,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (request.Status.HasValue)
                 query = query.Where(r => r.Status == request.Status.Value);
 
-            if (request.ClientId.HasValue)
+            if (request.ClientIds is { Count: > 0 })
+                query = query.Where(r => request.ClientIds.Contains(r.ClientId));
+            else if (request.ClientId.HasValue)
                 query = query.Where(r => r.ClientId == request.ClientId.Value);
 
             if (request.ServiceId.HasValue)
@@ -240,6 +249,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     r.Title.ToLower().Contains(searchKey)
                     || r.Description.ToLower().Contains(searchKey)
                     || r.Client.CompanyName.ToLower().Contains(searchKey)
+                    || (r.Client.User != null && (
+                        r.Client.User.FirstName.ToLower().Contains(searchKey)
+                        || r.Client.User.LastName.ToLower().Contains(searchKey)))
                     || r.Service.Name.ToLower().Contains(searchKey));
             }
 
@@ -273,8 +285,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (!string.Equals(role, "Client", StringComparison.OrdinalIgnoreCase))
                 return;
 
-            var client = await GetClientByUserIdAsync(userId);
-            if (client.Id != clientId)
+            if (!await _clientAccess.CanAccessClientIdAsync(userId, clientId))
                 throw new AppException("You do not have access to this request.", 403);
         }
 
@@ -313,6 +324,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 || dto.Priority is < 1 or > 5)
             {
                 throw new AppException("Invalid request.", 400);
+            }
+
+            if (dto.DueDate.HasValue)
+            {
+                var dueDate = dto.DueDate.Value.Date;
+                var requestedDate = DateTime.UtcNow.Date;
+                if (dueDate < requestedDate)
+                {
+                    throw new AppException(
+                        "Preferred due date cannot be before today or the request date.",
+                        400);
+                }
             }
         }
 
@@ -370,6 +393,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Id = request.Id,
                 ClientId = request.ClientId,
                 ClientName = request.Client?.CompanyName ?? string.Empty,
+                ClientMemberName = UserDisplayName.FromUser(request.Client?.User),
                 ServiceId = request.ServiceId,
                 ServiceName = request.Service?.Name ?? string.Empty,
                 ServiceCategoryName = request.Service?.ServiceCategory?.Name ?? string.Empty,
@@ -395,6 +419,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Id = request.Id,
                 ClientId = request.ClientId,
                 ClientName = request.Client?.CompanyName ?? string.Empty,
+                ClientMemberName = UserDisplayName.FromUser(request.Client?.User),
                 ClientEmail = request.Client?.User?.Email ?? string.Empty,
                 ServiceId = request.ServiceId,
                 ServiceName = request.Service?.Name ?? string.Empty,

@@ -125,7 +125,9 @@
                       {{ project.name }}
                     </a>
                   </td>
-                  <td>{{ project.clientName }}</td>
+                  <td>
+                    {{ project.clientName }}{{ project.clientMemberName ? ' · ' + project.clientMemberName : '' }}
+                  </td>
                   <td>
                     <span class="badge rounded-pill {{ statusBadgeClass(project.status) }}">
                       {{ statusLabel(project.status) }}

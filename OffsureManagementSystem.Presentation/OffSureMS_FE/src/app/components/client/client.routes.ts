@@ -35,6 +35,14 @@ export const clientRoutes: Routes = [
           ),
       },
       {
+        path: 'company-members',
+        data: { breadcrumb: 'My Company Members', title: 'My Company Members' },
+        loadComponent: () =>
+          import('./client-company-members/client-company-members.component').then(
+            m => m.ClientCompanyMembersComponent
+          ),
+      },
+      {
         path: 'offshore-techx',
         data: {
           breadcrumb: 'Offshore TechX',
@@ -58,7 +66,7 @@ export const clientRoutes: Routes = [
       },
       {
         path: 'profile',
-        data: { breadcrumb: 'Profile', title: 'Profile' },
+        data: { breadcrumb: false, title: 'Profile', hidePageHeader: true },
         loadComponent: () =>
           import('./client-profile/client-profile.component').then(m => m.ClientProfileComponent),
       },

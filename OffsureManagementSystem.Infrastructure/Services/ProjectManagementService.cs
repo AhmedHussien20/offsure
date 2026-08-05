@@ -38,6 +38,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly IRepository<User> _userRepo;
         private readonly IEmailNotificationService _emailNotificationService;
+        private readonly IClientAccessService _clientAccess;
 
         public ProjectManagementService(
             IRepository<Project> projectRepo,
@@ -51,7 +52,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<DomainService> serviceRepo,
             IRepository<TeamMember> teamMemberRepo,
             IRepository<User> userRepo,
-            IEmailNotificationService emailNotificationService)
+            IEmailNotificationService emailNotificationService,
+            IClientAccessService clientAccess)
         {
             _projectRepo = projectRepo;
             _projectAssignmentRepo = projectAssignmentRepo;
@@ -65,6 +67,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _teamMemberRepo = teamMemberRepo;
             _userRepo = userRepo;
             _emailNotificationService = emailNotificationService;
+            _clientAccess = clientAccess;
         }
 
         public async Task<PagedResponse<ProjectDto>> GetAllProjectsAsync(ProjectFilterRequest request)
@@ -103,8 +106,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int userId,
             ProjectFilterRequest request)
         {
-            var clientId = await GetClientIdForUserAsync(userId);
-            request.ClientId = clientId;
+            var accessibleClientIds = await _clientAccess.GetAccessibleClientIdsForUserAsync(userId);
+            request.ClientIds = accessibleClientIds.ToList();
+            request.ClientId = null;
             var response = await GetAllProjectsAsync(request);
             return new PagedResponse<ProjectDto>(
                 response.Data.Select(StripClientPortalFinancials).ToList(),
@@ -115,7 +119,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ProjectDto> GetClientProjectByIdAsync(int userId, int projectId)
         {
-            var clientId = await GetClientIdForUserAsync(userId);
+            var accessibleClientIds = await _clientAccess.GetAccessibleClientIdsForUserAsync(userId);
             var project = await BuildProjectQuery()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == projectId);
@@ -123,7 +127,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (project is null)
                 throw new AppException("Resource not found.", 404);
 
-            if (ResolveProjectClientId(project) != clientId)
+            var projectClientId = ResolveProjectClientId(project);
+            if (!projectClientId.HasValue || !accessibleClientIds.Contains(projectClientId.Value))
                 throw new AppException("You do not have access to this project.", 403);
 
             return StripClientPortalFinancials(await GetProjectDtoByIdAsync(projectId));
@@ -1264,9 +1269,11 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return _projectRepo
                 .Query()
                 .Include(p => p.Client)
+                    .ThenInclude(c => c.User)
                 .Include(p => p.Service)
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Client)
+                        .ThenInclude(c => c.User)
                 .Include(p => p.ServiceRequest)
                     .ThenInclude(r => r.Service);
         }
@@ -1309,7 +1316,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (request.ServiceRequestId.HasValue)
                 query = query.Where(p => p.ServiceRequestId == request.ServiceRequestId.Value);
 
-            if (request.ClientId.HasValue)
+            if (request.ClientIds is { Count: > 0 })
+            {
+                var filterClientIds = request.ClientIds;
+                query = query.Where(p =>
+                    (p.ClientId.HasValue && filterClientIds.Contains(p.ClientId.Value))
+                    || (p.ServiceRequest != null && filterClientIds.Contains(p.ServiceRequest.ClientId)));
+            }
+            else if (request.ClientId.HasValue)
             {
                 var filterClientId = request.ClientId.Value;
                 query = query.Where(p =>
@@ -1338,9 +1352,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     p.Name.ToLower().Contains(searchKey)
                     || p.Description.ToLower().Contains(searchKey)
                     || (p.Client != null && p.Client.CompanyName.ToLower().Contains(searchKey))
+                    || (p.Client != null && p.Client.User != null && (
+                        p.Client.User.FirstName.ToLower().Contains(searchKey)
+                        || p.Client.User.LastName.ToLower().Contains(searchKey)))
                     || (p.Service != null && p.Service.Name.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Title.ToLower().Contains(searchKey))
                     || (p.ServiceRequest != null && p.ServiceRequest.Client.CompanyName.ToLower().Contains(searchKey))
+                    || (p.ServiceRequest != null && p.ServiceRequest.Client.User != null && (
+                        p.ServiceRequest.Client.User.FirstName.ToLower().Contains(searchKey)
+                        || p.ServiceRequest.Client.User.LastName.ToLower().Contains(searchKey)))
                     || (p.ServiceRequest != null && p.ServiceRequest.Service.Name.ToLower().Contains(searchKey))
                     || p.ProjectAssignments.Any(a =>
                         a.IsActive
@@ -1632,6 +1652,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
                ?? project.ServiceRequest?.Client?.CompanyName
                ?? string.Empty;
 
+        private static string ResolveProjectClientMemberName(Project project)
+        {
+            var fromClient = UserDisplayName.FromUser(project.Client?.User);
+            if (!string.IsNullOrWhiteSpace(fromClient))
+                return fromClient;
+
+            return UserDisplayName.FromUser(project.ServiceRequest?.Client?.User);
+        }
+
         private static string ResolveProjectServiceName(Project project)
             => project.Service?.Name
                ?? project.ServiceRequest?.Service?.Name
@@ -1644,6 +1673,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Id = project.Id,
                 Name = project.Name,
                 ClientName = ResolveProjectClientName(project),
+                ClientMemberName = ResolveProjectClientMemberName(project),
                 ServiceName = ResolveProjectServiceName(project),
                 Status = project.Status,
                 BudgetType = project.BudgetType,
@@ -1719,6 +1749,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ServiceRequestTitle = project.ServiceRequest?.Title ?? string.Empty,
                 ClientId = ResolveProjectClientId(project),
                 ClientName = ResolveProjectClientName(project),
+                ClientMemberName = ResolveProjectClientMemberName(project),
                 ServiceId = ResolveProjectServiceId(project),
                 ServiceName = ResolveProjectServiceName(project),
                 Status = project.Status,
@@ -1797,6 +1828,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Name = project.Name,
                 Description = ProjectDescriptionSkills.StripSkillsMarker(project.Description),
                 ClientName = ResolveProjectClientName(project),
+                ClientMemberName = ResolveProjectClientMemberName(project),
                 Status = project.Status,
                 TeamMemberNames = project.ProjectAssignments
                     .Where(a => a.IsActive)

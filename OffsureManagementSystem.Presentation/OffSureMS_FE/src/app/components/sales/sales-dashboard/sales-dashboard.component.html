@@ -122,7 +122,9 @@
                       {{ project.name }}
                     </a>
                   </td>
-                  <td>{{ project.clientName }}</td>
+                  <td>
+                    {{ project.clientName }}{{ project.clientMemberName ? ' · ' + project.clientMemberName : '' }}
+                  </td>
                   <td>{{ formatCommission(project) }}</td>
                 </tr>
               }

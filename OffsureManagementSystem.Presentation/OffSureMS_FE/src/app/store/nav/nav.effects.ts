@@ -7,6 +7,7 @@ import * as NavActions from './nav.actions';
 import { MenuItem } from '../../shared/models/menu-item.model';
 import { forkJoin, Observable, of } from 'rxjs';
 import { AuthService } from 'app/core/services/auth.service';
+import { ClientContextService } from 'app/core/services/client-context.service';
 
 @Injectable()
 export class NavEffects {
@@ -79,10 +80,17 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     requiredRole: 'Administrator',
   },
   {
-    title: 'Clients',
-    path: '/admin/clients',
+    title: 'Companies',
+    path: '/admin/companies',
     type: 'link',
     icon: 'ti-briefcase',
+    requiredRole: 'Administrator',
+  },
+  {
+    title: 'All Client Members',
+    path: '/admin/client-members',
+    type: 'link',
+    icon: 'ti-id-badge',
     requiredRole: 'Administrator',
   },
 ];
@@ -206,14 +214,14 @@ private CLIENT_MENUITEMS: MenuItem[] = [
     icon: 'ti-id-badge',
     requiredRole: 'Client',
   },
-  
-  // {
-  //   title: 'Company Profile',
-  //   path: '/client/profile',
-  //   type: 'link',
-  //   icon: 'ti-user',
-  //   requiredRole: 'Client',
-  // },
+  {
+    title: 'My Company Members',
+    path: '/client/company-members',
+    type: 'link',
+    icon: 'ti-user',
+    requiredRole: 'Client',
+    requiredClientAccountRole: 'Owner',
+  },
 ];
 
 private MENUITEMS: MenuItem[] = [
@@ -413,7 +421,12 @@ private MENUITEMS: MenuItem[] = [
   //     { title: 'nav.apps.configurations.ads', type: 'link' },
   //   ],
   // },
-  constructor(private actions$: Actions, private translate: TranslateService, private auth: AuthService) {
+  constructor(
+    private actions$: Actions,
+    private translate: TranslateService,
+    private auth: AuthService,
+    private clientContext: ClientContextService
+  ) {
     console.log('NavEffects initialized:', this.actions$);
 
     this.initializeEffects();
@@ -511,6 +524,19 @@ private MENUITEMS: MenuItem[] = [
       (!(user as any).permissions || !(user as any).permissions.includes(item.requiredPermission))
     ) {
       return false;
+    }
+
+    if (item.requiredClientAccountRole) {
+      const profile = this.clientContext.getProfileSnapshot();
+      const role = profile?.accountRole;
+      const isOwner = role === 'Owner' || role === 1;
+      const isMember = role === 'Member' || role === 2;
+      if (item.requiredClientAccountRole === 'Owner' && !isOwner) {
+        return false;
+      }
+      if (item.requiredClientAccountRole === 'Member' && !isMember) {
+        return false;
+      }
     }
 
     return true;

@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using OffsureManagementSystem.Application.Common.Exceptions;
+using OffsureManagementSystem.Application.Common.Requests;
 using OffsureManagementSystem.Application.DTOs.ClientManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
+using OffsureManagementSystem.Domain.Entities.Enum;
 using TaskMangment.Application.Common.Responses;
 using Client = OffshoreManagementSystem.Domain.Entities.Client;
 using OffsureManagementSystem.Domain.Entities;
@@ -17,17 +19,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<User> _userRepo;
         private readonly IRepository<Role> _roleRepo;
         private readonly IRepository<ServiceRequest> _serviceRequestRepo;
+        private readonly IClientAccessService _clientAccess;
 
         public ClientManagementService(
             IRepository<Client> clientRepo,
             IRepository<User> userRepo,
             IRepository<Role> roleRepo,
-            IRepository<ServiceRequest> serviceRequestRepo)
+            IRepository<ServiceRequest> serviceRequestRepo,
+            IClientAccessService clientAccess)
         {
             _clientRepo = clientRepo;
             _userRepo = userRepo;
             _roleRepo = roleRepo;
             _serviceRequestRepo = serviceRequestRepo;
+            _clientAccess = clientAccess;
         }
 
         public async Task<PagedResponse<ClientDto>> GetAllClientsAsync(ClientFilterRequest request)
@@ -42,17 +47,42 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ToListAsync();
 
             var clientIds = clients.Select(c => c.Id).ToList();
+            var ownerIds = clients
+                .Where(c => c.AccountRole == ClientAccountRole.Owner)
+                .Select(c => c.Id)
+                .ToList();
+
+            // Company (owner) request totals include owner + all member requests.
             var requestCounts = clientIds.Count == 0
                 ? new Dictionary<int, int>()
                 : await _serviceRequestRepo
                     .Query()
-                    .Where(r => clientIds.Contains(r.ClientId))
-                    .GroupBy(r => r.ClientId)
+                    .Where(r =>
+                        clientIds.Contains(r.ClientId)
+                        || (r.Client.ParentClientId != null
+                            && ownerIds.Contains(r.Client.ParentClientId.Value)))
+                    .GroupBy(r => r.Client.ParentClientId ?? r.ClientId)
                     .Select(g => new { ClientId = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.ClientId, x => x.Count);
 
+            var memberCounts = ownerIds.Count == 0
+                ? new Dictionary<int, int>()
+                : await _clientRepo
+                    .Query()
+                    .Where(c =>
+                        c.ParentClientId != null
+                        && ownerIds.Contains(c.ParentClientId.Value)
+                        && c.AccountRole == ClientAccountRole.Member
+                        && !c.IsDeleted)
+                    .GroupBy(c => c.ParentClientId!.Value)
+                    .Select(g => new { OwnerId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.OwnerId, x => x.Count);
+
             return new PagedResponse<ClientDto>(
-                clients.Select(c => MapClientList(c, requestCounts.GetValueOrDefault(c.Id))).ToList(),
+                clients.Select(c => MapClientList(
+                    c,
+                    requestCounts.GetValueOrDefault(c.Id),
+                    memberCounts.GetValueOrDefault(c.Id))).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -98,6 +128,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 City = dto.City?.Trim() ?? string.Empty,
                 Country = dto.Country?.Trim() ?? string.Empty,
                 PostalCode = dto.PostalCode?.Trim() ?? string.Empty,
+                AccountRole = ClientAccountRole.Owner,
+                ParentClientId = null,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -106,6 +138,172 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _clientRepo.SaveChangesAsync();
 
             return await GetClientByIdAsync(client.Id);
+        }
+
+        public async Task<ClientDto> CreateOrganizationMemberAsync(int ownerClientId, CreateClientMemberDto dto)
+        {
+            ValidateMemberCreateInput(dto);
+
+            var owner = await _clientRepo
+                .Query()
+                .FirstOrDefaultAsync(c =>
+                    c.Id == ownerClientId
+                    && !c.IsDeleted
+                    && c.AccountRole == ClientAccountRole.Owner
+                    && c.ParentClientId == null);
+
+            if (owner is null)
+                throw new AppException("Organization owner client not found.", 404);
+
+            if (!owner.IsActive)
+                throw new AppException("Cannot add users to an inactive organization.", 400);
+
+            var normalizedEmail = NormalizeEmail(dto.Email);
+            var emailExists = await _userRepo
+                .GetAll(u => u.Email == normalizedEmail)
+                .AnyAsync();
+
+            if (emailExists)
+                throw new AppException("Email already exists.", 400);
+
+            var clientRole = await _roleRepo
+                .GetAll(r => r.Name == "Client")
+                .FirstOrDefaultAsync();
+
+            if (clientRole is null)
+                throw new AppException("Resource not found.", 404);
+
+            var user = new User
+            {
+                FirstName = dto.FirstName.Trim(),
+                LastName = dto.LastName.Trim(),
+                Email = normalizedEmail,
+                PasswordHash = HashPassword(dto.Password),
+                RoleId = clientRole.Id,
+                IsEmailVerified = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var member = new Client
+            {
+                User = user,
+                CompanyName = owner.CompanyName,
+                ContactPersonPhone = dto.ContactPersonPhone?.Trim() ?? string.Empty,
+                CompanyAddress = owner.CompanyAddress ?? string.Empty,
+                City = owner.City ?? string.Empty,
+                Country = owner.Country ?? string.Empty,
+                PostalCode = owner.PostalCode ?? string.Empty,
+                SalesId = owner.SalesId,
+                AccountRole = ClientAccountRole.Member,
+                ParentClientId = owner.Id,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _clientRepo.AddAsync(member);
+            await _clientRepo.SaveChangesAsync();
+
+            return await GetClientByIdAsync(member.Id);
+        }
+
+        public async Task<IReadOnlyList<ClientDto>> GetOrganizationMembersAsync(int ownerClientId)
+        {
+            var ownerExists = await _clientRepo
+                .Query()
+                .AnyAsync(c =>
+                    c.Id == ownerClientId
+                    && !c.IsDeleted
+                    && c.AccountRole == ClientAccountRole.Owner);
+
+            if (!ownerExists)
+                throw new AppException("Organization owner client not found.", 404);
+
+            return await LoadOrganizationMembersAsync(ownerClientId);
+        }
+
+        public async Task<PagedResponse<ClientDto>> GetMyOrganizationMembersAsync(
+            int userId,
+            BaseApiRequest request)
+        {
+            var owner = await _clientRepo
+                .Query()
+                .AsNoTracking()
+                .Where(c => c.UserId == userId && !c.IsDeleted)
+                .Select(c => new { c.Id, c.AccountRole, c.IsActive })
+                .FirstOrDefaultAsync();
+
+            if (owner is null)
+                throw new AppException("Client profile not found for current user.", 404);
+
+            if (!owner.IsActive)
+                throw new AppException("Client profile is inactive.", 403);
+
+            if (owner.AccountRole != ClientAccountRole.Owner)
+                throw new AppException("Only organization owners can view company members.", 403);
+
+            return await LoadOrganizationMembersPagedAsync(owner.Id, request);
+        }
+
+        private async Task<IReadOnlyList<ClientDto>> LoadOrganizationMembersAsync(int ownerClientId)
+        {
+            var members = await BuildOrganizationMembersQuery(ownerClientId)
+                .OrderBy(c => c.User.FirstName)
+                .ThenBy(c => c.User.LastName)
+                .ToListAsync();
+
+            var result = new List<ClientDto>(members.Count);
+            foreach (var member in members)
+                result.Add(await MapClientProfileAsync(member));
+
+            return result;
+        }
+
+        private async Task<PagedResponse<ClientDto>> LoadOrganizationMembersPagedAsync(
+            int ownerClientId,
+            BaseApiRequest request)
+        {
+            var pageIndex = request.PageIndex < 1 ? 1 : request.PageIndex;
+            var pageSize = request.PageSize < 1 ? 12 : request.PageSize;
+
+            var query = BuildOrganizationMembersQuery(ownerClientId);
+
+            if (!string.IsNullOrWhiteSpace(request.searchKey))
+            {
+                var searchKey = Normalize(request.searchKey);
+                query = query.Where(c =>
+                    (c.ContactPersonPhone ?? string.Empty).ToLower().Contains(searchKey)
+                    || c.User.FirstName.ToLower().Contains(searchKey)
+                    || c.User.LastName.ToLower().Contains(searchKey)
+                    || c.User.Email.ToLower().Contains(searchKey)
+                    || (c.User.FirstName + " " + c.User.LastName).ToLower().Contains(searchKey));
+            }
+
+            var totalCount = await query.CountAsync();
+            var members = await query
+                .OrderBy(c => c.User.FirstName)
+                .ThenBy(c => c.User.LastName)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var result = new List<ClientDto>(members.Count);
+            foreach (var member in members)
+                result.Add(await MapClientProfileAsync(member));
+
+            return new PagedResponse<ClientDto>(result, totalCount, pageIndex, pageSize);
+        }
+
+        private IQueryable<Client> BuildOrganizationMembersQuery(int ownerClientId)
+        {
+            return _clientRepo
+                .Query()
+                .Include(c => c.User)
+                .Include(c => c.SalesUser)
+                .Where(c =>
+                    c.ParentClientId == ownerClientId
+                    && c.AccountRole == ClientAccountRole.Member
+                    && !c.IsDeleted);
         }
 
         public async Task<ClientDto> CreateClientBySalesAsync(int salesUserId, CreateClientDto dto)
@@ -161,6 +359,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Country = dto.Country?.Trim() ?? string.Empty,
                 PostalCode = dto.PostalCode?.Trim() ?? string.Empty,
                 SalesId = salesUserId,
+                AccountRole = ClientAccountRole.Owner,
+                ParentClientId = null,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -208,16 +408,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
             int userId,
             int limit = 5)
         {
-            var clientId = await _clientRepo
+            limit = NormalizeRecentRequestsLimit(limit);
+            var clientIds = await _clientAccess.GetAccessibleClientIdsForUserAsync(userId);
+
+            var requests = await _serviceRequestRepo
                 .Query()
-                .Where(c => c.UserId == userId && c.IsActive && !c.IsDeleted)
-                .Select(c => c.Id)
-                .FirstOrDefaultAsync();
+                .Include(r => r.Service)
+                .Include(r => r.Project)
+                .Where(r => clientIds.Contains(r.ClientId))
+                .OrderByDescending(r => r.RequestedDate)
+                .Take(limit)
+                .ToListAsync();
 
-            if (clientId == 0)
-                throw new AppException("Client profile not found for current user.", 404);
-
-            return await GetClientRecentServiceRequestsByClientIdAsync(clientId, limit);
+            return requests.Select(MapRequest).ToList();
         }
 
         public async Task<IReadOnlyList<ClientServiceRequestSummaryDto>> GetClientRecentServiceRequestsByClientIdAsync(
@@ -226,18 +429,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             limit = NormalizeRecentRequestsLimit(limit);
 
-            var clientExists = await _clientRepo
-                .Query()
-                .AnyAsync(c => c.Id == clientId);
-
-            if (!clientExists)
+            var orgClientIds = await GetOrganizationClientIdsAsync(clientId);
+            if (orgClientIds.Count == 0)
                 throw new AppException("Resource not found.", 404);
 
             var requests = await _serviceRequestRepo
                 .Query()
                 .Include(r => r.Service)
                 .Include(r => r.Project)
-                .Where(r => r.ClientId == clientId)
+                .Where(r => orgClientIds.Contains(r.ClientId))
                 .OrderByDescending(r => r.RequestedDate)
                 .Take(limit)
                 .ToListAsync();
@@ -247,8 +447,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ClientDto> UpdateClientProfileAsync(int userId, UpdateClientProfileDto dto)
         {
-            ValidateProfileInput(dto);
-
             var client = await _clientRepo
                 .Query()
                 .FirstOrDefaultAsync(c => c.UserId == userId);
@@ -258,6 +456,23 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (!client.IsActive)
                 throw new AppException("Client profile is inactive.", 400);
+
+            // Organization members may update contact phone only — not company fields.
+            if (client.AccountRole == ClientAccountRole.Member)
+            {
+                client.ContactPersonPhone = dto.ContactPersonPhone?.Trim() ?? string.Empty;
+                client.UpdatedAt = DateTime.UtcNow;
+
+                _clientRepo.SaveInclude(
+                    client,
+                    nameof(client.ContactPersonPhone),
+                    nameof(client.UpdatedAt));
+                await _clientRepo.SaveChangesAsync();
+
+                return await GetClientProfileAsync(userId);
+            }
+
+            ValidateProfileInput(dto);
 
             client.CompanyName = dto.CompanyName.Trim();
             client.ContactPersonPhone = dto.ContactPersonPhone?.Trim() ?? string.Empty;
@@ -281,7 +496,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetClientProfileAsync(userId);
         }
 
-        public async Task<ClientDto> DeactivateClientAsync(int id)
+        public async Task<ClientDto> DeactivateClientAsync(int id, bool includeOrganizationMembers = false)
         {
             var client = await _clientRepo
                 .Query()
@@ -295,6 +510,30 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (!client.IsActive)
                 throw new AppException("Client is already inactive.", 400);
 
+            await ApplyClientDeactivationAsync(client);
+
+            if (includeOrganizationMembers && client.AccountRole == ClientAccountRole.Owner)
+            {
+                var members = await _clientRepo
+                    .Query()
+                    .Where(c =>
+                        c.ParentClientId == client.Id
+                        && c.AccountRole == ClientAccountRole.Member
+                        && c.IsActive
+                        && !c.IsDeleted)
+                    .ToListAsync();
+
+                foreach (var member in members)
+                    await ApplyClientDeactivationAsync(member);
+            }
+
+            await _clientRepo.SaveChangesAsync();
+
+            return await GetClientByIdAsync(id);
+        }
+
+        private async Task ApplyClientDeactivationAsync(Client client)
+        {
             client.IsActive = false;
             client.UpdatedAt = DateTime.UtcNow;
 
@@ -318,10 +557,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     nameof(user.RefreshTokenExpiry),
                     nameof(user.UpdatedAt));
             }
-
-            await _clientRepo.SaveChangesAsync();
-
-            return await GetClientByIdAsync(id);
         }
 
         public async Task<ClientDto> ActivateClientAsync(int id)
@@ -405,8 +640,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (request.IsActive.HasValue)
                 query = query.Where(c => c.IsActive == request.IsActive.Value);
-            else
-                query = query.Where(c => c.IsActive);
+
+            // Admin company browse / Sales lists default to Owners only.
+            if (request.OwnersOnly != false)
+                query = query.Where(c => c.AccountRole == ClientAccountRole.Owner && c.ParentClientId == null);
+
+            if (request.OrganizationClientId.HasValue)
+            {
+                var orgId = request.OrganizationClientId.Value;
+                query = query.Where(c => c.Id == orgId || c.ParentClientId == orgId);
+            }
+
+            if (request.AccountRole.HasValue)
+                query = query.Where(c => c.AccountRole == request.AccountRole.Value);
 
             if (!string.IsNullOrWhiteSpace(request.City))
             {
@@ -471,6 +717,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
             }
         }
 
+        private static void ValidateMemberCreateInput(CreateClientMemberDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.FirstName)
+                || string.IsNullOrWhiteSpace(dto.LastName)
+                || string.IsNullOrWhiteSpace(dto.Email)
+                || !dto.Email.Contains('@')
+                || string.IsNullOrWhiteSpace(dto.Password)
+                || dto.Password.Length < 8)
+            {
+                throw new AppException("Invalid request.", 400);
+            }
+        }
+
         private static void ValidateProfileInput(UpdateClientProfileDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.CompanyName))
@@ -507,15 +766,23 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return limit;
         }
 
-        private static ClientDto MapClientList(Client client, int requestsCount)
+        private static ClientDto MapClientList(Client client, int requestsCount, int membersCount = 0)
         {
             return new ClientDto
             {
                 Id = client.Id,
+                UserId = client.UserId,
                 Email = client.User?.Email ?? string.Empty,
+                FirstName = client.User?.FirstName ?? string.Empty,
+                LastName = client.User?.LastName ?? string.Empty,
+                ContactPersonPhone = client.ContactPersonPhone ?? string.Empty,
                 CompanyName = client.CompanyName ?? string.Empty,
                 City = client.City ?? string.Empty,
                 Country = client.Country ?? string.Empty,
+                AccountRole = client.AccountRole,
+                ParentClientId = client.ParentClientId,
+                IsActive = client.IsActive,
+                MembersCount = membersCount,
                 RequestsCount = requestsCount,
             };
         }
@@ -532,11 +799,58 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private async Task<ClientDto> MapClientProfileAsync(Client client)
         {
-            var requestQuery = _serviceRequestRepo.Query().Where(r => r.ClientId == client.Id);
+            var orgClientIds = await GetOrganizationClientIdsAsync(client.Id);
+            var requestQuery = _serviceRequestRepo.Query().Where(r => orgClientIds.Contains(r.ClientId));
             var requestsCount = await requestQuery.CountAsync();
             var projectsCount = await requestQuery.CountAsync(r => r.Project != null);
 
-            return MapClientCore(client, requestsCount, projectsCount, new List<ClientServiceRequestSummaryDto>());
+            var membersCount = 0;
+            if (client.AccountRole == ClientAccountRole.Owner)
+            {
+                membersCount = await _clientRepo
+                    .Query()
+                    .CountAsync(c =>
+                        c.ParentClientId == client.Id
+                        && c.AccountRole == ClientAccountRole.Member
+                        && !c.IsDeleted);
+            }
+
+            var dto = MapClientCore(client, requestsCount, projectsCount, new List<ClientServiceRequestSummaryDto>());
+            dto.MembersCount = membersCount;
+            return dto;
+        }
+
+        /// <summary>
+        /// Owner company scope = owner + members. Member scope = that member only.
+        /// </summary>
+        private async Task<IReadOnlyList<int>> GetOrganizationClientIdsAsync(int clientId)
+        {
+            var client = await _clientRepo
+                .Query()
+                .AsNoTracking()
+                .Where(c => c.Id == clientId && !c.IsDeleted)
+                .Select(c => new { c.Id, c.AccountRole })
+                .FirstOrDefaultAsync();
+
+            if (client is null)
+                return Array.Empty<int>();
+
+            if (client.AccountRole != ClientAccountRole.Owner)
+                return new[] { client.Id };
+
+            var memberIds = await _clientRepo
+                .Query()
+                .AsNoTracking()
+                .Where(c =>
+                    c.ParentClientId == client.Id
+                    && c.AccountRole == ClientAccountRole.Member
+                    && !c.IsDeleted)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            var ids = new List<int>(memberIds.Count + 1) { client.Id };
+            ids.AddRange(memberIds);
+            return ids;
         }
 
         private static ClientDto MapClientCore(
@@ -565,6 +879,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 SalesPersonName = client.SalesUser is not null
                     ? $"{client.SalesUser.FirstName} {client.SalesUser.LastName}".Trim()
                     : string.Empty,
+                AccountRole = client.AccountRole,
+                ParentClientId = client.ParentClientId,
+                MembersCount = 0,
                 RequestsCount = requestsCount,
                 ProjectsCount = projectsCount,
                 ServiceRequests = serviceRequests

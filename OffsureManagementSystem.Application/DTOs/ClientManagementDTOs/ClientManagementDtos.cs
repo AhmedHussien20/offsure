@@ -10,6 +10,11 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public bool? IsActive { get; set; }
         public string? City { get; set; }
         public string? Country { get; set; }
+        /// <summary>When true (default), only organization Owners are returned. Set false for all client users.</summary>
+        public bool? OwnersOnly { get; set; }
+        /// <summary>Filter to one organization: owner id or any member under that owner.</summary>
+        public int? OrganizationClientId { get; set; }
+        public ClientAccountRole? AccountRole { get; set; }
     }
 
     public class CreateClientDto
@@ -24,6 +29,16 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public string? City { get; set; }
         public string? Country { get; set; }
         public string? PostalCode { get; set; }
+    }
+
+    /// <summary>Create a Member user under an existing Owner organization.</summary>
+    public class CreateClientMemberDto
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string? ContactPersonPhone { get; set; }
     }
 
     public class UpdateClientProfileDto
@@ -54,6 +69,9 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         public bool IsActive { get; set; }
         public int? SalesId { get; set; }
         public string SalesPersonName { get; set; } = string.Empty;
+        public ClientAccountRole AccountRole { get; set; } = ClientAccountRole.Owner;
+        public int? ParentClientId { get; set; }
+        public int MembersCount { get; set; }
         public int RequestsCount { get; set; }
         public int ProjectsCount { get; set; }
         public List<ClientServiceRequestSummaryDto> ServiceRequests { get; set; } = new();

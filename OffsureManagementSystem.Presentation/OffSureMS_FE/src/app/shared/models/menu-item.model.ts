@@ -14,6 +14,8 @@ export interface MenuItem {
   requiredPermission?: string;
   /** When set, menu row is shown only if user's JWT/profile role matches (e.g. OPERATIONS). */
   requiredRole?: string;
+  /** Client portal: show only for Owner (or Member) organization accounts. */
+  requiredClientAccountRole?: 'Owner' | 'Member';
   /** Hide for administration portal users (`type=system`). */
   customerPortalOnly?: boolean;
   /** Show only for administration portal users (internal staff JWT). */

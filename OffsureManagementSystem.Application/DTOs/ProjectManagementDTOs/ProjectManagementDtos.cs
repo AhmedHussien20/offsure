@@ -9,6 +9,8 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public ProjectBudgetType? BudgetType { get; set; }
         public int? ServiceRequestId { get; set; }
         public int? ClientId { get; set; }
+        /// <summary>When set, projects matching any of these client ids (direct or via service request).</summary>
+        public List<int>? ClientIds { get; set; }
         public int? ServiceId { get; set; }
         public int? TeamMemberId { get; set; }
         public int? SalesId { get; set; }
@@ -123,6 +125,8 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public string ServiceRequestTitle { get; set; } = string.Empty;
         public int? ClientId { get; set; }
         public string ClientName { get; set; } = string.Empty;
+        /// <summary>Person (owner or member) linked to the project / originating request.</summary>
+        public string ClientMemberName { get; set; } = string.Empty;
         public int? ServiceId { get; set; }
         public string ServiceName { get; set; } = string.Empty;
         public ProjectStatus Status { get; set; }
@@ -160,6 +164,7 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
+        public string ClientMemberName { get; set; } = string.Empty;
         public ProjectStatus Status { get; set; }
         public List<string> TeamMemberNames { get; set; } = new();
         public CommissionType? CommissionType { get; set; }

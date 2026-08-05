@@ -1,33 +1,85 @@
 <app-page-header></app-page-header>
 
-<div class="card custom-card">
-    <app-generic-table
-      [columns]="columns"
-      [data]="data"
-      [page]="page"
-      [entries]="entries"
-      [totalItems]="totalItems"
-      [totalPages]="totalPages"
-      [searchCriteria]="searchCriteria"
-      [labels]="labels"
-      [dropdownOptions]="dropdownOptions"
-      [showFilters]="true"
-      [showPagination]="true"
-      [showEmployeeFilter]="false"
-      [showExportExcel]="false"
-      [showAddButton]="true"
-      [addButtonLabel]="'Add Client'"
-      [expandable]="true"
-      [expandTemplate]="clientDetail"
-      [onSearch]="onSearch"
-      (pageChange)="onPageChange($event)"
-      (entriesChange)="onEntriesChange($event)"
-      (addClick)="onAdd()">
-    </app-generic-table>
-</div>
+<div class="card custom-card admin-companies">
+  <div class="card-body">
+    <div class="admin-companies__toolbar row g-3 align-items-end mb-3">
+      <div class="col-lg-5 col-md-6">
+        <label class="form-label mb-1" for="companySearch">Search companies</label>
+        <div class="admin-companies__search">
+          <i class="fe fe-search admin-companies__search-icon"></i>
+          <input
+            id="companySearch"
+            type="text"
+            class="form-control admin-companies__search-input"
+            placeholder="Company, contact, email, city…"
+            [(ngModel)]="searchKey"
+            (ngModelChange)="onSearchInput()" />
+        </div>
+      </div>
 
-<ng-template #clientDetail let-item>
-  <app-admin-client-detail-panel
-    [clientId]="item.id"
-    (saved)="onClientSaved()" />
-</ng-template>
+      <div class="col-lg-3 col-md-4">
+        <label class="form-label mb-1" for="companyActive">Status</label>
+        <select
+          id="companyActive"
+          class="form-select"
+          [(ngModel)]="activeFilter"
+          (ngModelChange)="onActiveFilterChange()">
+          <option value="">All</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+
+      <div class="col-lg-4 col-md-2 d-flex justify-content-md-end">
+        <button type="button" class="btn btn-primary" (click)="onAdd()">
+          <i class="fe fe-plus me-1"></i>
+          Add Company
+        </button>
+      </div>
+    </div>
+
+    @if (loadError) {
+      <div class="alert alert-danger mb-0">{{ loadError }}</div>
+    } @else if (hasLoaded && companies.length === 0 && !loading) {
+      <div class="admin-companies__empty text-center py-5">
+        <i class="ti ti-building admin-companies__empty-icon"></i>
+        <h5 class="mt-3 mb-1">No companies found</h5>
+        <p class="text-muted mb-0">Try a different search, or add a new client organization.</p>
+      </div>
+    } @else {
+      <div class="admin-companies__grid" [class.admin-companies__grid--dim]="refreshing">
+        @for (company of companies; track company.id) {
+          <button type="button" class="admin-company-card" (click)="openCompany(company)">
+            <span class="admin-company-card__avatar">{{ companyInitials(company) }}</span>
+            <div class="admin-company-card__body">
+              <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                <p class="admin-company-card__name mb-0">{{ company.companyName }}</p>
+                <span
+                  class="badge rounded-pill flex-shrink-0"
+                  [class.bg-success-transparent]="company.isActive"
+                  [class.bg-danger-transparent]="!company.isActive">
+                  {{ company.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+              <p class="admin-company-card__meta mb-1">{{ ownerName(company) }}</p>
+              <p class="admin-company-card__meta mb-2">{{ locationLabel(company) }}</p>
+              <div class="admin-company-card__stats">
+                <span>{{ company.membersCount ?? 0 }} users</span>
+                <span>{{ company.requestsCount ?? 0 }} requests</span>
+              </div>
+            </div>
+          </button>
+        }
+      </div>
+
+      @if (refreshing) {
+        <p class="text-muted small mb-0 mt-3">Updating results…</p>
+      } @else if (loading) {
+        <p class="text-muted small mb-0 mt-3">Loading more…</p>
+      } @else if (hasMore) {
+        <div #scrollSentinel class="admin-companies__sentinel" aria-hidden="true"></div>
+        <p class="text-muted small mb-0 mt-2">Scroll for more…</p>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,61 @@
+<div class="modal-header">
+  <div>
+    <h5 class="modal-title mb-0">Add Client</h5>
+    <p class="text-muted small mb-0 mt-1">
+      Step {{ currentStep + 1 }} of {{ steps.length }} — {{ activeStep.label }}
+    </p>
+  </div>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body">
+  <div class="client-create-stepper" role="navigation" aria-label="Create client steps">
+    @for (step of steps; track step.id; let i = $index; let last = $last) {
+      <button
+        type="button"
+        class="client-create-stepper__item"
+        [class.active]="currentStep === i"
+        [class.completed]="currentStep > i"
+        [attr.aria-current]="currentStep === i ? 'step' : null"
+        (click)="goToStep(i)">
+        <span class="client-create-stepper__dot">{{ i + 1 }}</span>
+        <span class="client-create-stepper__label">{{ step.shortLabel }}</span>
+      </button>
+      @if (!last) {
+        <span class="client-create-stepper__dash" [class.completed]="currentStep > i"></span>
+      }
+    }
+  </div>
+
+  <p class="text-muted small mb-3">
+    @if (currentStep === 0) {
+      Enter the organization details first. You will add the owner login next.
+    } @else {
+      Owner account credentials. Email is marked verified so they can sign in immediately.
+    }
+  </p>
+
+  <app-generic-form
+    [formGroup]="form"
+    [formConfig]="formConfig"
+    [showSubmit]="false"
+    class="generic-form"></app-generic-form>
+</div>
+
+<div class="modal-footer justify-content-between">
+  <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Cancel</button>
+  <div class="d-flex gap-2">
+    @if (currentStep > 0) {
+      <button type="button" class="btn btn-outline-secondary" [disabled]="saving" (click)="previousStep()">
+        Back
+      </button>
+    }
+    @if (!isLastStep) {
+      <button type="button" class="btn btn-primary" (click)="nextStep()">Continue</button>
+    } @else {
+      <button type="button" class="btn btn-primary" [disabled]="saving" (click)="submit()">
+        {{ saving ? 'Saving...' : 'Save Client' }}
+      </button>
+    }
+  </div>
+</div>

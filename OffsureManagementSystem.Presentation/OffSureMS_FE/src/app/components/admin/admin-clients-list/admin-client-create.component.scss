@@ -1,0 +1,63 @@
+.client-create-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.client-create-stepper__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #94a3b8;
+  font: inherit;
+  cursor: pointer;
+
+  &.active,
+  &.completed {
+    color: var(--primary-color, #6259ca);
+  }
+
+  &.active .client-create-stepper__dot {
+    background: var(--primary-color, #6259ca);
+    color: #fff;
+  }
+
+  &.completed .client-create-stepper__dot {
+    background: rgba(var(--primary-rgb, 98, 89, 202), 0.15);
+    color: var(--primary-color, #6259ca);
+  }
+}
+
+.client-create-stepper__dot {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.client-create-stepper__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.client-create-stepper__dash {
+  flex: 1;
+  height: 2px;
+  min-width: 1.5rem;
+  background: #e2e8f0;
+  border-radius: 2px;
+
+  &.completed {
+    background: rgba(var(--primary-rgb, 98, 89, 202), 0.45);
+  }
+}

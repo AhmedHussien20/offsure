@@ -25,7 +25,8 @@ export const PROJECT_BUDGET_TYPE_BADGES: Record<string, { text: string; class: s
 
 export const ADMIN_REQUEST_COLUMNS: TableColumn[] = [
   { key: 'title', label: 'Title', type: 'text' },
-  { key: 'clientName', label: 'Client', type: 'text' },
+  { key: 'clientName', label: 'Company', type: 'text' },
+  { key: 'clientMemberName', label: 'Member', type: 'text' },
   { key: 'serviceName', label: 'Service', type: 'text' },
   { key: 'status', label: 'Status', type: 'badge', badgeMap: SERVICE_REQUEST_STATUS_BADGES },
   { key: 'requestedDate', label: 'Requested', type: 'date' },
@@ -33,7 +34,8 @@ export const ADMIN_REQUEST_COLUMNS: TableColumn[] = [
 
 export const ADMIN_PROJECT_COLUMNS: TableColumn[] = [
   { key: 'name', label: 'Project', type: 'text' },
-  { key: 'clientName', label: 'Client', type: 'text' },
+  { key: 'clientName', label: 'Company', type: 'text' },
+  { key: 'clientMemberName', label: 'Member', type: 'text' },
   { key: 'serviceName', label: 'Service', type: 'text' },
   { key: 'budgetType', label: 'Budget type', type: 'badge', badgeMap: PROJECT_BUDGET_TYPE_BADGES },
   { key: 'status', label: 'Status', type: 'badge', badgeMap: PROJECT_STATUS_BADGES },
@@ -89,6 +91,17 @@ export const ADMIN_CLIENT_COLUMNS: TableColumn[] = [
   { key: 'email', label: 'Email', type: 'text' },
   { key: 'city', label: 'City', type: 'text' },
   { key: 'country', label: 'Country', type: 'text' },
+  { key: 'requestsCount', label: 'Requests', type: 'text' },
+];
+
+export const ADMIN_CLIENT_MEMBER_COLUMNS: TableColumn[] = [
+  { key: 'companyName', label: 'Company', type: 'text' },
+  { key: 'fullName', label: 'Name', type: 'text' },
+  { key: 'email', label: 'Email', type: 'text' },
+  { key: 'accountRoleLabel', label: 'Role', type: 'text' },
+  { key: 'city', label: 'City', type: 'text' },
+  { key: 'country', label: 'Country', type: 'text' },
+  { key: 'accountStatusLabel', label: 'Status', type: 'text' },
   { key: 'requestsCount', label: 'Requests', type: 'text' },
 ];
 

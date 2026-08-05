@@ -48,11 +48,25 @@ export class ClientProfileComponent implements OnInit {
     this.loadProfile();
   }
 
-  get initials(): string {
-    if (!this.profile?.companyName) {
-      return 'CL';
+  get isMember(): boolean {
+    const role = this.profile?.accountRole;
+    return role === 'Member' || role === 2;
+  }
+
+  get displayName(): string {
+    if (!this.profile) {
+      return '';
     }
-    return this.profile.companyName
+    if (this.isMember) {
+      const person = `${this.profile.firstName ?? ''} ${this.profile.lastName ?? ''}`.trim();
+      return person || this.profile.companyName;
+    }
+    return this.profile.companyName;
+  }
+
+  get initials(): string {
+    const source = this.displayName || 'CL';
+    return source
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
@@ -62,7 +76,16 @@ export class ClientProfileComponent implements OnInit {
   }
 
   saveProfile(): void {
-    if (this.profileForm.invalid || this.saving) {
+    if (this.saving) {
+      return;
+    }
+
+    if (this.isMember) {
+      this.saveMemberContact();
+      return;
+    }
+
+    if (this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
       return;
     }
@@ -87,9 +110,27 @@ export class ClientProfileComponent implements OnInit {
         this.saving = false;
         this.toastr.success('Profile updated successfully.');
       },
-      error: err => {
+      error: () => {
         this.saving = false;
-        },
+      },
+    });
+  }
+
+  private saveMemberContact(): void {
+    const phone = this.profileForm.get('contactPersonPhone')?.value?.trim() || undefined;
+    this.saving = true;
+    this.clientsService.updateProfile({ contactPersonPhone: phone }).subscribe({
+      next: res => {
+        this.profile = res.data ?? this.profile;
+        if (this.profile) {
+          this.patchForm(this.profile);
+        }
+        this.saving = false;
+        this.toastr.success('Contact phone updated.');
+      },
+      error: () => {
+        this.saving = false;
+      },
     });
   }
 
@@ -102,9 +143,9 @@ export class ClientProfileComponent implements OnInit {
         }
         this.loading = false;
       },
-      error: err => {
+      error: () => {
         this.loading = false;
-        },
+      },
     });
   }
 
@@ -117,5 +158,23 @@ export class ClientProfileComponent implements OnInit {
       country: profile.country ?? '',
       postalCode: profile.postalCode ?? '',
     });
+
+    const companyControls = ['companyName', 'companyAddress', 'city', 'country', 'postalCode'] as const;
+    for (const name of companyControls) {
+      const control = this.profileForm.get(name);
+      if (!control) {
+        continue;
+      }
+      if (this.isMember) {
+        control.disable({ emitEvent: false });
+        control.clearValidators();
+      } else {
+        control.enable({ emitEvent: false });
+        if (name === 'companyName') {
+          control.setValidators([Validators.required]);
+        }
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    }
   }
 }

@@ -56,7 +56,7 @@ export const teamRoutes: Routes = [
       },
       {
         path: 'profile',
-        data: { breadcrumb: 'Profile', title: 'Profile' },
+        data: { breadcrumb: false, title: 'Profile', hidePageHeader: true },
         loadComponent: () =>
           import('./team-profile/team-profile.component').then(m => m.TeamProfileComponent),
       },

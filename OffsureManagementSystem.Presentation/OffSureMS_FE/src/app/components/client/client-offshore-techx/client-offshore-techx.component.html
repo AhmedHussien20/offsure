@@ -7,13 +7,16 @@
 } @else {
   <!-- UI browse enhancement (2026-08-04): hero + panel heads — ask to undo if unwanted -->
   <section class="client-techx-hero card custom-card mb-3">
-    <div class="client-techx-hero__inner">
-      <div class="client-techx-hero__copy">
-        <p class="client-techx-hero__eyebrow mb-1">Organization catalog</p>
-        <h2 class="client-techx-hero__title mb-2">{{ providerName }}</h2>
-        <p class="client-techx-hero__text mb-0">
-          Explore what we deliver, who delivers it, and proof from published work — browse like a
-          living catalog of our organization.
+    <div class="client-techx-hero__stage">
+      <img
+        class="client-techx-hero__cover"
+        src="assets/images/client/offshore-techx-catalog-cover.png"
+        [alt]="providerName + ' organization catalog'" />
+      <div class="visually-hidden">
+        <h2>{{ providerName }}</h2>
+        <p>
+          Explore our services, the experts behind them, and real proof of our work. All in one
+          living company catalog.
         </p>
       </div>
       <div class="client-techx-hero__paths" role="navigation" aria-label="Browse sections">

@@ -8,7 +8,12 @@ export interface ClientFilterRequest {
   searchKey?: string;
   pageIndex?: number;
   pageSize?: number;
+  ownersOnly?: boolean;
+  organizationClientId?: number;
+  accountRole?: ClientAccountRole;
 }
+
+export type ClientAccountRole = 'Owner' | 'Member' | 1 | 2;
 
 export interface CreateClientDto {
   firstName: string;
@@ -21,6 +26,14 @@ export interface CreateClientDto {
   city?: string;
   country?: string;
   postalCode?: string;
+}
+
+export interface CreateClientMemberDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  contactPersonPhone?: string;
 }
 
 export interface UpdateClientProfileDto {
@@ -61,6 +74,9 @@ export interface ClientDto {
   isActive: boolean;
   salesId?: number | null;
   salesPersonName?: string;
+  accountRole?: ClientAccountRole;
+  parentClientId?: number | null;
+  membersCount?: number;
   requestsCount: number;
   projectsCount: number;
   serviceRequests: ClientServiceRequestSummaryDto[];

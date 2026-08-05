@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OffsureManagementSystem.Application.Common.Requests;
 using OffsureManagementSystem.Application.DTOs.ClientManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using OffsureManagementSystem.Application.Responses;
@@ -40,6 +41,24 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ClientDto>.Ok(client, "Client created successfully."));
         }
 
+        [HttpPost("{ownerClientId:int}/members")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<ClientDto>>> CreateOrganizationMember(
+            int ownerClientId,
+            CreateClientMemberDto dto)
+        {
+            var member = await _clientManagementService.CreateOrganizationMemberAsync(ownerClientId, dto);
+            return Ok(ApiResponse<ClientDto>.Ok(member, "Organization user created successfully."));
+        }
+
+        [HttpGet("{ownerClientId:int}/members")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<ClientDto>>>> GetOrganizationMembers(int ownerClientId)
+        {
+            var members = await _clientManagementService.GetOrganizationMembersAsync(ownerClientId);
+            return Ok(ApiResponse<IReadOnlyList<ClientDto>>.Ok(members));
+        }
+
         [HttpGet("{id:int}")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<ApiResponse<ClientDto>>> GetClientById(int id)
@@ -64,6 +83,17 @@ namespace OffsureManagementSystem.API.Controllers
         {
             var client = await _clientManagementService.GetClientProfileAsync(GetCurrentUserId());
             return Ok(ApiResponse<ClientDto>.Ok(client));
+        }
+
+        [HttpGet("organization-members")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ClientDto>>>> GetMyOrganizationMembers(
+            [FromQuery] BaseApiRequest request)
+        {
+            var members = await _clientManagementService.GetMyOrganizationMembersAsync(
+                GetCurrentUserId(),
+                request);
+            return Ok(ApiResponse<PagedResponse<ClientDto>>.Ok(members));
         }
 
         [HttpGet("profile/recent-requests")]
@@ -122,9 +152,11 @@ namespace OffsureManagementSystem.API.Controllers
 
         [HttpPatch("{id:int}/deactivate")]
         [Authorize(Roles = "Administrator")]
-        public async Task<ActionResult<ApiResponse<ClientDto>>> DeactivateClient(int id)
+        public async Task<ActionResult<ApiResponse<ClientDto>>> DeactivateClient(
+            int id,
+            [FromQuery] bool includeMembers = false)
         {
-            var client = await _clientManagementService.DeactivateClientAsync(id);
+            var client = await _clientManagementService.DeactivateClientAsync(id, includeMembers);
             return Ok(ApiResponse<ClientDto>.Ok(client, "Client deactivated successfully."));
         }
 

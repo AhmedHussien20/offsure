@@ -98,8 +98,12 @@
         <div class="card-body">
           <dl class="project-detail-info-grid">
             <div class="project-detail-info-grid__item">
-              <dt>Client</dt>
+              <dt>Company</dt>
               <dd>{{ project.clientName }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Member</dt>
+              <dd>{{ project.clientMemberName || '—' }}</dd>
             </div>
             <div class="project-detail-info-grid__item">
               <dt>Start</dt>

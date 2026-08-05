@@ -18,6 +18,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly ITeamProfileStorageService _photoStorage;
         private readonly ITeamIntroVideoStorageService _introVideoStorage;
+        private readonly IClientAccessService _clientAccess;
 
         public ClientTeamBrowseService(
             IRepository<Client> clientRepo,
@@ -25,7 +26,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<ProjectAssignment> assignmentRepo,
             IRepository<TeamMember> teamMemberRepo,
             ITeamProfileStorageService photoStorage,
-            ITeamIntroVideoStorageService introVideoStorage)
+            ITeamIntroVideoStorageService introVideoStorage,
+            IClientAccessService clientAccess)
         {
             _clientRepo = clientRepo;
             _projectRepo = projectRepo;
@@ -33,19 +35,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _teamMemberRepo = teamMemberRepo;
             _photoStorage = photoStorage;
             _introVideoStorage = introVideoStorage;
+            _clientAccess = clientAccess;
         }
 
         public async Task<PagedResponse<ClientTeamMemberCardDto>> BrowseTeamMembersAsync(
             int clientUserId,
             ClientTeamMemberBrowseRequest request)
         {
-            var clientId = await GetClientIdForUserAsync(clientUserId);
+            var accessibleClientIds = await _clientAccess.GetAccessibleClientIdsForUserAsync(clientUserId);
             var projectQuery = _projectRepo
                 .Query()
                 .AsNoTracking()
                 .Where(p => !p.IsDeleted
-                    && (p.ClientId == clientId
-                        || (p.ServiceRequest != null && p.ServiceRequest.ClientId == clientId)));
+                    && ((p.ClientId.HasValue && accessibleClientIds.Contains(p.ClientId.Value))
+                        || (p.ServiceRequest != null && accessibleClientIds.Contains(p.ServiceRequest.ClientId))));
 
             if (request.ProjectId.HasValue)
                 projectQuery = projectQuery.Where(p => p.Id == request.ProjectId.Value);
@@ -151,7 +154,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ClientTeamMemberDetailDto> GetTeamMemberDetailAsync(int clientUserId, int teamMemberId)
         {
-            var clientId = await GetClientIdForUserAsync(clientUserId);
+            var accessibleClientIds = await _clientAccess.GetAccessibleClientIdsForUserAsync(clientUserId);
 
             var hasAccess = await _assignmentRepo
                 .Query()
@@ -161,8 +164,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     && a.IsActive
                     && !a.IsDeleted
                     && !a.Project.IsDeleted
-                    && (a.Project.ClientId == clientId
-                        || (a.Project.ServiceRequest != null && a.Project.ServiceRequest.ClientId == clientId)));
+                    && ((a.Project.ClientId.HasValue && accessibleClientIds.Contains(a.Project.ClientId.Value))
+                        || (a.Project.ServiceRequest != null
+                            && accessibleClientIds.Contains(a.Project.ServiceRequest.ClientId))));
 
             if (!hasAccess)
                 throw new AppException("Team member not found on your projects.", 404);
@@ -175,8 +179,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     && a.IsActive
                     && !a.IsDeleted
                     && !a.Project.IsDeleted
-                    && (a.Project.ClientId == clientId
-                        || (a.Project.ServiceRequest != null && a.Project.ServiceRequest.ClientId == clientId)))
+                    && ((a.Project.ClientId.HasValue && accessibleClientIds.Contains(a.Project.ClientId.Value))
+                        || (a.Project.ServiceRequest != null
+                            && accessibleClientIds.Contains(a.Project.ServiceRequest.ClientId))))
                 .Select(a => a.Project.Name)
                 .Distinct()
                 .OrderBy(name => name)

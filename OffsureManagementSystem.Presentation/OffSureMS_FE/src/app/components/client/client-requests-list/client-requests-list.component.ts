@@ -39,6 +39,8 @@ export class ClientRequestsListComponent implements OnInit {
   entries = 10;
   loading = false;
   clientId: number | null = null;
+  /** Owners can open requests created by organization members. */
+  isOrganizationOwner = false;
   private pendingCreatePrefill: ServiceRequestCreatePrefill | null = null;
 
   searchCriteria = new SearchCriteria({
@@ -86,6 +88,8 @@ export class ClientRequestsListComponent implements OnInit {
 
     this.clientContext.loadProfile().subscribe(profile => {
       this.clientId = profile?.id ?? null;
+      const role = profile?.accountRole;
+      this.isOrganizationOwner = role === 'Owner' || role === 1 || role == null;
       if (this.clientId) {
         this.loadRequests();
       }
@@ -131,6 +135,11 @@ export class ClientRequestsListComponent implements OnInit {
   canViewEnteredData(request: ServiceRequestDto): boolean {
     if (!this.clientId || !request) {
       return false;
+    }
+
+    // List API already scopes rows to accessible clients; owners may open member requests.
+    if (this.isOrganizationOwner) {
+      return true;
     }
 
     return request.clientId === this.clientId;

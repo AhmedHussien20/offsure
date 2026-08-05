@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { FormFieldConfig } from 'app/core/models/form-field-config';
@@ -16,6 +24,41 @@ import {
 import { ServiceRequestsService } from 'app/core/services/service-requests.service';
 import { ServicesService } from 'app/core/services/services.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
+
+/** Preferred due date must be today or later (requested date is now on create). */
+function dueDateNotBeforeTodayValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const raw = control.value;
+    if (raw == null || raw === '') {
+      return null;
+    }
+
+    const selected = parseDateOnly(raw);
+    if (!selected) {
+      return { minDate: true };
+    }
+
+    const today = startOfLocalDay(new Date());
+    return selected < today ? { minDate: true } : null;
+  };
+}
+
+function parseDateOnly(value: string | Date): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : startOfLocalDay(value);
+  }
+
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) {
+    return null;
+  }
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
 
 @Component({
   selector: 'app-client-request-create',
@@ -70,7 +113,7 @@ export class ClientRequestCreateComponent implements OnInit {
       serviceId: [null, Validators.required],
       title: ['', [Validators.required, Validators.maxLength(200)]],
       description: [''],
-      dueDate: [''],
+      dueDate: ['', [dueDateNotBeforeTodayValidator()]],
       budget: [null, [Validators.required]],
       priority: [ServiceRequestPriority.Medium],
     });
@@ -151,6 +194,10 @@ export class ClientRequestCreateComponent implements OnInit {
         type: 'date',
         name: 'dueDate',
         label: 'Preferred Due Date',
+        minDate: startOfLocalDay(new Date()),
+        errorMessages: {
+          minDate: 'must be today or later (not before the request date).',
+        },
       },
       {
         type: 'select',

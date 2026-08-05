@@ -22,6 +22,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<ProjectResourceManager> _projectResourceManagerRepo;
         private readonly IRepository<Client> _clientRepo;
         private readonly IProjectInvoiceStorageService _storage;
+        private readonly IClientAccessService _clientAccess;
 
         public ProjectInvoiceService(
             IRepository<Project> projectRepo,
@@ -30,7 +31,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<ProjectMilestone> milestoneRepo,
             IRepository<ProjectResourceManager> projectResourceManagerRepo,
             IRepository<Client> clientRepo,
-            IProjectInvoiceStorageService storage)
+            IProjectInvoiceStorageService storage,
+            IClientAccessService clientAccess)
         {
             _projectRepo = projectRepo;
             _invoiceRepo = invoiceRepo;
@@ -39,6 +41,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _projectResourceManagerRepo = projectResourceManagerRepo;
             _clientRepo = clientRepo;
             _storage = storage;
+            _clientAccess = clientAccess;
         }
 
         public async Task<List<ProjectInvoiceDto>> GetInvoicesForProjectAsync(int userId, string role, int projectId)
@@ -452,13 +455,6 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (string.Equals(role, nameof(UserRole.Client), StringComparison.OrdinalIgnoreCase))
             {
-                var clientId = await _clientRepo
-                    .Query()
-                    .Where(c => c.UserId == userId && c.IsActive && !c.IsDeleted)
-                    .Select(c => (int?)c.Id)
-                    .FirstOrDefaultAsync()
-                    ?? throw new AppException("Client profile not found.", 404);
-
                 var projectClientId = project.ClientId
                     ?? (await _projectRepo
                         .Query()
@@ -467,7 +463,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                         .Select(p => p.ServiceRequest != null ? (int?)p.ServiceRequest.ClientId : null)
                         .FirstOrDefaultAsync());
 
-                if (projectClientId != clientId)
+                if (!projectClientId.HasValue
+                    || !await _clientAccess.CanAccessClientIdAsync(userId, projectClientId.Value))
                     throw new AppException("You do not have access to this project.", 403);
 
                 return;

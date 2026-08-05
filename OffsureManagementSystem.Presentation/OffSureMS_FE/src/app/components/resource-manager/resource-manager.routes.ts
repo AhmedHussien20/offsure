@@ -50,7 +50,7 @@ export const resourceManagerRoutes: Routes = [
       },
       {
         path: 'profile',
-        data: { breadcrumb: 'My Profile', title: 'My Profile' },
+        data: { breadcrumb: false, title: 'My Profile', hidePageHeader: true },
         loadComponent: () =>
           import('./rm-profile/rm-profile.component').then(m => m.RmProfileComponent),
       },

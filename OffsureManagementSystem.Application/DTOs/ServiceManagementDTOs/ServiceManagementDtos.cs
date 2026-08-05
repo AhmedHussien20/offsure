@@ -23,6 +23,7 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
     {
         public ServiceRequestStatus? Status { get; set; }
         public int? ClientId { get; set; }
+        public List<int>? ClientIds { get; set; }
         public int? ServiceId { get; set; }
     }
 
@@ -115,6 +116,8 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         public int Id { get; set; }
         public int ClientId { get; set; }
         public string ClientName { get; set; } = string.Empty;
+        /// <summary>Person (owner or member) who submitted the request.</summary>
+        public string ClientMemberName { get; set; } = string.Empty;
         public string ClientEmail { get; set; } = string.Empty;
         public int ServiceId { get; set; }
         public string ServiceName { get; set; } = string.Empty;

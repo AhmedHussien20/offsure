@@ -127,6 +127,8 @@ export interface ServiceRequestDto {
   id: number;
   clientId: number;
   clientName: string;
+  /** Person (owner or member) who submitted the request. */
+  clientMemberName?: string;
   clientEmail: string;
   serviceId: number;
   serviceName: string;

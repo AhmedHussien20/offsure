@@ -175,7 +175,12 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
 
   activityLog(item: ServiceRequestDto): { text: string; date?: string }[] {
     const entries: { text: string; date?: string }[] = [
-      { text: `Submitted by ${item.clientName}`, date: item.requestedDate },
+      {
+        text: `Submitted by ${item.clientMemberName || item.clientName}${
+          item.clientMemberName && item.clientName ? ` (${item.clientName})` : ''
+        }`,
+        date: item.requestedDate,
+      },
     ];
     const status = normalizeServiceRequestStatus(item.status);
     if (

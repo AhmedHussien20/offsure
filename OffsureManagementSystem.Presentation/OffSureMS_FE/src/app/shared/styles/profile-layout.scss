@@ -4,29 +4,31 @@
 }
 
 .profile-header-card {
+  position: relative;
   overflow: hidden;
   border: 0;
   box-shadow: 0 8px 28px rgb(15 23 42 / 8%);
+  background: url('/assets/images/profile_cover.png') center / cover no-repeat;
 }
 
 .profile-header-cover {
-  height: 140px;
-  background: linear-gradient(
-    135deg,
-    rgb(var(--primary-rgb) / 42%) 0%,
-    rgb(var(--primary-rgb) / 18%) 55%,
-    rgb(var(--primary-rgb) / 8%) 100%
-  );
+  // Tall enough that the baked-in cover title sits above the profile row.
+  height: clamp(168px, 26vw, 230px);
+  background: transparent;
 }
 
 .profile-header-body {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1.25rem;
-  padding: 0 1.5rem 1.5rem;
-  margin-top: -3.25rem;
+  padding: 0.35rem 1.5rem 1.35rem;
+  // Light overlap so the circle still sits on the cover, but name/email stay below the title.
+  margin-top: -2rem;
+  background: transparent;
 }
 
 .profile-header-main {
@@ -38,6 +40,8 @@
 }
 
 .profile-avatar-readonly {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
   width: 6.5rem;
   height: 6.5rem;
@@ -45,7 +49,12 @@
   overflow: hidden;
   border: 4px solid #fff;
   box-shadow: 0 12px 28px rgb(15 23 42 / 14%);
-  background: rgb(var(--primary-rgb) / 12%);
+  // Solid fill so the cover never shows through the circle.
+  background-color: #fff;
+  background-image: linear-gradient(
+    rgb(var(--primary-rgb) / 12%),
+    rgb(var(--primary-rgb) / 12%)
+  );
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -58,23 +67,29 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    background: #fff;
   }
 }
 
 .profile-header-info {
   min-width: 0;
-  padding-bottom: 0.25rem;
+  padding-bottom: 0.15rem;
+  padding-top: 2.75rem;
+  background: transparent;
 }
 
 .profile-header-name {
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.2;
+  color: #0f172a;
+  text-shadow: 0 1px 2px rgb(255 255 255 / 85%);
 }
 
 .profile-header-title {
-  color: var(--text-muted, #64748b);
+  color: #334155;
   font-size: 0.95rem;
+  text-shadow: 0 1px 2px rgb(255 255 255 / 85%);
 }
 
 .profile-header-meta {

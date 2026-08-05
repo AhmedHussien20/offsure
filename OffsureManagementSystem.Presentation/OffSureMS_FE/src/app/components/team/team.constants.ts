@@ -10,7 +10,8 @@ export const TEAM_TIMESHEET_ENTRY_COLUMNS: TableColumn[] = [
 
 export const TEAM_PROJECT_COLUMNS: TableColumn[] = [
   { key: 'name', label: 'Project', type: 'text' },
-  { key: 'clientName', label: 'Client', type: 'text' },
+  { key: 'clientName', label: 'Company', type: 'text' },
+  { key: 'clientMemberName', label: 'Member', type: 'text' },
   { key: 'myRole', label: 'My Role', type: 'text' },
   { key: 'status', label: 'Status', type: 'badge', badgeMap: PROJECT_STATUS_BADGES },
   { key: 'progressLabel', label: 'Progress', type: 'text' },

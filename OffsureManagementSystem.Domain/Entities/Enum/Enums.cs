@@ -55,6 +55,16 @@ namespace OffsureManagementSystem.Domain.Entities.Enum
         Sales = 5
     }
 
+    /// <summary>
+    /// Client portal account type within an organization.
+    /// Both still use ASP.NET role <see cref="UserRole.Client"/>.
+    /// </summary>
+    public enum ClientAccountRole
+    {
+        Owner = 1,
+        Member = 2
+    }
+
     public enum CommissionType
     {
         Fixed = 0,

@@ -48,4 +48,11 @@ export const LIST_FILTER_LABELS = {
   serviceCategoryId: 'Category',
   skillCategoryId: 'Category',
   serviceId: 'Service',
+  organizationClientId: 'Company',
+  accountRole: 'Account role',
 } as const;
+
+export const CLIENT_ACCOUNT_ROLE_FILTER_OPTIONS = [
+  { id: 1, name: 'Owner' },
+  { id: 2, name: 'Member' },
+];

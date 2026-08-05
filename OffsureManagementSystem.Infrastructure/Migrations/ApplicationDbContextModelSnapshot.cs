@@ -30,6 +30,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AccountRole")
+                        .HasColumnType("int");
+
                     b.Property<string>("City")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -72,6 +75,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("ParentClientId")
+                        .HasColumnType("int");
+
                     b.Property<string>("PostalCode")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -89,6 +95,10 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AccountRole");
+
+                    b.HasIndex("ParentClientId");
 
                     b.HasIndex("SalesId");
 
@@ -1604,6 +1614,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Client", b =>
                 {
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.Client", "ParentClient")
+                        .WithMany("Members")
+                        .HasForeignKey("ParentClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "SalesUser")
                         .WithMany()
                         .HasForeignKey("SalesId")
@@ -1614,6 +1629,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasForeignKey("OffshoreManagementSystem.Domain.Entities.Client", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ParentClient");
 
                     b.Navigation("SalesUser");
 
@@ -1927,6 +1944,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Client", b =>
                 {
+                    b.Navigation("Members");
+
                     b.Navigation("ServiceRequests");
                 });
 

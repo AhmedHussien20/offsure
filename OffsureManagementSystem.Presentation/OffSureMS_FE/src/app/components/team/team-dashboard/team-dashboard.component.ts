@@ -29,7 +29,14 @@ import { PROJECT_STATUS_BADGES } from '../../client/client.constants';
 })
 export class TeamDashboardComponent implements OnInit {
   profile: TeamMemberDto | null = null;
-  currentProjects: Array<{ id: number; name: string; clientName: string; status: string; myRole: string }> = [];
+  currentProjects: Array<{
+    id: number;
+    name: string;
+    clientName: string;
+    clientMemberName?: string;
+    status: string;
+    myRole: string;
+  }> = [];
   loading = true;
   togglingAvailability = false;
 
@@ -102,6 +109,7 @@ export class TeamDashboardComponent implements OnInit {
               id: p.id,
               name: p.name,
               clientName: p.clientName,
+              clientMemberName: p.clientMemberName,
               status: projectStatusKey(p.status),
               myRole: p.myRole?.trim() || '—',
             }));

@@ -25,7 +25,9 @@
   <div class="sales-modal__context">
     <div class="sales-modal__context-item">
       <span class="sales-modal__context-label">Client</span>
-      <span class="sales-modal__context-value">{{ project.clientName || '—' }}</span>
+      <span class="sales-modal__context-value">
+        {{ project.clientName || '—' }}{{ project.clientMemberName ? ' · ' + project.clientMemberName : '' }}
+      </span>
     </div>
     <div class="sales-modal__context-item">
       <span class="sales-modal__context-label">Service</span>

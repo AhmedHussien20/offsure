@@ -8,6 +8,7 @@ import {
   ClientFilterRequest,
   ClientServiceRequestSummaryDto,
   CreateClientDto,
+  CreateClientMemberDto,
   UpdateClientProfileDto,
 } from '../models/clients/client.models';
 import {
@@ -33,6 +34,39 @@ export class ClientsService {
     return this.api
       .post<BaseResponse<ClientDto>>(this.service, '', dto)
       .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
+  }
+
+  createOrganizationMember(
+    ownerClientId: number,
+    dto: CreateClientMemberDto
+  ): Observable<BaseResponse<ClientDto>> {
+    return this.api
+      .post<BaseResponse<ClientDto>>(this.service, `${ownerClientId}/members`, dto)
+      .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
+  }
+
+  getOrganizationMembers(ownerClientId: number): Observable<BaseResponse<ClientDto[]>> {
+    return this.api
+      .get<BaseResponse<ClientDto[]>>(this.service, `${ownerClientId}/members`)
+      .pipe(
+        map(res => ({
+          ...res,
+          data: (res.data ?? []).map(c => this.mapClient(c)),
+        }))
+      );
+  }
+
+  /** Owner portal: organization members with request/project counts. */
+  getMyOrganizationMembers(
+    request?: Pick<ClientFilterRequest, 'searchKey' | 'pageIndex' | 'pageSize'>
+  ): Observable<BaseResponse<PagedResponse<ClientDto>>> {
+    return this.api
+      .get<BaseResponse<PagedResponse<ClientDto>>>(
+        this.service,
+        'organization-members',
+        request as Record<string, unknown>
+      )
+      .pipe(map(res => this.mapPagedClients(res)));
   }
 
   getById(id: number): Observable<BaseResponse<ClientDto>> {
@@ -74,9 +108,10 @@ export class ClientsService {
       .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
   }
 
-  deactivate(id: number): Observable<BaseResponse<ClientDto>> {
+  deactivate(id: number, includeMembers = false): Observable<BaseResponse<ClientDto>> {
+    const query = includeMembers ? '?includeMembers=true' : '';
     return this.api
-      .patch<BaseResponse<ClientDto>>(this.service, `${id}/deactivate`, {})
+      .patch<BaseResponse<ClientDto>>(this.service, `${id}/deactivate${query}`, {})
       .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
   }
 

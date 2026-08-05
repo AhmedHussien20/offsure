@@ -9,8 +9,12 @@
 <div class="modal-body project-flow-modal__body">
   <div class="project-flow-context">
     <div>
-      <span class="project-flow-context__label">Client</span>
+      <span class="project-flow-context__label">Company</span>
       <span class="project-flow-context__value">{{ request.clientName }}</span>
+    </div>
+    <div>
+      <span class="project-flow-context__label">Member</span>
+      <span class="project-flow-context__value">{{ request.clientMemberName || '—' }}</span>
     </div>
     <div>
       <span class="project-flow-context__label">Service</span>

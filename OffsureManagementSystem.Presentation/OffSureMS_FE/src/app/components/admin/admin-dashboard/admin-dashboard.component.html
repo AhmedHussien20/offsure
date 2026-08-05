@@ -92,7 +92,7 @@
                     <div class="flex-grow-1 min-w-0">
                       <p class="mb-0 fw-semibold text-truncate">{{ request.clientName }}</p>
                       <p class="mb-0 fs-12 text-muted text-truncate">
-                        {{ request.serviceName || request.title }}
+                        {{ request.clientMemberName ? request.clientMemberName + ' · ' : '' }}{{ request.serviceName || request.title }}
                       </p>
                     </div>
                     <span class="badge rounded-pill {{ requestStatusBadge(request.status).class }}">
@@ -135,7 +135,9 @@
                         <div class="d-flex align-items-start justify-content-between gap-2">
                           <div class="min-w-0">
                             <p class="mb-0 fw-semibold text-truncate">{{ project.name }}</p>
-                            <p class="mb-2 fs-12 text-muted text-truncate">{{ project.clientName }}</p>
+                            <p class="mb-2 fs-12 text-muted text-truncate">
+                              {{ project.clientName }}{{ project.clientMemberName ? ' · ' + project.clientMemberName : '' }}
+                            </p>
                           </div>
                           <span
                             class="fw-semibold fs-13 flex-shrink-0 {{ progressTextClass(projectProgress(project)) }}">

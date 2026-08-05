@@ -10,6 +10,9 @@
         <p class="client-detail-panel__meta mb-0">{{ client.email }}</p>
       </div>
       <div class="d-flex flex-wrap align-items-center gap-2">
+        @if (isOrganizationOwner) {
+          <span class="badge rounded-pill bg-primary-transparent">Owner</span>
+        }
         <span
           class="badge rounded-pill"
           [class.bg-success-transparent]="client.isActive"
@@ -124,6 +127,42 @@
             </ul>
           }
         </div>
+
+        @if (isOrganizationOwner) {
+          <div class="client-sidebar-card">
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+              <h6 class="mb-0">Organization users</h6>
+              <button
+                type="button"
+                class="btn btn-sm btn-primary no-expand"
+                (click)="openCreateMember()">
+                Add user
+              </button>
+            </div>
+            <p class="text-muted small mb-2">
+              Members sign in as clients and only see their own projects.
+            </p>
+            @if (loadingMembers) {
+              <p class="text-muted small mb-0">Loading users…</p>
+            } @else if (membersError) {
+              <p class="text-danger small mb-0">{{ membersError }}</p>
+            } @else if (members.length === 0) {
+              <p class="text-muted small mb-0">No organization users yet.</p>
+            } @else {
+              <ul class="client-request-list">
+                @for (member of members; track member.id) {
+                  <li>
+                    <strong>{{ memberDisplayName(member) }}</strong>
+                    <span class="d-block text-muted small">
+                      {{ member.email }}
+                      · {{ member.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
       </div>
     </div>
   }

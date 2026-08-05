@@ -1,0 +1,94 @@
+<app-page-header></app-page-header>
+
+<div class="card custom-card client-company-members">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+      <div>
+        <h5 class="mb-1">My company members</h5>
+        <p class="text-muted small mb-0">People in your organization and their activity</p>
+      </div>
+      @if (!loading && !loadError) {
+        <span class="badge bg-primary-transparent">{{ totalCount }} member{{ totalCount === 1 ? '' : 's' }}</span>
+      }
+    </div>
+
+    <div class="client-company-members__toolbar mb-3">
+      <label class="form-label mb-1" for="companyMemberSearch">Search</label>
+      <div class="client-company-members__search">
+        <i class="fe fe-search client-company-members__search-icon"></i>
+        <input
+          id="companyMemberSearch"
+          type="text"
+          class="form-control client-company-members__search-input"
+          placeholder="Name, email, or phone"
+          [(ngModel)]="searchKey"
+          (ngModelChange)="onSearchInput()" />
+      </div>
+    </div>
+
+    @if (loading) {
+      <p class="text-muted mb-0">Loading members…</p>
+    } @else if (loadError) {
+      <div class="alert alert-danger mb-0">{{ loadError }}</div>
+    } @else if (members.length === 0) {
+      <div class="client-company-members__empty text-center py-5">
+        <i class="ti ti-users client-company-members__empty-icon"></i>
+        <h5 class="mt-3 mb-1">{{ searchKey.trim() ? 'No members match your search' : 'No company members yet' }}</h5>
+        <p class="text-muted mb-0">
+          {{
+            searchKey.trim()
+              ? 'Try a different name, email, or phone.'
+              : 'Ask an admin to add users under your organization.'
+          }}
+        </p>
+      </div>
+    } @else {
+      <div class="client-company-members__grid">
+        @for (member of members; track member.id) {
+          <div class="client-company-member-card">
+            <span class="client-company-member-card__avatar" aria-hidden="true">{{ initials(member) }}</span>
+            <div class="client-company-member-card__body">
+              <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                <p class="client-company-member-card__name mb-0">{{ displayName(member) }}</p>
+                <span
+                  class="badge rounded-pill flex-shrink-0"
+                  [class.bg-success-transparent]="member.isActive"
+                  [class.bg-danger-transparent]="!member.isActive">
+                  {{ member.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+              <p class="client-company-member-card__meta mb-1">{{ member.email }}</p>
+              @if (member.contactPersonPhone) {
+                <p class="client-company-member-card__meta mb-2">{{ member.contactPersonPhone }}</p>
+              } @else {
+                <p class="client-company-member-card__meta mb-2">Member</p>
+              }
+              <div class="client-company-member-card__stats">
+                <span>{{ member.requestsCount ?? 0 }} requests</span>
+                <span>{{ member.projectsCount ?? 0 }} projects</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (showPagination) {
+        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2 mt-4 pt-3 border-top">
+          <p class="text-muted small mb-0">
+            Showing {{ (page - 1) * pageSize + 1 }}–{{ (page - 1) * pageSize + members.length }} of
+            {{ totalCount }}
+          </p>
+          <ngb-pagination
+            [collectionSize]="totalCount"
+            [(page)]="page"
+            [pageSize]="pageSize"
+            [maxSize]="5"
+            [boundaryLinks]="true"
+            [rotate]="true"
+            (pageChange)="onPageChange($event)">
+          </ngb-pagination>
+        </div>
+      }
+    }
+  </div>
+</div>

@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ClientDto, ClientServiceRequestSummaryDto } from 'app/core/models/clients/client.models';
 import { ClientsService } from 'app/core/services/clients.service';
 import { ConfirmDialogService } from 'app/shared/services/confirm-dialog.service';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { AdminClientMemberCreateComponent } from './admin-client-member-create.component';
 
 @Component({
   selector: 'app-admin-client-detail-panel',
@@ -20,12 +22,15 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
 
   loading = false;
   loadingRequests = false;
+  loadingMembers = false;
   deactivating = false;
   activating = false;
   loadError: string | null = null;
   requestsError: string | null = null;
+  membersError: string | null = null;
   client: ClientDto | null = null;
   recentRequests: ClientServiceRequestSummaryDto[] = [];
+  members: ClientDto[] = [];
 
   private readonly recentRequestsLimit = 2;
 
@@ -34,7 +39,8 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
   constructor(
     private clientsService: ClientsService,
     private toastr: ToastrService,
-    private confirmDialog: ConfirmDialogService
+    private confirmDialog: ConfirmDialogService,
+    private modalService: NgbModal
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -59,8 +65,43 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
     return !!(this.client?.salesId || this.client?.salesPersonName?.trim());
   }
 
+  get isOrganizationOwner(): boolean {
+    if (!this.client) {
+      return false;
+    }
+    const role = this.client.accountRole;
+    return role === 'Owner' || role === 1 || role == null;
+  }
+
   salesPersonLabel(): string {
     return this.client?.salesPersonName?.trim() || '—';
+  }
+
+  memberDisplayName(member: ClientDto): string {
+    return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
+  }
+
+  openCreateMember(): void {
+    if (!this.client || !this.isOrganizationOwner) {
+      return;
+    }
+
+    const modalRef = this.modalService.open(AdminClientMemberCreateComponent, {
+      centered: true,
+      size: 'lg',
+    });
+    modalRef.componentInstance.ownerClientId = this.client.id;
+    modalRef.componentInstance.companyName = this.client.companyName;
+
+    modalRef.result.then(
+      created => {
+        if (created) {
+          this.loadMembers();
+          this.saved.emit();
+        }
+      },
+      () => undefined
+    );
   }
 
   display(value: string | number | null | undefined): string {
@@ -80,28 +121,56 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
     const historyNote = hasHistory
       ? ' Their service requests and projects will be kept on record.'
       : '';
+    const activeMemberCount =
+      this.members.filter(m => m.isActive).length ||
+      (this.isOrganizationOwner ? this.client.membersCount ?? 0 : 0);
 
-    const confirmed = await this.confirmDialog.confirm({
-      title: 'Deactivate client',
-      message: `Deactivate ${label}? The client will no longer be able to sign in.${historyNote}`,
-      confirmLabel: 'Deactivate',
-      variant: 'warning',
-      icon: 'ti-user-off',
-    });
-    if (!confirmed) {
-      return;
+    let includeMembers = false;
+
+    if (this.isOrganizationOwner && activeMemberCount > 0) {
+      const choice = await this.confirmDialog.confirmChoice({
+        title: 'Deactivate company owner',
+        message: `Deactivate ${label}? This company has ${activeMemberCount} member${
+          activeMemberCount === 1 ? '' : 's'
+        }. Deactivate this owner only, or the owner and remaining members?${historyNote}`,
+        confirmLabel: 'Owner & members',
+        alternateConfirmLabel: 'Owner only',
+        cancelLabel: 'Cancel',
+        variant: 'warning',
+        icon: 'ti-user-off',
+      });
+      if (!choice) {
+        return;
+      }
+      includeMembers = choice === 'confirm';
+    } else {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Deactivate client',
+        message: `Deactivate ${label}? The client will no longer be able to sign in.${historyNote}`,
+        confirmLabel: 'Deactivate',
+        variant: 'warning',
+        icon: 'ti-user-off',
+      });
+      if (!confirmed) {
+        return;
+      }
     }
 
     this.deactivating = true;
     this.clientsService
-      .deactivate(this.client.id)
+      .deactivate(this.client.id, includeMembers)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: res => {
           this.client = res.data ?? this.client;
-          this.toastr.success('Client deactivated.');
+          this.toastr.success(
+            includeMembers ? 'Owner and members deactivated.' : 'Client deactivated.'
+          );
           this.deactivating = false;
           this.saved.emit();
+          if (includeMembers) {
+            this.loadMembers();
+          }
         },
         error: () => {
           this.deactivating = false;
@@ -163,10 +232,34 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
           }
           this.loading = false;
           this.loadRecentRequests();
+          if (this.isOrganizationOwner) {
+            this.loadMembers();
+          } else {
+            this.members = [];
+          }
         },
         error: err => {
           this.loadError = err?.error?.message || 'Failed to load client.';
           this.loading = false;
+        },
+      });
+  }
+
+  private loadMembers(): void {
+    this.loadingMembers = true;
+    this.membersError = null;
+
+    this.clientsService
+      .getOrganizationMembers(this.clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: res => {
+          this.members = res.data ?? [];
+          this.loadingMembers = false;
+        },
+        error: err => {
+          this.membersError = err?.error?.message || 'Failed to load organization users.';
+          this.loadingMembers = false;
         },
       });
   }

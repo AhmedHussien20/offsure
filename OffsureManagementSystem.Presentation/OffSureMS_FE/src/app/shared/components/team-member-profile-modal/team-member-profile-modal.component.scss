@@ -10,12 +10,10 @@
   border: 1px solid var(--default-border, rgb(15 23 42 / 8%));
 
   &__cover {
-    height: 88px;
-    background: linear-gradient(
-      135deg,
-      rgb(var(--primary-rgb) / 38%) 0%,
-      rgb(var(--primary-rgb) / 14%) 100%
-    );
+    height: 100px;
+    background:
+      linear-gradient(90deg, rgb(248 250 252 / 45%) 0%, transparent 40%),
+      url('/assets/images/profile_cover.png') center / cover no-repeat;
   }
 
   &__body {

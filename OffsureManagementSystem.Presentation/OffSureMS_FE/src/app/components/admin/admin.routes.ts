@@ -99,14 +99,36 @@ export const adminRoutes: Routes = [
           import('./admin-portfolios-list/admin-portfolios-list.component').then(m => m.AdminPortfoliosListComponent),
       },
       {
-        path: 'clients',
-        data: { breadcrumb: 'Clients', title: 'Clients' },
+        path: 'companies',
+        data: { breadcrumb: 'Companies', title: 'Companies' },
         loadComponent: () =>
           import('./admin-clients-list/admin-clients-list.component').then(m => m.AdminClientsListComponent),
       },
       {
+        path: 'companies/:id',
+        data: {
+          breadcrumb: 'Company',
+          title: 'Company',
+          breadcrumbParents: [{ key: 'Companies', route: ['admin', 'companies'] }],
+        },
+        loadComponent: () =>
+          import('./admin-clients-list/admin-client-organization.component').then(
+            m => m.AdminClientOrganizationComponent
+          ),
+      },
+      { path: 'clients', redirectTo: 'companies', pathMatch: 'full' },
+      { path: 'clients/:id', redirectTo: 'companies/:id' },
+      {
+        path: 'client-members',
+        data: { breadcrumb: 'All Client Members', title: 'All Client Members' },
+        loadComponent: () =>
+          import('./admin-clients-list/admin-client-members-list.component').then(
+            m => m.AdminClientMembersListComponent
+          ),
+      },
+      {
         path: 'profile',
-        data: { breadcrumb: 'Profile', title: 'My Profile' },
+        data: { breadcrumb: false, title: 'My Profile', hidePageHeader: true },
         loadComponent: () =>
           import('./admin-profile/admin-profile.component').then(m => m.AdminProfileComponent),
       },

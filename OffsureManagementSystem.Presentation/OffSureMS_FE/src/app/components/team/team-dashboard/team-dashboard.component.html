@@ -109,7 +109,9 @@
                       {{ p.name }}
                     </a>
                   </td>
-                  <td>{{ p.clientName }}</td>
+                  <td>
+                    {{ p.clientName }}{{ p.clientMemberName ? ' · ' + p.clientMemberName : '' }}
+                  </td>
                   <td>{{ p.myRole }}</td>
                   <td>
                     <span class="badge rounded-pill {{ statusBadgeClass(p.status) }}">

@@ -7,40 +7,69 @@ import { ClientsService } from 'app/core/services/clients.service';
 import { GenericFormComponent } from 'app/shared/components/generic-form/generic-form.component';
 import { ToastrService } from 'ngx-toastr';
 
+interface CreateStep {
+  id: number;
+  label: string;
+  shortLabel: string;
+}
+
 @Component({
   selector: 'app-admin-client-create',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, GenericFormComponent],
-  template: `
-    <div class="modal-header">
-      <h5 class="modal-title">Add Client</h5>
-      <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
-    </div>
-    <div class="modal-body">
-      <p class="text-muted small mb-3">
-        Creates an active client account with login credentials. Email is marked verified so they can sign in immediately.
-      </p>
-      <app-generic-form
-        [formGroup]="form"
-        [formConfig]="formConfig"
-        [showSubmit]="false"
-        class="generic-form"></app-generic-form>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Cancel</button>
-      <button type="button" class="btn btn-primary" [disabled]="saving" (click)="submit()">
-        {{ saving ? 'Saving...' : 'Save Client' }}
-      </button>
-    </div>
-  `,
+  templateUrl: './admin-client-create.component.html',
+  styleUrl: './admin-client-create.component.scss',
 })
 export class AdminClientCreateComponent {
   saving = false;
+  currentStep = 0;
   form!: FormGroup;
-  formConfig: FormFieldConfig[] = [
-    { type: 'input', inputType: 'text', name: 'firstName', label: 'First name', icon: 'fe fe-user', validations: { required: true } },
-    { type: 'input', inputType: 'text', name: 'lastName', label: 'Last name', icon: 'fe fe-user', validations: { required: true } },
-    { type: 'input', inputType: 'email', name: 'email', label: 'Email', icon: 'fe fe-mail', validations: { required: true } },
+
+  readonly steps: CreateStep[] = [
+    { id: 0, label: 'Company Information', shortLabel: 'Company' },
+    { id: 1, label: 'Personal Information', shortLabel: 'Personal' },
+  ];
+
+  private readonly companyFields: FormFieldConfig[] = [
+    {
+      type: 'input',
+      inputType: 'text',
+      name: 'companyName',
+      label: 'Company name',
+      icon: 'fe fe-briefcase',
+      validations: { required: true },
+    },
+    { type: 'input', inputType: 'text', name: 'companyAddress', label: 'Address', icon: 'fe fe-map-pin' },
+    { type: 'input', inputType: 'text', name: 'city', label: 'City', icon: 'fe fe-map' },
+    { type: 'input', inputType: 'text', name: 'country', label: 'Country', icon: 'fe fe-globe' },
+    { type: 'input', inputType: 'text', name: 'postalCode', label: 'Postal code', icon: 'fe fe-hash' },
+  ];
+
+  private readonly personalFields: FormFieldConfig[] = [
+    {
+      type: 'input',
+      inputType: 'text',
+      name: 'firstName',
+      label: 'First name',
+      icon: 'fe fe-user',
+      validations: { required: true },
+    },
+    {
+      type: 'input',
+      inputType: 'text',
+      name: 'lastName',
+      label: 'Last name',
+      icon: 'fe fe-user',
+      validations: { required: true },
+    },
+    {
+      type: 'input',
+      inputType: 'email',
+      name: 'email',
+      label: 'Email',
+      icon: 'fe fe-mail',
+      validations: { required: true },
+    },
     {
       type: 'input',
       inputType: 'password',
@@ -52,16 +81,16 @@ export class AdminClientCreateComponent {
     {
       type: 'input',
       inputType: 'text',
-      name: 'companyName',
-      label: 'Company name',
-      icon: 'fe fe-briefcase',
+      name: 'contactPersonPhone',
+      label: 'Phone',
+      icon: 'fe fe-phone',
       validations: { required: true },
     },
-    { type: 'input', inputType: 'text', name: 'contactPersonPhone', label: 'Phone', icon: 'fe fe-phone', validations: { required: true } },
-    { type: 'input', inputType: 'text', name: 'companyAddress', label: 'Address', icon: 'fe fe-map-pin' },
-    { type: 'input', inputType: 'text', name: 'city', label: 'City', icon: 'fe fe-map' },
-    { type: 'input', inputType: 'text', name: 'country', label: 'Country', icon: 'fe fe-globe' },
-    { type: 'input', inputType: 'text', name: 'postalCode', label: 'Postal code', icon: 'fe fe-hash' },
+  ];
+
+  private readonly stepFieldNames: string[][] = [
+    ['companyName', 'companyAddress', 'city', 'country', 'postalCode'],
+    ['firstName', 'lastName', 'email', 'password', 'contactPersonPhone'],
   ];
 
   constructor(
@@ -71,21 +100,64 @@ export class AdminClientCreateComponent {
     public activeModal: NgbActiveModal
   ) {
     this.form = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
       companyName: ['', Validators.required],
-      contactPersonPhone: ['', Validators.required ],
       companyAddress: [''],
       city: [''],
       country: [''],
       postalCode: [''],
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      contactPersonPhone: ['', Validators.required],
     });
   }
 
+  get activeStep(): CreateStep {
+    return this.steps[this.currentStep];
+  }
+
+  get formConfig(): FormFieldConfig[] {
+    return this.currentStep === 0 ? this.companyFields : this.personalFields;
+  }
+
+  get isLastStep(): boolean {
+    return this.currentStep === this.steps.length - 1;
+  }
+
+  nextStep(): void {
+    if (!this.validateCurrentStep()) {
+      return;
+    }
+    if (!this.isLastStep) {
+      this.currentStep += 1;
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 0) {
+      this.currentStep -= 1;
+    }
+  }
+
+  goToStep(index: number): void {
+    if (index < 0 || index >= this.steps.length || index === this.currentStep) {
+      return;
+    }
+    if (index < this.currentStep) {
+      this.currentStep = index;
+      return;
+    }
+    while (this.currentStep < index) {
+      if (!this.validateCurrentStep()) {
+        return;
+      }
+      this.currentStep += 1;
+    }
+  }
+
   submit(): void {
-    if (this.form.invalid) {
+    if (!this.validateCurrentStep() || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -111,9 +183,24 @@ export class AdminClientCreateComponent {
           this.saving = false;
           this.activeModal.close(true);
         },
-        error: err => {
+        error: () => {
           this.saving = false;
         },
       });
+  }
+
+  private validateCurrentStep(): boolean {
+    let valid = true;
+    for (const name of this.stepFieldNames[this.currentStep]) {
+      const control = this.form.get(name);
+      if (!control) {
+        continue;
+      }
+      control.markAsTouched();
+      if (control.invalid) {
+        valid = false;
+      }
+    }
+    return valid;
   }
 }

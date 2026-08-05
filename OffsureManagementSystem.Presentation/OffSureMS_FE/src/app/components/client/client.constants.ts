@@ -19,6 +19,7 @@ export const PROJECT_STATUS_BADGES: Record<string, { text: string; class: string
 
 export const CLIENT_REQUEST_COLUMNS: TableColumn[] = [
   { key: 'title', label: 'Title', type: 'text' },
+  { key: 'clientMemberName', label: 'Member', type: 'text' },
   { key: 'serviceName', label: 'Service', type: 'text' },
   { key: 'status', label: 'Status', type: 'badge', badgeMap: SERVICE_REQUEST_STATUS_BADGES },
   { key: 'requestedDate', label: 'Requested', type: 'date' },
@@ -27,6 +28,7 @@ export const CLIENT_REQUEST_COLUMNS: TableColumn[] = [
 
 export const CLIENT_PROJECT_COLUMNS: TableColumn[] = [
   { key: 'name', label: 'Project', type: 'text' },
+  { key: 'clientMemberName', label: 'Member', type: 'text' },
   { key: 'serviceName', label: 'Service', type: 'text' },
   { key: 'status', label: 'Status', type: 'badge', badgeMap: PROJECT_STATUS_BADGES },
   { key: 'progressLabel', label: 'Progress', type: 'text' },

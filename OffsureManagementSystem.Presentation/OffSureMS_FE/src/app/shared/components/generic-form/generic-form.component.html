@@ -280,7 +280,16 @@
 
         @if (isInvalid(field.name)) {
           <div class="invalid-feedback">
-            {{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}
+            @if (formGroup.controls[field.name].errors?.['required']) {
+              <div>{{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}</div>
+            } @else if (formGroup.controls[field.name].errors?.['minDate']) {
+              <div>
+                {{ field.label | translate }}
+                {{ field.errorMessages?.['minDate'] || 'must be on or after the earliest allowed date.' }}
+              </div>
+            } @else {
+              <div>{{ field.label | translate }} {{ 'FORM.IS_REQUIRED' | translate }}</div>
+            }
           </div>
         }
       }

@@ -338,7 +338,7 @@ export class AdminDashboardComponent implements OnInit {
 
       {
 
-        label: 'Total Clients',
+        label: 'Total Companies',
 
         value: String(stats.totalClients),
 
@@ -346,7 +346,7 @@ export class AdminDashboardComponent implements OnInit {
 
         description: 'Active companies',
 
-        link: '/admin/clients',
+        link: '/admin/companies',
 
       },
 
@@ -418,7 +418,7 @@ export class AdminDashboardComponent implements OnInit {
 
       {
 
-        label: 'Total Clients',
+        label: 'Total Companies',
 
         value: '—',
 
@@ -426,7 +426,7 @@ export class AdminDashboardComponent implements OnInit {
 
         description: 'Registered companies',
 
-        link: '/admin/clients',
+        link: '/admin/companies',
 
       },
 

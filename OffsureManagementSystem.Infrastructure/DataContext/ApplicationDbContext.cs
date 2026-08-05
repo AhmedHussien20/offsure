@@ -417,6 +417,10 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.Property(e => e.IsActive)
                     .HasDefaultValue(true);
 
+                // Stored as int: Owner = 1, Member = 2 (no DB default — app always sets the value).
+                entity.Property(e => e.AccountRole)
+                    .HasConversion<int>();
+
                 entity.HasOne(e => e.User)
                     .WithOne(u => u.Client)
                     .HasForeignKey<Client>(e => e.UserId)
@@ -427,6 +431,15 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasForeignKey(e => e.SalesId)
                     .OnDelete(DeleteBehavior.Restrict)
                     .IsRequired(false);
+
+                entity.HasOne(e => e.ParentClient)
+                    .WithMany(c => c.Members)
+                    .HasForeignKey(e => e.ParentClientId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasIndex(e => e.ParentClientId);
+                entity.HasIndex(e => e.AccountRole);
 
                 entity.HasMany(e => e.ServiceRequests)
                     .WithOne(s => s.Client)

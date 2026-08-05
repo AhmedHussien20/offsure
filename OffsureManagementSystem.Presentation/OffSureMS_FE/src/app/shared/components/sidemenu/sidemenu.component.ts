@@ -190,18 +190,38 @@ export class SidemenuComponent implements OnInit, OnDestroy {
     }
 
     const normalizedPath = this.normalizeRoutePath(currentPath);
-    let isAnyItemActive = false;
+
+    // Prefer the longest matching menu path so /admin/companies does not stay
+    // selected when a more specific sibling like /admin/client-members is active.
+    const matchingPaths: string[] = [];
+    const collectMatches = (items: MenuItem[]) => {
+      for (const item of items) {
+        if (item.path) {
+          const menuPath = this.normalizeRoutePath(item.path);
+          if (normalizedPath === menuPath || normalizedPath.startsWith(`${menuPath}/`)) {
+            matchingPaths.push(menuPath);
+          }
+        }
+        if (item.children?.length) {
+          collectMatches(item.children);
+        }
+      }
+    };
+    collectMatches(menuData);
+    const bestPath =
+      matchingPaths.length > 0
+        ? matchingPaths.reduce((longest, path) => (path.length > longest.length ? path : longest))
+        : null;
 
     const traverseMenu = (items: MenuItem[]) => {
       return items.map(item => {
         const newItem = { ...item, active: false, selected: false };
 
-        if (newItem.path) {
+        if (newItem.path && bestPath) {
           const menuPath = this.normalizeRoutePath(newItem.path);
-          if (normalizedPath === menuPath || normalizedPath.startsWith(menuPath + '/')) {
+          if (menuPath === bestPath) {
             newItem.active = true;
             newItem.selected = true;
-            isAnyItemActive = true;
           }
         }
 

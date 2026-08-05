@@ -89,7 +89,10 @@ export class ProjectDetailReadonlyComponent implements OnChanges {
     if (this.isClient) {
       return this.project.serviceName || '';
     }
-    return `${this.project.clientName} · ${this.project.serviceName}`;
+    const member = this.project.clientMemberName?.trim();
+    const company = this.project.clientName?.trim();
+    const clientPart = [company, member].filter(Boolean).join(' · ');
+    return [clientPart, this.project.serviceName].filter(Boolean).join(' · ');
   }
 
   get progressPercent(): number {

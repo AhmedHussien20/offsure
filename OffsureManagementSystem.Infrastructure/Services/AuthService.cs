@@ -7,6 +7,7 @@ using OffsureManagementSystem.Application.DTOs.AuthDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using OffsureManagementSystem.Domain.Entities;
+using OffsureManagementSystem.Domain.Entities.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,6 +84,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 City = dto.City,
                 Country = dto.Country,
                 PostalCode = dto.PostalCode,
+                AccountRole = ClientAccountRole.Owner,
+                ParentClientId = null,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
             };

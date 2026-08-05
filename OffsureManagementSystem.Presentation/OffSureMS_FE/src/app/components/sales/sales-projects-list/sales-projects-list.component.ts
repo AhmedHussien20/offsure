@@ -16,7 +16,8 @@ import { PROJECT_STATUS_BADGES } from '../../admin/admin.constants';
 
 const SALES_PROJECT_COLUMNS = [
   { key: 'name', label: 'Project', type: 'text' as const },
-  { key: 'clientName', label: 'Client', type: 'text' as const },
+  { key: 'clientName', label: 'Company', type: 'text' as const },
+  { key: 'clientMemberName', label: 'Member', type: 'text' as const },
   { key: 'status', label: 'Status', type: 'badge' as const, badgeMap: PROJECT_STATUS_BADGES },
   { key: 'commissionLabel', label: 'My commission', type: 'text' as const },
 ];

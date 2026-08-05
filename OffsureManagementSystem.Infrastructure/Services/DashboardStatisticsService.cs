@@ -21,6 +21,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<TeamMember> _teamMemberRepo;
         private readonly IRepository<ProjectAssignment> _assignmentRepo;
         private readonly IRepository<TimesheetEntry> _timesheetEntryRepo;
+        private readonly IClientAccessService _clientAccess;
 
         public DashboardStatisticsService(
             IRepository<ServiceRequest> requestRepo,
@@ -28,7 +29,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<Client> clientRepo,
             IRepository<TeamMember> teamMemberRepo,
             IRepository<ProjectAssignment> assignmentRepo,
-            IRepository<TimesheetEntry> timesheetEntryRepo)
+            IRepository<TimesheetEntry> timesheetEntryRepo,
+            IClientAccessService clientAccess)
         {
             _requestRepo = requestRepo;
             _projectRepo = projectRepo;
@@ -36,6 +38,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _teamMemberRepo = teamMemberRepo;
             _assignmentRepo = assignmentRepo;
             _timesheetEntryRepo = timesheetEntryRepo;
+            _clientAccess = clientAccess;
         }
 
         public async Task<AdminDashboardStatisticsDto> GetAdminStatisticsAsync()
@@ -83,16 +86,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<ClientDashboardStatisticsDto> GetClientStatisticsAsync(int userId)
         {
-            var clientId = await GetClientIdForUserAsync(userId);
+            var accessibleClientIds = await _clientAccess.GetAccessibleClientIdsForUserAsync(userId);
 
             var requests = await _requestRepo
-                .GetAll(r => !r.IsDeleted && r.ClientId == clientId)
+                .GetAll(r => !r.IsDeleted && accessibleClientIds.Contains(r.ClientId))
                 .AsNoTracking()
                 .ToListAsync();
 
             var projectIds = await _projectRepo
-                .GetAll(p => !p.IsDeleted && (p.ClientId == clientId
-                    || (p.ServiceRequest != null && p.ServiceRequest.ClientId == clientId)))
+                .GetAll(p => !p.IsDeleted && (
+                    (p.ClientId.HasValue && accessibleClientIds.Contains(p.ClientId.Value))
+                    || (p.ServiceRequest != null && accessibleClientIds.Contains(p.ServiceRequest.ClientId))))
                 .AsNoTracking()
                 .Select(p => p.Id)
                 .ToListAsync();

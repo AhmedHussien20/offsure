@@ -59,6 +59,7 @@ export interface SalesProjectSummaryDto {
   name: string;
   description: string;
   clientName: string;
+  clientMemberName?: string;
   status: ProjectStatus;
   teamMemberNames: string[];
   commissionType?: CommissionType | null;
@@ -177,6 +178,8 @@ export interface ProjectDto {
   serviceRequestTitle?: string;
   clientId?: number | null;
   clientName: string;
+  /** Person (owner or member) linked to the project / originating request. */
+  clientMemberName?: string;
   serviceId?: number | null;
   serviceName: string;
   status: ProjectStatus;
