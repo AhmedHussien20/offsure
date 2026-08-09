@@ -51,6 +51,7 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
   formConfig: FormFieldConfig[] = [];
   creating = false;
   serviceResetToken = 0;
+  memberResetToken = 0;
   salesBudgetPreview: number | null = null;
   currentStep = 1;
   companyMembers: ClientDto[] = [];
@@ -129,14 +130,20 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
 
   loadCompanies: PaginatedSelectLoader = (search, pageIndex) =>
     this.clientsService
-      .getAll({ pageIndex, pageSize: 20, searchKey: search.trim() || undefined })
+      .getAll({
+        pageIndex,
+        pageSize: 20,
+        ownersOnly: true,
+        isActive: true,
+        searchKey: search.trim() || undefined,
+      })
       .pipe(
         map(res => {
-          const rows = res.data?.data ?? [];
+          const rows = (res.data?.data ?? []).filter(c => c.isActive !== false);
           rows.forEach(c => this.companyNameById.set(c.id, c.companyName));
           return {
             items: rows.map(c => ({ label: c.companyName, value: c.id })),
-            totalCount: res.data?.totalCount ?? 0,
+            totalCount: res.data?.totalCount ?? rows.length,
           };
         })
       );
@@ -173,6 +180,26 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
           };
         })
       );
+  };
+
+  loadCompanyMemberOptions: PaginatedSelectLoader = (search, pageIndex) => {
+    if (!this.companyClientId || this.loadingMembers) {
+      return of({ items: [], totalCount: 0 });
+    }
+
+    const term = search.trim().toLowerCase();
+    const filtered = !term
+      ? this.companyMembers
+      : this.companyMembers.filter(m => this.memberLabel(m).toLowerCase().includes(term));
+
+    const pageSize = 20;
+    const start = Math.max(0, (pageIndex - 1) * pageSize);
+    const page = filtered.slice(start, start + pageSize);
+
+    return of({
+      items: page.map(m => ({ label: this.memberLabel(m), value: m.id })),
+      totalCount: filtered.length,
+    });
   };
 
   ngOnInit(): void {
@@ -453,6 +480,7 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
   private loadCompanyMembers(companyId: number | null): void {
     const loadId = ++this.membersLoadId;
     this.companyMembers = [];
+    this.memberResetToken++;
     const memberControl = this.form.get('clientId');
     memberControl?.patchValue(null, { emitEvent: false });
 
@@ -474,13 +502,27 @@ export class AdminProjectCreateComponent implements OnInit, OnDestroy {
           if (loadId !== this.membersLoadId) {
             return;
           }
-          const ownerClient = owner.data;
-          const memberClients = members.data ?? [];
+          const ownerClient = owner.data?.isActive ? owner.data : null;
+          const memberClients = (members.data ?? []).filter(m => m.isActive);
           this.companyMembers = ownerClient ? [ownerClient, ...memberClients] : memberClients;
           this.loadingMembers = false;
+
+          if (!this.companyMembers.length) {
+            memberControl?.disable({ emitEvent: false });
+            memberControl?.patchValue(null, { emitEvent: false });
+            this.toastr.warning('This company has no active members to assign.');
+            return;
+          }
+
           memberControl?.enable({ emitEvent: false });
           const defaultId = ownerClient?.id ?? this.companyMembers[0]?.id ?? null;
-          memberControl?.patchValue(defaultId, { emitEvent: true });
+          // After enable/disabled flip reloads options, set default without racing resetToken clear.
+          setTimeout(() => {
+            if (loadId !== this.membersLoadId) {
+              return;
+            }
+            memberControl?.patchValue(defaultId, { emitEvent: true });
+          });
         },
         error: () => {
           if (loadId !== this.membersLoadId) {

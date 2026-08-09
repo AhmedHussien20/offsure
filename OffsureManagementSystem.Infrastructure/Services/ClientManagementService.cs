@@ -56,18 +56,35 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Select(c => c.Id)
                 .ToList();
 
-            // Company (owner) request totals include owner + all member requests.
-            var requestCounts = clientIds.Count == 0
-                ? new Dictionary<int, int>()
-                : await _serviceRequestRepo
+            // Company browse (owners only): owner total includes owner + member requests.
+            // Members / mixed lists: each client gets only their own request count.
+            Dictionary<int, int> requestCounts;
+            if (clientIds.Count == 0)
+            {
+                requestCounts = new Dictionary<int, int>();
+            }
+            else if (request.OwnersOnly != false)
+            {
+                requestCounts = await _serviceRequestRepo
                     .Query()
                     .Where(r =>
-                        clientIds.Contains(r.ClientId)
-                        || (r.Client.ParentClientId != null
-                            && ownerIds.Contains(r.Client.ParentClientId.Value)))
+                        !r.IsDeleted
+                        && (clientIds.Contains(r.ClientId)
+                            || (r.Client.ParentClientId != null
+                                && ownerIds.Contains(r.Client.ParentClientId.Value))))
                     .GroupBy(r => r.Client.ParentClientId ?? r.ClientId)
                     .Select(g => new { ClientId = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.ClientId, x => x.Count);
+            }
+            else
+            {
+                requestCounts = await _serviceRequestRepo
+                    .Query()
+                    .Where(r => !r.IsDeleted && clientIds.Contains(r.ClientId))
+                    .GroupBy(r => r.ClientId)
+                    .Select(g => new { ClientId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.ClientId, x => x.Count);
+            }
 
             var memberCounts = ownerIds.Count == 0
                 ? new Dictionary<int, int>()

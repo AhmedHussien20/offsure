@@ -15,12 +15,13 @@ import { buildPagedListQuery } from 'app/core/utils/list-query.util';
 import { GenericTableComponent } from 'app/shared/components/generic-table/generic-table.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { ADMIN_CLIENT_MEMBER_COLUMNS } from '../admin.constants';
+import { AdminClientDetailPanelComponent } from './admin-client-detail-panel.component';
 import { AdminClientMemberCreateComponent } from './admin-client-member-create.component';
 
 @Component({
   selector: 'app-admin-client-members-list',
   standalone: true,
-  imports: [CommonModule, SharedModule, GenericTableComponent],
+  imports: [CommonModule, SharedModule, GenericTableComponent, AdminClientDetailPanelComponent],
   templateUrl: './admin-client-members-list.component.html',
 })
 export class AdminClientMembersListComponent implements OnInit {
@@ -30,6 +31,7 @@ export class AdminClientMembersListComponent implements OnInit {
   totalPages = 0;
   page = 1;
   entries = 10;
+  expandedRowId: number | null = null;
 
   searchCriteria = new SearchCriteria({
     pageIndex: 1,
@@ -101,6 +103,14 @@ export class AdminClientMembersListComponent implements OnInit {
       },
       () => undefined
     );
+  }
+
+  onExpandedRowChange(row: ClientDto | null): void {
+    this.expandedRowId = row?.id ?? null;
+  }
+
+  onMemberSaved(): void {
+    this.loadMembers();
   }
 
   private loadCompanyFilterOptions(): void {

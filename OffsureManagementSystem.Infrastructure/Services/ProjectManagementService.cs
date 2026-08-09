@@ -988,10 +988,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var client = await _clientRepo
                 .Query()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == dto.ClientId.Value);
+                .FirstOrDefaultAsync(c => c.Id == dto.ClientId.Value && !c.IsDeleted);
 
             if (client is null)
                 throw new AppException("Client not found.", 404);
+
+            if (!client.IsActive)
+                throw new AppException("Inactive clients cannot be assigned to a project.", 400);
 
             return client;
         }

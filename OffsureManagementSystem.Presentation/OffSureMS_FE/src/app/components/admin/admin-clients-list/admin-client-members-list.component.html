@@ -17,9 +17,19 @@
     [showExportExcel]="false"
     [showAddButton]="true"
     [addButtonLabel]="'Add member'"
+    [expandable]="true"
+    [expandTemplate]="memberDetail"
+    [expandedRowId]="expandedRowId"
     [onSearch]="onSearch"
     (addClick)="onAdd()"
     (pageChange)="onPageChange($event)"
-    (entriesChange)="onEntriesChange($event)">
+    (entriesChange)="onEntriesChange($event)"
+    (expandedRowChange)="onExpandedRowChange($event)">
   </app-generic-table>
 </div>
+
+<ng-template #memberDetail let-item>
+  <app-admin-client-detail-panel
+    [clientId]="item.id"
+    (saved)="onMemberSaved()" />
+</ng-template>
