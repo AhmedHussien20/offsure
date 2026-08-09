@@ -80,6 +80,13 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     requiredRole: 'Administrator',
   },
   {
+    title: 'Landing Content',
+    path: '/admin/landing-content',
+    type: 'link',
+    icon: 'ti-layout',
+    requiredRole: 'Administrator',
+  },
+  {
     title: 'Companies',
     path: '/admin/companies',
     type: 'link',

@@ -90,7 +90,7 @@ export class AdminClientMembersListComponent implements OnInit {
   onAdd(): void {
     const modalRef = this.modalService.open(AdminClientMemberCreateComponent, {
       centered: true,
-      size: 'md',
+      size: 'lg',
     });
     modalRef.componentInstance.selectCompany = true;
     modalRef.result.then(

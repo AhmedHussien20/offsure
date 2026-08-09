@@ -7,6 +7,7 @@ import {
   ElementRef,
   HostListener,
   Inject,
+  OnInit,
   Renderer2,
   ViewChild,
   inject,
@@ -26,11 +27,20 @@ import { LandingPortfolioDetailModalComponent } from './landing-portfolio-detail
 import { ServiceCategoryDto, ServiceDto } from '../../../core/models/services/service.models';
 import { ContactService } from '../../../core/services/contact.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { LandingPageService } from '../../../core/services/landing-page.service';
 import { AppStateService } from '../../../shared/services/app-state.service';
 import { PortfoliosService } from '../../../core/services/portfolios.service';
 import { ServiceCategoriesService } from '../../../core/services/service-categories.service';
 import { ServicesService } from '../../../core/services/services.service';
 import { ToastrService } from 'ngx-toastr';
+import {
+  LandingContactContent,
+  LandingFooterContent,
+  LandingFooterSocialLink,
+  LandingHomeContent,
+  LandingPageSectionDto,
+  LandingStatsContent,
+} from '../../../core/models/landing/landing-page.models';
 import {
   LANDING_CAROUSEL_AUTOPLAY_MS,
   LANDING_CAROUSEL_PARAMS,
@@ -74,18 +84,6 @@ interface LandingSuccessStory {
   highlight: string;
 }
 
-interface LandingWhatWeOffer {
-  icon: string;
-  title: string;
-  description: string;
-}
-
-interface LandingWhyChooseUs {
-  icon: string;
-  title: string;
-  description: string;
-}
-
 @Component({
   selector: 'app-landing-page',
   standalone: true,
@@ -96,7 +94,7 @@ interface LandingWhyChooseUs {
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
 })
-export class LandingPageComponent {
+export class LandingPageComponent implements OnInit {
   @ViewChild('swiperContainer1') swiperContainer1!: ElementRef;
   @ViewChild('swiperContainerPortfolio') swiperContainerPortfolio?: ElementRef;
   @ViewChild('swiperContainerCategories') swiperContainerCategories?: ElementRef;
@@ -255,81 +253,106 @@ export class LandingPageComponent {
   serviceCategoriesCount = 0;
   publicServicesCount = 0;
   publishedProjectsCount = 0;
-  readonly companyProfile = {
+  companyProfile = {
     legalName: 'Offshore TechX',
     platformName: 'Offsure Management System',
     tagline: 'Remote networking expertise, delivered worldwide.',
-    heroSubtitle: 'Enterprise networking, security, and digital solutions — supported globally since 2018.',
-    foundedYear: 2018,
+    heroSubtitle:
+      'Enterprise networking, security, and digital solutions — supported globally since 2018. Explore service categories, review delivered projects, and connect with Offshore TechX for networking, security, and digital solutions.',
     email: 'info@offshoretechx.net',
     phone: '+1 (702) 605-8569',
     website: 'https://offshoretechx.net/',
     globalProjectsDelivered: 100,
-    yearsNetworkingExperience: 15,
     supportHours: '24/7 deployment and support with SLA-backed response.',
   };
 
-  readonly whatWeOffer: LandingWhatWeOffer[] = [
-    {
-      icon: 'fe fe-users',
-      title: 'Vendor Partnership',
-      description:
-        'We help companies improve their partnership with vendors and align technology decisions with business outcomes.',
-    },
-    {
-      icon: 'fe fe-book-open',
-      title: 'Technical Training',
-      description:
-        'Specialized training programs that empower your teams to adopt and operate the latest networking technologies effectively.',
-    },
-    {
-      icon: 'fe fe-compass',
-      title: 'Consultation',
-      description:
-        'Comprehensive network solution consultation to optimize infrastructure design, operations, and long-term roadmaps.',
-    },
-    {
-      icon: 'fe fe-layers',
-      title: 'Design / Presales',
-      description:
-        'Expert design services including BOM, HLD, LLD, and complete documentation for enterprise network projects.',
-    },
-    {
-      icon: 'fe fe-headphones',
-      title: 'Deployment / Support / SLA',
-      description:
-        'Dedicated 24/7 support to resolve issues promptly, minimize downtime, and keep your operations productive.',
-    },
+  aboutSection = {
+    title: 'About Offshore TechX',
+    subtitle: 'Remote networking expertise with proven global delivery.',
+    intro:
+      'Founded in 2018, we specialize in remote support for enterprise networking, unified communications, security, data center, and digital solutions.',
+    whoWeAreTitle: 'Who We Are',
+    whoWeAreParagraph1:
+      'Founded in 2018, Offshore TechX provides remote support for networking solutions worldwide, with 100+ successfully completed projects.',
+    whoWeAreParagraph2:
+      'Our experts are committed to seamless, efficient network operations — backed by 15 years of multi-vendor experience across Cisco, Fortinet, Palo Alto, and more.',
+    missionTitle: 'Mission & Core Values',
+    missionParagraph1:
+      'Our mission is to deliver unparalleled remote support that enhances client productivity while fostering innovation and collaboration in digital communications.',
+    missionParagraph2:
+      'Integrity, excellence, and innovation guide how we serve clients — with a culture built on collaboration, continuous learning, and operational excellence.',
+    whyChooseUsTitle: 'Why Choose Us',
+    whyChooseUsLead1:
+      '15+ years of multi-vendor networking experience with expert certifications including CCIE (Cisco), PCNSE (Palo Alto), and NSE7 (Fortinet).',
+    whyChooseUsLead2:
+      'A track record of 100+ successfully completed projects worldwide, delivering reliable remote support across locations and complexity levels.',
+    endToEndTitle: 'End-to-End Solutions',
+    endToEndParagraph1:
+      'Beyond networking, we deliver enterprise and digital solutions — from mobile and web development to Agile delivery, system integration, AI-driven automation, and legacy support.',
+    endToEndParagraph2:
+      'Expert design services including BOM, HLD, LLD, and complete documentation for enterprise network projects. 24/7 deployment and support with SLA-backed response.',
+  };
+
+  faqSection = {
+    eyebrow: "FAQ'S ?",
+    title: 'Frequently Asked Questions About Offshore TechX',
+    subtitle:
+      'Learn about our remote networking services, global delivery experience, and how to start your next project with Offshore TechX.',
+  };
+
+  clientsSection = {
+    eyebrow: 'Success Stories',
+    title: 'Proven delivery across industries worldwide.',
+    subtitle: 'Examples of outcomes we have delivered for enterprise clients.',
+  };
+
+  heroCtaPrimaryText = 'Browse Categories';
+  heroCtaSecondaryText = 'Our Work';
+
+  servicesSection = {
+    eyebrow: 'Service Categories',
+    title: 'What We Offer',
+    subtitle:
+      'From vendor partnership and technical training to consultation, design/presales, and 24/7 SLA-backed support — browse live categories below to see our current service lines.',
+  };
+
+  statsLabels = {
+    serviceCategories: 'Service Categories',
+    publicServices: 'Public Services',
+    publishedProjects: 'Published Projects',
+    globalProjects: 'Global Projects',
+  };
+
+  portfolioSection = {
+    eyebrow: 'Our Work',
+    title: 'Our Success Stories',
+    subtitle: 'Published portfolio projects from real deliveries.',
+  };
+
+  contactSection = {
+    eyebrow: 'Contact',
+    title: 'Get in Touch with Offshore TechX',
+    subtitle: 'Tell us about your project and we will respond promptly.',
+  };
+
+  footerAboutText =
+    'Offshore TechX specializes in remote support for networking solutions worldwide — with 100+ completed projects and deep multi-vendor expertise.';
+  footerCopyrightText = 'All rights reserved.';
+
+  private sectionVisibility = new Map<string, boolean>();
+
+  /** Footer “Capabilities” column — titles only. */
+  footerCapabilities: string[] = [
+    'Vendor Partnership',
+    'Technical Training',
+    'Consultation',
+    'Design / Presales',
+    'Deployment / Support / SLA',
   ];
 
-  readonly whyChooseUs: LandingWhyChooseUs[] = [
-    {
-      icon: 'fe fe-award',
-      title: 'Unmatched Expertise',
-      description:
-        '15+ years of multi-vendor networking experience with expert certifications including CCIE (Cisco), PCNSE (Palo Alto), and NSE7 (Fortinet).',
-    },
-    {
-      icon: 'fe fe-globe',
-      title: 'Proven Global Success',
-      description:
-        'A track record of 100+ successfully completed projects worldwide, delivering reliable remote support across locations and complexity levels.',
-    },
-    {
-      icon: 'fe fe-trending-up',
-      title: 'Cost-Effective',
-      description:
-        'Access top-tier expertise without the overhead of maintaining a full in-house team — reducing cost while maintaining quality.',
-    },
-    {
-      icon: 'fe fe-sliders',
-      title: 'Scalable & Flexible Team',
-      description:
-        'We scale quickly to match your evolving needs and deploy dedicated teams tailored to each project requirement.',
-    },
-  ];
+  footerSocialLinks: LandingFooterSocialLink[] = [];
 
-  readonly successStories: LandingSuccessStory[] = [
+  successStories: LandingSuccessStory[] = [
     {
       icon: 'fe fe-phone',
       title: 'Unified Communications Deployment',
@@ -417,6 +440,7 @@ export class LandingPageComponent {
     private servicesService: ServicesService,
     private portfoliosService: PortfoliosService,
     private contactService: ContactService,
+    private landingPageService: LandingPageService,
     private toastr: ToastrService,
     private appStateService: AppStateService,
     private authService: AuthService,
@@ -502,6 +526,7 @@ export class LandingPageComponent {
   ngOnInit(): void {
     // this.menuResizeFn()
     this.renderer.addClass(this.document.body, 'landing-body');
+    this.loadLandingContent();
     this.loadServiceCategories();
     this.loadPublicServices();
     this.loadPortfolioHighlights();
@@ -523,6 +548,253 @@ export class LandingPageComponent {
     // });
 
   }
+  isSectionVisible(sectionKey: string): boolean {
+    return this.sectionVisibility.get(sectionKey) !== false;
+  }
+
+  private loadLandingContent(): void {
+    this.landingPageService.getPublic().subscribe({
+      next: res => {
+        this.applyLandingSections(res.data ?? []);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Keep hardcoded defaults if CMS is unavailable (e.g. before migration).
+      },
+    });
+  }
+
+  private applyLandingSections(sections: LandingPageSectionDto[]): void {
+    this.sectionVisibility.clear();
+    for (const section of sections) {
+      this.sectionVisibility.set(section.sectionKey, section.isVisible !== false);
+      const content = section.content ?? {};
+
+      switch (section.sectionKey) {
+        case 'home': {
+          const home = content as LandingHomeContent;
+          this.companyProfile = {
+            ...this.companyProfile,
+            legalName: home.legalName || this.companyProfile.legalName,
+            platformName: home.platformName || this.companyProfile.platformName,
+            tagline: home.tagline || this.companyProfile.tagline,
+            heroSubtitle: home.subtitle || this.companyProfile.heroSubtitle,
+          };
+          this.heroCtaPrimaryText = home.ctaPrimaryText || this.heroCtaPrimaryText;
+          this.heroCtaSecondaryText = home.ctaSecondaryText || this.heroCtaSecondaryText;
+          break;
+        }
+        case 'stats': {
+          const stats = content as LandingStatsContent;
+          this.statsLabels = {
+            serviceCategories: stats.serviceCategoriesLabel || this.statsLabels.serviceCategories,
+            publicServices: stats.publicServicesLabel || this.statsLabels.publicServices,
+            publishedProjects: stats.publishedProjectsLabel || this.statsLabels.publishedProjects,
+            globalProjects: stats.globalProjectsLabel || this.statsLabels.globalProjects,
+          };
+          if (stats.globalProjectsValue != null && Number.isFinite(Number(stats.globalProjectsValue))) {
+            this.companyProfile.globalProjectsDelivered = Number(stats.globalProjectsValue);
+          }
+          break;
+        }
+        case 'contact': {
+          const contact = content as LandingContactContent;
+          this.contactSection = {
+            eyebrow: contact.eyebrow || this.contactSection.eyebrow,
+            title: contact.title || this.contactSection.title,
+            subtitle: contact.subtitle || this.contactSection.subtitle,
+          };
+          this.companyProfile = {
+            ...this.companyProfile,
+            email: contact.email || this.companyProfile.email,
+            phone: contact.phone || this.companyProfile.phone,
+            website: contact.website || this.companyProfile.website,
+            supportHours: contact.supportHours || this.companyProfile.supportHours,
+          };
+          break;
+        }
+        case 'footer': {
+          const footer = content as LandingFooterContent;
+          this.footerAboutText = footer.aboutText || this.footerAboutText;
+          this.footerCopyrightText = footer.copyrightText || this.footerCopyrightText;
+          const caps = this.readCapabilityTitles(footer.capabilities ?? content['capabilities']);
+          if (caps.length) {
+            this.footerCapabilities = caps;
+          }
+          this.footerSocialLinks = this.readSocialLinks(footer.socialLinks ?? content['socialLinks']);
+          break;
+        }
+        case 'about': {
+          const about = content as Record<string, unknown>;
+          this.aboutSection = {
+            title: String(about['title'] || this.aboutSection.title),
+            subtitle: String(about['subtitle'] || this.aboutSection.subtitle),
+            intro: String(about['intro'] || this.aboutSection.intro),
+            whoWeAreTitle: String(about['whoWeAreTitle'] || this.aboutSection.whoWeAreTitle),
+            whoWeAreParagraph1: String(about['whoWeAreParagraph1'] || this.aboutSection.whoWeAreParagraph1),
+            whoWeAreParagraph2: String(about['whoWeAreParagraph2'] || this.aboutSection.whoWeAreParagraph2),
+            missionTitle: String(about['missionTitle'] || this.aboutSection.missionTitle),
+            missionParagraph1: String(about['missionParagraph1'] || this.aboutSection.missionParagraph1),
+            missionParagraph2: String(about['missionParagraph2'] || this.aboutSection.missionParagraph2),
+            whyChooseUsTitle: String(about['whyChooseUsTitle'] || this.aboutSection.whyChooseUsTitle),
+            whyChooseUsLead1: String(about['whyChooseUsLead1'] || this.aboutSection.whyChooseUsLead1),
+            whyChooseUsLead2: String(about['whyChooseUsLead2'] || this.aboutSection.whyChooseUsLead2),
+            endToEndTitle: String(about['endToEndTitle'] || this.aboutSection.endToEndTitle),
+            endToEndParagraph1: String(about['endToEndParagraph1'] || this.aboutSection.endToEndParagraph1),
+            endToEndParagraph2: String(about['endToEndParagraph2'] || this.aboutSection.endToEndParagraph2),
+          };
+          break;
+        }
+        case 'faq': {
+          this.faqSection = {
+            eyebrow: String(content['eyebrow'] || this.faqSection.eyebrow),
+            title: String(content['title'] || this.faqSection.title),
+            subtitle: String(content['subtitle'] || this.faqSection.subtitle),
+          };
+          const faqItems = this.readFaqItems(content['items']);
+          if (faqItems.length) {
+            this.basicAccordions2 = faqItems;
+          }
+          break;
+        }
+        case 'clients': {
+          this.clientsSection = {
+            eyebrow: String(content['eyebrow'] || this.clientsSection.eyebrow),
+            title: String(content['title'] || this.clientsSection.title),
+            subtitle: String(content['subtitle'] || this.clientsSection.subtitle),
+          };
+          const stories = this.readSuccessStories(content['stories']);
+          if (stories.length) {
+            this.successStories = stories;
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    }
+  }
+
+  private readCapabilityTitles(raw: unknown): string[] {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw
+      .map(item => {
+        if (typeof item === 'string') {
+          return item.trim();
+        }
+        const row = (item ?? {}) as Record<string, unknown>;
+        return String(row['title'] ?? '').trim();
+      })
+      .filter(title => title.length > 0);
+  }
+
+  private readSocialLinks(raw: unknown): LandingFooterSocialLink[] {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw
+      .map(item => {
+        const row = (item ?? {}) as Record<string, unknown>;
+        const url = String(row['url'] ?? '').trim();
+        const icon = String(row['icon'] ?? '').trim();
+        const label = String(row['label'] ?? row['key'] ?? 'Social').trim();
+        const key = String(row['key'] ?? label).trim().toLowerCase();
+        return {
+          key,
+          label,
+          icon: icon || 'fe fe-link',
+          url,
+          isVisible: row['isVisible'] !== false,
+        };
+      })
+      .filter(link => link.isVisible && !!link.url);
+  }
+
+  private readSuccessStories(raw: unknown): LandingSuccessStory[] {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw
+      .map(item => {
+        const row = (item ?? {}) as Record<string, unknown>;
+        return {
+          icon: String(row['icon'] ?? 'fe fe-briefcase'),
+          title: String(row['title'] ?? ''),
+          sector: String(row['sector'] ?? ''),
+          summary: String(row['summary'] ?? ''),
+          highlight: String(row['highlight'] ?? ''),
+        };
+      })
+      .filter(item => item.title.trim().length > 0);
+  }
+
+  private readFaqItems(raw: unknown): typeof this.basicAccordions2 {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+
+    const accents = [
+      { item: 'accordion-item acc-primary', accordion: 'accordion accordion-customicon1 accordion-primary accordions-items-seperate' },
+      { item: 'accordion-item acc-danger', accordion: 'accordion accordion-customicon1 accordion-danger accordions-items-seperate' },
+      { item: 'accordion-item acc-success', accordion: 'accordion accordion-customicon1 accordion-success accordions-items-seperate' },
+      { item: 'accordion-item acc-secondary', accordion: 'accordion accordion-customicon1 accordion-secondary accordions-items-seperate' },
+      { item: 'accordion-item acc-info', accordion: 'accordion accordion-customicon1 accordion-info accordions-items-seperate' },
+    ];
+
+    return raw
+      .map((item, index) => {
+        const row = (item ?? {}) as Record<string, unknown>;
+        const question = String(row['question'] ?? '').trim();
+        const plainAnswer = String(row['answer'] ?? '').trim();
+        const legacyHtml = String(row['answerHtml'] ?? '').trim();
+        if (!question) {
+          return null;
+        }
+        const n = String(index + 1).padStart(2, '0');
+        const accent = accents[index % accents.length];
+        return {
+          title: ` <span class="me-3 fs-18 fw-bold">${this.escapeHtml(n)}.</span>${this.escapeHtml(question)}`,
+          body: plainAnswer
+            ? this.formatPlainAnswerToHtml(plainAnswer)
+            : legacyHtml || '<p></p>',
+          headingId: `headingFaqCms${index}`,
+          collapseId: `collapseFaqCms${index}`,
+          collapsed: true,
+          accodionItemClass: accent.item,
+          accodionClass: accent.accordion,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item != null);
+  }
+
+  /** Convert client plain text (blank line = new paragraph) into safe HTML for the accordion. */
+  private formatPlainAnswerToHtml(text: string): string {
+    const blocks = text
+      .replace(/\r\n/g, '\n')
+      .split(/\n\s*\n/)
+      .map(block => block.trim())
+      .filter(Boolean);
+
+    if (!blocks.length) {
+      return '<p></p>';
+    }
+
+    return blocks
+      .map(block => `<p>${this.escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
+      .join('');
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   get categoryHasMore(): boolean {
     return this.serviceCategoryCards.length < this.categoryTotalCount;
   }

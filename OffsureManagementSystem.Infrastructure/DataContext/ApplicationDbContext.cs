@@ -35,6 +35,7 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<TimesheetEntry> TimesheetEntries { get; set; }
         public DbSet<PortfolioProject> PortfolioProjects { get; set; }
         public DbSet<PortfolioProjectImage> PortfolioProjectImages { get; set; }
+        public DbSet<LandingPageSection> LandingPageSections { get; set; }
 
         public DbSet<Role> Roles { get; set; }
         public DbSet<SkillCategory> SkillCategories { get; set; }
@@ -906,6 +907,37 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .WithMany(p => p.PortfolioProjectImages)
                     .HasForeignKey(e => e.PortfolioProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<LandingPageSection>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.SectionKey)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DisplayName)
+                    .IsRequired()
+                    .HasMaxLength(120);
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.ContentJson)
+                    .IsRequired();
+
+                entity.Property(e => e.IsVisible)
+                    .HasDefaultValue(true);
+
+                entity.Property(e => e.IsDynamic)
+                    .HasDefaultValue(false);
+
+                entity.HasIndex(e => e.SectionKey)
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
+
+                entity.HasIndex(e => e.SortOrder);
             });
 
             ConfigureSoftDeleteFilters(modelBuilder);

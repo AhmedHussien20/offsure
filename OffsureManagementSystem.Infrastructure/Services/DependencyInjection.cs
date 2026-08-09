@@ -37,6 +37,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             services.AddScoped<IClientAccessService, ClientAccessService>();
             services.AddScoped<IClientManagementService, ClientManagementService>();
             services.AddScoped<IPortfolioManagementService, PortfolioManagementService>();
+            services.AddScoped<ILandingPageContentService, LandingPageContentService>();
             services.AddScoped<ISkillManagementService, SkillManagementService>();
             services.AddScoped<IDashboardStatisticsService, DashboardStatisticsService>();
 

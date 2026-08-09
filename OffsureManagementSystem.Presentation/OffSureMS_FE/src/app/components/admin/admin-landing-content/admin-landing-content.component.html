@@ -1,0 +1,679 @@
+<app-page-header></app-page-header>
+
+<div class="card custom-card admin-landing">
+  <div class="card-body">
+    <div class="admin-landing__toolbar">
+      <div>
+        <h5 class="mb-1">Landing page content</h5>
+        <p class="text-muted small mb-0">
+          Pick a section on the left (same order as the public page). Service Categories and Our Work are edited in
+          Services and Portfolio.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-light btn-sm" (click)="preview()" [disabled]="loading">
+          Preview site
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          (click)="saveAll()"
+          [disabled]="loading || saving || !hasDirty">
+          {{ saving ? 'Saving…' : dirtyCount > 0 ? ('Save ' + dirtyCount + (dirtyCount === 1 ? ' change' : ' changes')) : 'Save changes' }}
+        </button>
+      </div>
+    </div>
+
+    @if (loading) {
+      <p class="text-muted mb-0">Loading landing sections…</p>
+    } @else if (loadError) {
+      <div class="alert alert-danger mb-0">{{ loadError }}</div>
+    } @else {
+      <div class="admin-landing__layout">
+        <aside class="admin-landing__nav" aria-label="Landing sections">
+          <p class="admin-landing__nav-label">Page sections</p>
+          @for (navSection of sections; track navSection.sectionKey; let i = $index) {
+            <button
+              type="button"
+              class="admin-landing__nav-item"
+              [class.admin-landing__nav-item--active]="isSelected(navSection)"
+              [class.admin-landing__nav-item--dirty]="navSection.dirty"
+              (click)="selectSection(navSection)">
+              <span class="admin-landing__nav-index">{{ i + 1 }}</span>
+              <span class="admin-landing__nav-copy">
+                <span class="admin-landing__nav-title">
+                  {{ labelFor(navSection.sectionKey, navSection.displayName) }}
+                </span>
+                <span class="admin-landing__nav-hint">{{ navHint(navSection.sectionKey) }}</span>
+              </span>
+              <span class="admin-landing__nav-flags">
+                @if (!navSection.isVisible) {
+                  <span class="admin-landing__flag admin-landing__flag--hidden">Hidden</span>
+                }
+                @if (navSection.dirty) {
+                  <span class="admin-landing__flag admin-landing__flag--dirty">Edit</span>
+                }
+              </span>
+            </button>
+          }
+        </aside>
+
+        @if (activeSection; as section) {
+          <div class="admin-landing__editor">
+            <div class="admin-landing__editor-head">
+              <div class="admin-landing__editor-title">
+                <span class="admin-landing__section-icon" aria-hidden="true">
+                  <i [class]="'ti ' + iconFor(section.sectionKey)"></i>
+                </span>
+                <div>
+                  <h6 class="mb-0">{{ labelFor(section.sectionKey, section.displayName) }}</h6>
+                  <p class="admin-landing__editor-where mb-0">{{ whereOnPage(section.sectionKey) }}</p>
+                </div>
+              </div>
+              <div class="form-check form-switch admin-landing__visibility mb-0">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  [id]="'visible-' + section.sectionKey"
+                  [checked]="section.isVisible"
+                  (change)="setVisible(section, $any($event.target).checked)" />
+                <label class="form-check-label" [attr.for]="'visible-' + section.sectionKey">
+                  Show on landing page
+                </label>
+              </div>
+            </div>
+
+            <div class="admin-landing__editor-body">
+                @switch (section.sectionKey) {
+                  @case ('home') {
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Platform name</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'platformName')"
+                          (ngModelChange)="setContentString(section, 'platformName', $event)" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Legal / company name</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'legalName')"
+                          (ngModelChange)="setContentString(section, 'legalName', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Main headline / tagline</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'tagline')"
+                          (ngModelChange)="setContentString(section, 'tagline', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Subtitle (full hero paragraph)</label>
+                        <textarea
+                          class="form-control"
+                          rows="4"
+                          [ngModel]="contentString(section, 'subtitle')"
+                          (ngModelChange)="setContentString(section, 'subtitle', $event)"></textarea>
+                        <p class="text-muted small mb-0 mt-1">
+                          Include the full paragraph shown under the headline (including the “Explore service categories…” sentence).
+                        </p>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Primary button text</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'ctaPrimaryText')"
+                          (ngModelChange)="setContentString(section, 'ctaPrimaryText', $event)" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Secondary button text</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'ctaSecondaryText')"
+                          (ngModelChange)="setContentString(section, 'ctaSecondaryText', $event)" />
+                      </div>
+                    </div>
+                  }
+
+                  @case ('stats') {
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Service categories label</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'serviceCategoriesLabel')"
+                          (ngModelChange)="setContentString(section, 'serviceCategoriesLabel', $event)" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Public services label</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'publicServicesLabel')"
+                          (ngModelChange)="setContentString(section, 'publicServicesLabel', $event)" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Published projects label</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'publishedProjectsLabel')"
+                          (ngModelChange)="setContentString(section, 'publishedProjectsLabel', $event)" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Global projects label</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'globalProjectsLabel')"
+                          (ngModelChange)="setContentString(section, 'globalProjectsLabel', $event)" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Global projects value</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          [ngModel]="contentNumber(section, 'globalProjectsValue')"
+                          (ngModelChange)="setContentNumber(section, 'globalProjectsValue', $event)" />
+                      </div>
+                    </div>
+                  }
+
+                  @case ('contact') {
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Eyebrow</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'eyebrow')"
+                          (ngModelChange)="setContentString(section, 'eyebrow', $event)" />
+                      </div>
+                      <div class="col-md-8">
+                        <label class="form-label">Title</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'title')"
+                          (ngModelChange)="setContentString(section, 'title', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Subtitle</label>
+                        <textarea
+                          class="form-control"
+                          rows="2"
+                          [ngModel]="contentString(section, 'subtitle')"
+                          (ngModelChange)="setContentString(section, 'subtitle', $event)"></textarea>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Email</label>
+                        <input
+                          type="email"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'email')"
+                          (ngModelChange)="setContentString(section, 'email', $event)" />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Phone</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'phone')"
+                          (ngModelChange)="setContentString(section, 'phone', $event)" />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Website</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'website')"
+                          (ngModelChange)="setContentString(section, 'website', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Support hours</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'supportHours')"
+                          (ngModelChange)="setContentString(section, 'supportHours', $event)" />
+                      </div>
+                    </div>
+                  }
+
+                  @case ('about') {
+                    <div class="row g-3">
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <p class="admin-landing__group-title">Section header</p>
+                          <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Eyebrow</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'eyebrow')"
+                          (ngModelChange)="setContentString(section, 'eyebrow', $event)" />
+                      </div>
+                      <div class="col-md-8">
+                        <label class="form-label">Section title</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'title')"
+                          (ngModelChange)="setContentString(section, 'title', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Headline</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'subtitle')"
+                          (ngModelChange)="setContentString(section, 'subtitle', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Intro paragraph</label>
+                        <textarea class="form-control" rows="3"
+                          [ngModel]="contentString(section, 'intro')"
+                          (ngModelChange)="setContentString(section, 'intro', $event)"></textarea>
+                      </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <p class="admin-landing__group-title">Who We Are</p>
+                          <div class="row g-3">
+                      <div class="col-12">
+                        <label class="form-label">Block title</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'whoWeAreTitle')"
+                          (ngModelChange)="setContentString(section, 'whoWeAreTitle', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Paragraph 1</label>
+                        <textarea class="form-control" rows="3"
+                          [ngModel]="contentString(section, 'whoWeAreParagraph1')"
+                          (ngModelChange)="setContentString(section, 'whoWeAreParagraph1', $event)"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Paragraph 2</label>
+                        <textarea class="form-control" rows="3"
+                          [ngModel]="contentString(section, 'whoWeAreParagraph2')"
+                          (ngModelChange)="setContentString(section, 'whoWeAreParagraph2', $event)"></textarea>
+                      </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <p class="admin-landing__group-title">Mission &amp; Core Values</p>
+                          <div class="row g-3">
+                      <div class="col-12">
+                        <label class="form-label">Block title</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'missionTitle')"
+                          (ngModelChange)="setContentString(section, 'missionTitle', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Paragraph 1</label>
+                        <textarea class="form-control" rows="3"
+                          [ngModel]="contentString(section, 'missionParagraph1')"
+                          (ngModelChange)="setContentString(section, 'missionParagraph1', $event)"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Paragraph 2</label>
+                        <textarea class="form-control" rows="3"
+                          [ngModel]="contentString(section, 'missionParagraph2')"
+                          (ngModelChange)="setContentString(section, 'missionParagraph2', $event)"></textarea>
+                      </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <p class="admin-landing__group-title">Why Choose Us (lead copy)</p>
+                          <div class="row g-3">
+                      <div class="col-12">
+                        <label class="form-label">Block title</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'whyChooseUsTitle')"
+                          (ngModelChange)="setContentString(section, 'whyChooseUsTitle', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Lead paragraph 1</label>
+                        <textarea class="form-control" rows="2"
+                          [ngModel]="contentString(section, 'whyChooseUsLead1')"
+                          (ngModelChange)="setContentString(section, 'whyChooseUsLead1', $event)"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Lead paragraph 2</label>
+                        <textarea class="form-control" rows="2"
+                          [ngModel]="contentString(section, 'whyChooseUsLead2')"
+                          (ngModelChange)="setContentString(section, 'whyChooseUsLead2', $event)"></textarea>
+                      </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <p class="admin-landing__group-title">End-to-End Solutions</p>
+                          <div class="row g-3">
+                      <div class="col-12">
+                        <label class="form-label">Block title</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'endToEndTitle')"
+                          (ngModelChange)="setContentString(section, 'endToEndTitle', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Paragraph 1</label>
+                        <textarea class="form-control" rows="3"
+                          [ngModel]="contentString(section, 'endToEndParagraph1')"
+                          (ngModelChange)="setContentString(section, 'endToEndParagraph1', $event)"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Paragraph 2</label>
+                        <textarea class="form-control" rows="3"
+                          [ngModel]="contentString(section, 'endToEndParagraph2')"
+                          (ngModelChange)="setContentString(section, 'endToEndParagraph2', $event)"></textarea>
+                      </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  }
+
+                  @case ('faq') {
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Eyebrow</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'eyebrow')"
+                          (ngModelChange)="setContentString(section, 'eyebrow', $event)" />
+                      </div>
+                      <div class="col-md-8">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'title')"
+                          (ngModelChange)="setContentString(section, 'title', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Subtitle</label>
+                        <textarea class="form-control" rows="2"
+                          [ngModel]="contentString(section, 'subtitle')"
+                          (ngModelChange)="setContentString(section, 'subtitle', $event)"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <div class="d-flex align-items-center justify-content-between">
+                          <h6 class="mb-0">Questions &amp; answers</h6>
+                          <button type="button" class="btn btn-sm btn-outline-primary"
+                            (click)="addArrayItem(section, 'items', { question: 'New question?', answer: '' })">
+                            Add FAQ
+                          </button>
+                        </div>
+                        <p class="text-muted small mb-0 mt-2">
+                          Use plain text. Blank lines create separate paragraphs on the landing page.
+                        </p>
+                      </div>
+                      @for (item of contentArray(section, 'items'); track $index; let i = $index) {
+                        <div class="col-12 admin-landing__array-item">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">FAQ {{ i + 1 }}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                              (click)="removeArrayItem(section, 'items', i)">Remove</button>
+                          </div>
+                          <div class="row g-2">
+                            <div class="col-12">
+                              <label class="form-label">Question</label>
+                              <input type="text" class="form-control"
+                                [ngModel]="arrayItemString(section, 'items', i, 'question')"
+                                (ngModelChange)="setArrayItemString(section, 'items', i, 'question', $event)" />
+                            </div>
+                            <div class="col-12">
+                              <label class="form-label">Answer</label>
+                              <textarea class="form-control" rows="5"
+                                [ngModel]="arrayItemString(section, 'items', i, 'answer')"
+                                (ngModelChange)="setArrayItemString(section, 'items', i, 'answer', $event)"></textarea>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @case ('clients') {
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Eyebrow</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'eyebrow')"
+                          (ngModelChange)="setContentString(section, 'eyebrow', $event)" />
+                      </div>
+                      <div class="col-md-8">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control"
+                          [ngModel]="contentString(section, 'title')"
+                          (ngModelChange)="setContentString(section, 'title', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Subtitle</label>
+                        <textarea class="form-control" rows="2"
+                          [ngModel]="contentString(section, 'subtitle')"
+                          (ngModelChange)="setContentString(section, 'subtitle', $event)"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <div class="d-flex align-items-center justify-content-between">
+                          <h6 class="mb-0">Success stories</h6>
+                          <button type="button" class="btn btn-sm btn-outline-primary"
+                            (click)="addArrayItem(section, 'stories', { icon: 'fe fe-briefcase', title: 'New story', sector: '', summary: '', highlight: '' })">
+                            Add story
+                          </button>
+                        </div>
+                      </div>
+                      @for (item of contentArray(section, 'stories'); track $index; let i = $index) {
+                        <div class="col-12 admin-landing__array-item">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">Story {{ i + 1 }}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                              (click)="removeArrayItem(section, 'stories', i)">Remove</button>
+                          </div>
+                          <div class="row g-2">
+                            <div class="col-12">
+                              <label class="form-label">Title</label>
+                              <input type="text" class="form-control"
+                                [ngModel]="arrayItemString(section, 'stories', i, 'title')"
+                                (ngModelChange)="setArrayItemString(section, 'stories', i, 'title', $event)" />
+                            </div>
+                            <div class="col-md-6">
+                              <label class="form-label">Sector</label>
+                              <input type="text" class="form-control"
+                                [ngModel]="arrayItemString(section, 'stories', i, 'sector')"
+                                (ngModelChange)="setArrayItemString(section, 'stories', i, 'sector', $event)" />
+                            </div>
+                            <div class="col-md-6">
+                              <label class="form-label">Highlight badge</label>
+                              <input type="text" class="form-control"
+                                [ngModel]="arrayItemString(section, 'stories', i, 'highlight')"
+                                (ngModelChange)="setArrayItemString(section, 'stories', i, 'highlight', $event)" />
+                            </div>
+                            <div class="col-12">
+                              <label class="form-label">Summary</label>
+                              <textarea class="form-control" rows="3"
+                                [ngModel]="arrayItemString(section, 'stories', i, 'summary')"
+                                (ngModelChange)="setArrayItemString(section, 'stories', i, 'summary', $event)"></textarea>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @case ('footer') {
+                    <div class="row g-3">
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <p class="admin-landing__group-title">Footer copy</p>
+                          <div class="row g-3">
+                            <div class="col-12">
+                              <label class="form-label">About text</label>
+                              <textarea
+                                class="form-control"
+                                rows="3"
+                                [ngModel]="contentString(section, 'aboutText')"
+                                (ngModelChange)="setContentString(section, 'aboutText', $event)"></textarea>
+                            </div>
+                            <div class="col-12">
+                              <label class="form-label">Copyright text</label>
+                              <input
+                                type="text"
+                                class="form-control"
+                                [ngModel]="contentString(section, 'copyrightText')"
+                                (ngModelChange)="setContentString(section, 'copyrightText', $event)" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <div class="d-flex align-items-center justify-content-between mb-3">
+                            <p class="admin-landing__group-title mb-0">Capabilities list</p>
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-primary"
+                              (click)="addArrayItem(section, 'capabilities', { title: 'New capability' })">
+                              Add item
+                            </button>
+                          </div>
+                          <p class="text-muted small mb-3">
+                            Shown in the footer under “Capabilities”. Titles only.
+                          </p>
+                          <div class="row g-3">
+                            @for (item of contentArray(section, 'capabilities'); track $index; let i = $index) {
+                              <div class="col-12 admin-landing__array-item">
+                                <div class="d-flex justify-content-between align-items-center gap-2">
+                                  <div class="flex-grow-1">
+                                    <label class="form-label">Title {{ i + 1 }}</label>
+                                    <input
+                                      type="text"
+                                      class="form-control"
+                                      [ngModel]="arrayItemString(section, 'capabilities', i, 'title')"
+                                      (ngModelChange)="setArrayItemString(section, 'capabilities', i, 'title', $event)" />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger align-self-end mb-1"
+                                    (click)="removeArrayItem(section, 'capabilities', i)">
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="admin-landing__group">
+                          <p class="admin-landing__group-title">Social media icons</p>
+                          <p class="text-muted small mb-3">
+                            Turn an icon on and add its profile URL. Icons without a URL stay hidden on the site.
+                          </p>
+                          <div class="row g-3">
+                            @for (item of contentArray(section, 'socialLinks'); track $index; let i = $index) {
+                              <div class="col-12 admin-landing__array-item">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                  <span class="fw-medium">
+                                    <i
+                                      class="me-1"
+                                      [class]="arrayItemString(section, 'socialLinks', i, 'icon')"
+                                      aria-hidden="true"></i>
+                                    {{ arrayItemString(section, 'socialLinks', i, 'label') }}
+                                  </span>
+                                  <div class="form-check form-switch mb-0">
+                                    <input
+                                      class="form-check-input"
+                                      type="checkbox"
+                                      role="switch"
+                                      [id]="'social-visible-' + section.sectionKey + '-' + i"
+                                      [checked]="arrayItemBool(section, 'socialLinks', i, 'isVisible')"
+                                      (change)="
+                                        setArrayItemBool(
+                                          section,
+                                          'socialLinks',
+                                          i,
+                                          'isVisible',
+                                          $any($event.target).checked
+                                        )
+                                      " />
+                                    <label
+                                      class="form-check-label"
+                                      [attr.for]="'social-visible-' + section.sectionKey + '-' + i">
+                                      Show
+                                    </label>
+                                  </div>
+                                </div>
+                                <label class="form-label">Profile URL</label>
+                                <input
+                                  type="url"
+                                  class="form-control"
+                                  placeholder="https://…"
+                                  [ngModel]="arrayItemString(section, 'socialLinks', i, 'url')"
+                                  (ngModelChange)="setArrayItemString(section, 'socialLinks', i, 'url', $event)" />
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  @default {
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Eyebrow</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'eyebrow')"
+                          (ngModelChange)="setContentString(section, 'eyebrow', $event)" />
+                      </div>
+                      <div class="col-md-8">
+                        <label class="form-label">Title</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          [ngModel]="contentString(section, 'title')"
+                          (ngModelChange)="setContentString(section, 'title', $event)" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Subtitle</label>
+                        <textarea
+                          class="form-control"
+                          rows="2"
+                          [ngModel]="contentString(section, 'subtitle')"
+                          (ngModelChange)="setContentString(section, 'subtitle', $event)"></textarea>
+                      </div>
+                    </div>
+                  }
+                }
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (hasDirty) {
+        <div class="admin-landing__sticky-bar">
+          <span>{{ dirtyCount }} unsaved section{{ dirtyCount === 1 ? '' : 's' }}</span>
+          <button type="button" class="btn btn-primary btn-sm" (click)="saveAll()" [disabled]="saving">
+            {{ saving ? 'Saving…' : 'Save all changes' }}
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

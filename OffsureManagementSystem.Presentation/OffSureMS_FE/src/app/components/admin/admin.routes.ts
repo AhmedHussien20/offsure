@@ -99,6 +99,14 @@ export const adminRoutes: Routes = [
           import('./admin-portfolios-list/admin-portfolios-list.component').then(m => m.AdminPortfoliosListComponent),
       },
       {
+        path: 'landing-content',
+        data: { breadcrumb: 'Landing Content', title: 'Landing Content' },
+        loadComponent: () =>
+          import('./admin-landing-content/admin-landing-content.component').then(
+            m => m.AdminLandingContentComponent
+          ),
+      },
+      {
         path: 'companies',
         data: { breadcrumb: 'Companies', title: 'Companies' },
         loadComponent: () =>

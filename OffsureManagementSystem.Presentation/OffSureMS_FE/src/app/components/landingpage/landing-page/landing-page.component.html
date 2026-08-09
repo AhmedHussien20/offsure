@@ -177,14 +177,12 @@
                             <p class="text-start fw-bold">{{ companyProfile.tagline }}</p>
                             <h6 class="pb-3">
                                 {{ companyProfile.heroSubtitle }}
-                                Explore service categories, review delivered projects, and connect with
-                                {{ companyProfile.legalName }} for networking, security, and digital solutions.
                             </h6>
                             <div class="d-flex flex-wrap gap-2">
                                 <a href="javascript:void(0)" class="btn btn-white text-primary  hero-cta-btn-primary"
-                                    (click)="scroll(serviceCategories)">Browse Categories</a>
+                                    (click)="scroll(serviceCategories)">{{ heroCtaPrimaryText }}</a>
                                 <a href="javascript:void(0)" class="btn btn-outline-light text-white hero-cta-btn-secondary"
-                                    (click)="scroll(highlights)">Our Work</a>
+                                    (click)="scroll(highlights)">{{ heroCtaSecondaryText }}</a>
                             </div>
 
                         </div>
@@ -198,14 +196,16 @@
         <!-- End:: Section-1 -->
 
         <!-- Start:: Section-2 -->
-        <section class="section hor-content main_features" id="service-categories" #serviceCategories>
+        <section
+            class="section hor-content main_features"
+            id="service-categories"
+            #serviceCategories>
             <div class="container text-center">
-                <h4 class="text-center fw-medium landing-card-header">Service Categories</h4>
+                <h4 class="text-center fw-medium landing-card-header">{{ servicesSection.eyebrow }}</h4>
                 <span class="landing-title"></span>
-                <h2 class="fw-medium text-center">What We Offer</h2>
+                <h2 class="fw-medium text-center">{{ servicesSection.title }}</h2>
                 <p class="text-default mb-5 text-center">
-                    From vendor partnership and technical training to consultation, design/presales, and 24/7 SLA-backed support —
-                    browse live categories below to see our current service lines.
+                    {{ servicesSection.subtitle }}
                 </p>
 
                 @if (categoryLoading && !serviceCategoryCards.length) {
@@ -379,7 +379,7 @@
         <!-- End:: Section-2 -->
 
         <!-- Start:: Section-3 -->
-        <div class="testimonial-owl-landing">
+        <div class="testimonial-owl-landing" [hidden]="!isSectionVisible('stats')">
             <div class="container">
                 <div class="row">
                     <div class="card bg-transparent mb-0">
@@ -405,7 +405,7 @@
                                                                                         class="count">{{serviceCategoriesCount}}</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Service Categories</h5>
+                                                                                        {{ statsLabels.serviceCategories }}</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -425,7 +425,7 @@
                                                                                         class="count">{{publicServicesCount}}</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Public Services</h5>
+                                                                                        {{ statsLabels.publicServices }}</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -445,7 +445,7 @@
                                                                                         class="count">{{publishedProjectsCount}}</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Published Projects</h5>
+                                                                                        {{ statsLabels.publishedProjects }}</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -465,7 +465,7 @@
                                                                                         class="count">{{ companyProfile.globalProjectsDelivered }}+</span></h1>
                                                                                 <div class="counter-text">
                                                                                     <h5 class="fw-normal mb-0">
-                                                                                        Global Projects</h5>
+                                                                                        {{ statsLabels.globalProjects }}</h5>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -488,16 +488,15 @@
         <!-- End:: Section-3 -->
 
         <!-- Start:: Section-3 -->
-        <section class="section bg-landing working-section" id="about" #about>
+        <section class="section bg-landing working-section" id="about" #about [hidden]="!isSectionVisible('about')">
             <div class="container">
                 <div class="row">
-                    <h4 class="text-center fw-medium landing-card-header">About {{ companyProfile.legalName }}</h4>
+                    <h4 class="text-center fw-medium landing-card-header">{{ aboutSection.title || ('About ' + companyProfile.legalName) }}</h4>
                     <span class="landing-title"></span>
                     <div class="text-center">
-                        <h2 class="text-center fw-medium">Remote networking expertise with proven global delivery.</h2>
+                        <h2 class="text-center fw-medium">{{ aboutSection.subtitle }}</h2>
                         <p class="text-default mb-0">
-                            Founded in {{ companyProfile.foundedYear }}, we specialize in remote support for enterprise
-                            networking, unified communications, security, data center, and digital solutions.
+                            {{ aboutSection.intro }}
                         </p>
                     </div>
                     <div class="reveal">
@@ -787,16 +786,12 @@
                                 </div>
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12">
                                     <div class="working-content content-1">
-                                        <h4 class="mb-3">Who We Are</h4>
+                                        <h4 class="mb-3">{{ aboutSection.whoWeAreTitle }}</h4>
                                         <p class="title-desc text-muted">
-                                            Founded in {{ companyProfile.foundedYear }}, {{ companyProfile.legalName }}
-                                            provides remote support for networking solutions worldwide, with
-                                            {{ companyProfile.globalProjectsDelivered }}+ successfully completed projects.
+                                            {{ aboutSection.whoWeAreParagraph1 }}
                                         </p>
                                         <p class="title-desc text-muted mb-0">
-                                            Our experts are committed to seamless, efficient network operations —
-                                            backed by {{ companyProfile.yearsNetworkingExperience }} years of multi-vendor
-                                            experience across Cisco, Fortinet, Palo Alto, and more.
+                                            {{ aboutSection.whoWeAreParagraph2 }}
                                         </p>
                                     </div>
                                 </div>
@@ -806,14 +801,12 @@
                             <div class="row align-items-center justify-content-center">
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12 myorder-2">
                                     <div class="working-content content-2">
-                                        <h4 class="mb-3">Mission &amp; Core Values</h4>
+                                        <h4 class="mb-3">{{ aboutSection.missionTitle }}</h4>
                                         <p class="title-desc text-muted">
-                                            Our mission is to deliver unparalleled remote support that enhances client
-                                            productivity while fostering innovation and collaboration in digital communications.
+                                            {{ aboutSection.missionParagraph1 }}
                                         </p>
                                         <p class="title-desc text-muted mb-0">
-                                            Integrity, excellence, and innovation guide how we serve clients — with a culture
-                                            built on collaboration, continuous learning, and operational excellence.
+                                            {{ aboutSection.missionParagraph2 }}
                                         </p>
                                     </div>
                                 </div>
@@ -2032,12 +2025,12 @@ c-0.6137161,4.8149414-1.0946579,9.651413-1.4447937,14.4860229L43.0290565,232.100
                                 </div>
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12">
                                     <div class="working-content content-3">
-                                        <h4 class="mb-3">Why Choose Us</h4>
+                                        <h4 class="mb-3">{{ aboutSection.whyChooseUsTitle }}</h4>
                                         <p class="title-desc text-muted">
-                                            {{ whyChooseUs[0].description }}
+                                            {{ aboutSection.whyChooseUsLead1 }}
                                         </p>
                                         <p class="title-desc text-muted mb-0">
-                                            {{ whyChooseUs[1].description }}
+                                            {{ aboutSection.whyChooseUsLead2 }}
                                         </p>
                                     </div>
                                 </div>
@@ -2047,15 +2040,12 @@ c-0.6137161,4.8149414-1.0946579,9.651413-1.4447937,14.4860229L43.0290565,232.100
                             <div class="row align-items-center justify-content-center">
                                 <div class="col-xl-8 col-lg-6 col-md-6 col-sm-12 myorder-2">
                                     <div class="working-content content-4">
-                                        <h4 class="mb-3">End-to-End Solutions</h4>
+                                        <h4 class="mb-3">{{ aboutSection.endToEndTitle }}</h4>
                                         <p class="title-desc text-muted">
-                                            Beyond networking, we deliver enterprise and digital solutions — from mobile and
-                                            web development to Agile delivery, system integration, AI-driven automation, and
-                                            legacy support.
+                                            {{ aboutSection.endToEndParagraph1 }}
                                         </p>
                                         <p class="title-desc text-muted mb-0">
-                                            {{ whatWeOffer[3].description }}
-                                            {{ companyProfile.supportHours }}
+                                            {{ aboutSection.endToEndParagraph2 }}
                                         </p>
                                     </div>
                                 </div>
@@ -2210,18 +2200,20 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         <!-- End:: Section-3 -->
 
         <!-- Start:: Section-5 -->
-        <section class="section highlights landing-our-work" id="highlights" #highlights>
+        <section
+            class="section highlights landing-our-work"
+            id="highlights"
+            #highlights>
             <div class="container text-center">
                 <div class="row">
-                    <h4 class="text-center fw-medium">Our Work</h4>
+                    <h4 class="text-center fw-medium">{{ portfolioSection.eyebrow }}</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium">Our Success Stories</h2>
+                    <h2 class="text-center fw-medium">{{ portfolioSection.title }}</h2>
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-xl-8">
                         <p class="fs-15 mb-5 fw-normal">
-                            Successfully completed {{ companyProfile.globalProjectsDelivered }}+ complex network projects for
-                            global clients. Browse published portfolio work below — swipe the carousel or scroll to load more.
+                            {{ portfolioSection.subtitle }}
                         </p>
                     </div>
                 </div>
@@ -2321,16 +2313,15 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         <!-- End:: Section-5 -->
 
         <!-- Start:: Section-7 -->
-        <section class="section highlights" id="faq" #faq>
+        <section class="section highlights" id="faq" #faq [hidden]="!isSectionVisible('faq')">
             <div class="container">
                 <div class="row">
-                    <h4 class="text-center fw-medium landing-card-header">FAQ'S ?</h4>
+                    <h4 class="text-center fw-medium landing-card-header">{{ faqSection.eyebrow }}</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium">Frequently Asked Questions About {{ companyProfile.legalName }}</h2>
+                    <h2 class="text-center fw-medium">{{ faqSection.title }}</h2>
                     <div class="row justify-content-center">
                         <p class="col-xl-9 wow fadeInUp text-default sub-text mb-5" data-wow-delay="0s">
-                            Learn about our remote networking services, global delivery experience, and how to start your
-                            next project with {{ companyProfile.legalName }}.
+                            {{ faqSection.subtitle }}
                         </p>
                     </div>
                     <div class="row align-items-center">
@@ -2350,12 +2341,12 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         <!-- End:: Section-7 -->
 
         <!-- Start:: Section-8 -->
-        <section class="section landing-testimonials section-bg px-3" id="Clients" #Clients>
+        <section class="section landing-testimonials section-bg px-3" id="Clients" #Clients [hidden]="!isSectionVisible('clients')">
             <div class="container text-center">
                 <div class="row">
-                    <h4 class="text-center fw-medium landing-card-header">Success Stories</h4>
+                    <h4 class="text-center fw-medium landing-card-header">{{ clientsSection.eyebrow }}</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-medium mb-5">Proven delivery across industries worldwide.</h2>
+                    <h2 class="text-center fw-medium mb-5">{{ clientsSection.title }}</h2>
                     <div class="swiper pagination-dynamic text-start">
                         <div class="swiper-wrapper">
                             <swiper-container #swiperContainer1 class="swiper mySwiper" space-between="10"
@@ -2398,15 +2389,14 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         <!-- End:: Section-8 -->
 
         <!-- Start:: Section-10 -->
-        <section class="section" id="contact" #contact>
+        <section class="section" id="contact" #contact [hidden]="!isSectionVisible('contact')">
             <div class="container">
                 <div class="row">
-                    <h4 class="text-center fw-semibold mt-7 landing-card-header ">Contact</h4>
+                    <h4 class="text-center fw-semibold mt-7 landing-card-header ">{{ contactSection.eyebrow }}</h4>
                     <span class="landing-title"></span>
-                    <h2 class="text-center fw-semibold mb-0 px-2">Get in Touch with <span
-                            class="text-primary">{{ companyProfile.legalName }}</span></h2>
+                    <h2 class="text-center fw-semibold mb-0 px-2">{{ contactSection.title }}</h2>
                     <p class="text-center text-muted mb-0 mt-2">
-                        We are here to help with your networking, security, data center, and digital solution needs.
+                        {{ contactSection.subtitle }}
                     </p>
                     <div class="card-body text-dark p-4">
                         <div class="statistics-info">
@@ -2477,8 +2467,7 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                                                     </div>
                                                                     <h4 class="mb-2 fw-semibold">
                                                                         Support</h4>
-                                                                    <p class="mb-0">24/7 deployment &amp; support</p>
-                                                                    <p>SLA-backed response</p>
+                                                                    <p class="mb-0">{{ companyProfile.supportHours }}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2562,7 +2551,9 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
         </div>
     </div>
     <!-- Start:: Section-11 -->
-    <section class="section landing-footer pb-0 text-fixed-white demo-footer px-4">
+    <section
+        class="section landing-footer pb-0 text-fixed-white demo-footer px-4"
+        [hidden]="!isSectionVisible('footer')">
         <div class="container">
             <div class="row">
                 <div class="p-2 mb-0">
@@ -2572,13 +2563,7 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                 <div class="col-lg-4 col-sm-12 col-md-12 reveal revealleft position-relative">
                                     <h6>About</h6>
                                     <p>
-                                        {{ companyProfile.legalName }} specializes in remote support for networking solutions
-                                        worldwide — with {{ companyProfile.globalProjectsDelivered }}+ completed projects and
-                                        certified expertise across Cisco, Fortinet, Palo Alto, and more.
-                                    </p>
-                                    <p class="mb-5 mb-lg-2">
-                                        We are here to help with networking, security, data center, unified communications,
-                                        and end-to-end digital solutions.
+                                        {{ footerAboutText }}
                                     </p>
                                 </div>
                                 <div class="col-lg-2 col-sm-6 col-md-4 reveal revealleft position-relative">
@@ -2595,8 +2580,8 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                 <div class="col-lg-2 col-sm-6 col-md-4 reveal revealleft position-relative ">
                                     <h6>Capabilities</h6>
                                     <ul class="mb-5 mb-lg-0 ps-0">
-                                        @for (offer of whatWeOffer; track offer.title) {
-                                        <li><span class="text-fixed-white opacity-75">{{ offer.title }}</span></li>
+                                        @for (title of footerCapabilities; track title) {
+                                        <li><span class="text-fixed-white opacity-75">{{ title }}</span></li>
                                         }
                                     </ul>
                                 </div>
@@ -2610,16 +2595,20 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                         </p>
                                         <a href="javascript:void(0)" class="btn btn-primary" (click)="scroll(contact)">Contact Us</a>
                                     </div>
+                                    @if (footerSocialLinks.length) {
                                     <div class="btn-list mt-6">
-                                        <button type="button" class="btn btn-icon rounded-pill m-1"><i
-                                                class="fs-14 fe fe-facebook"></i></button>
-                                        <button type="button" class="btn btn-icon rounded-pill m-1"><i
-                                                class="fs-14 fe fe-github"></i></button>
-                                        <button type="button" class="btn btn-icon rounded-pill m-1"><i
-                                                class="fs-14 ri ri-twitter-x-line"></i></button>
-                                        <button type="button" class="btn btn-icon rounded-pill m-1"><i
-                                                class="fs-14 fe fe-instagram"></i></button>
+                                        @for (link of footerSocialLinks; track link.key) {
+                                        <a
+                                            class="btn btn-icon rounded-pill m-1"
+                                            [href]="link.url"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            [attr.aria-label]="link.label">
+                                            <i [class]="'fs-14 ' + link.icon"></i>
+                                        </a>
+                                        }
                                     </div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -2629,7 +2618,7 @@ C431.3,1830.2,378.4,1777.3,378.4,1712z" />
                                 <div class="col-md-12 col-sm-12">
                                     Copyright © 2026
                                     <a [href]="companyProfile.website" target="_blank" rel="noopener noreferrer">{{ companyProfile.legalName }}</a>.
-                                    All rights reserved.
+                                    {{ footerCopyrightText }}
                                 </div>
                             </div>
                         </footer>
