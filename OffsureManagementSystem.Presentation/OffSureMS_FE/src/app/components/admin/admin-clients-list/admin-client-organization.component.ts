@@ -85,7 +85,7 @@ export class AdminClientOrganizationComponent implements OnInit, OnDestroy {
     }
     const modalRef = this.modalService.open(AdminClientMemberCreateComponent, {
       centered: true,
-      size: 'md',
+      size: 'lg',
     });
     modalRef.componentInstance.ownerClientId = this.owner.id;
     modalRef.componentInstance.companyName = this.owner.companyName;
