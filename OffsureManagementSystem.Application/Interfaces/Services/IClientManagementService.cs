@@ -21,5 +21,9 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<ClientDto> UpdateClientProfileAsync(int userId, UpdateClientProfileDto dto);
         Task<ClientDto> DeactivateClientAsync(int id, bool includeOrganizationMembers = false);
         Task<ClientDto> ActivateClientAsync(int id);
+        /// <summary>
+        /// Soft-deletes a client (member or owner). Owners with remaining non-deleted members cannot be deleted.
+        /// </summary>
+        Task DeleteClientAsync(int id);
     }
 }

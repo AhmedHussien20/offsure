@@ -619,6 +619,67 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return await GetClientByIdAsync(id);
         }
 
+        public async Task DeleteClientAsync(int id)
+        {
+            var client = await _clientRepo
+                .Query()
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (client is null)
+                throw new AppException("Resource not found.", 404);
+
+            var isOwner = client.AccountRole == ClientAccountRole.Owner && client.ParentClientId == null;
+            if (isOwner)
+            {
+                // Soft-deleted members are already excluded by the global query filter.
+                var hasRemainingMembers = await _clientRepo
+                    .Query()
+                    .AnyAsync(c =>
+                        c.ParentClientId == client.Id
+                        && c.AccountRole == ClientAccountRole.Member);
+
+                if (hasRemainingMembers)
+                    throw new AppException(
+                        "Cannot delete this company owner while organization members still exist. Delete all members first.",
+                        400);
+            }
+
+            await ApplyClientSoftDeleteAsync(client);
+            await _clientRepo.SaveChangesAsync();
+        }
+
+        private async Task ApplyClientSoftDeleteAsync(Client client)
+        {
+            client.IsActive = false;
+            client.UpdatedAt = DateTime.UtcNow;
+
+            _clientRepo.SaveInclude(
+                client,
+                nameof(client.IsActive),
+                nameof(client.UpdatedAt));
+            _clientRepo.SoftDelete(client);
+
+            var user = await _userRepo.GetByIDAsync(client.UserId);
+            if (user is not null && !user.IsDeleted)
+            {
+                user.IsActive = false;
+                user.IsDeleted = true;
+                user.DeletedAt = DateTime.UtcNow;
+                user.RefreshToken = null;
+                user.RefreshTokenExpiry = null;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                _userRepo.SaveInclude(
+                    user,
+                    nameof(user.IsActive),
+                    nameof(user.IsDeleted),
+                    nameof(user.DeletedAt),
+                    nameof(user.RefreshToken),
+                    nameof(user.RefreshTokenExpiry),
+                    nameof(user.UpdatedAt));
+            }
+        }
+
         private IQueryable<Client> BuildClientListQuery()
         {
             return _clientRepo

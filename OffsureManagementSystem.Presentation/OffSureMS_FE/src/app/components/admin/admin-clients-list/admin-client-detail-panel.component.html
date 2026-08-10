@@ -22,8 +22,8 @@
         @if (client.isActive) {
           <button
             type="button"
-            class="btn btn-sm btn-outline-danger no-expand"
-            [disabled]="deactivating"
+            class="btn btn-sm btn-outline-warning no-expand"
+            [disabled]="deactivating || deleting"
             (click)="deactivateClient()">
             {{
               deactivating
@@ -37,7 +37,7 @@
           <button
             type="button"
             class="btn btn-sm btn-outline-success no-expand"
-            [disabled]="activating"
+            [disabled]="activating || deleting"
             (click)="activateClient()">
             {{
               activating
@@ -48,6 +48,19 @@
             }}
           </button>
         }
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger no-expand"
+          [disabled]="deleting || deactivating || activating"
+          (click)="deleteClient()">
+          {{
+            deleting
+              ? 'Deleting…'
+              : isOrganizationOwner
+                ? 'Delete owner'
+                : 'Delete member'
+          }}
+        </button>
       </div>
     </div>
 

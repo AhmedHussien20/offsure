@@ -98,13 +98,22 @@
                           </span>
                         </td>
                         <td class="text-end">
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-light"
-                            [disabled]="deactivating || activating"
-                            (click)="toggleActive(row.client)">
-                            {{ row.client.isActive ? 'Deactivate' : 'Activate' }}
-                          </button>
+                          <div class="d-inline-flex flex-wrap gap-1 justify-content-end">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-light"
+                              [disabled]="deactivating || activating || deleting"
+                              (click)="toggleActive(row.client)">
+                              {{ row.client.isActive ? 'Deactivate' : 'Activate' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-danger"
+                              [disabled]="deactivating || activating || deleting"
+                              (click)="deletePerson(row.client)">
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     }

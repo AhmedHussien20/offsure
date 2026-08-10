@@ -31,5 +31,6 @@
 <ng-template #memberDetail let-item>
   <app-admin-client-detail-panel
     [clientId]="item.id"
-    (saved)="onMemberSaved()" />
+    (saved)="onMemberSaved()"
+    (deleted)="onMemberDeleted()" />
 </ng-template>

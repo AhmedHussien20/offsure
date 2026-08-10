@@ -168,6 +168,14 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<ClientDto>.Ok(client, "Client activated successfully."));
         }
 
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteClient(int id)
+        {
+            await _clientManagementService.DeleteClientAsync(id);
+            return Ok(ApiResponse<object>.Ok(null!, "Client deleted successfully."));
+        }
+
         private int GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

@@ -36,6 +36,7 @@ export class AdminClientOrganizationComponent implements OnInit, OnDestroy {
   requestsError: string | null = null;
   deactivating = false;
   activating = false;
+  deleting = false;
 
   private ownerId = 0;
   private readonly destroy$ = new Subject<void>();
@@ -186,6 +187,51 @@ export class AdminClientOrganizationComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.activating = false;
+        },
+      });
+  }
+
+  async deletePerson(person: ClientDto): Promise<void> {
+    const label = this.personName(person);
+    const isOwner = person.id === this.owner?.id;
+    const remainingMembers = this.people.filter(p => !p.isOwner).length;
+
+    if (isOwner && remainingMembers > 0) {
+      this.toastr.warning(
+        `Cannot delete owner while members remain. Delete all ${remainingMembers} member${
+          remainingMembers === 1 ? '' : 's'
+        } first.`
+      );
+      return;
+    }
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: isOwner ? 'Delete company owner' : 'Delete member',
+      message: `Delete ${label}? They will be removed from lists and will no longer be able to sign in. Service requests and projects are kept on record.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      icon: 'ti-trash',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.deleting = true;
+    this.clientsService
+      .delete(person.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toastr.success(isOwner ? 'Company owner deleted.' : 'Member deleted.');
+          this.deleting = false;
+          if (isOwner) {
+            void this.router.navigate(['/admin/companies']);
+            return;
+          }
+          this.loadOrganization();
+        },
+        error: () => {
+          this.deleting = false;
         },
       });
   }

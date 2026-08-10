@@ -121,6 +121,10 @@ export class ClientsService {
       .pipe(map(res => ({ ...res, data: res.data ? this.mapClient(res.data) : res.data })));
   }
 
+  delete(id: number): Observable<BaseResponse<object>> {
+    return this.api.delete<BaseResponse<object>>(this.service, `${id}`);
+  }
+
   browseTeamMembers(
     request?: ClientTeamMemberBrowseRequest
   ): Observable<BaseResponse<PagedResponse<ClientTeamMemberCardDto>>> {

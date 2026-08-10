@@ -113,6 +113,11 @@ export class AdminClientMembersListComponent implements OnInit {
     this.loadMembers();
   }
 
+  onMemberDeleted(): void {
+    this.expandedRowId = null;
+    this.loadMembers();
+  }
+
   private loadCompanyFilterOptions(): void {
     this.clientsService
       .getAll({

@@ -19,12 +19,14 @@ import { AdminClientMemberCreateComponent } from './admin-client-member-create.c
 export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) clientId!: number;
   @Output() saved = new EventEmitter<void>();
+  @Output() deleted = new EventEmitter<void>();
 
   loading = false;
   loadingRequests = false;
   loadingMembers = false;
   deactivating = false;
   activating = false;
+  deleting = false;
   loadError: string | null = null;
   requestsError: string | null = null;
   membersError: string | null = null;
@@ -208,6 +210,52 @@ export class AdminClientDetailPanelComponent implements OnChanges, OnDestroy {
         },
         error: () => {
           this.activating = false;
+        },
+      });
+  }
+
+  async deleteClient(): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    const label = this.contactName || this.client.companyName?.trim() || 'this client';
+    const remainingMemberCount = this.isOrganizationOwner
+      ? this.members.length || this.client.membersCount || 0
+      : 0;
+
+    if (this.isOrganizationOwner && remainingMemberCount > 0) {
+      this.toastr.warning(
+        `Cannot delete owner while members remain. Delete all ${remainingMemberCount} member${
+          remainingMemberCount === 1 ? '' : 's'
+        } first.`
+      );
+      return;
+    }
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: this.isOrganizationOwner ? 'Delete company owner' : 'Delete member',
+      message: `Delete ${label}? They will be removed from lists and will no longer be able to sign in. Service requests and projects are kept on record.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      icon: 'ti-trash',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.deleting = true;
+    this.clientsService
+      .delete(this.client.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toastr.success(this.isOrganizationOwner ? 'Company owner deleted.' : 'Member deleted.');
+          this.deleting = false;
+          this.deleted.emit();
+        },
+        error: () => {
+          this.deleting = false;
         },
       });
   }

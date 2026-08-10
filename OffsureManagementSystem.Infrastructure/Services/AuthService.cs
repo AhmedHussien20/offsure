@@ -364,16 +364,19 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private async Task EnsureUserCanAuthenticateAsync(User user)
         {
-            if (!user.IsActive)
+            if (user.IsDeleted || !user.IsActive)
                 throw new AppException("Your account has been deactivated. Please contact support.");
 
             if (string.Equals(user.Role?.Name, "Client", StringComparison.OrdinalIgnoreCase))
             {
                 var client = await _clientRepo
-                    .GetAll(c => c.UserId == user.Id)
+                    .GetAll(c => c.UserId == user.Id && !c.IsDeleted)
                     .FirstOrDefaultAsync();
 
-                if (client is not null && !client.IsActive)
+                if (client is null)
+                    throw new AppException("Your client account is no longer available. Please contact support.");
+
+                if (!client.IsActive)
                     throw new AppException("Your client account has been deactivated. Please contact support.");
             }
         }
