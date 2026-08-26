@@ -262,16 +262,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var user = await _userRepo.GetByIDAsync(member.UserId);
             if (user is not null)
             {
-                user.IsActive = false;
-                user.IsDeleted = true;
-                user.DeletedAt = DateTime.UtcNow;
-                user.UpdatedAt = DateTime.UtcNow;
+                UserAccountLifecycle.SoftDeleteUserAccount(user);
 
                 _userRepo.SaveInclude(
                     user,
                     nameof(user.IsActive),
                     nameof(user.IsDeleted),
                     nameof(user.DeletedAt),
+                    nameof(user.Email),
+                    nameof(user.RefreshToken),
+                    nameof(user.RefreshTokenExpiry),
+                    nameof(user.PasswordResetToken),
+                    nameof(user.PasswordResetTokenExpiry),
+                    nameof(user.EmailVerificationToken),
+                    nameof(user.EmailVerificationExpiry),
                     nameof(user.UpdatedAt));
             }
 
@@ -858,20 +862,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             await EnsureResourceManagerCanBeRemovedAsync(user.Id);
 
-            user.IsActive = false;
-            user.IsDeleted = true;
-            user.DeletedAt = DateTime.UtcNow;
-            user.RefreshToken = null;
-            user.RefreshTokenExpiry = null;
-            user.UpdatedAt = DateTime.UtcNow;
+            UserAccountLifecycle.SoftDeleteUserAccount(user);
 
             _userRepo.SaveInclude(
                 user,
                 nameof(user.IsActive),
                 nameof(user.IsDeleted),
                 nameof(user.DeletedAt),
+                nameof(user.Email),
                 nameof(user.RefreshToken),
                 nameof(user.RefreshTokenExpiry),
+                nameof(user.PasswordResetToken),
+                nameof(user.PasswordResetTokenExpiry),
+                nameof(user.EmailVerificationToken),
+                nameof(user.EmailVerificationExpiry),
                 nameof(user.UpdatedAt));
 
             await _userRepo.SaveChangesAsync();
@@ -1037,20 +1041,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var user = await GetSalesUserEntityAsync(userId, includeInactive: true);
 
-            user.IsActive = false;
-            user.IsDeleted = true;
-            user.DeletedAt = DateTime.UtcNow;
-            user.RefreshToken = null;
-            user.RefreshTokenExpiry = null;
-            user.UpdatedAt = DateTime.UtcNow;
+            UserAccountLifecycle.SoftDeleteUserAccount(user);
 
             _userRepo.SaveInclude(
                 user,
                 nameof(user.IsActive),
                 nameof(user.IsDeleted),
                 nameof(user.DeletedAt),
+                nameof(user.Email),
                 nameof(user.RefreshToken),
                 nameof(user.RefreshTokenExpiry),
+                nameof(user.PasswordResetToken),
+                nameof(user.PasswordResetTokenExpiry),
+                nameof(user.EmailVerificationToken),
+                nameof(user.EmailVerificationExpiry),
                 nameof(user.UpdatedAt));
 
             await _userRepo.SaveChangesAsync();

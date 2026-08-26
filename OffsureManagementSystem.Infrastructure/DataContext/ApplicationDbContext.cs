@@ -83,7 +83,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .HasMaxLength(500);
 
                 entity.HasIndex(e => e.Email)
-                    .IsUnique();
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
 
                 entity.HasOne(e => e.Client)
                     .WithOne(c => c.User)

@@ -44,7 +44,7 @@
   }
 
   @if (!readonly) {
-    <div class="skill-picker" (scroll)="onSkillPickerScroll($event)">
+    <div #skillPicker class="skill-picker" (scroll)="onSkillPickerScroll($event)">
       @if (skillsLoading && skillsList.length === 0) {
         <p class="text-muted small mb-0 py-2">Loading skills…</p>
       }
@@ -69,10 +69,15 @@
         </p>
       }
       @if (skillsLoading && skillsList.length > 0) {
-        <p class="text-muted small mb-0 py-2">Loading more…</p>
+        <p class="text-muted small mb-0 py-2 w-100">Loading more…</p>
       }
-      @if (skillsHasMore && !skillsLoading && skillsList.length > 0 && !initialSkills.length) {
-        <p class="text-muted small mb-0 py-2 w-100">Scroll for more</p>
+      @if (skillsHasMore && !skillsLoading && skillsList.length > 0) {
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 skill-picker__load-more"
+          (click)="loadMoreSkills()">
+          Load more skills
+        </button>
       }
     </div>
   }

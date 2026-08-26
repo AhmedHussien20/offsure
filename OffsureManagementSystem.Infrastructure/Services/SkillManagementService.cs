@@ -49,8 +49,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Take(GetPageSize(request))
                 .ToListAsync();
 
+            var categoryIds = categories.Select(c => c.Id).ToList();
+            var skillCounts = categoryIds.Count == 0
+                ? new Dictionary<int, int>()
+                : await _skillRepo
+                    .Query()
+                    .Where(s => categoryIds.Contains(s.SkillCategoryId))
+                    .GroupBy(s => s.SkillCategoryId)
+                    .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.CategoryId, x => x.Count);
+
             return new PagedResponse<SkillCategoryDto>(
-                categories.Select(MapCategory).ToList(),
+                categories.Select(c => MapCategory(c, skillCounts.GetValueOrDefault(c.Id))).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -356,7 +366,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static int GetSkipCount(SkillRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
-        private static SkillCategoryDto MapCategory(SkillCategory category)
+        private static SkillCategoryDto MapCategory(SkillCategory category, int? skillsCount = null)
         {
             return new SkillCategoryDto
             {
@@ -364,7 +374,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Name = category.Name,
                 Description = category.Description,
                 IsActive = category.IsActive,
-                SkillsCount = category.Skills.Count
+                SkillsCount = skillsCount ?? category.Skills.Count(s => !s.IsDeleted)
             };
         }
 

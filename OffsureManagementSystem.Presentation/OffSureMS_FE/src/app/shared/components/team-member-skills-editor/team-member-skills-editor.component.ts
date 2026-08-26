@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  ElementRef,
   EventEmitter,
   Input,
   OnChanges,
@@ -8,6 +9,7 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SkillDto } from 'app/core/models/skills/skill.models';
@@ -56,6 +58,8 @@ export class TeamMemberSkillsEditorComponent implements OnInit, OnChanges, OnDes
   @Output() assignmentsChange = new EventEmitter<UpsertTeamMemberSkillDto[]>();
   @Output() profileChange = new EventEmitter<TeamMemberDto>();
 
+  @ViewChild('skillPicker') skillPicker?: ElementRef<HTMLElement>;
+
   skillSearchQuery = '';
   skillsList: SkillDto[] = [];
   skillsPageIndex = 1;
@@ -69,6 +73,7 @@ export class TeamMemberSkillsEditorComponent implements OnInit, OnChanges, OnDes
   private readonly destroy$ = new Subject<void>();
   private readonly skillSearch$ = new Subject<string>();
   private liveSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoFillTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private skillsService: SkillsService,
@@ -94,6 +99,9 @@ export class TeamMemberSkillsEditorComponent implements OnInit, OnChanges, OnDes
     if (this.liveSaveTimer) {
       clearTimeout(this.liveSaveTimer);
     }
+    if (this.autoFillTimer) {
+      clearTimeout(this.autoFillTimer);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -118,6 +126,13 @@ export class TeamMemberSkillsEditorComponent implements OnInit, OnChanges, OnDes
   onSkillPickerScroll(event: Event): void {
     const el = event.target as HTMLElement;
     if (!isNearScrollEnd(el) || this.skillsLoading || !this.skillsHasMore) {
+      return;
+    }
+    this.loadSkillsPage(true);
+  }
+
+  loadMoreSkills(): void {
+    if (this.skillsLoading || !this.skillsHasMore) {
       return;
     }
     this.loadSkillsPage(true);
@@ -292,10 +307,31 @@ export class TeamMemberSkillsEditorComponent implements OnInit, OnChanges, OnDes
           const total = paged?.totalCount ?? 0;
           this.skillsHasMore = this.skillsList.length < total;
           this.skillsLoading = false;
+          this.scheduleAutoFillIfNeeded();
         },
         error: () => {
           this.skillsLoading = false;
         },
       });
+  }
+
+  /** When the first pages fit inside the picker, scroll never fires — keep loading until it overflows. */
+  private scheduleAutoFillIfNeeded(): void {
+    if (this.autoFillTimer) {
+      clearTimeout(this.autoFillTimer);
+    }
+    this.autoFillTimer = setTimeout(() => {
+      this.autoFillTimer = null;
+      if (this.skillsLoading || !this.skillsHasMore) {
+        return;
+      }
+      const el = this.skillPicker?.nativeElement;
+      if (!el) {
+        return;
+      }
+      if (el.scrollHeight <= el.clientHeight + 4) {
+        this.loadSkillsPage(true);
+      }
+    });
   }
 }

@@ -45,7 +45,14 @@
   gap: 0.5rem;
   max-height: 200px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   align-content: flex-start;
+}
+
+.skill-picker__load-more {
+  flex: 1 0 100%;
+  text-align: left;
 }
 
 .skill-picker__chip button,

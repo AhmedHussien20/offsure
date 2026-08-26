@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
 using OffsureManagementSystem.Application.Common.Requests;
 using OffsureManagementSystem.Application.DTOs.ClientManagementDTOs;
@@ -662,20 +663,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var user = await _userRepo.GetByIDAsync(client.UserId);
             if (user is not null && !user.IsDeleted)
             {
-                user.IsActive = false;
-                user.IsDeleted = true;
-                user.DeletedAt = DateTime.UtcNow;
-                user.RefreshToken = null;
-                user.RefreshTokenExpiry = null;
-                user.UpdatedAt = DateTime.UtcNow;
+                UserAccountLifecycle.SoftDeleteUserAccount(user);
 
                 _userRepo.SaveInclude(
                     user,
                     nameof(user.IsActive),
                     nameof(user.IsDeleted),
                     nameof(user.DeletedAt),
+                    nameof(user.Email),
                     nameof(user.RefreshToken),
                     nameof(user.RefreshTokenExpiry),
+                    nameof(user.PasswordResetToken),
+                    nameof(user.PasswordResetTokenExpiry),
+                    nameof(user.EmailVerificationToken),
+                    nameof(user.EmailVerificationExpiry),
                     nameof(user.UpdatedAt));
             }
         }
