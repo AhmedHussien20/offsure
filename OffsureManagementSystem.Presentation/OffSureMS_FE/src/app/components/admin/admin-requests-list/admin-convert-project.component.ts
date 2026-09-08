@@ -111,7 +111,8 @@ export class AdminConvertProjectComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const defaultName = `${this.request.clientName} — ${this.request.serviceName}`;
+    const serviceOrTitle = this.request.serviceName?.trim() || this.request.title?.trim() || 'Project';
+    const defaultName = `${this.request.clientName} — ${serviceOrTitle}`;
     this.form = this.fb.group({
       name: [defaultName, Validators.required],
       startDate: [this.minDate, Validators.required],

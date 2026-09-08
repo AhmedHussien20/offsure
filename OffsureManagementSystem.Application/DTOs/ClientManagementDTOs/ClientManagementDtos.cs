@@ -80,7 +80,7 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
     public class ClientServiceRequestSummaryDto
     {
         public int Id { get; set; }
-        public int ServiceId { get; set; }
+        public int? ServiceId { get; set; }
         public string ServiceName { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public ServiceRequestStatus Status { get; set; }

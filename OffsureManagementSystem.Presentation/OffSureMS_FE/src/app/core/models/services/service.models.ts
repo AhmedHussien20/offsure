@@ -111,7 +111,7 @@ export interface ServiceRequestFilterRequest {
 }
 
 export interface CreateServiceRequestDto {
-  serviceId: number;
+  serviceId?: number | null;
   title: string;
   description?: string;
   dueDate?: string;
@@ -130,7 +130,7 @@ export interface ServiceRequestDto {
   /** Person (owner or member) who submitted the request. */
   clientMemberName?: string;
   clientEmail: string;
-  serviceId: number;
+  serviceId?: number | null;
   serviceName: string;
   serviceCategoryName: string;
   title: string;

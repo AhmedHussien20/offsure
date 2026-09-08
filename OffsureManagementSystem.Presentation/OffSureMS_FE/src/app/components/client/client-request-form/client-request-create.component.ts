@@ -70,6 +70,13 @@ function startOfLocalDay(date: Date): Date {
       <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
     </div>
     <div class="modal-body">
+      <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-3 border-0 bg-info-subtle text-info-emphasis rounded-3">
+        <i class="ti ti-info-circle fs-5 mt-1 flex-shrink-0"></i>
+        <div class="small">
+          <strong>Not sure which service you need?</strong>
+          <div>You can leave the <strong>Service</strong> field empty and describe your goals or problem in the <strong>Description</strong> field below.</div>
+        </div>
+      </div>
       @if (formConfig.length) {
         <app-generic-form
           [formGroup]="formGroup"
@@ -110,7 +117,7 @@ export class ClientRequestCreateComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup = this.fb.group({
-      serviceId: [null, Validators.required],
+      serviceId: [null],
       title: ['', [Validators.required, Validators.maxLength(200)]],
       description: [''],
       dueDate: ['', [dueDateNotBeforeTodayValidator()]],
@@ -136,10 +143,21 @@ export class ClientRequestCreateComponent implements OnInit {
     }
 
     const raw = this.formGroup.getRawValue();
+    const serviceIdValue = raw.serviceId != null && raw.serviceId !== '' ? Number(raw.serviceId) : null;
+    const desc = raw.description?.trim() || '';
+
+    if (!serviceIdValue && !desc) {
+      this.toastr.warning('Please provide a description of your request if no service is selected.');
+      const descControl = this.formGroup.get('description');
+      descControl?.setErrors({ required: true });
+      descControl?.markAsTouched();
+      return;
+    }
+
     const dto: CreateServiceRequestDto = {
-      serviceId: Number(raw.serviceId),
+      serviceId: serviceIdValue && serviceIdValue > 0 ? serviceIdValue : undefined,
       title: String(raw.title).trim(),
-      description: raw.description?.trim() || undefined,
+      description: desc || undefined,
       dueDate: raw.dueDate || undefined,
       budget: raw.budget != null && raw.budget !== '' ? Number(raw.budget) : undefined,
       priority:
@@ -166,10 +184,10 @@ export class ClientRequestCreateComponent implements OnInit {
       {
         type: 'select',
         name: 'serviceId',
-        label: 'Service',
+        label: 'Service (Optional)',
+        placeholder: 'Select a service or leave blank if unsure...',
         selectType: 'simple',
         options: this.services.map(s => ({ value: s.id, label: s.name })),
-        validations: { required: true },
       },
       {
         type: 'input',
@@ -182,6 +200,7 @@ export class ClientRequestCreateComponent implements OnInit {
         type: 'textarea',
         name: 'description',
         label: 'Description',
+        placeholder: 'Describe what you want to achieve, features you need, or the problem you are facing...',
       },
       {
         type: 'input',

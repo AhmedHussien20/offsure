@@ -828,7 +828,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             ServiceRequest? request = null;
             int clientId;
-            int serviceId;
+            int? serviceId;
             int? resolvedSalesId;
             string defaultName;
             string defaultDescription;
@@ -848,7 +848,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 var client = await ValidateStandaloneProjectClientServiceAsync(dto);
                 clientId = dto.ClientId!.Value;
-                serviceId = dto.ServiceId!.Value;
+                serviceId = dto.ServiceId;
                 resolvedSalesId = dto.SalesId ?? client.SalesId;
                 defaultName = dto.Name!.Trim();
                 defaultDescription = dto.Description?.Trim() ?? string.Empty;

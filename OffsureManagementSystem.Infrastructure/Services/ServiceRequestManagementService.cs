@@ -94,16 +94,21 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             ValidateRequestInput(dto);
             var client = await GetClientByUserIdAsync(userId);
-            await EnsurePublicServiceExistsAsync(dto.ServiceId);
 
             if(client is null)
                 throw new AppException("Client profile not found for current user.", 404);
-            
+
+            int? serviceId = null;
+            if (dto.ServiceId.HasValue && dto.ServiceId.Value > 0)
+            {
+                await EnsurePublicServiceExistsAsync(dto.ServiceId.Value);
+                serviceId = dto.ServiceId.Value;
+            }
 
             var request = new ServiceRequest
             {
                 ClientId = client.Id,
-                ServiceId = dto.ServiceId,
+                ServiceId = serviceId,
                 Title = dto.Title.Trim(),
                 Description = dto.Description?.Trim() ?? string.Empty,
                 Status = ServiceRequestStatus.Pending,
@@ -252,7 +257,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     || (r.Client.User != null && (
                         r.Client.User.FirstName.ToLower().Contains(searchKey)
                         || r.Client.User.LastName.ToLower().Contains(searchKey)))
-                    || r.Service.Name.ToLower().Contains(searchKey));
+                    || (r.Service != null && r.Service.Name.ToLower().Contains(searchKey)));
             }
 
             return query;
@@ -319,11 +324,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         private static void ValidateRequestInput(CreateServiceRequestDto dto)
         {
-            if (dto.ServiceId <= 0
-                || string.IsNullOrWhiteSpace(dto.Title)
+            if (string.IsNullOrWhiteSpace(dto.Title)
                 || dto.Priority is < 1 or > 5)
             {
                 throw new AppException("Invalid request.", 400);
+            }
+
+            if (dto.ServiceId.HasValue && dto.ServiceId.Value <= 0)
+            {
+                throw new AppException("Invalid service.", 400);
+            }
+
+            if ((!dto.ServiceId.HasValue || dto.ServiceId.Value <= 0) && string.IsNullOrWhiteSpace(dto.Description))
+            {
+                throw new AppException("Please provide a description of your request if no service is selected.", 400);
             }
 
             if (dto.DueDate.HasValue)

@@ -98,7 +98,7 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
 
     public class CreateServiceRequestDto
     {
-        public int ServiceId { get; set; }
+        public int? ServiceId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public DateTime? DueDate { get; set; }
@@ -119,7 +119,7 @@ namespace OffsureManagementSystem.Application.DTOs.ServiceManagementDTOs
         /// <summary>Person (owner or member) who submitted the request.</summary>
         public string ClientMemberName { get; set; } = string.Empty;
         public string ClientEmail { get; set; } = string.Empty;
-        public int ServiceId { get; set; }
+        public int? ServiceId { get; set; }
         public string ServiceName { get; set; } = string.Empty;
         public string ServiceCategoryName { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;

@@ -845,7 +845,7 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<int?>("SalesId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ServiceId")
+                    b.Property<int?>("ServiceId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -1894,8 +1894,7 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.Service", "Service")
                         .WithMany("ServiceRequests")
                         .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Client");
 

@@ -467,7 +467,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.HasMany(e => e.ServiceRequests)
                     .WithOne(s => s.Service)
                     .HasForeignKey(s => s.ServiceId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
 
                 entity.HasMany(e => e.PortfolioProjects)
                     .WithOne(p => p.Service)
@@ -514,7 +515,8 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.HasOne(e => e.Service)
                     .WithMany(s => s.ServiceRequests)
                     .HasForeignKey(e => e.ServiceId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
 
                 entity.HasOne(e => e.SalesUser)
                     .WithMany()
