@@ -1,0 +1,31 @@
+﻿@use '../../../shared/styles/generic-form-controls' as gfc;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+
+  @include gfc.gf-field-label;
+  @include gfc.gf-text-input;
+}
+
+.project-form-modal {
+  .row + app-generic-form {
+    display: block;
+    margin-top: 0.5rem;
+  }
+
+  .required {
+    color: var(--danger-color, #dc3545);
+  }
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: #f8fafc;
+  color: #64748b;
+  cursor: default;
+}

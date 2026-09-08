@@ -370,8 +370,8 @@ export class AdminProjectDetailComponent implements OnInit, OnDestroy {
 
     const modalRef = this.modalService.open(AdminProjectEditModalComponent, {
       centered: true,
-      size: 'lg',
       backdrop: 'static',
+      modalDialogClass: 'project-flow-modal__dialog',
     });
     modalRef.componentInstance.project = this.project;
 

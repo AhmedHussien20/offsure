@@ -1,3 +1,4 @@
+using OffsureManagementSystem.Application.DTOs.ClientManagementDTOs;
 using OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs;
 using OffsureManagementSystem.Domain.Entities.Enum;
 using TaskMangment.Application.Common.Responses;
@@ -9,6 +10,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<PagedResponse<ProjectDto>> GetAllProjectsAsync(ProjectFilterRequest request);
         Task<PagedResponse<ProjectDto>> GetClientProjectsByUserIdAsync(int userId, ProjectFilterRequest request);
         Task<ProjectDto> GetProjectByIdAsync(int id);
+        Task<IReadOnlyList<ClientDto>> GetEligibleClientsForProjectAsync(int projectId);
         Task<ProjectDto> GetClientProjectByIdAsync(int userId, int projectId);
         Task<ProjectDto> CreateProjectAsync(CreateProjectDto dto);
         Task<ProjectDto> UpdateProjectAsync(int id, UpdateProjectDto dto);

@@ -79,6 +79,7 @@ export interface UpdateProjectDto {
   progress?: number;
   requiredSkillIds?: number[];
   assignTeamBySkill?: boolean;
+  clientId?: number;
 }
 
 export interface AssignProjectTeamMemberDto {

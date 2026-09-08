@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OffsureManagementSystem.Application.DTOs.ClientManagementDTOs;
 using OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using OffsureManagementSystem.Application.Responses;
@@ -72,6 +73,14 @@ namespace OffsureManagementSystem.API.Controllers
         {
             var project = await _projectManagementService.GetProjectByIdAsync(id);
             return Ok(ApiResponse<ProjectDto>.Ok(project));
+        }
+
+        [HttpGet("{id:int}/eligible-clients")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<ClientDto>>>> GetEligibleClients(int id)
+        {
+            var clients = await _projectManagementService.GetEligibleClientsForProjectAsync(id);
+            return Ok(ApiResponse<IReadOnlyList<ClientDto>>.Ok(clients));
         }
 
         [HttpPost]

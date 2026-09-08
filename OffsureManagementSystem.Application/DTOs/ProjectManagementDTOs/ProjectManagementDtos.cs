@@ -53,6 +53,8 @@ namespace OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs
         /// <summary>When set, syncs selected skills on the project (ProjectSkills table).</summary>
         public List<int>? RequiredSkillIds { get; set; }
         public bool? AssignTeamBySkill { get; set; }
+        /// <summary>Client responsible for this project. Must belong to the same organization/company.</summary>
+        public int? ClientId { get; set; }
     }
 
     public class UpdateProjectStaffingModeDto

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OffsureManagementSystem.Application.Common;
 using OffsureManagementSystem.Application.Common.Exceptions;
+using OffsureManagementSystem.Application.DTOs.ClientManagementDTOs;
 using OffsureManagementSystem.Application.DTOs.ProjectManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
@@ -1053,13 +1054,134 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _projectRepo.SaveChangesAsync();
         }
 
+        public async Task<IReadOnlyList<ClientDto>> GetEligibleClientsForProjectAsync(int projectId)
+        {
+            var project = await _projectRepo
+                .Query()
+                .Include(p => p.Client)
+                .Include(p => p.ServiceRequest)
+                    .ThenInclude(sr => sr.Client)
+                .FirstOrDefaultAsync(p => p.Id == projectId && !p.IsDeleted);
+
+            if (project is null)
+                throw new AppException("Project not found.", 404);
+
+            var currentClientId = ResolveProjectClientId(project);
+
+            if (!currentClientId.HasValue)
+            {
+                var allClients = await _clientRepo
+                    .Query()
+                    .Include(c => c.User)
+                    .Where(c => !c.IsDeleted && c.IsActive && c.User.IsActive && !c.User.IsDeleted)
+                    .OrderBy(c => c.CompanyName)
+                    .ThenBy(c => c.AccountRole)
+                    .ToListAsync();
+
+                return allClients.Select(c => new ClientDto
+                {
+                    Id = c.Id,
+                    UserId = c.UserId,
+                    FirstName = c.User?.FirstName ?? string.Empty,
+                    LastName = c.User?.LastName ?? string.Empty,
+                    Email = c.User?.Email ?? string.Empty,
+                    CompanyName = c.CompanyName ?? string.Empty,
+                    AccountRole = c.AccountRole,
+                    ParentClientId = c.ParentClientId,
+                    IsActive = c.IsActive
+                }).ToList();
+            }
+
+            var currentClient = await _clientRepo
+                .Query()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == currentClientId.Value && !c.IsDeleted);
+
+            if (currentClient is null)
+                throw new AppException("Current project client not found.", 404);
+
+            var orgOwnerId = currentClient.AccountRole == ClientAccountRole.Owner
+                ? currentClient.Id
+                : (currentClient.ParentClientId ?? currentClient.Id);
+
+            var eligibleClients = await _clientRepo
+                .Query()
+                .Include(c => c.User)
+                .Where(c => !c.IsDeleted && c.IsActive && c.User.IsActive && !c.User.IsDeleted
+                    && (c.Id == orgOwnerId || c.ParentClientId == orgOwnerId))
+                .OrderBy(c => c.AccountRole)
+                .ThenBy(c => c.User.FirstName)
+                .ThenBy(c => c.User.LastName)
+                .ToListAsync();
+
+            return eligibleClients.Select(c => new ClientDto
+            {
+                Id = c.Id,
+                UserId = c.UserId,
+                FirstName = c.User?.FirstName ?? string.Empty,
+                LastName = c.User?.LastName ?? string.Empty,
+                Email = c.User?.Email ?? string.Empty,
+                CompanyName = c.CompanyName ?? string.Empty,
+                AccountRole = c.AccountRole,
+                ParentClientId = c.ParentClientId,
+                IsActive = c.IsActive
+            }).ToList();
+        }
+
         public async Task<ProjectDto> UpdateProjectAsync(int id, UpdateProjectDto dto)
         {
             ValidateUpdateProjectInput(dto);
 
-            var project = await _projectRepo.GetByIDAsync(id);
+            var project = await _projectRepo
+                .Query()
+                .Include(p => p.Client)
+                .Include(p => p.ServiceRequest)
+                    .ThenInclude(sr => sr.Client)
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+
             if (project is null)
                 throw new AppException("Resource not found.", 404);
+
+            if (dto.ClientId.HasValue && dto.ClientId.Value != project.ClientId)
+            {
+                var newClient = await _clientRepo
+                    .Query()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == dto.ClientId.Value && !c.IsDeleted);
+
+                if (newClient is null)
+                    throw new AppException("The selected client was not found.", 404);
+
+                if (!newClient.IsActive)
+                    throw new AppException("Inactive clients cannot be assigned to a project.", 400);
+
+                var currentClientId = ResolveProjectClientId(project);
+                if (currentClientId.HasValue)
+                {
+                    var currentClient = await _clientRepo
+                        .Query()
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(c => c.Id == currentClientId.Value && !c.IsDeleted);
+
+                    if (currentClient is not null)
+                    {
+                        var currentOrgOwnerId = currentClient.AccountRole == ClientAccountRole.Owner
+                            ? currentClient.Id
+                            : (currentClient.ParentClientId ?? currentClient.Id);
+
+                        var newOrgOwnerId = newClient.AccountRole == ClientAccountRole.Owner
+                            ? newClient.Id
+                            : (newClient.ParentClientId ?? newClient.Id);
+
+                        if (currentOrgOwnerId != newOrgOwnerId)
+                        {
+                            throw new AppException("The selected client must belong to the same organization/company.", 400);
+                        }
+                    }
+                }
+
+                project.ClientId = dto.ClientId.Value;
+            }
 
             project.Name = dto.Name.Trim();
             if (dto.RequiredSkillIds is not null)
@@ -1096,6 +1218,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             _projectRepo.SaveInclude(
                 project,
+                nameof(project.ClientId),
                 nameof(project.Name),
                 nameof(project.Description),
                 nameof(project.StartDate),
@@ -1675,6 +1798,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 Id = project.Id,
                 Name = project.Name,
+                ClientId = ResolveProjectClientId(project),
                 ClientName = ResolveProjectClientName(project),
                 ClientMemberName = ResolveProjectClientMemberName(project),
                 ServiceName = ResolveProjectServiceName(project),

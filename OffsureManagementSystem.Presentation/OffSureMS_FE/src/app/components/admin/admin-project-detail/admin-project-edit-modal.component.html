@@ -1,48 +1,57 @@
-<div class="modal-header">
+<div class="modal-header project-flow-modal__header">
   <div>
     <h5 class="modal-title mb-1">Edit project</h5>
-    <p class="text-muted small mb-0">Update basic project information.</p>
+    <p class="text-muted small mb-0">Update basic project information and assigned client.</p>
   </div>
   <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
 </div>
 
-<div class="modal-body">
-  <form [formGroup]="form" class="generic-form">
-    <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+<div class="modal-body project-flow-modal__body">
+  <form [formGroup]="form" class="project-flow-modal__step-pane generic-form">
+    <div class="project-form-modal">
+      <div class="row gy-3 gx-3 align-items-start mb-2">
+        <div class="col-md-6">
+          <div class="gf-paginated-select">
+            <label class="form-label">Company</label>
+            <div class="generic-form__control">
+              <div class="input-wrapper">
+                <i class="fe fe-briefcase"></i>
+                <input
+                  type="text"
+                  class="form-control"
+                  [value]="companyName"
+                  readonly
+                  disabled />
+              </div>
+            </div>
+          </div>
+        </div>
 
-    @if (isHourlyBudget) {
-      <div class="mb-0">
-        <label class="form-label fw-semibold" for="edit-hourly-rate">Hourly billing rate</label>
-        <div class="input-group">
-          <span class="input-group-text">$</span>
-          <input
-            id="edit-hourly-rate"
-            type="number"
-            class="form-control"
-            formControlName="hourlyRate"
-            min="0.01"
-            step="0.01" />
-          <span class="input-group-text">/hr</span>
+        <div class="col-md-6">
+          <app-paginated-select
+            formControlName="clientId"
+            label="Company member"
+            fieldIcon="fe fe-user"
+            appendTo=".project-flow-modal__body"
+            [required]="true"
+            [disabled]="loadingMembers"
+            [placeholder]="loadingMembers ? 'Loading members...' : 'Search members...'"
+            [pageSize]="20"
+            [loadPage]="loadCompanyMemberOptions" />
         </div>
       </div>
-    } @else {
-      <div class="mb-0">
-        <label class="form-label fw-semibold" for="edit-budget">Budget</label>
-        <input
-          id="edit-budget"
-          type="number"
-          class="form-control"
-          formControlName="budget"
-          min="0"
-          step="0.01" />
-      </div>
-    }
+
+      @if (formConfig.length) {
+        <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+      }
+    </div>
   </form>
 </div>
 
-<div class="modal-footer">
+<div class="modal-footer project-flow-modal__footer">
   <button type="button" class="btn btn-light" [disabled]="saving" (click)="activeModal.dismiss()">Cancel</button>
   <button type="button" class="btn btn-primary" [disabled]="saving || form.invalid" (click)="save()">
     {{ saving ? 'Saving...' : 'Save changes' }}
   </button>
 </div>
+

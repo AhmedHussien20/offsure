@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { BaseResponse } from '../models/base.response';
+import { ClientDto } from '../models/clients/client.models';
 import { PagedResponse } from '../models/paged-response.model';
 import {
   AssignProjectTeamMemberDto,
@@ -42,6 +43,10 @@ export class ProjectsService {
     return this.api
       .get<BaseResponse<ProjectDto>>(this.service, `${id}`)
       .pipe(map(res => ({ ...res, data: res.data ? this.mapProject(res.data) : res.data })));
+  }
+
+  getEligibleClients(projectId: number): Observable<BaseResponse<ClientDto[]>> {
+    return this.api.get<BaseResponse<ClientDto[]>>(this.service, `${projectId}/eligible-clients`);
   }
 
   getMyById(id: number): Observable<BaseResponse<ProjectDto>> {
