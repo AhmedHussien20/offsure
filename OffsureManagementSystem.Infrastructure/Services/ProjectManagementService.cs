@@ -1144,6 +1144,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (dto.ClientId.HasValue && dto.ClientId.Value != project.ClientId)
             {
+                if (project.ServiceRequestId is > 0)
+                    throw new AppException("The assigned member cannot be changed because this project is linked to a service request.", 400);
+
                 var newClient = await _clientRepo
                     .Query()
                     .AsNoTracking()

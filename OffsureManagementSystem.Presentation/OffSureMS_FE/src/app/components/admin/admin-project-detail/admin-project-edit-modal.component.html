@@ -28,16 +28,34 @@
         </div>
 
         <div class="col-md-6">
-          <app-paginated-select
-            formControlName="clientId"
-            label="Company member"
-            fieldIcon="fe fe-user"
-            appendTo=".project-flow-modal__body"
-            [required]="true"
-            [disabled]="loadingMembers"
-            [placeholder]="loadingMembers ? 'Loading members...' : 'Search members...'"
-            [pageSize]="20"
-            [loadPage]="loadCompanyMemberOptions" />
+          @if (clientAssignmentLocked) {
+            <div class="gf-paginated-select">
+              <label class="form-label">Company member</label>
+              <div class="generic-form__control">
+                <div class="input-wrapper">
+                  <i class="fe fe-user"></i>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [value]="assignedMemberLabel"
+                    readonly
+                    disabled />
+                </div>
+              </div>
+              <p class="text-muted small mb-0 mt-1">Assigned from the service request and cannot be changed.</p>
+            </div>
+          } @else {
+            <app-paginated-select
+              formControlName="clientId"
+              label="Company member"
+              fieldIcon="fe fe-user"
+              appendTo=".project-flow-modal__body"
+              [required]="true"
+              [disabled]="loadingMembers"
+              [placeholder]="loadingMembers ? 'Loading members...' : 'Search members...'"
+              [pageSize]="20"
+              [loadPage]="loadCompanyMemberOptions" />
+          }
         </div>
       </div>
 

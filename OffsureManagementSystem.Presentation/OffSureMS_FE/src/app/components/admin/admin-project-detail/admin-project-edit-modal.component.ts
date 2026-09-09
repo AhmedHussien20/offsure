@@ -47,6 +47,15 @@ export class AdminProjectEditModalComponent implements OnInit {
     return this.project?.clientName || this.companyMembers[0]?.companyName || '—';
   }
 
+  /** Request-linked projects stay with the requester; member cannot be reassigned. */
+  get clientAssignmentLocked(): boolean {
+    return (this.project?.serviceRequestId ?? 0) > 0;
+  }
+
+  get assignedMemberLabel(): string {
+    return this.project?.clientMemberName?.trim() || '—';
+  }
+
   isOwner(client: ClientDto): boolean {
     return client.accountRole === 1 || client.accountRole === 'Owner' || !client.parentClientId;
   }
@@ -93,7 +102,10 @@ export class AdminProjectEditModalComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      clientId: [this.project.clientId ?? null, Validators.required],
+      clientId: [
+        this.project.clientId ?? null,
+        this.clientAssignmentLocked ? [] : [Validators.required],
+      ],
       name: [this.project.name ?? '', Validators.required],
       description: [this.project.description ?? ''],
       startDate: [this.toDateInput(this.project.startDate)],
@@ -102,7 +114,9 @@ export class AdminProjectEditModalComponent implements OnInit {
       hourlyRate: [this.project.hourlyRate ?? null],
     });
 
-    this.loadEligibleClients();
+    if (!this.clientAssignmentLocked) {
+      this.loadEligibleClients();
+    }
 
     this.formConfig = [
       {
@@ -184,7 +198,11 @@ export class AdminProjectEditModalComponent implements OnInit {
             : undefined
           : undefined,
         progress: this.project.progress ?? undefined,
-        clientId: raw.clientId ? Number(raw.clientId) : undefined,
+        clientId: this.clientAssignmentLocked
+          ? undefined
+          : raw.clientId
+            ? Number(raw.clientId)
+            : undefined,
       })
       .subscribe({
         next: res => {
