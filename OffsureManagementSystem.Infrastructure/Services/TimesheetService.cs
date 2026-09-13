@@ -22,6 +22,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<ProjectAssignment> _assignmentRepo;
         private readonly IRepository<ProjectResourceManager> _projectResourceManagerRepo;
         private readonly IRepository<ProjectMilestone> _milestoneRepo;
+        private readonly IClientAccessService _clientAccess;
 
         public TimesheetService(
             IRepository<TimesheetEntity> timesheetRepo,
@@ -30,7 +31,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             IRepository<TeamMember> teamMemberRepo,
             IRepository<ProjectAssignment> assignmentRepo,
             IRepository<ProjectResourceManager> projectResourceManagerRepo,
-            IRepository<ProjectMilestone> milestoneRepo)
+            IRepository<ProjectMilestone> milestoneRepo,
+            IClientAccessService clientAccess)
         {
             _timesheetRepo = timesheetRepo;
             _entryRepo = entryRepo;
@@ -39,6 +41,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _assignmentRepo = assignmentRepo;
             _projectResourceManagerRepo = projectResourceManagerRepo;
             _milestoneRepo = milestoneRepo;
+            _clientAccess = clientAccess;
         }
 
         public async Task<TimesheetDayDto?> GetTimesheetDayAsync(int userId, int projectId, DateOnly workDate)
@@ -236,6 +239,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
         {
             var project = await GetHourlyProjectAsync(projectId);
             var isResourceManager = string.Equals(role, "ResourceManager", StringComparison.OrdinalIgnoreCase);
+            var isClient = string.Equals(role, "Client", StringComparison.OrdinalIgnoreCase);
+
+            if (isClient)
+                await EnsureClientCanAccessHourlyProjectAsync(userId, projectId);
 
             if (isResourceManager)
                 await EnsureResourceManagerCanAccessProjectAsync(userId, projectId);
@@ -300,7 +307,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                             ? UserDisplayName.FromTeamMember(assignment.TeamMember)
                             : g.First().TeamMemberName,
                         Role = assignment?.Role ?? "—",
-                        CostRate = assignment?.HourlyRate,
+                        // Never expose internal assignment cost rates to clients.
+                        CostRate = isClient ? null : assignment?.HourlyRate,
                         TotalHours = g.Sum(e => e.Hours)
                     };
                 })
@@ -313,6 +321,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 HourlyRate = isResourceManager ? 0m : billingRate,
                 TotalHoursLogged = totalHours,
                 ThisWeekHours = weekHours,
+                // For clients this is estimated billable cost (project billing rate × hours).
                 EstimatedRevenue = isResourceManager
                     ? 0m
                     : Math.Round(billingRate * totalHours, 2, MidpointRounding.AwayFromZero),
@@ -330,8 +339,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("Project is required.", 400);
 
             var project = await GetHourlyProjectAsync(request.ProjectId);
+            var isAdministrator = string.Equals(role, "Administrator", StringComparison.OrdinalIgnoreCase);
             var isResourceManager = string.Equals(role, "ResourceManager", StringComparison.OrdinalIgnoreCase);
             var isTeamMember = string.Equals(role, "TeamMember", StringComparison.OrdinalIgnoreCase);
+            var isClient = string.Equals(role, "Client", StringComparison.OrdinalIgnoreCase);
+
+            if (isClient)
+                await EnsureClientCanAccessHourlyProjectAsync(userId, request.ProjectId);
 
             if (isResourceManager)
                 await EnsureResourceManagerCanAccessProjectAsync(userId, request.ProjectId);
@@ -344,6 +358,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 if (teamMemberFilter.HasValue && teamMemberFilter.Value != member.Id)
                     throw new AppException("You can only view your own time entries.", 403);
                 teamMemberFilter = member.Id;
+            }
+
+            if (isClient)
+            {
+                // Clients may view all hours on their project, never filter by internal RM.
+                teamMemberFilter = null;
             }
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
@@ -386,8 +406,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 query = query.Where(e => allowedIds.Contains(e.TeamMemberId)).ToList();
             }
 
-            if (request.ResourceManagerUserId.HasValue
-                && string.Equals(role, "Administrator", StringComparison.OrdinalIgnoreCase))
+            if (request.ResourceManagerUserId.HasValue && isAdministrator)
             {
                 var rmAssigned = await _projectResourceManagerRepo
                     .GetAll(r =>
@@ -415,9 +434,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             var totalHours = rows.Sum(r => r.Hours);
             var billingRate = project.HourlyRate ?? 0m;
 
+            // Internal assignment cost rates: Admin + RM only.
             decimal? totalCost = null;
-            if (string.Equals(role, "Administrator", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(role, "ResourceManager", StringComparison.OrdinalIgnoreCase))
+            if (isAdministrator || isResourceManager)
             {
                 var costRates = await _assignmentRepo
                     .GetAll(a => a.ProjectId == request.ProjectId && a.IsActive)
@@ -427,6 +446,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     costRates.TryGetValue(r.TeamMemberId, out var rate) ? rate * r.Hours : 0m);
             }
 
+            // Billing estimate (project hourly rate × hours): Admin revenue + Client cost tracking.
+            decimal? estimatedBilling = null;
+            if (isAdministrator || isClient)
+            {
+                estimatedBilling = Math.Round(
+                    billingRate * totalHours,
+                    2,
+                    MidpointRounding.AwayFromZero);
+            }
+
             return new TimesheetReportDto
             {
                 ProjectId = project.Id,
@@ -434,9 +463,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 RangeStart = rangeStart,
                 RangeEnd = rangeEnd,
                 TotalHours = totalHours,
-                EstimatedRevenue = string.Equals(role, "Administrator", StringComparison.OrdinalIgnoreCase)
-                    ? Math.Round(billingRate * totalHours, 2, MidpointRounding.AwayFromZero)
-                    : null,
+                EstimatedRevenue = estimatedBilling,
                 TotalCost = totalCost,
                 Rows = rows.Select(r => new TimesheetReportRowDto
                 {
@@ -473,6 +500,25 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             if (!assigned)
                 throw new AppException("You are not assigned to this project.", 403);
+        }
+
+        private async Task EnsureClientCanAccessHourlyProjectAsync(int userId, int projectId)
+        {
+            var project = await _projectRepo
+                .Query()
+                .Include(p => p.ServiceRequest)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == projectId && !p.IsDeleted);
+
+            if (project is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (project.BudgetType != ProjectBudgetType.Hourly)
+                throw new AppException("Timesheets are only available for hourly projects.", 400);
+
+            var clientId = project.ClientId ?? project.ServiceRequest?.ClientId;
+            if (!clientId.HasValue || !await _clientAccess.CanAccessClientIdAsync(userId, clientId.Value))
+                throw new AppException("You do not have access to this project.", 403);
         }
 
         private async Task<Project> GetHourlyProjectAsync(int projectId)

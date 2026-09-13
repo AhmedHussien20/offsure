@@ -1,6 +1,6 @@
 <app-page-header></app-page-header>
 
-<ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav nav-tabs nav-style-5 mb-3">
+<ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" (navChange)="onTabChange($event.nextId)" class="nav nav-tabs nav-style-5 mb-3">
   <li [ngbNavItem]="'categories'">
     <a ngbNavLink class="nav-link">Skill Categories</a>
     <ng-template ngbNavContent>

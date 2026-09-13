@@ -334,6 +334,23 @@ function styleEntryTotalRow(sheet: Worksheet, row: number, totalHours: number, c
   sheet.getRow(row).height = 22;
 }
 
+/**
+ * Angular production optimization breaks the Node entry (`exceljs`).
+ * Load the browser bundle and normalize default/named interop.
+ */
+async function createExcelWorkbook(): Promise<import('exceljs').Workbook> {
+  // Prefer non-minified dist — exceljs.min is known to fail under Angular optimize.
+  const mod = (await import('exceljs/dist/exceljs')) as unknown as {
+    Workbook?: new () => import('exceljs').Workbook;
+    default?: { Workbook: new () => import('exceljs').Workbook };
+  };
+  const Workbook = mod.Workbook ?? mod.default?.Workbook;
+  if (!Workbook) {
+    throw new Error('ExcelJS Workbook is unavailable in this build.');
+  }
+  return new Workbook();
+}
+
 async function exportExcel(
   report: TimesheetReportDto,
   overview: HourlyProjectOverviewDto | null | undefined,
@@ -344,8 +361,7 @@ async function exportExcel(
   includeTimeColumn: boolean,
   contentMode: TimesheetExportContentMode
 ): Promise<void> {
-  const ExcelJS = await import('exceljs');
-  const workbook = new ExcelJS.Workbook();
+  const workbook = await createExcelWorkbook();
   workbook.creator = 'OffSure';
   workbook.created = new Date();
 
@@ -433,7 +449,7 @@ async function exportExcel(
 
   const buffer = await workbook.xlsx.writeBuffer();
   downloadBlob(
-    new Blob([buffer], {
+    new Blob([new Uint8Array(buffer as ArrayBuffer)], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
     `${buildBaseFileName(report, contentMode)}.xlsx`

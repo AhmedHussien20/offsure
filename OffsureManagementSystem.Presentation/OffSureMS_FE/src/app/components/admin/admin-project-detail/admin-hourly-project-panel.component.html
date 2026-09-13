@@ -14,12 +14,15 @@
         @if (isRmPortal) {
           <span class="project-detail-stat__label">Team est. cost</span>
           <span class="project-detail-stat__value">${{ teamEstimatedCost | number: '1.0-0' }}</span>
+        } @else if (isClientPortal) {
+          <span class="project-detail-stat__label">Est. cost</span>
+          <span class="project-detail-stat__value">${{ overview.estimatedRevenue | number: '1.0-0' }}</span>
         } @else {
           <span class="project-detail-stat__label">Est. revenue</span>
           <span class="project-detail-stat__value">${{ overview.estimatedRevenue | number: '1.0-0' }}</span>
         }
       </div>
     </div>
-    <span class="project-detail-stat__hint project-detail-stat__hint--action">Hours &amp; costs</span>
+    <span class="project-detail-stat__hint project-detail-stat__hint--action">{{ cardHint }}</span>
   </a>
 }

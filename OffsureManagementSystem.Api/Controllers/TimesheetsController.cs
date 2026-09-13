@@ -67,7 +67,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("projects/{projectId:int}/overview")]
-        [Authorize(Roles = "Administrator,ResourceManager")]
+        [Authorize(Roles = "Administrator,ResourceManager,Client")]
         public async Task<ActionResult<ApiResponse<HourlyProjectOverviewDto>>> GetProjectOverview(int projectId)
         {
             var role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
@@ -76,7 +76,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("report")]
-        [Authorize(Roles = "Administrator,ResourceManager,TeamMember")]
+        [Authorize(Roles = "Administrator,ResourceManager,TeamMember,Client")]
         public async Task<ActionResult<ApiResponse<TimesheetReportDto>>> GetReport(
             [FromQuery] TimesheetReportRequest request)
         {

@@ -5,6 +5,7 @@ using OffsureManagementSystem.Application.DTOs.PortfolioManagementDTOs;
 using OffsureManagementSystem.Application.Interfaces.IRepository;
 using OffsureManagementSystem.Application.Interfaces.Services;
 using TaskMangment.Application.Common.Responses;
+using DomainProject = OffshoreManagementSystem.Domain.Entities.Project;
 using DomainService = OffshoreManagementSystem.Domain.Entities.Service;
 using PortfolioProject = OffshoreManagementSystem.Domain.Entities.PortfolioProject;
 using PortfolioProjectImage = OffshoreManagementSystem.Domain.Entities.PortfolioProjectImage;
@@ -16,17 +17,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private readonly IRepository<PortfolioProject> _portfolioRepo;
         private readonly IRepository<PortfolioProjectImage> _portfolioImageRepo;
         private readonly IRepository<DomainService> _serviceRepo;
+        private readonly IRepository<DomainProject> _projectRepo;
         private readonly string _imageRootPath;
 
         public PortfolioManagementService(
             IRepository<PortfolioProject> portfolioRepo,
             IRepository<PortfolioProjectImage> portfolioImageRepo,
             IRepository<DomainService> serviceRepo,
+            IRepository<DomainProject> projectRepo,
             IConfiguration configuration)
         {
             _portfolioRepo = portfolioRepo;
             _portfolioImageRepo = portfolioImageRepo;
             _serviceRepo = serviceRepo;
+            _projectRepo = projectRepo;
             _imageRootPath = configuration[PortfolioImageRootConfigKey]
                 ?? throw new InvalidOperationException(
                     $"Missing configuration key '{PortfolioImageRootConfigKey}'. Ensure LocalStorageBootstrap runs at startup.");
@@ -61,18 +65,56 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
         public async Task<List<PortfolioServiceSummaryDto>> GetServiceProjectSummaryAsync()
         {
-            // Count all portfolio projects for the service (published and unpublished).
-            return await _portfolioRepo
+            // Count all delivery projects linked to each service (any status),
+            // via direct ServiceId or the linked service request — not only completed portfolio showcase items.
+            var rows = await _projectRepo
                 .Query()
                 .AsNoTracking()
-                .Where(p => !p.IsDeleted && p.Service != null && !p.Service.IsDeleted)
-                .GroupBy(p => new
+                .Select(p => new
                 {
-                    p.ServiceId,
-                    ServiceName = p.Service.Name,
-                    CategoryName = p.Service.ServiceCategory != null
+                    DirectServiceId = p.ServiceId,
+                    RequestServiceId = p.ServiceRequest != null ? p.ServiceRequest.ServiceId : null,
+                    DirectServiceName = p.Service != null ? p.Service.Name : null,
+                    DirectCategoryName = p.Service != null && p.Service.ServiceCategory != null
                         ? p.Service.ServiceCategory.Name
-                        : string.Empty
+                        : null,
+                    DirectServiceDeleted = p.Service != null && p.Service.IsDeleted,
+                    RequestServiceName = p.ServiceRequest != null && p.ServiceRequest.Service != null
+                        ? p.ServiceRequest.Service.Name
+                        : null,
+                    RequestCategoryName = p.ServiceRequest != null
+                        && p.ServiceRequest.Service != null
+                        && p.ServiceRequest.Service.ServiceCategory != null
+                            ? p.ServiceRequest.Service.ServiceCategory.Name
+                            : null,
+                    RequestServiceDeleted = p.ServiceRequest != null
+                        && p.ServiceRequest.Service != null
+                        && p.ServiceRequest.Service.IsDeleted
+                })
+                .ToListAsync();
+
+            return rows
+                .Select(r =>
+                {
+                    var useDirect = r.DirectServiceId.HasValue;
+                    var serviceId = useDirect ? r.DirectServiceId : r.RequestServiceId;
+                    var serviceName = useDirect ? r.DirectServiceName : r.RequestServiceName;
+                    var categoryName = useDirect ? r.DirectCategoryName : r.RequestCategoryName;
+                    var deleted = useDirect ? r.DirectServiceDeleted : r.RequestServiceDeleted;
+                    return new
+                    {
+                        ServiceId = serviceId,
+                        ServiceName = serviceName,
+                        CategoryName = categoryName ?? string.Empty,
+                        Deleted = deleted
+                    };
+                })
+                .Where(x => x.ServiceId.HasValue && !string.IsNullOrWhiteSpace(x.ServiceName) && !x.Deleted)
+                .GroupBy(x => new
+                {
+                    ServiceId = x.ServiceId!.Value,
+                    ServiceName = x.ServiceName!,
+                    x.CategoryName
                 })
                 .Select(g => new PortfolioServiceSummaryDto
                 {
@@ -83,7 +125,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 })
                 .Where(s => s.ProjectCount > 0)
                 .OrderBy(s => s.ServiceName)
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<PortfolioDto> GetPortfolioByIdAsync(int id, bool includeUnpublished = false)

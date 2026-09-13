@@ -65,6 +65,19 @@ export const clientRoutes: Routes = [
           import('./client-project-detail/client-project-detail.component').then(m => m.ClientProjectDetailComponent),
       },
       {
+        path: 'projects/:id/logged-hours',
+        data: {
+          breadcrumb: 'Logged hours',
+          title: 'Logged hours',
+          portal: 'client',
+          breadcrumbParents: [{ key: 'My Projects', route: ['client', 'projects'] }],
+        },
+        loadComponent: () =>
+          import('../admin/admin-project-detail/admin-timesheet-report.component').then(
+            m => m.AdminTimesheetReportComponent
+          ),
+      },
+      {
         path: 'profile',
         data: { breadcrumb: false, title: 'Profile', hidePageHeader: true },
         loadComponent: () =>

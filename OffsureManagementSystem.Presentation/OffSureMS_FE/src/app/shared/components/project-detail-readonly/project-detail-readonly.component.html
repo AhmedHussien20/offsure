@@ -43,6 +43,9 @@
       <span class="project-detail-stat__hint project-detail-stat__hint--action">View your time entries</span>
     </a>
   }
+  @if (isClient && isHourlyBudget) {
+    <app-admin-hourly-project-panel [projectId]="project.id" [projectName]="project.name" portal="client" />
+  }
   @if (showPayments) {
     <button
       type="button"

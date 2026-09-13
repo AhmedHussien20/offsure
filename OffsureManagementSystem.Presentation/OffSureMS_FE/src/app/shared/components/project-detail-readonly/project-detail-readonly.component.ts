@@ -17,6 +17,7 @@ import {
 import { ProjectMilestonesReadonlyComponent } from '../project-milestones-readonly/project-milestones-readonly.component';
 import { ProjectPaymentModalComponent } from '../project-payment-modal/project-payment-modal.component';
 import { ProjectTeamSummaryModalComponent } from '../project-team-summary-modal/project-team-summary-modal.component';
+import { AdminHourlyProjectPanelComponent } from 'app/components/admin/admin-project-detail/admin-hourly-project-panel.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -25,7 +26,12 @@ export type ProjectDetailAudience = 'client' | 'team';
 @Component({
   selector: 'app-project-detail-readonly',
   standalone: true,
-  imports: [CommonModule, RouterModule, ProjectMilestonesReadonlyComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    ProjectMilestonesReadonlyComponent,
+    AdminHourlyProjectPanelComponent,
+  ],
   templateUrl: './project-detail-readonly.component.html',
   styleUrl: './project-detail-readonly.component.scss',
 })

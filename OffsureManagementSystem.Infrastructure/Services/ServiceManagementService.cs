@@ -53,8 +53,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Take(GetPageSize(request))
                 .ToListAsync();
 
+            var categoryIds = categories.Select(c => c.Id).ToList();
+            var serviceCounts = categoryIds.Count == 0
+                ? new Dictionary<int, int>()
+                : await _serviceRepo
+                    .Query()
+                    .Where(s => categoryIds.Contains(s.ServiceCategoryId))
+                    .GroupBy(s => s.ServiceCategoryId)
+                    .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.CategoryId, x => x.Count);
+
             return new PagedResponse<ServiceCategoryDto>(
-                categories.Select(MapCategory).ToList(),
+                categories.Select(c => MapCategory(c, serviceCounts.GetValueOrDefault(c.Id))).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -85,7 +95,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .ToListAsync();
 
             return new PagedResponse<ServiceCategoryDto>(
-                categories.Select(MapCategory).ToList(),
+                categories.Select(c => MapCategory(c)).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -544,7 +554,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
         private static int GetSkipCount(PublicServiceFilterRequest request)
             => (GetPageIndex(request) - 1) * GetPageSize(request);
 
-        private static ServiceCategoryDto MapCategory(ServiceCategory category)
+        private static ServiceCategoryDto MapCategory(ServiceCategory category, int? servicesCount = null)
         {
             return new ServiceCategoryDto
             {
@@ -552,7 +562,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 Name = category.Name,
                 Description = category.Description,
                 IsActive = category.IsActive,
-                ServicesCount = category.Services.Count
+                ServicesCount =
+                    servicesCount
+                    ?? category.Services.Count(s => !s.IsDeleted)
             };
         }
 

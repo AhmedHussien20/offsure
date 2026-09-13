@@ -168,8 +168,18 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Take(GetPageSize(request))
                 .ToListAsync();
 
+            var skillIds = skills.Select(s => s.Id).ToList();
+            var assignedCounts = skillIds.Count == 0
+                ? new Dictionary<int, int>()
+                : await _teamMemberSkillRepo
+                    .Query()
+                    .Where(ts => skillIds.Contains(ts.SkillId))
+                    .GroupBy(ts => ts.SkillId)
+                    .Select(g => new { SkillId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.SkillId, x => x.Count);
+
             return new PagedResponse<SkillDto>(
-                skills.Select(MapSkill).ToList(),
+                skills.Select(s => MapSkill(s, assignedCounts.GetValueOrDefault(s.Id))).ToList(),
                 totalCount,
                 GetPageIndex(request),
                 GetPageSize(request));
@@ -378,7 +388,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             };
         }
 
-        private static SkillDto MapSkill(Skill skill)
+        private static SkillDto MapSkill(Skill skill, int? assignedTeamMembersCount = null)
         {
             return new SkillDto
             {
@@ -388,7 +398,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 SkillCategoryId = skill.SkillCategoryId,
                 SkillCategoryName = skill.SkillCategory?.Name ?? string.Empty,
                 IsActive = skill.IsActive,
-                AssignedTeamMembersCount = skill.TeamMemberSkills.Count
+                AssignedTeamMembersCount =
+                    assignedTeamMembersCount
+                    ?? skill.TeamMemberSkills.Count(ts => !ts.IsDeleted)
             };
         }
     }

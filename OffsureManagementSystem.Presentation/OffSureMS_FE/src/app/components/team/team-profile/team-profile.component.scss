@@ -12,11 +12,12 @@
   overflow: hidden;
   border: 0;
   box-shadow: 0 8px 28px rgb(15 23 42 / 8%);
-  background: url('/assets/images/profile_cover.png') center / cover no-repeat;
+  background: url('/assets/images/profile_cover.png') left top / cover no-repeat;
+  background-color: #f8fafc;
 }
 
 .profile-header-cover {
-  height: clamp(168px, 26vw, 230px);
+  height: clamp(96px, 10vw + 52px, 128px);
   background: transparent;
 }
 
@@ -28,8 +29,8 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 1.25rem;
-  padding: 0.35rem 1.5rem 1.35rem;
-  margin-top: -2rem;
+  padding: 0.25rem 1.5rem 1.2rem;
+  margin-top: -1.5rem;
   background: transparent;
 }
 
@@ -109,7 +110,7 @@
 .profile-header-info {
   min-width: 0;
   padding-bottom: 0.15rem;
-  padding-top: 2.75rem;
+  padding-top: 3.1rem;
   background: transparent;
 }
 
@@ -118,13 +119,13 @@
   font-weight: 700;
   line-height: 1.2;
   color: #0f172a;
-  text-shadow: 0 1px 2px rgb(255 255 255 / 85%);
+  text-shadow: none;
 }
 
 .profile-header-title {
   color: #334155;
   font-size: 0.95rem;
-  text-shadow: 0 1px 2px rgb(255 255 255 / 85%);
+  text-shadow: none;
 }
 
 .profile-header-meta {
@@ -498,12 +499,28 @@
   .profile-tab-content--split {
     grid-template-columns: 1fr;
   }
+
+  .profile-header-cover {
+    height: clamp(88px, 12vw + 40px, 112px);
+  }
+
+  .profile-header-info {
+    padding-top: 2.75rem;
+  }
 }
 
 @media (max-width: 575.98px) {
+  .profile-header-cover {
+    height: 84px;
+  }
+
   .profile-header-body {
     padding: 0 1rem 1rem;
-    margin-top: -2.75rem;
+    margin-top: -1.75rem;
+  }
+
+  .profile-header-info {
+    padding-top: 0.85rem;
   }
 
   .profile-header-main {

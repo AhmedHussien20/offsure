@@ -12,23 +12,31 @@
   } @else if (loadError) {
     <div class="alert alert-warning mb-0">{{ loadError }}</div>
   } @else if (member) {
-    <div class="member-profile-hero">
-      <div class="member-profile-hero__cover"></div>
-      <div class="member-profile-hero__body">
-        @if (photoUrl) {
-          <img [src]="photoUrl" [alt]="member.fullName" class="member-profile-hero__photo" />
-        } @else {
-          <span class="member-profile-hero__avatar">{{ initials }}</span>
-        }
-        <div class="member-profile-hero__info">
-          <h4 class="member-profile-hero__name mb-1">{{ member.fullName }}</h4>
-          <p class="member-profile-hero__title mb-2">{{ member.title || 'Team member' }}</p>
-          <span class="badge bg-primary-transparent">
-            <i class="fe fe-briefcase me-1"></i>{{ member.yearsOfExperience }} yrs experience
+    <section class="card custom-card profile-header-card member-profile-header mb-3">
+      <div class="profile-header-cover"></div>
+      <div class="profile-header-body">
+        <div class="profile-header-main">
+          <span class="profile-avatar-readonly">
+            @if (photoUrl) {
+              <img [src]="photoUrl" [alt]="member.fullName" class="profile-avatar-readonly__image" />
+            } @else {
+              {{ initials }}
+            }
           </span>
+          <div class="profile-header-info">
+            <h2 class="profile-header-name mb-1">{{ member.fullName }}</h2>
+            <p class="profile-header-title mb-2">{{ member.title || 'Team member' }}</p>
+            <div class="profile-header-meta">
+              <span class="profile-meta-item">
+                <span class="badge bg-primary-transparent">
+                  <i class="fe fe-briefcase me-1"></i>{{ member.yearsOfExperience }} yrs experience
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <section class="member-profile-tabs-card">
       <ul ngbNav #memberNav="ngbNav" [(activeId)]="activeTab" class="nav profile-tabs member-profile-tabs">

@@ -72,6 +72,8 @@ export class AdminSkillsComponent implements OnInit {
     isActive: ACTIVE_FILTER_OPTIONS,
   };
 
+  private categoryOptionsLoaded = false;
+
   constructor(
     private skillCategoriesService: SkillCategoriesService,
     private skillsService: SkillsService,
@@ -79,9 +81,12 @@ export class AdminSkillsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadCategoryOptions();
-    this.loadCategories();
-    this.loadSkills();
+    this.loadActiveTab();
+  }
+
+  onTabChange(tabId: string | number | null): void {
+    this.activeTab = tabId === 'skills' ? 'skills' : 'categories';
+    this.loadActiveTab();
   }
 
   onCatSearch = (): void => {
@@ -131,38 +136,63 @@ export class AdminSkillsComponent implements OnInit {
     });
     modalRef.closed.subscribe((created: boolean) => {
       if (created) {
-        this.loadCategoryOptions();
+        this.categoryOptionsLoaded = false;
         this.loadCategories();
+        if (this.activeTab === 'skills') {
+          this.loadCategoryOptions();
+        }
       }
     });
   }
 
   openSkillForm(): void {
-    this.loadCategoryOptions();
-    const modalRef = this.modalService.open(AdminSkillCreateComponent, {
-      centered: true,
-      size: 'lg',
-    });
-    modalRef.componentInstance.categoryOptions = this.categoryOptions;
-    modalRef.closed.subscribe((created: boolean) => {
-      if (created) {
-        this.loadSkills();
-        this.loadCategories();
-      }
+    this.loadCategoryOptions(() => {
+      const modalRef = this.modalService.open(AdminSkillCreateComponent, {
+        centered: true,
+        size: 'lg',
+      });
+      modalRef.componentInstance.categoryOptions = this.categoryOptions;
+      modalRef.closed.subscribe((created: boolean) => {
+        if (created) {
+          this.loadSkills();
+          if (this.activeTab === 'categories') {
+            this.loadCategories();
+          }
+        }
+      });
     });
   }
 
   onCategoryChanged(): void {
-    this.loadCategoryOptions();
+    this.categoryOptionsLoaded = false;
     this.loadCategories();
+    if (this.activeTab === 'skills') {
+      this.loadCategoryOptions();
+    }
   }
 
   onSkillChanged(): void {
     this.loadSkills();
+    if (this.activeTab === 'categories') {
+      this.loadCategories();
+    }
+  }
+
+  private loadActiveTab(): void {
+    if (this.activeTab === 'skills') {
+      this.loadCategoryOptions();
+      this.loadSkills();
+      return;
+    }
     this.loadCategories();
   }
 
-  private loadCategoryOptions(): void {
+  private loadCategoryOptions(done?: () => void): void {
+    if (this.categoryOptionsLoaded && this.categoryOptions.length) {
+      done?.();
+      return;
+    }
+
     this.skillCategoriesService.getAll({ pageIndex: 1, pageSize: 500 } as any).subscribe(res => {
       const list = res.data?.data ?? [];
       this.categoryOptions = list.map(c => ({ id: c.id, name: c.name }));
@@ -170,6 +200,8 @@ export class AdminSkillsComponent implements OnInit {
         skillCategoryId: this.categoryOptions,
         isActive: ACTIVE_FILTER_OPTIONS,
       };
+      this.categoryOptionsLoaded = true;
+      done?.();
     });
   }
 

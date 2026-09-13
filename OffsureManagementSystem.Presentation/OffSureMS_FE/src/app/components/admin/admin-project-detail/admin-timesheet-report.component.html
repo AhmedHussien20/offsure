@@ -1,22 +1,28 @@
 <app-page-header></app-page-header>
 
 @if (loading && !overview && !report) {
-  <p class="text-muted py-4">{{ isTeamPortal ? 'Loading your logged hours…' : 'Loading hours & costs…' }}</p>
+  <p class="text-muted py-4">
+    {{ isHoursOnlyPortal ? 'Loading logged hours…' : 'Loading hours & costs…' }}
+  </p>
 } @else if (!project) {
   <div class="alert alert-warning">Project not found.</div>
 } @else if (project.budgetType !== 'Hourly') {
-  <div class="alert alert-info">Hours and costs are only available for hourly projects.</div>
-} @else if (isTeamPortal) {
+  <div class="alert alert-info">
+    {{ isClientPortal ? 'Logged hours are only available for hourly projects.' : 'Hours and costs are only available for hourly projects.' }}
+  </div>
+} @else if (isHoursOnlyPortal) {
   <div class="card custom-card report-toolbar mb-3">
     <div class="card-body">
       <div class="report-toolbar__head">
         <div>
-          <h5 class="mb-1">My logged hours</h5>
+          <h5 class="mb-1">{{ isClientPortal ? 'Logged hours' : 'My logged hours' }}</h5>
           <p class="text-muted small mb-0">{{ project.name }}</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-sm btn-light" [routerLink]="projectDetailLink">Back to project</a>
-          <a class="btn btn-sm btn-outline-primary" [routerLink]="dailyTimesheetLink">Log time</a>
+          @if (isTeamPortal) {
+            <a class="btn btn-sm btn-outline-primary" [routerLink]="dailyTimesheetLink">Log time</a>
+          }
         </div>
       </div>
 
@@ -25,7 +31,13 @@
           <span class="report-filter-panel__icon" aria-hidden="true"><i class="fe fe-sliders"></i></span>
           <div>
             <div class="report-filter-panel__title">Report filters</div>
-            <div class="report-filter-panel__hint">Applies to your summary and logged hours below</div>
+            <div class="report-filter-panel__hint">
+              {{
+                isClientPortal
+                  ? 'Applies to team hours and entries below'
+                  : 'Applies to your summary and logged hours below'
+              }}
+            </div>
           </div>
         </div>
 
@@ -67,20 +79,33 @@
   </div>
 
   <div class="hours-costs-kpi-row mb-3">
+    @if (isClientPortal && clientBillingRate != null) {
+      <div class="hours-costs-kpi">
+        <span class="hours-costs-kpi__label">Billing rate</span>
+        <span class="hours-costs-kpi__value">${{ clientBillingRate | number: '1.0-0' }}/hr</span>
+      </div>
+    }
     <div class="hours-costs-kpi">
       <span class="hours-costs-kpi__label">Hours this period</span>
       <span class="hours-costs-kpi__value">{{ totalHoursLogged | number: '1.1-1' }}h</span>
     </div>
-    <div class="hours-costs-kpi">
-      <span class="hours-costs-kpi__label">Entries</span>
-      <span class="hours-costs-kpi__value">{{ entryTableData.length }}</span>
-    </div>
+    @if (isClientPortal) {
+      <div class="hours-costs-kpi hours-costs-kpi--accent">
+        <span class="hours-costs-kpi__label">Est. cost</span>
+        <span class="hours-costs-kpi__value">${{ clientEstimatedCost | number: '1.0-0' }}</span>
+      </div>
+    } @else {
+      <div class="hours-costs-kpi">
+        <span class="hours-costs-kpi__label">Entries</span>
+        <span class="hours-costs-kpi__value">{{ entryTableData.length }}</span>
+      </div>
+    }
   </div>
 
   <div class="card custom-card mb-3">
     <div class="card-header border-bottom-0 hours-resource-card-header">
       <div>
-        <h5 class="mb-0">Logging history</h5>
+        <h5 class="mb-0">{{ isClientPortal ? 'Hours by team member' : 'Logging history' }}</h5>
         @if (filteredResources.length) {
           <p class="text-muted small mb-0 mt-1">Click a row to expand time entries</p>
         }
@@ -121,6 +146,10 @@
                   <span class="hours-resource-item__meta">{{ r.role }} · {{ entryCountForResource(r.teamMemberId) }} {{ entryCountForResource(r.teamMemberId) === 1 ? 'entry' : 'entries' }}</span>
                 </div>
                 <div class="hours-resource-item__stats">
+                  @if (isClientPortal && r.costRate != null) {
+                    <span class="hours-resource-item__rate">${{ r.costRate | number: '1.0-0' }}/hr</span>
+                    <span class="hours-resource-item__cost">Est. cost: ${{ resourceLineCost(r.totalHours, r.costRate) | number: '1.0-0' }}</span>
+                  }
                   <span class="hours-resource-item__hours">{{ r.totalHours | number: '1.1-1' }}h logged</span>
                 </div>
               </button>
@@ -169,6 +198,9 @@
           <div class="hours-resource-total">
             <span>Total</span>
             <strong>{{ report.totalHours | number: '1.1-1' }}h</strong>
+            @if (isClientPortal) {
+              <strong class="ms-3">${{ clientEstimatedCost | number: '1.0-0' }}</strong>
+            }
           </div>
         }
       }
@@ -427,25 +459,39 @@
             [class.export-dialog__mode--active]="exportContentMode === 'hoursOnly'"
             (click)="selectExportContentMode('hoursOnly')">
             <strong>Hours only</strong>
-            <span>Total hours by resource — no cost or rates</span>
+            <span>
+              {{
+                isClientPortal
+                  ? 'Total hours by team member — no billing amounts'
+                  : 'Total hours by resource — no cost or rates'
+              }}
+            </span>
           </button>
           <button
             type="button"
             class="export-dialog__mode"
             [class.export-dialog__mode--active]="exportContentMode === 'withGrossCost'"
             (click)="selectExportContentMode('withGrossCost')">
-            <strong>Gross cost</strong>
-            <span>Gross hourly rate and gross total cost</span>
+            <strong>{{ isClientPortal ? 'With estimated cost' : 'Gross cost' }}</strong>
+            <span>
+              {{
+                isClientPortal
+                  ? 'Agreed hourly rate and estimated cost for the period'
+                  : 'Gross hourly rate and gross total cost'
+              }}
+            </span>
           </button>
         </div>
 
         <p class="small text-muted mb-2">Detail level</p>
         <div class="d-grid gap-2">
           <button type="button" class="btn btn-outline-primary" (click)="confirmExport(false)">
-            Resource summary only
+            {{ isClientPortal ? 'Team summary only' : 'Resource summary only' }}
             <span class="d-block small text-muted fw-normal">
               @if (exportContentMode === 'hoursOnly') {
-                Resources with hours and total hours
+                {{ isClientPortal ? 'Team members with hours and totals' : 'Resources with hours and total hours' }}
+              } @else if (isClientPortal) {
+                Team members with billing rate, hours, and estimated cost
               } @else {
                 Resources with gross rate, hours, and gross total cost
               }
@@ -454,7 +500,11 @@
           <button type="button" class="btn btn-primary" (click)="confirmExport(true)">
             Include time entries
             <span class="d-block small opacity-75 fw-normal">
-              Resource summary plus detailed entry lines (hours)
+              {{
+                isClientPortal
+                  ? 'Team summary plus detailed entry lines (hours)'
+                  : 'Resource summary plus detailed entry lines (hours)'
+              }}
             </span>
           </button>
           <button type="button" class="btn btn-light" (click)="closeExportDialog()">Cancel</button>

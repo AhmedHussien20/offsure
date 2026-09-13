@@ -74,6 +74,8 @@ export class AdminServicesComponent implements OnInit {
     isVisible: VISIBILITY_FILTER_OPTIONS,
   };
 
+  private categoryOptionsLoaded = false;
+
   constructor(
     private categoriesService: ServiceCategoriesService,
     private servicesService: ServicesService,
@@ -81,9 +83,12 @@ export class AdminServicesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadCategoryOptions();
-    this.loadCategories();
-    this.loadServices();
+    this.loadActiveTab();
+  }
+
+  onTabChange(tabId: string | number | null): void {
+    this.activeTab = tabId === 'services' ? 'services' : 'categories';
+    this.loadActiveTab();
   }
 
   onCatSearch = (): void => {
@@ -133,38 +138,63 @@ export class AdminServicesComponent implements OnInit {
     });
     modalRef.closed.subscribe((created: boolean) => {
       if (created) {
-        this.loadCategoryOptions();
+        this.categoryOptionsLoaded = false;
         this.loadCategories();
+        if (this.activeTab === 'services') {
+          this.loadCategoryOptions();
+        }
       }
     });
   }
 
   openServiceForm(): void {
-    this.loadCategoryOptions();
-    const modalRef = this.modalService.open(AdminServiceCreateComponent, {
-      centered: true,
-      size: 'lg',
-    });
-    modalRef.componentInstance.categoryOptions = this.categoryOptions;
-    modalRef.closed.subscribe((created: boolean) => {
-      if (created) {
-        this.loadServices();
-        this.loadCategories();
-      }
+    this.loadCategoryOptions(() => {
+      const modalRef = this.modalService.open(AdminServiceCreateComponent, {
+        centered: true,
+        size: 'lg',
+      });
+      modalRef.componentInstance.categoryOptions = this.categoryOptions;
+      modalRef.closed.subscribe((created: boolean) => {
+        if (created) {
+          this.loadServices();
+          if (this.activeTab === 'categories') {
+            this.loadCategories();
+          }
+        }
+      });
     });
   }
 
   onCategoryChanged(): void {
-    this.loadCategoryOptions();
+    this.categoryOptionsLoaded = false;
     this.loadCategories();
+    if (this.activeTab === 'services') {
+      this.loadCategoryOptions();
+    }
   }
 
   onServiceChanged(): void {
     this.loadServices();
+    if (this.activeTab === 'categories') {
+      this.loadCategories();
+    }
+  }
+
+  private loadActiveTab(): void {
+    if (this.activeTab === 'services') {
+      this.loadCategoryOptions();
+      this.loadServices();
+      return;
+    }
     this.loadCategories();
   }
 
-  private loadCategoryOptions(): void {
+  private loadCategoryOptions(done?: () => void): void {
+    if (this.categoryOptionsLoaded && this.categoryOptions.length) {
+      done?.();
+      return;
+    }
+
     this.categoriesService.getAll({ pageIndex: 1, pageSize: 500 } as any).subscribe(res => {
       const list = res.data?.data ?? [];
       this.categoryOptions = list.map(c => ({ id: c.id, name: c.name }));
@@ -172,6 +202,8 @@ export class AdminServicesComponent implements OnInit {
         serviceCategoryId: this.categoryOptions,
         isVisible: VISIBILITY_FILTER_OPTIONS,
       };
+      this.categoryOptionsLoaded = true;
+      done?.();
     });
   }
 

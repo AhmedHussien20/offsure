@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map, Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { BaseResponse } from '../models/base.response';
 import { PagedResponse } from '../models/paged-response.model';
@@ -21,12 +22,16 @@ import {
   UpdateTeamMemberDto,
   UpsertTeamMemberSkillDto,
 } from '../models/team-members/team-member.models';
+import { ProjectFetchCache } from './project-fetch-cache.service';
 
 @Injectable({ providedIn: 'root' })
 export class ResourceManagerPortalService {
   private readonly service = 'resource-manager';
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private projectCache: ProjectFetchCache
+  ) {}
 
   getTeamMembers(request?: TeamMemberRequest): Observable<BaseResponse<PagedResponse<TeamMemberDto>>> {
     return this.api.get<BaseResponse<PagedResponse<TeamMemberDto>>>(
@@ -77,23 +82,39 @@ export class ResourceManagerPortalService {
   }
 
   getProjectById(id: number): Observable<BaseResponse<ProjectDto>> {
-    return this.api.get<BaseResponse<ProjectDto>>(this.service, `projects/${id}`);
+    const key = ProjectFetchCache.projectKey('rm', id);
+    const cached = this.projectCache.get<BaseResponse<ProjectDto>>(key);
+    if (cached) {
+      return of(cached);
+    }
+
+    return this.api.get<BaseResponse<ProjectDto>>(this.service, `projects/${id}`).pipe(
+      tap(res => this.projectCache.set(key, res))
+    );
   }
 
   assignTeamMember(projectId: number, dto: AssignProjectTeamMemberDto): Observable<BaseResponse<ProjectDto>> {
-    return this.api.post<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/team-members`, dto);
+    return this.api
+      .post<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/team-members`, dto)
+      .pipe(tap(() => this.projectCache.invalidateProject(projectId)));
   }
 
   updateDelivery(projectId: number, dto: UpdateProjectDeliveryDto): Observable<BaseResponse<ProjectDto>> {
-    return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/delivery`, dto);
+    return this.api
+      .patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/delivery`, dto)
+      .pipe(tap(() => this.projectCache.invalidateProject(projectId)));
   }
 
   updateStaffingMode(projectId: number, dto: UpdateProjectStaffingModeDto): Observable<BaseResponse<ProjectDto>> {
-    return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/staffing-mode`, dto);
+    return this.api
+      .patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/staffing-mode`, dto)
+      .pipe(tap(() => this.projectCache.invalidateProject(projectId)));
   }
 
   updateRequiredSkills(projectId: number, dto: UpdateProjectRequiredSkillsDto): Observable<BaseResponse<ProjectDto>> {
-    return this.api.put<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/required-skills`, dto);
+    return this.api
+      .put<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/required-skills`, dto)
+      .pipe(tap(() => this.projectCache.invalidateProject(projectId)));
   }
 
   updateMilestoneStatus(
@@ -101,25 +122,31 @@ export class ResourceManagerPortalService {
     milestoneId: number,
     dto: UpdateProjectMilestoneStatusDto
   ): Observable<BaseResponse<ProjectDto>> {
-    return this.api.patch<BaseResponse<ProjectDto>>(
-      this.service,
-      `projects/${projectId}/milestones/${milestoneId}/status`,
-      dto
-    );
+    return this.api
+      .patch<BaseResponse<ProjectDto>>(
+        this.service,
+        `projects/${projectId}/milestones/${milestoneId}/status`,
+        dto
+      )
+      .pipe(tap(() => this.projectCache.invalidateProject(projectId)));
   }
 
   updateHourlyCostRate(
     projectId: number,
     dto: UpdateProjectRmHourlyCostRateDto
   ): Observable<BaseResponse<ProjectDto>> {
-    return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/hourly-cost-rate`, dto);
+    return this.api
+      .patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/hourly-cost-rate`, dto)
+      .pipe(tap(() => this.projectCache.invalidateProject(projectId)));
   }
 
   updateFixedCostAmount(
     projectId: number,
     dto: UpdateProjectRmFixedCostAmountDto
   ): Observable<BaseResponse<ProjectDto>> {
-    return this.api.patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/fixed-cost-amount`, dto);
+    return this.api
+      .patch<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/fixed-cost-amount`, dto)
+      .pipe(tap(() => this.projectCache.invalidateProject(projectId)));
   }
 
   resetTeamMemberPassword(id: number, dto: { newPassword: string }): Observable<BaseResponse<object>> {
@@ -129,6 +156,9 @@ export class ResourceManagerPortalService {
   removeAssignment(projectId: number, assignmentId: number): Observable<BaseResponse<ProjectDto>> {
     return this.api
       .delete<BaseResponse<ProjectDto>>(this.service, `projects/${projectId}/assignments/${assignmentId}`)
-      .pipe(map(res => ({ ...res, data: res.data ?? undefined })));
+      .pipe(
+        map(res => ({ ...res, data: res.data ?? undefined })),
+        tap(() => this.projectCache.invalidateProject(projectId))
+      );
   }
 }

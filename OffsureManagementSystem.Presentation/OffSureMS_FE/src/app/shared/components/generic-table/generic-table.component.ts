@@ -181,14 +181,9 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
 
   ngOnInit(): void {
     this.restoreFiltersPanelOpen();
-    const restored = this.tryRestoreListPage();
+    this.tryRestoreListPage();
     // After restore, persist the restored page (not the default page 1).
     queueMicrotask(() => this.persistListPage());
-    if (restored) {
-      // Beat parent ngOnInit races that reload page 1.
-      setTimeout(() => this.reemitRestoredPage(restored), 0);
-      setTimeout(() => this.reemitRestoredPage(restored), 100);
-    }
 
     this.filterChanged$
       .pipe(debounceTime(300), takeUntil(this.destroy$))
@@ -417,38 +412,40 @@ export class GenericTableComponent<T> implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * On browser back, re-emit the saved page so the parent reloads that page.
-   * Applies synchronously — deferred restore lost to parent page-1 loads.
+   * Sync pager UI from saved list state.
+   * Parents that call seedListPaging() already load the correct page once —
+   * only emit when restore differs from current inputs (unseeded parents).
    */
-  private tryRestoreListPage(): { page: number; pageSize?: number } | null {
+  private tryRestoreListPage(): void {
     if (!this.showPagination) {
-      return null;
+      return;
     }
     const restored = this.viewState.consumeListRestore(this.router.url);
     if (!restored || restored.page < 1) {
-      return null;
+      return;
     }
-    this.applyRestoredPage(restored);
-    return restored;
-  }
 
-  private reemitRestoredPage(restored: { page: number; pageSize?: number }): void {
-    if (this.page !== restored.page || (restored.pageSize != null && this.entries !== restored.pageSize)) {
-      this.applyRestoredPage(restored);
-    } else if (this.page === restored.page) {
-      // Parent may still be showing page-1 data from an earlier fetch.
-      this.pageChange.emit(restored.page);
-    }
-  }
+    const pageSizeChanged =
+      restored.pageSize != null && restored.pageSize > 0 && restored.pageSize !== this.entries;
+    const pageChanged = restored.page !== this.page;
 
-  private applyRestoredPage(restored: { page: number; pageSize?: number }): void {
-    if (restored.pageSize != null && restored.pageSize > 0 && restored.pageSize !== this.entries) {
-      this.entries = restored.pageSize;
-      this.entriesChange.emit(this.entries);
+    if (pageSizeChanged) {
+      this.entries = restored.pageSize!;
     }
     this.page = restored.page;
-    this.pageChange.emit(restored.page);
     this.persistListPage();
+
+    // Seeded parents already match → no emit → single parent init load.
+    if (!pageSizeChanged && !pageChanged) {
+      return;
+    }
+
+    if (pageSizeChanged) {
+      // Parent handlers often reset to page 1 on entriesChange; re-emit page after.
+      this.entriesChange.emit(this.entries);
+      this.page = restored.page;
+    }
+    this.pageChange.emit(this.page);
   }
 
   trackByRow(index: number, item: T): unknown {

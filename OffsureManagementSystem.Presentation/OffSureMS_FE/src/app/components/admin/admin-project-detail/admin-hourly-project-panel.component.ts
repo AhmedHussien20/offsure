@@ -14,7 +14,7 @@ import { TimesheetsService } from 'app/core/services/timesheets.service';
 export class AdminHourlyProjectPanelComponent implements OnInit, OnChanges {
   @Input() projectId = 0;
   @Input() projectName = '';
-  @Input() portal: 'admin' | 'rm' = 'admin';
+  @Input() portal: 'admin' | 'rm' | 'client' = 'admin';
 
   overview: HourlyProjectOverviewDto | null = null;
   loading = true;
@@ -25,7 +25,14 @@ export class AdminHourlyProjectPanelComponent implements OnInit, OnChanges {
     return this.portal === 'rm';
   }
 
+  get isClientPortal(): boolean {
+    return this.portal === 'client';
+  }
+
   get timesheetReportLink(): (string | number)[] {
+    if (this.isClientPortal) {
+      return ['/client', 'projects', this.projectId, 'logged-hours'];
+    }
     return this.isRmPortal
       ? ['/resource-manager', 'projects', this.projectId, 'timesheet-report']
       : ['/admin', 'projects', this.projectId, 'timesheet-report'];
@@ -34,6 +41,10 @@ export class AdminHourlyProjectPanelComponent implements OnInit, OnChanges {
   get teamEstimatedCost(): number {
     if (!this.overview?.resources.length) return 0;
     return this.overview.resources.reduce((sum, r) => sum + r.totalHours * (r.costRate ?? 0), 0);
+  }
+
+  get cardHint(): string {
+    return 'Hours & costs';
   }
 
   ngOnInit(): void {

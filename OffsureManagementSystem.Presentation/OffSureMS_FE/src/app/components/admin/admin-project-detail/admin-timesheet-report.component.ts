@@ -26,7 +26,7 @@ import {
   sumResourceLineCost,
 } from 'app/core/utils/timesheet-report.util';
 
-type TimesheetPortal = 'admin' | 'rm' | 'team';
+type TimesheetPortal = 'admin' | 'rm' | 'team' | 'client';
 
 interface TimesheetEntryTableRow {
   id: string;
@@ -88,7 +88,8 @@ export class AdminTimesheetReportComponent implements OnInit {
 
   ngOnInit(): void {
     const portal = this.route.snapshot.data['portal'];
-    this.portal = portal === 'rm' ? 'rm' : portal === 'team' ? 'team' : 'admin';
+    this.portal =
+      portal === 'rm' ? 'rm' : portal === 'team' ? 'team' : portal === 'client' ? 'client' : 'admin';
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
     if (!this.projectId) {
       this.loading = false;
@@ -106,7 +107,19 @@ export class AdminTimesheetReportComponent implements OnInit {
     return this.portal === 'team';
   }
 
+  get isClientPortal(): boolean {
+    return this.portal === 'client';
+  }
+
+  /** Shared hours report shell (team: hours only; client: hours + est. cost). */
+  get isHoursOnlyPortal(): boolean {
+    return this.isTeamPortal || this.isClientPortal;
+  }
+
   get projectDetailLink(): (string | number)[] {
+    if (this.isClientPortal) {
+      return ['/client', 'projects', this.projectId];
+    }
     if (this.isTeamPortal) {
       return ['/team', 'projects', this.projectId];
     }
@@ -151,7 +164,21 @@ export class AdminTimesheetReportComponent implements OnInit {
   }
 
   get filteredResources() {
-    return buildResourceSummariesFromReport(this.report, this.overview, this.project);
+    const rows = buildResourceSummariesFromReport(this.report, this.overview, this.project);
+    if (!this.isClientPortal) {
+      return rows;
+    }
+    // Client tracks cost with the project billing rate — never assignment cost rates.
+    const billingRate = this.project?.hourlyRate ?? null;
+    return rows.map(r => ({ ...r, costRate: billingRate }));
+  }
+
+  get clientBillingRate(): number | null {
+    return this.project?.hourlyRate ?? null;
+  }
+
+  get clientEstimatedCost(): number {
+    return this.report?.estimatedRevenue ?? 0;
   }
 
   get visibleFilteredResources() {
@@ -202,7 +229,7 @@ export class AdminTimesheetReportComponent implements OnInit {
     if (this.period !== this.defaultPeriod) return true;
     if (this.rangeFrom || this.rangeTo) return true;
     if (this.isRmPortal && this.teamMemberId != null) return true;
-    if (!this.isRmPortal && !this.isTeamPortal && this.resourceManagerUserId != null) return true;
+    if (!this.isHoursOnlyPortal && !this.isRmPortal && this.resourceManagerUserId != null) return true;
     return false;
   }
 
@@ -245,7 +272,7 @@ export class AdminTimesheetReportComponent implements OnInit {
   }
 
   get totalHoursLogged(): number {
-    if (this.isTeamPortal || this.report) {
+    if (this.isHoursOnlyPortal || this.report) {
       return this.report?.totalHours ?? 0;
     }
     return this.overview?.totalHoursLogged ?? 0;
@@ -300,6 +327,7 @@ export class AdminTimesheetReportComponent implements OnInit {
       return;
     }
 
+    // Admin, RM, and Client choose hours-only vs cost content.
     this.pendingExportFormat = format;
     this.exportContentMode = 'hoursOnly';
     this.exportDialogOpen = true;
@@ -340,19 +368,26 @@ export class AdminTimesheetReportComponent implements OnInit {
   ): void {
     if (!this.report) return;
 
-    void exportTimesheetReport(format, this.report, this.isTeamPortal ? null : this.overview, {
+    void exportTimesheetReport(format, this.report, this.isHoursOnlyPortal ? null : this.overview, {
       contentMode,
-      hideRevenue: this.isTeamPortal || this.isRmPortal,
+      hideRevenue: this.isClientPortal || this.isTeamPortal || this.isRmPortal,
       includeTimeEntries,
-      includeTimeColumn: this.isTeamPortal,
+      includeTimeColumn: this.isHoursOnlyPortal,
       resources: this.filteredResources,
       estimatedCost:
-        this.isTeamPortal || contentMode === 'hoursOnly' ? undefined : this.estimatedCost,
+        contentMode === 'hoursOnly'
+          ? undefined
+          : this.isClientPortal
+            ? this.clientEstimatedCost
+            : this.isTeamPortal
+              ? undefined
+              : this.estimatedCost,
     })
       .then(() => {
         this.toastr.success(format === 'excel' ? 'Excel file downloaded.' : 'PDF file downloaded.');
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        console.error('Timesheet export failed', err);
         this.toastr.error('Export failed. Please try again.');
       });
   }
@@ -370,11 +405,13 @@ export class AdminTimesheetReportComponent implements OnInit {
   }
 
   private loadProject(): void {
-    const request$ = this.isTeamPortal
-      ? this.projectsService.getTeamMyById(this.projectId)
-      : this.isRmPortal
-        ? this.rmPortal.getProjectById(this.projectId)
-        : this.projectsService.getById(this.projectId);
+    const request$ = this.isClientPortal
+      ? this.projectsService.getMyById(this.projectId)
+      : this.isTeamPortal
+        ? this.projectsService.getTeamMyById(this.projectId)
+        : this.isRmPortal
+          ? this.rmPortal.getProjectById(this.projectId)
+          : this.projectsService.getById(this.projectId);
 
     request$.subscribe({
       next: res => {
@@ -385,7 +422,7 @@ export class AdminTimesheetReportComponent implements OnInit {
         }
 
         this.setBreadcrumbs();
-        if (this.isTeamPortal) {
+        if (this.isHoursOnlyPortal) {
           this.loadReport();
         } else {
           this.loadOverviewAndReport();
@@ -399,6 +436,18 @@ export class AdminTimesheetReportComponent implements OnInit {
 
   private setBreadcrumbs(): void {
     if (!this.project) return;
+
+    if (this.isClientPortal) {
+      this.breadcrumbService.setTrail(
+        [
+          { key: 'My Projects', route: ['client', 'projects'] },
+          { key: this.project.name, route: ['client', 'projects', this.projectId] },
+          'Logged hours',
+        ],
+        'Logged hours'
+      );
+      return;
+    }
 
     if (this.isTeamPortal) {
       this.breadcrumbService.setTrail(
@@ -474,7 +523,7 @@ export class AdminTimesheetReportComponent implements OnInit {
       period: this.period,
       teamMemberId: this.isRmPortal ? this.teamMemberId ?? undefined : undefined,
       resourceManagerUserId:
-        !this.isRmPortal && !this.isTeamPortal ? this.resourceManagerUserId ?? undefined : undefined,
+        !this.isRmPortal && !this.isHoursOnlyPortal ? this.resourceManagerUserId ?? undefined : undefined,
       rangeStart: useCustomRange ? this.rangeFrom! : undefined,
       rangeEnd: useCustomRange ? this.rangeTo! : undefined,
     };

@@ -1,64 +1,47 @@
+@import '../../styles/profile-layout.scss';
+
 .team-member-profile-modal {
   padding-top: 0.5rem;
 }
 
-.member-profile-hero {
-  position: relative;
-  margin-bottom: 1rem;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid var(--default-border, rgb(15 23 42 / 8%));
+/* Same cover system as account/RM profile pages, sized for the modal.
+   Shorter height + left-anchored background so "Offshore TechX LLC" isn't cropped. */
+.member-profile-header.profile-header-card {
+  background-position: left top;
+  background-size: cover;
+}
 
-  &__cover {
-    height: 100px;
-    background:
-      linear-gradient(90deg, rgb(248 250 252 / 45%) 0%, transparent 40%),
-      url('/assets/images/profile_cover.png') center / cover no-repeat;
+.member-profile-header {
+  .profile-header-cover {
+    height: clamp(88px, 14vw, 112px);
   }
 
-  &__body {
-    display: flex;
-    align-items: flex-end;
-    gap: 1rem;
-    padding: 0 1.1rem 1.1rem;
-    margin-top: -2.25rem;
+  .profile-header-body {
+    padding: 0.15rem 1.15rem 1rem;
+    // Less pull-up so the identity row sits under the cover brand title.
+    margin-top: -1.35rem;
   }
 
-  &__photo,
-  &__avatar {
-    width: 4.5rem;
-    height: 4.5rem;
-    border-radius: 50%;
-    border: 3px solid #fff;
-    box-shadow: 0 8px 20px rgb(15 23 42 / 12%);
-    flex-shrink: 0;
-    object-fit: cover;
+  .profile-header-info {
+    // Push name/title below the baked-in "Offshore TechX LLC" artwork.
+    padding-top: 3.35rem;
   }
 
-  &__avatar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgb(var(--primary-rgb) / 12%);
-    color: rgb(var(--primary-rgb));
-    font-weight: 700;
-    font-size: 1.2rem;
+  .profile-avatar-readonly {
+    width: 5.25rem;
+    height: 5.25rem;
+    font-size: 1.35rem;
   }
 
-  &__info {
-    min-width: 0;
-    padding-bottom: 0.15rem;
+  .profile-header-name {
+    font-size: 1.25rem;
+    color: #0f172a;
+    text-shadow: none;
   }
 
-  &__name {
-    font-size: 1.15rem;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  &__title {
-    color: var(--text-muted, #64748b);
-    font-size: 0.9rem;
+  .profile-header-title {
+    color: #64748b;
+    text-shadow: none;
   }
 }
 
