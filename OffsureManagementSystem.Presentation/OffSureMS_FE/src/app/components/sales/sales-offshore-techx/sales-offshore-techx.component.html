@@ -5,16 +5,13 @@
 } @else if (loadError) {
   <div class="alert alert-warning mb-0">{{ loadError }}</div>
 } @else {
-  <!-- UI browse enhancement (2026-08-04): hero + panel heads — ask to undo if unwanted -->
+  <!-- UI browse enhancement: compact hero with profile_cover and responsive text overlay -->
   <section class="client-techx-hero card custom-card mb-3">
     <div class="client-techx-hero__stage">
-      <img
-        class="client-techx-hero__cover"
-        src="assets/images/client/offshore-techx-catalog-cover.png"
-        [alt]="providerName + ' organization catalog'" />
-      <div class="visually-hidden">
-        <h2>{{ providerName }}</h2>
-        <p>
+      <div class="client-techx-hero__content">
+        <span class="client-techx-hero__tag">Organization Catalog</span>
+        <h2 class="client-techx-hero__title">{{ providerName }}</h2>
+        <p class="client-techx-hero__desc">
           Browse available services, offshore specialists, and published project proof to support
           client conversations.
         </p>
@@ -47,7 +44,7 @@
           class="client-techx-hero__path"
           [class.client-techx-hero__path--active]="activeTab === 'projects'"
           (click)="goToTab('projects')">
-          <i class="ti ti-briefcase" aria-hidden="true"></i>
+          <i class="fe fe-briefcase" aria-hidden="true"></i>
           <span>
             <strong>Proof</strong>
             <small>Published projects</small>
@@ -108,11 +105,11 @@
                 @for (category of visibleCategories; track category.id) {
                   <div
                     class="client-techx__category-card"
-                    [class.client-techx__category-card--open]="isCategoryExpanded(category.id)">
+                    [class.client-techx__category-card--active]="isCategoryActive(category.id)">
                     <button
                       type="button"
                       class="client-techx__category-toggle"
-                      (click)="toggleCategory(category.id)">
+                      (click)="openCategoryDrawer(category)">
                       <span class="client-techx__category-avatar">
                         {{ category.name.charAt(0).toUpperCase() }}
                       </span>
@@ -127,33 +124,12 @@
                             · {{ projectCountLabel(category.totalProjects) }}
                           }
                         </span>
+                        <span class="client-techx__card-cue">View services</span>
                       </span>
                       <i
-                        class="fe"
-                        [class.fe-chevron-down]="!isCategoryExpanded(category.id)"
-                        [class.fe-chevron-up]="isCategoryExpanded(category.id)"
+                        class="fe fe-arrow-right client-techx__category-arrow"
                         aria-hidden="true"></i>
                     </button>
-
-                    @if (isCategoryExpanded(category.id)) {
-                      <ul class="client-techx__service-list">
-                        @for (service of category.services; track service.id) {
-                          <li class="client-techx__service-item">
-                            <div class="client-techx__service-main">
-                              <div class="client-techx__service-name">{{ service.name }}</div>
-                              @if (service.description) {
-                                <p class="client-techx__service-desc">{{ service.description }}</p>
-                              }
-                              @if (service.projectCount > 0) {
-                                <span class="client-techx__service-count">
-                                  {{ projectCountLabel(service.projectCount) }}
-                                </span>
-                              }
-                            </div>
-                          </li>
-                        }
-                      </ul>
-                    }
                   </div>
                 }
               </div>
@@ -167,6 +143,78 @@
                   class="client-techx__scroll-sentinel"
                   aria-hidden="true"></div>
                 <p class="client-techx__scroll-hint text-muted small mb-0">Scroll for more…</p>
+              }
+
+              <!-- Side Drawer for Category Services -->
+              @if (selectedDrawerCategory) {
+                <div
+                  class="client-techx__drawer-backdrop"
+                  (click)="closeCategoryDrawer()"
+                  aria-hidden="true"></div>
+                <aside
+                  class="client-techx__drawer"
+                  role="dialog"
+                  aria-modal="true"
+                  [attr.aria-label]="selectedDrawerCategory.name + ' services'">
+                  <div class="client-techx__drawer-header">
+                    <div class="d-flex align-items-center gap-2 min-w-0">
+                      <span class="client-techx__category-avatar client-techx__drawer-avatar">
+                        {{ selectedDrawerCategory.name.charAt(0).toUpperCase() }}
+                      </span>
+                      <div class="min-w-0">
+                        <h4 class="client-techx__drawer-title mb-0 text-truncate">
+                          {{ selectedDrawerCategory.name }}
+                        </h4>
+                        <span class="client-techx__category-meta">
+                          {{ serviceCountLabel(selectedDrawerCategory.services.length) }}
+                          @if (selectedDrawerCategory.totalProjects > 0) {
+                            · {{ projectCountLabel(selectedDrawerCategory.totalProjects) }}
+                          }
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-close client-techx__drawer-close"
+                      aria-label="Close"
+                      (click)="closeCategoryDrawer()"></button>
+                  </div>
+
+                  @if (selectedDrawerCategory.description) {
+                    <div class="client-techx__drawer-desc-box">
+                      <p class="mb-0 text-muted small">
+                        {{ selectedDrawerCategory.description }}
+                      </p>
+                    </div>
+                  }
+
+                  <div class="client-techx__drawer-body">
+                    <h5 class="client-techx__drawer-section-title">Available Services</h5>
+                    @if (selectedDrawerCategory.services.length === 0) {
+                      <div class="text-center py-4 text-muted small">
+                        No services published under this category yet.
+                      </div>
+                    } @else {
+                      <ul class="client-techx__drawer-service-list">
+                        @for (service of selectedDrawerCategory.services; track service.id) {
+                          <li class="client-techx__drawer-service-item">
+                            <div class="client-techx__drawer-service-main">
+                              <div class="client-techx__drawer-service-name">{{ service.name }}</div>
+                              @if (service.description) {
+                                <p class="client-techx__drawer-service-desc">{{ service.description }}</p>
+                              }
+                              @if (service.projectCount > 0) {
+                                <span class="client-techx__service-count">
+                                  {{ projectCountLabel(service.projectCount) }}
+                                </span>
+                              }
+                            </div>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                </aside>
               }
             }
           </div>
@@ -317,7 +365,7 @@
               <div class="text-center py-5 text-muted">Loading projects...</div>
             } @else if (!projectsRefreshing && projectsHasLoaded && publishedProjects.length === 0) {
               <div class="client-techx__empty text-center py-5">
-                <i class="ti ti-briefcase client-techx__empty-icon"></i>
+                <i class="fe fe-briefcase client-techx__empty-icon"></i>
                 <p class="mb-0 text-muted">No published projects match your search.</p>
               </div>
             } @else {

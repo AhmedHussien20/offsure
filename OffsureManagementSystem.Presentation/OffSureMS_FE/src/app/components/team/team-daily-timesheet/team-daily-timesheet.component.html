@@ -196,7 +196,7 @@
                 <div class="d-flex align-items-center gap-2">
                   <span class="timesheet-popup__entry-duration">{{ entryDurationLabel(i) }}</span>
                   @if (popupEntries.length > 1 && !popupFieldsDisabled) {
-                    <button type="button" class="btn btn-sm btn-link text-danger px-0" (click)="removePopupRow(i)">
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removePopupRow(i)">
                       Remove
                     </button>
                   }

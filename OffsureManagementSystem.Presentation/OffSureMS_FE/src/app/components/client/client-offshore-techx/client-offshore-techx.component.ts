@@ -75,6 +75,7 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
 
   private projectCountByServiceId = new Map<number, number>();
   visibleCategories: ShowcaseCategory[] = [];
+  selectedDrawerCategory: ShowcaseCategory | null = null;
   expandedCategoryIds = new Set<number>();
   serviceSearch = '';
   categoryPage = 1;
@@ -210,6 +211,7 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
   }
 
   onTabChange(tab: string | number | null | undefined): void {
+    this.closeCategoryDrawer();
     const next = String(tab ?? 'services') as 'services' | 'team' | 'projects';
     this.activeTab = next;
     this.persistBrowseTab();
@@ -271,6 +273,18 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     return count === 1 ? '1 project' : `${count} projects`;
   }
 
+  openCategoryDrawer(category: ShowcaseCategory): void {
+    this.selectedDrawerCategory = category;
+  }
+
+  closeCategoryDrawer(): void {
+    this.selectedDrawerCategory = null;
+  }
+
+  isCategoryActive(categoryId: number): boolean {
+    return this.selectedDrawerCategory?.id === categoryId;
+  }
+
   toggleCategory(categoryId: number): void {
     if (this.expandedCategoryIds.has(categoryId)) {
       this.expandedCategoryIds.delete(categoryId);
@@ -284,6 +298,7 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
   }
 
   requestService(service: ShowcaseService): void {
+    this.closeCategoryDrawer();
     const prefill: ServiceRequestCreatePrefill = {
       serviceId: service.id,
       title: `${service.name} engagement`,
@@ -360,6 +375,7 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     if (reset) {
       this.categoryPage = 1;
       this.categoriesHasMore = false;
+      this.closeCategoryDrawer();
       if (!keepStale) {
         this.visibleCategories = [];
         this.expandedCategoryIds = new Set();

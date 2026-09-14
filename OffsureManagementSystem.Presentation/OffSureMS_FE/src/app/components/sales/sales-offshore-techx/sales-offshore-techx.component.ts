@@ -73,6 +73,7 @@ export class SalesOffshoreTechxComponent implements OnInit, OnDestroy {
 
   private projectCountByServiceId = new Map<number, number>();
   visibleCategories: ShowcaseCategory[] = [];
+  selectedDrawerCategory: ShowcaseCategory | null = null;
   expandedCategoryIds = new Set<number>();
   serviceSearch = '';
   categoryPage = 1;
@@ -207,6 +208,7 @@ export class SalesOffshoreTechxComponent implements OnInit, OnDestroy {
   }
 
   onTabChange(tab: string | number | null | undefined): void {
+    this.closeCategoryDrawer();
     const next = String(tab ?? 'services') as 'services' | 'team' | 'projects';
     this.activeTab = next;
     this.persistBrowseTab();
@@ -265,6 +267,18 @@ export class SalesOffshoreTechxComponent implements OnInit, OnDestroy {
 
   projectCountLabel(count: number): string {
     return count === 1 ? '1 project' : `${count} projects`;
+  }
+
+  openCategoryDrawer(category: ShowcaseCategory): void {
+    this.selectedDrawerCategory = category;
+  }
+
+  closeCategoryDrawer(): void {
+    this.selectedDrawerCategory = null;
+  }
+
+  isCategoryActive(categoryId: number): boolean {
+    return this.selectedDrawerCategory?.id === categoryId;
   }
 
   toggleCategory(categoryId: number): void {
@@ -343,6 +357,7 @@ export class SalesOffshoreTechxComponent implements OnInit, OnDestroy {
     if (reset) {
       this.categoryPage = 1;
       this.categoriesHasMore = false;
+      this.closeCategoryDrawer();
       if (!keepStale) {
         this.visibleCategories = [];
         this.expandedCategoryIds = new Set();

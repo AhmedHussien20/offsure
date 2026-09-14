@@ -1,10 +1,14 @@
 <div class="modal-header">
-  <h5 class="modal-title">New portfolio</h5>
-  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+  <div>
+    <h5 class="modal-title mb-1">New portfolio</h5>
+    <p class="text-muted small mb-0">Create a new portfolio project with showcase photos for the landing page.</p>
+  </div>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()" aria-label="Close"></button>
 </div>
 
 <div class="modal-body">
   <form [formGroup]="form" class="generic-form">
+    <!-- Service Category & Service -->
     <div class="row gy-3 gx-3 align-items-start mb-2">
       <div class="col-md-6">
         <app-paginated-select
@@ -28,35 +32,124 @@
       </div>
     </div>
 
+    <!-- Generic form fields: Title, Client Name, Completed Date, Description -->
     @if (formConfig.length) {
       <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
     }
 
-    <div class="mt-3">
-      <label class="form-label fw-semibold">
-        Project photos <span class="text-danger">*</span>
-      </label>
-      <p class="text-muted small mb-2">
-        Add at least one image. These appear on the landing page gallery; visitors can switch between them like a product photo viewer.
-      </p>
-      <input
-        type="file"
-        class="form-control"
-        accept="image/*"
-        multiple
-        (change)="onImagesSelected($event)" />
-      @if (pendingImages.length) {
-        <div class="portfolio-create-previews mt-3">
-          @for (img of pendingImages; track img.previewUrl; let i = $index) {
-            <div class="portfolio-create-preview">
-              <img [src]="img.previewUrl" [alt]="img.altText || 'Preview'" />
-              <button type="button" class="btn btn-sm btn-icon btn-danger" (click)="removePendingImage(i)" title="Remove">
-                <i class="fe fe-x"></i>
-              </button>
+    <!-- Side by side: Project Photos & Publication Status -->
+    <div class="row gy-3 gx-3 align-items-start mt-2">
+      <!-- Left: Project photos -->
+      <div class="col-md-7">
+        <div class="portfolio-side-block">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <label class="form-label fw-semibold mb-0">
+              Project photos <span class="text-danger">*</span>
+            </label>
+            <span class="badge bg-light text-muted border px-2 py-1" *ngIf="pendingImages.length">
+              {{ pendingImages.length }} {{ pendingImages.length === 1 ? 'photo' : 'photos' }}
+            </span>
+          </div>
+
+          <!-- Dropzone -->
+          <div
+            class="portfolio-dropzone"
+            [class.drag-over]="isDragging"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            (click)="fileInput.click()"
+            role="button"
+            tabindex="0">
+            <input
+              #fileInput
+              type="file"
+              class="d-none"
+              accept="image/*"
+              multiple
+              (change)="onImagesSelected($event)" />
+
+            <div class="portfolio-dropzone__content">
+              <div class="portfolio-dropzone__icon-wrap">
+                <i class="fe fe-upload-cloud"></i>
+              </div>
+              <div class="portfolio-dropzone__title">
+                <span class="text-primary fw-semibold">Upload photos</span> or drag & drop
+              </div>
+              <div class="text-muted small">PNG, JPG, WEBP (multiple allowed)</div>
+            </div>
+          </div>
+
+          <!-- Previews -->
+          @if (pendingImages.length) {
+            <div class="portfolio-create-previews mt-2">
+              @for (img of pendingImages; track img.previewUrl; let i = $index) {
+                <div class="portfolio-create-preview" [title]="img.altText || 'Preview'">
+                  <img [src]="img.previewUrl" [alt]="img.altText || 'Preview'" />
+                  <span class="portfolio-create-preview__badge" *ngIf="i === 0">Cover</span>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-icon btn-danger remove-btn"
+                    (click)="removePendingImage(i, $event)"
+                    title="Remove image">
+                    <i class="fe fe-x"></i>
+                  </button>
+                </div>
+              }
             </div>
           }
         </div>
-      }
+      </div>
+
+      <!-- Right: Publication Status -->
+      <div class="col-md-5">
+        <div class="portfolio-side-block">
+          <label class="form-label fw-semibold mb-2">
+            Publication Status
+          </label>
+
+          <div
+            class="portfolio-publish-card"
+            [class.portfolio-publish-card--active]="form.get('isPublished')?.value"
+            (click)="togglePublished()"
+            role="button"
+            tabindex="0">
+
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="portfolio-publish-card__icon" [class.portfolio-publish-card__icon--active]="form.get('isPublished')?.value">
+                  <i class="fe fe-globe"></i>
+                </div>
+                <div>
+                  <div class="fw-semibold text-dark fs-14">
+                    {{ form.get('isPublished')?.value ? 'Published' : 'Draft' }}
+                  </div>
+                  <div class="text-muted fs-12">
+                    {{ form.get('isPublished')?.value ? 'Visible to public' : 'Hidden from public' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Switch -->
+              <div class="form-check form-switch mb-0">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  id="isPublishedToggle"
+                  formControlName="isPublished"
+                  (click)="$event.stopPropagation()" />
+              </div>
+            </div>
+
+            <p class="text-muted fs-12 mb-0">
+              {{ form.get('isPublished')?.value
+                ? 'This project will immediately appear in the landing page gallery.'
+                : 'Project stays saved as a draft. You can publish it anytime.' }}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </form>
 </div>
@@ -68,6 +161,12 @@
     class="btn btn-primary"
     [disabled]="creating || form.invalid || pendingImages.length === 0"
     (click)="save()">
-    {{ creating ? 'Saving...' : 'Save' }}
+    @if (creating) {
+      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      Saving...
+    } @else {
+      <i class="fe fe-check me-1"></i>
+      Save portfolio
+    }
   </button>
 </div>

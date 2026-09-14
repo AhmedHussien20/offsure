@@ -114,11 +114,6 @@ export class AdminPortfolioCreateComponent implements OnInit, OnDestroy {
         label: 'Completed date',
         icon: 'fe fe-calendar',
       },
-      {
-        type: 'checkbox',
-        name: 'isPublished',
-        label: 'Published',
-      },
     ];
 
     this.form
@@ -136,9 +131,36 @@ export class AdminPortfolioCreateComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  isDragging = false;
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+    const files = Array.from(event.dataTransfer?.files ?? []);
+    this.addFiles(files);
+  }
+
   onImagesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
+    this.addFiles(files);
+    input.value = '';
+  }
+
+  private addFiles(files: File[]): void {
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
         continue;
@@ -149,14 +171,21 @@ export class AdminPortfolioCreateComponent implements OnInit, OnDestroy {
         altText: file.name.replace(/\.[^.]+$/, ''),
       });
     }
-    input.value = '';
   }
 
-  removePendingImage(index: number): void {
+  removePendingImage(index: number, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     const removed = this.pendingImages.splice(index, 1)[0];
     if (removed?.previewUrl) {
       URL.revokeObjectURL(removed.previewUrl);
     }
+  }
+
+  togglePublished(): void {
+    const current = !!this.form.get('isPublished')?.value;
+    this.form.patchValue({ isPublished: !current });
   }
 
   save(): void {
