@@ -4,5 +4,6 @@ namespace OffsureManagementSystem.Application.Common
     {
         public const string ServiceProviderName = "Offshore TechX LLC";
         public const string ClientPortalName = "Offshore TechX LLC Client Portal";
+        public const string GeneralServiceDisplayName = "General / Custom Request";
     }
 }

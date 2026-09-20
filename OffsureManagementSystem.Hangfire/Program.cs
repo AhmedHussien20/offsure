@@ -21,6 +21,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings")
 );
+builder.Services.AddHttpClient();
 builder.Services.AddTransient<IEmailService, EmailService>();
 
 builder.Services.AddHangfire(cfg =>

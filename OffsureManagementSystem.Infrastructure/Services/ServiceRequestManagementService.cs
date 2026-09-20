@@ -409,7 +409,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ClientName = request.Client?.CompanyName ?? string.Empty,
                 ClientMemberName = UserDisplayName.FromUser(request.Client?.User),
                 ServiceId = request.ServiceId,
-                ServiceName = request.Service?.Name ?? string.Empty,
+                ServiceName = ResolveServiceName(request),
                 ServiceCategoryName = request.Service?.ServiceCategory?.Name ?? string.Empty,
                 Title = request.Title,
                 Description = request.Description,
@@ -436,7 +436,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ClientMemberName = UserDisplayName.FromUser(request.Client?.User),
                 ClientEmail = request.Client?.User?.Email ?? string.Empty,
                 ServiceId = request.ServiceId,
-                ServiceName = request.Service?.Name ?? string.Empty,
+                ServiceName = ResolveServiceName(request),
                 ServiceCategoryName = request.Service?.ServiceCategory?.Name ?? string.Empty,
                 Title = request.Title,
                 Description = request.Description,
@@ -453,5 +453,10 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     : string.Empty
             };
         }
+
+        private static string ResolveServiceName(ServiceRequest request)
+            => string.IsNullOrWhiteSpace(request.Service?.Name)
+                ? BrandingConstants.GeneralServiceDisplayName
+                : request.Service.Name;
     }
 }

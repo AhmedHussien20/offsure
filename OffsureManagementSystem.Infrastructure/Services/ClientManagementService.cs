@@ -989,7 +989,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
             {
                 Id = request.Id,
                 ServiceId = request.ServiceId,
-                ServiceName = request.Service?.Name ?? string.Empty,
+                ServiceName = string.IsNullOrWhiteSpace(request.Service?.Name)
+                    ? BrandingConstants.GeneralServiceDisplayName
+                    : request.Service.Name,
                 Title = request.Title,
                 Status = request.Status,
                 RequestedDate = request.RequestedDate,

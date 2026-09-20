@@ -1,19 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace OffsureManagementSystem.Infrastructure
 {
     public class EmailSettings
     {
-        public string From { get; set; }
-        public string To { get; set; }
-        public string Password { get; set; }
-        public string Host { get; set; }
-        public int Port { get; set; }
-        public bool EnableSSL { get; set; } = true;
+        public string ApiKey { get; set; } = string.Empty;
+        public string From { get; set; } = "notify@offshoretechx.net";
+        public string FromName { get; set; } = "Offshore TechX LLC";
+        public string To { get; set; } = string.Empty;
+        public string ApiUrl { get; set; } = "https://api.brevo.com/v3/smtp/email";
     }
-
 }

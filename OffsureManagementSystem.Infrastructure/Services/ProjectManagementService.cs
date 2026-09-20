@@ -1791,9 +1791,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
         }
 
         private static string ResolveProjectServiceName(Project project)
-            => project.Service?.Name
-               ?? project.ServiceRequest?.Service?.Name
-               ?? string.Empty;
+        {
+            var name = project.Service?.Name ?? project.ServiceRequest?.Service?.Name;
+            return string.IsNullOrWhiteSpace(name)
+                ? BrandingConstants.GeneralServiceDisplayName
+                : name;
+        }
 
         private static ProjectDto MapProjectList(Project project)
         {

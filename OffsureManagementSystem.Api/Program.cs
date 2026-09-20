@@ -33,6 +33,7 @@ namespace OffsureManagementSystem.API
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddHttpClient();
             builder.Services.AddDI();
 
 

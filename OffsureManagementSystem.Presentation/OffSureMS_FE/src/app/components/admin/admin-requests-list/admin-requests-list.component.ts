@@ -277,7 +277,7 @@ export class AdminRequestsListComponent implements OnInit, OnDestroy {
           const paged = res.data;
           this.data = (paged?.data ?? []).map(r => ({
             ...r,
-            serviceName: r.serviceName?.trim() || 'General Request',
+            serviceName: r.serviceName?.trim() || 'General / Custom Request',
           }));
           this.totalItems = paged?.totalCount ?? 0;
           this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.entries));
