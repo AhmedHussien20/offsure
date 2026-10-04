@@ -46,6 +46,13 @@ namespace OffsureManagementSystem.Application.Common
         public static decimal CalculateHours(int startMinutes, int endMinutes)
             => Math.Round((endMinutes - startMinutes) / 60m, 2, MidpointRounding.AwayFromZero);
 
+        /// <summary>
+        /// Unrounded duration. Use for anything summed or shown to users: the stored 2-decimal
+        /// value drifts (10 min = 0.17h), so totals converted back to minutes would be off.
+        /// </summary>
+        public static decimal DurationHours(int startMinutes, int endMinutes)
+            => (endMinutes - startMinutes) / 60m;
+
         public static void ValidateEntryTimes(int startMinutes, int endMinutes)
         {
             if (startMinutes % 10 != 0 || endMinutes % 10 != 0)

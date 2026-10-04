@@ -5,6 +5,7 @@ import {
   TimesheetReportDto,
 } from 'app/core/models/timesheets/timesheet.models';
 import { sumResourceLineCost } from './timesheet-report.util';
+import { formatTotalLogged } from './timesheet-time.util';
 
 export type TimesheetExportFormat = 'excel' | 'pdf';
 /** A = hours only; B = gross hourly rate + gross total cost */
@@ -48,7 +49,7 @@ function formatCurrency(value: number): string {
 }
 
 function formatHours(value: number): string {
-  return `${value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h`;
+  return formatTotalLogged(value);
 }
 
 function buildBaseFileName(report: TimesheetReportDto, contentMode: TimesheetExportContentMode): string {

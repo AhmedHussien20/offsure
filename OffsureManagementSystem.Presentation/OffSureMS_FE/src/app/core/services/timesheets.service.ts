@@ -23,10 +23,15 @@ export class TimesheetsService {
     private projectCache: ProjectFetchCache
   ) {}
 
-  getDay(projectId: number, workDate: string): Observable<BaseResponse<TimesheetDayDto | null>> {
+  getDay(
+    projectId: number,
+    workDate: string,
+    teamMemberId?: number | null
+  ): Observable<BaseResponse<TimesheetDayDto | null>> {
     return this.api.get<BaseResponse<TimesheetDayDto | null>>(this.service, 'day', {
       projectId,
       workDate,
+      teamMemberId: teamMemberId ?? undefined,
     });
   }
 
@@ -82,6 +87,7 @@ export class TimesheetsService {
       period: request.period,
       teamMemberId: request.teamMemberId,
       resourceManagerUserId: request.resourceManagerUserId,
+      resourceManagerHoursOnly: request.resourceManagerHoursOnly || undefined,
       rangeStart: request.rangeStart,
       rangeEnd: request.rangeEnd,
     });

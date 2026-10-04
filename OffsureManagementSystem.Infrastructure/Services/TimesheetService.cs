@@ -44,31 +44,34 @@ namespace OffsureManagementSystem.Infrastructure.Services
             _clientAccess = clientAccess;
         }
 
-        public async Task<TimesheetDayDto?> GetTimesheetDayAsync(int userId, int projectId, DateOnly workDate)
+        public async Task<TimesheetDayDto?> GetTimesheetDayAsync(
+            int userId,
+            string role,
+            int projectId,
+            DateOnly workDate,
+            int? teamMemberId)
         {
-            var member = await GetTeamMemberForUserAsync(userId);
-            var project = await GetHourlyProjectAsync(projectId);
-            await EnsureAssignedToHourlyProjectAsync(projectId, member.Id);
+            await GetHourlyProjectAsync(projectId);
+            var owner = await ResolveLoggingOwnerAsync(userId, role, projectId, teamMemberId);
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
             if (workDate > today)
                 return null;
 
-            var sheet = await LoadTimesheetAsync(projectId, member.Id, workDate);
+            var sheet = await LoadTimesheetAsync(projectId, owner, workDate);
             if (sheet is null)
                 return null;
 
             return MapTimesheetDay(sheet);
         }
 
-        public async Task<TimesheetDayDto> UpsertTimesheetDayAsync(int userId, UpsertTimesheetDto dto)
+        public async Task<TimesheetDayDto> UpsertTimesheetDayAsync(int userId, string role, UpsertTimesheetDto dto)
         {
             if (dto.ProjectId <= 0)
                 throw new AppException("Invalid request.", 400);
 
-            var member = await GetTeamMemberForUserAsync(userId);
             var project = await GetHourlyProjectAsync(dto.ProjectId);
-            await EnsureAssignedToHourlyProjectAsync(dto.ProjectId, member.Id);
+            var owner = await ResolveLoggingOwnerAsync(userId, role, dto.ProjectId, dto.TeamMemberId);
             EnsureProjectAllowsTimesheetLogging(project);
             await EnsureWorkDateAllowedAsync(project, dto.WorkDate);
 
@@ -76,7 +79,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (parsed.TotalHours > 24m)
                 throw new AppException("Total hours in a day cannot exceed 24.", 400);
 
-            var sheet = await GetOrCreateTimesheetAsync(dto.ProjectId, member.Id, dto.WorkDate);
+            var sheet = await GetOrCreateTimesheetAsync(dto.ProjectId, owner, dto.WorkDate);
 
             foreach (var existing in sheet.Entries.Where(e => !e.IsDeleted).ToList())
             {
@@ -91,23 +94,22 @@ namespace OffsureManagementSystem.Infrastructure.Services
             sheet.UpdatedAt = DateTime.UtcNow;
             await _timesheetRepo.SaveChangesAsync();
 
-            var reloaded = await LoadTimesheetAsync(dto.ProjectId, member.Id, dto.WorkDate);
+            var reloaded = await LoadTimesheetAsync(dto.ProjectId, owner, dto.WorkDate);
             return MapTimesheetDay(reloaded!);
         }
 
-        public async Task<TimesheetDayDto> AppendTimesheetEntriesAsync(int userId, AppendTimesheetEntriesDto dto)
+        public async Task<TimesheetDayDto> AppendTimesheetEntriesAsync(int userId, string role, AppendTimesheetEntriesDto dto)
         {
             if (dto.ProjectId <= 0)
                 throw new AppException("Invalid request.", 400);
 
-            var member = await GetTeamMemberForUserAsync(userId);
             var project = await GetHourlyProjectAsync(dto.ProjectId);
-            await EnsureAssignedToHourlyProjectAsync(dto.ProjectId, member.Id);
+            var owner = await ResolveLoggingOwnerAsync(userId, role, dto.ProjectId, dto.TeamMemberId);
             EnsureProjectAllowsTimesheetLogging(project);
             await EnsureWorkDateAllowedAsync(project, dto.WorkDate);
 
             var parsed = ParseAndValidateEntries(dto.Entries);
-            var sheet = await GetOrCreateTimesheetAsync(dto.ProjectId, member.Id, dto.WorkDate);
+            var sheet = await GetOrCreateTimesheetAsync(dto.ProjectId, owner, dto.WorkDate);
             var existingEntries = sheet.Entries.Where(e => !e.IsDeleted).ToList();
 
             var combinedSlots = existingEntries
@@ -125,17 +127,16 @@ namespace OffsureManagementSystem.Infrastructure.Services
             sheet.UpdatedAt = DateTime.UtcNow;
             await _timesheetRepo.SaveChangesAsync();
 
-            var reloaded = await LoadTimesheetAsync(dto.ProjectId, member.Id, dto.WorkDate);
+            var reloaded = await LoadTimesheetAsync(dto.ProjectId, owner, dto.WorkDate);
             return MapTimesheetDay(reloaded!);
         }
 
         public async Task<TimesheetDayDto> UpdateTimesheetEntryAsync(
             int userId,
+            string role,
             int entryId,
             UpdateTimesheetEntryDto dto)
         {
-            var member = await GetTeamMemberForUserAsync(userId);
-
             var entry = await _entryRepo
                 .Query()
                 .IgnoreQueryFilters()
@@ -145,11 +146,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (entry?.Timesheet is null || entry.Timesheet.IsDeleted)
                 throw new AppException("Time entry not found.", 404);
 
-            if (entry.Timesheet.TeamMemberId != member.Id)
-                throw new AppException("You can only edit your own time entries.", 403);
-
             var project = await GetHourlyProjectAsync(entry.Timesheet.ProjectId);
-            await EnsureAssignedToHourlyProjectAsync(entry.Timesheet.ProjectId, member.Id);
+            var owner = await ResolveOwnerForExistingSheetAsync(userId, role, entry.Timesheet);
             EnsureProjectAllowsTimesheetLogging(project);
             await EnsureWorkDateAllowedAsync(project, entry.Timesheet.WorkDate);
 
@@ -195,15 +193,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             var reloaded = await LoadTimesheetAsync(
                 entry.Timesheet.ProjectId,
-                member.Id,
+                owner,
                 entry.Timesheet.WorkDate);
             return MapTimesheetDay(reloaded!);
         }
 
-        public async Task<TimesheetDayDto> DeleteTimesheetEntryAsync(int userId, int entryId)
+        public async Task<TimesheetDayDto> DeleteTimesheetEntryAsync(int userId, string role, int entryId)
         {
-            var member = await GetTeamMemberForUserAsync(userId);
-
             var entry = await _entryRepo
                 .Query()
                 .IgnoreQueryFilters()
@@ -213,11 +209,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (entry?.Timesheet is null || entry.Timesheet.IsDeleted)
                 throw new AppException("Time entry not found.", 404);
 
-            if (entry.Timesheet.TeamMemberId != member.Id)
-                throw new AppException("You can only delete your own time entries.", 403);
-
             var project = await GetHourlyProjectAsync(entry.Timesheet.ProjectId);
-            await EnsureAssignedToHourlyProjectAsync(entry.Timesheet.ProjectId, member.Id);
+            var owner = await ResolveOwnerForExistingSheetAsync(userId, role, entry.Timesheet);
             EnsureProjectAllowsTimesheetLogging(project);
 
             var projectId = entry.Timesheet.ProjectId;
@@ -231,7 +224,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             await _timesheetRepo.SaveChangesAsync();
 
-            var reloaded = await LoadTimesheetAsync(projectId, member.Id, workDate);
+            var reloaded = await LoadTimesheetAsync(projectId, owner, workDate);
             return MapTimesheetDay(reloaded!);
         }
 
@@ -258,12 +251,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 projectStart,
                 today);
 
+            int? ownRmUserId = isResourceManager ? userId : null;
             var weekEntries = FilterEntriesForRole(
                 await LoadEntryRowsAsync(projectId, null, weekStart, today),
-                allowedIds);
+                allowedIds,
+                ownRmUserId);
             var allEntries = FilterEntriesForRole(
                 await LoadEntryRowsAsync(projectId, null, projectStart, today),
-                allowedIds);
+                allowedIds,
+                ownRmUserId);
 
             var totalHours = allEntries.Sum(e => e.Hours);
             var weekHours = weekEntries.Sum(e => e.Hours);
@@ -295,21 +291,38 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .GroupBy(a => a.TeamMemberId)
                 .ToDictionary(g => g.Key, g => g.First());
 
+            var rmCostRates = await LoadResourceManagerCostRatesAsync(projectId);
+
             var resources = allEntries
-                .GroupBy(e => e.TeamMemberId)
+                .GroupBy(e => new { e.TeamMemberId, e.ResourceManagerUserId })
                 .Select(g =>
                 {
-                    assignmentMap.TryGetValue(g.Key, out var assignment);
+                    var totalHoursForOwner = g.Sum(e => e.Hours);
+
+                    if (g.Key.TeamMemberId is null)
+                    {
+                        rmCostRates.TryGetValue(g.Key.ResourceManagerUserId ?? 0, out var rmRate);
+                        return new HourlyProjectResourceSummaryDto
+                        {
+                            ResourceManagerUserId = g.Key.ResourceManagerUserId,
+                            TeamMemberName = g.First().TeamMemberName,
+                            Role = "Resource Manager",
+                            CostRate = isClient ? null : rmRate,
+                            TotalHours = totalHoursForOwner
+                        };
+                    }
+
+                    assignmentMap.TryGetValue(g.Key.TeamMemberId.Value, out var assignment);
                     return new HourlyProjectResourceSummaryDto
                     {
-                        TeamMemberId = g.Key,
+                        TeamMemberId = g.Key.TeamMemberId,
                         TeamMemberName = assignment is not null
                             ? UserDisplayName.FromTeamMember(assignment.TeamMember)
                             : g.First().TeamMemberName,
                         Role = assignment?.Role ?? "—",
                         // Never expose internal assignment cost rates to clients.
                         CostRate = isClient ? null : assignment?.HourlyRate,
-                        TotalHours = g.Sum(e => e.Hours)
+                        TotalHours = totalHoursForOwner
                     };
                 })
                 .Where(r => r.TotalHours > 0)
@@ -403,7 +416,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             if (isResourceManager)
             {
                 var allowedIds = await GetManagedTeamMemberIdsAsync(userId, request.ProjectId);
-                query = query.Where(e => allowedIds.Contains(e.TeamMemberId)).ToList();
+                query = FilterEntriesForRole(query, allowedIds, userId);
             }
 
             if (request.ResourceManagerUserId.HasValue && isAdministrator)
@@ -422,7 +435,14 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 var rmTeamIds = await GetManagedTeamMemberIdsAsync(
                     request.ResourceManagerUserId.Value,
                     request.ProjectId);
-                query = query.Where(e => rmTeamIds.Contains(e.TeamMemberId)).ToList();
+                query = FilterEntriesForRole(query, rmTeamIds, request.ResourceManagerUserId.Value);
+            }
+
+            if (request.ResourceManagerHoursOnly && (isAdministrator || isResourceManager))
+            {
+                if (teamMemberFilter.HasValue)
+                    throw new AppException("Choose either a team member or resource manager hours, not both.", 400);
+                query = query.Where(e => e.ResourceManagerUserId.HasValue).ToList();
             }
 
             var rows = query
@@ -441,9 +461,15 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 var costRates = await _assignmentRepo
                     .GetAll(a => a.ProjectId == request.ProjectId && a.IsActive)
                     .ToDictionaryAsync(a => a.TeamMemberId, a => a.HourlyRate ?? 0m);
+                var rmCostRates = await LoadResourceManagerCostRatesAsync(request.ProjectId);
 
                 totalCost = rows.Sum(r =>
-                    costRates.TryGetValue(r.TeamMemberId, out var rate) ? rate * r.Hours : 0m);
+                {
+                    decimal? rate = r.TeamMemberId.HasValue
+                        ? costRates.TryGetValue(r.TeamMemberId.Value, out var memberRate) ? memberRate : null
+                        : rmCostRates.TryGetValue(r.ResourceManagerUserId ?? 0, out var rmRate) ? rmRate : null;
+                    return (rate ?? 0m) * r.Hours;
+                });
             }
 
             // Billing estimate (project hourly rate × hours): Admin revenue + Client cost tracking.
@@ -469,6 +495,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 {
                     WorkDate = r.WorkDate,
                     TeamMemberId = r.TeamMemberId,
+                    ResourceManagerUserId = r.ResourceManagerUserId,
                     TeamMemberName = r.TeamMemberName,
                     StartTime = TimesheetTimeHelper.FormatTime(r.StartMinutes),
                     EndTime = TimesheetTimeHelper.FormatTime(r.EndMinutes),
@@ -476,6 +503,85 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     Hours = r.Hours
                 }).ToList()
             };
+        }
+
+        /// <summary>
+        /// Who a logging request writes to. Team members always log their own time; resource managers
+        /// log their own time (teamMemberId null) or on behalf of a team member they manage.
+        /// </summary>
+        private async Task<TimesheetOwner> ResolveLoggingOwnerAsync(
+            int userId,
+            string role,
+            int projectId,
+            int? teamMemberId)
+        {
+            if (IsResourceManagerRole(role))
+            {
+                if (teamMemberId.HasValue)
+                {
+                    await EnsureManagedByResourceManagerAsync(userId, teamMemberId.Value);
+                    await EnsureAssignedToHourlyProjectAsync(projectId, teamMemberId.Value);
+                    return new TimesheetOwner(teamMemberId.Value, null);
+                }
+
+                await EnsureResourceManagerOnProjectAsync(userId, projectId);
+                return new TimesheetOwner(null, userId);
+            }
+
+            var member = await GetTeamMemberForUserAsync(userId);
+            if (teamMemberId.HasValue && teamMemberId.Value != member.Id)
+                throw new AppException("You can only log your own time.", 403);
+
+            await EnsureAssignedToHourlyProjectAsync(projectId, member.Id);
+            return new TimesheetOwner(member.Id, null);
+        }
+
+        private async Task<TimesheetOwner> ResolveOwnerForExistingSheetAsync(
+            int userId,
+            string role,
+            TimesheetEntity sheet)
+        {
+            if (sheet.ResourceManagerUserId.HasValue
+                && (!IsResourceManagerRole(role) || sheet.ResourceManagerUserId.Value != userId))
+            {
+                throw new AppException("You can only change your own time entries.", 403);
+            }
+
+            return await ResolveLoggingOwnerAsync(userId, role, sheet.ProjectId, sheet.TeamMemberId);
+        }
+
+        private static bool IsResourceManagerRole(string role)
+            => string.Equals(role, "ResourceManager", StringComparison.OrdinalIgnoreCase);
+
+        private async Task EnsureManagedByResourceManagerAsync(int resourceManagerUserId, int teamMemberId)
+        {
+            var managed = await _teamMemberRepo
+                .Query()
+                .AnyAsync(t => t.Id == teamMemberId && t.ResourceManagerId == resourceManagerUserId && !t.IsDeleted);
+
+            if (!managed)
+                throw new AppException("You can only log time for your own team members.", 403);
+        }
+
+        private async Task EnsureResourceManagerOnProjectAsync(int resourceManagerUserId, int projectId)
+        {
+            var onProject = await _projectResourceManagerRepo
+                .GetAll(r =>
+                    r.ProjectId == projectId
+                    && r.IsActive
+                    && !r.IsDeleted
+                    && r.ResourceManagerUserId == resourceManagerUserId)
+                .AnyAsync();
+
+            if (!onProject)
+                throw new AppException("You are not a resource manager on this project.", 403);
+        }
+
+        private async Task<Dictionary<int, decimal?>> LoadResourceManagerCostRatesAsync(int projectId)
+        {
+            return await _projectResourceManagerRepo
+                .GetAll(r => r.ProjectId == projectId && r.IsActive && !r.IsDeleted)
+                .ToDictionaryAsync(r => r.ResourceManagerUserId, r => r.HourlyCostRate);
         }
 
         private async Task<TeamMember> GetTeamMemberForUserAsync(int userId)
@@ -533,7 +639,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return project;
         }
 
-        private async Task<TimesheetEntity> GetOrCreateTimesheetAsync(int projectId, int teamMemberId, DateOnly workDate)
+        private async Task<TimesheetEntity> GetOrCreateTimesheetAsync(int projectId, TimesheetOwner owner, DateOnly workDate)
         {
             var sheet = await _timesheetRepo
                 .Query()
@@ -541,7 +647,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(t => t.Entries.Where(e => !e.IsDeleted))
                 .FirstOrDefaultAsync(t =>
                     t.ProjectId == projectId
-                    && t.TeamMemberId == teamMemberId
+                    && t.TeamMemberId == owner.TeamMemberId
+                    && t.ResourceManagerUserId == owner.ResourceManagerUserId
                     && t.WorkDate == workDate
                     && !t.IsDeleted);
 
@@ -551,7 +658,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
             sheet = new TimesheetEntity
             {
                 ProjectId = projectId,
-                TeamMemberId = teamMemberId,
+                TeamMemberId = owner.TeamMemberId,
+                ResourceManagerUserId = owner.ResourceManagerUserId,
                 WorkDate = workDate,
                 CreatedAt = DateTime.UtcNow
             };
@@ -626,7 +734,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             return null;
         }
 
-        private async Task<TimesheetEntity?> LoadTimesheetAsync(int projectId, int teamMemberId, DateOnly workDate)
+        private async Task<TimesheetEntity?> LoadTimesheetAsync(int projectId, TimesheetOwner owner, DateOnly workDate)
         {
             return await _timesheetRepo
                 .Query()
@@ -634,13 +742,20 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(t => t.Project)
                 .Include(t => t.TeamMember)
                 .ThenInclude(m => m!.User)
+                .Include(t => t.ResourceManagerUser)
                 .Include(t => t.Entries.Where(e => !e.IsDeleted))
                 .FirstOrDefaultAsync(t =>
                     t.ProjectId == projectId
-                    && t.TeamMemberId == teamMemberId
+                    && t.TeamMemberId == owner.TeamMemberId
+                    && t.ResourceManagerUserId == owner.ResourceManagerUserId
                     && t.WorkDate == workDate
                     && !t.IsDeleted);
         }
+
+        private static string ResolveOwnerName(TimesheetEntity sheet)
+            => sheet.TeamMember is not null
+                ? UserDisplayName.FromTeamMember(sheet.TeamMember)
+                : UserDisplayName.FromUser(sheet.ResourceManagerUser);
 
         private static TimesheetDayDto MapTimesheetDay(TimesheetEntity sheet)
         {
@@ -653,7 +768,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     StartTime = TimesheetTimeHelper.FormatTime(e.StartMinutes),
                     EndTime = TimesheetTimeHelper.FormatTime(e.EndMinutes),
                     Description = e.Description,
-                    Hours = e.Hours
+                    Hours = TimesheetTimeHelper.DurationHours(e.StartMinutes, e.EndMinutes)
                 })
                 .ToList();
 
@@ -663,7 +778,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 ProjectId = sheet.ProjectId,
                 ProjectName = sheet.Project?.Name ?? string.Empty,
                 TeamMemberId = sheet.TeamMemberId,
-                TeamMemberName = UserDisplayName.FromTeamMember(sheet.TeamMember),
+                ResourceManagerUserId = sheet.ResourceManagerUserId,
+                TeamMemberName = ResolveOwnerName(sheet),
                 WorkDate = sheet.WorkDate,
                 TotalHours = entries.Sum(e => e.Hours),
                 Entries = entries
@@ -709,6 +825,8 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 .Include(e => e.Timesheet)
                 .ThenInclude(t => t!.TeamMember)
                 .ThenInclude(m => m!.User)
+                .Include(e => e.Timesheet)
+                .ThenInclude(t => t!.ResourceManagerUser)
                 .Where(e =>
                     !e.IsDeleted
                     && e.Timesheet != null
@@ -727,11 +845,12 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 {
                     WorkDate = e.Timesheet!.WorkDate,
                     TeamMemberId = e.Timesheet.TeamMemberId,
-                    TeamMemberName = UserDisplayName.FromTeamMember(e.Timesheet.TeamMember),
+                    ResourceManagerUserId = e.Timesheet.ResourceManagerUserId,
+                    TeamMemberName = ResolveOwnerName(e.Timesheet),
                     StartMinutes = e.StartMinutes,
                     EndMinutes = e.EndMinutes,
                     Description = e.Description,
-                    Hours = e.Hours
+                    Hours = TimesheetTimeHelper.DurationHours(e.StartMinutes, e.EndMinutes)
                 })
                 .ToList();
         }
@@ -760,20 +879,32 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     && e.Timesheet != null
                     && !e.Timesheet.IsDeleted
                     && e.Timesheet.ProjectId == projectId
-                    && ids.Contains(e.Timesheet.TeamMemberId))
-                .Select(e => e.Timesheet!.TeamMemberId)
+                    && e.Timesheet.TeamMemberId.HasValue
+                    && ids.Contains(e.Timesheet.TeamMemberId.Value))
+                .Select(e => e.Timesheet!.TeamMemberId!.Value)
                 .Distinct()
                 .ToListAsync();
 
             return assigned.Concat(withLoggedHours).ToHashSet();
         }
 
-        private static List<EntryRow> FilterEntriesForRole(List<EntryRow> entries, HashSet<int>? allowedIds)
+        /// <summary>
+        /// Resource manager scope: their managed team members plus their own logged time.
+        /// A null <paramref name="allowedIds"/> means no restriction.
+        /// </summary>
+        private static List<EntryRow> FilterEntriesForRole(
+            List<EntryRow> entries,
+            HashSet<int>? allowedIds,
+            int? ownResourceManagerUserId)
         {
             if (allowedIds is null)
                 return entries;
 
-            return entries.Where(e => allowedIds.Contains(e.TeamMemberId)).ToList();
+            return entries
+                .Where(e => e.TeamMemberId.HasValue
+                    ? allowedIds.Contains(e.TeamMemberId.Value)
+                    : ownResourceManagerUserId.HasValue && e.ResourceManagerUserId == ownResourceManagerUserId)
+                .ToList();
         }
 
         private async Task EnsureResourceManagerCanAccessProjectAsync(int resourceManagerUserId, int projectId)
@@ -801,10 +932,13 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 throw new AppException("You do not have access to this project.", 403);
         }
 
+        private readonly record struct TimesheetOwner(int? TeamMemberId, int? ResourceManagerUserId);
+
         private sealed class EntryRow
         {
             public DateOnly WorkDate { get; init; }
-            public int TeamMemberId { get; init; }
+            public int? TeamMemberId { get; init; }
+            public int? ResourceManagerUserId { get; init; }
             public string TeamMemberName { get; init; } = string.Empty;
             public int StartMinutes { get; init; }
             public int EndMinutes { get; init; }

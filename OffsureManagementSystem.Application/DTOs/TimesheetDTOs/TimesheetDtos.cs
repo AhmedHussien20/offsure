@@ -11,6 +11,8 @@ namespace OffsureManagementSystem.Application.DTOs.TimesheetDTOs
     public class UpsertTimesheetDto
     {
         public int ProjectId { get; set; }
+        /// <summary>Resource managers only: log on behalf of a managed team member. Null = own time.</summary>
+        public int? TeamMemberId { get; set; }
         public DateOnly WorkDate { get; set; }
         public List<UpsertTimesheetEntryDto> Entries { get; set; } = new();
     }
@@ -18,6 +20,8 @@ namespace OffsureManagementSystem.Application.DTOs.TimesheetDTOs
     public class AppendTimesheetEntriesDto
     {
         public int ProjectId { get; set; }
+        /// <summary>Resource managers only: log on behalf of a managed team member. Null = own time.</summary>
+        public int? TeamMemberId { get; set; }
         public DateOnly WorkDate { get; set; }
         public List<UpsertTimesheetEntryDto> Entries { get; set; } = new();
     }
@@ -43,7 +47,8 @@ namespace OffsureManagementSystem.Application.DTOs.TimesheetDTOs
         public int Id { get; set; }
         public int ProjectId { get; set; }
         public string ProjectName { get; set; } = string.Empty;
-        public int TeamMemberId { get; set; }
+        public int? TeamMemberId { get; set; }
+        public int? ResourceManagerUserId { get; set; }
         public string TeamMemberName { get; set; } = string.Empty;
         public DateOnly WorkDate { get; set; }
         public decimal TotalHours { get; set; }
@@ -63,6 +68,8 @@ namespace OffsureManagementSystem.Application.DTOs.TimesheetDTOs
         public TimesheetReportPeriod Period { get; set; } = TimesheetReportPeriod.Week;
         public int? TeamMemberId { get; set; }
         public int? ResourceManagerUserId { get; set; }
+        /// <summary>Only Resource Manager-owned hours (combined with ResourceManagerUserId / RM scope).</summary>
+        public bool ResourceManagerHoursOnly { get; set; }
         public DateOnly? RangeStart { get; set; }
         public DateOnly? RangeEnd { get; set; }
     }
@@ -70,7 +77,8 @@ namespace OffsureManagementSystem.Application.DTOs.TimesheetDTOs
     public class TimesheetReportRowDto
     {
         public DateOnly WorkDate { get; set; }
-        public int TeamMemberId { get; set; }
+        public int? TeamMemberId { get; set; }
+        public int? ResourceManagerUserId { get; set; }
         public string TeamMemberName { get; set; } = string.Empty;
         public string StartTime { get; set; } = string.Empty;
         public string EndTime { get; set; } = string.Empty;
@@ -100,7 +108,8 @@ namespace OffsureManagementSystem.Application.DTOs.TimesheetDTOs
 
     public class HourlyProjectResourceSummaryDto
     {
-        public int TeamMemberId { get; set; }
+        public int? TeamMemberId { get; set; }
+        public int? ResourceManagerUserId { get; set; }
         public string TeamMemberName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public decimal? CostRate { get; set; }

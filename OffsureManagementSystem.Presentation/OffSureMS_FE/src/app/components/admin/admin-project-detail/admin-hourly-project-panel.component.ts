@@ -3,6 +3,7 @@ import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/cor
 import { RouterModule } from '@angular/router';
 import { HourlyProjectOverviewDto } from 'app/core/models/timesheets/timesheet.models';
 import { TimesheetsService } from 'app/core/services/timesheets.service';
+import { formatTotalLogged } from 'app/core/utils/timesheet-time.util';
 
 @Component({
   selector: 'app-admin-hourly-project-panel',
@@ -18,6 +19,7 @@ export class AdminHourlyProjectPanelComponent implements OnInit, OnChanges {
 
   overview: HourlyProjectOverviewDto | null = null;
   loading = true;
+  readonly formatHours = formatTotalLogged;
 
   constructor(private timesheetsService: TimesheetsService) {}
 

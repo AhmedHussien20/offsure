@@ -21,48 +21,54 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("day")]
-        [Authorize(Roles = "TeamMember")]
+        [Authorize(Roles = "TeamMember,ResourceManager")]
         public async Task<ActionResult<ApiResponse<TimesheetDayDto?>>> GetDay(
             [FromQuery] int projectId,
-            [FromQuery] DateOnly workDate)
+            [FromQuery] DateOnly workDate,
+            [FromQuery] int? teamMemberId)
         {
-            var sheet = await _timesheetService.GetTimesheetDayAsync(GetCurrentUserId(), projectId, workDate);
+            var sheet = await _timesheetService.GetTimesheetDayAsync(
+                GetCurrentUserId(),
+                GetCurrentRole(),
+                projectId,
+                workDate,
+                teamMemberId);
             return Ok(ApiResponse<TimesheetDayDto?>.Ok(sheet));
         }
 
         [HttpPut("day")]
-        [Authorize(Roles = "TeamMember")]
+        [Authorize(Roles = "TeamMember,ResourceManager")]
         public async Task<ActionResult<ApiResponse<TimesheetDayDto>>> UpsertDay(
             [FromBody] UpsertTimesheetDto dto)
         {
-            var sheet = await _timesheetService.UpsertTimesheetDayAsync(GetCurrentUserId(), dto);
+            var sheet = await _timesheetService.UpsertTimesheetDayAsync(GetCurrentUserId(), GetCurrentRole(), dto);
             return Ok(ApiResponse<TimesheetDayDto>.Ok(sheet));
         }
 
         [HttpPost("day/entries")]
-        [Authorize(Roles = "TeamMember")]
+        [Authorize(Roles = "TeamMember,ResourceManager")]
         public async Task<ActionResult<ApiResponse<TimesheetDayDto>>> AppendEntries(
             [FromBody] AppendTimesheetEntriesDto dto)
         {
-            var sheet = await _timesheetService.AppendTimesheetEntriesAsync(GetCurrentUserId(), dto);
+            var sheet = await _timesheetService.AppendTimesheetEntriesAsync(GetCurrentUserId(), GetCurrentRole(), dto);
             return Ok(ApiResponse<TimesheetDayDto>.Ok(sheet));
         }
 
         [HttpPut("day/entries/{entryId:int}")]
-        [Authorize(Roles = "TeamMember")]
+        [Authorize(Roles = "TeamMember,ResourceManager")]
         public async Task<ActionResult<ApiResponse<TimesheetDayDto>>> UpdateEntry(
             int entryId,
             [FromBody] UpdateTimesheetEntryDto dto)
         {
-            var sheet = await _timesheetService.UpdateTimesheetEntryAsync(GetCurrentUserId(), entryId, dto);
+            var sheet = await _timesheetService.UpdateTimesheetEntryAsync(GetCurrentUserId(), GetCurrentRole(), entryId, dto);
             return Ok(ApiResponse<TimesheetDayDto>.Ok(sheet));
         }
 
         [HttpDelete("day/entries/{entryId:int}")]
-        [Authorize(Roles = "TeamMember")]
+        [Authorize(Roles = "TeamMember,ResourceManager")]
         public async Task<ActionResult<ApiResponse<TimesheetDayDto>>> DeleteEntry(int entryId)
         {
-            var sheet = await _timesheetService.DeleteTimesheetEntryAsync(GetCurrentUserId(), entryId);
+            var sheet = await _timesheetService.DeleteTimesheetEntryAsync(GetCurrentUserId(), GetCurrentRole(), entryId);
             return Ok(ApiResponse<TimesheetDayDto>.Ok(sheet));
         }
 
@@ -84,6 +90,8 @@ namespace OffsureManagementSystem.API.Controllers
             var report = await _timesheetService.GetReportAsync(GetCurrentUserId(), role, request);
             return Ok(ApiResponse<TimesheetReportDto>.Ok(report));
         }
+
+        private string GetCurrentRole() => User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
 
         private int GetCurrentUserId()
         {

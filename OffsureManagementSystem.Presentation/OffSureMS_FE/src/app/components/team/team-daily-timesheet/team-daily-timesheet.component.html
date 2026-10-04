@@ -34,6 +34,20 @@
           </button>
         </div>
 
+        @if (isRmPortal) {
+          <label class="timesheet-shell__date">
+            <span class="timesheet-shell__date-label">Log time for</span>
+            <select
+              class="form-select form-select-sm"
+              [(ngModel)]="logForTeamMemberId"
+              (ngModelChange)="onLogForChange()">
+              @for (option of logForOptions; track option.teamMemberId) {
+                <option [ngValue]="option.teamMemberId">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+        }
+
         @if (calendarView === 'day') {
           <label class="timesheet-shell__date">
             <span class="timesheet-shell__date-label">Date</span>

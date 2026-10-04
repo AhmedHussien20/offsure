@@ -24,7 +24,9 @@ import {
 import {
   buildResourceSummariesFromReport,
   sumResourceLineCost,
+  timesheetPersonKey,
 } from 'app/core/utils/timesheet-report.util';
+import { formatTotalLogged } from 'app/core/utils/timesheet-time.util';
 
 type TimesheetPortal = 'admin' | 'rm' | 'team' | 'client';
 
@@ -52,6 +54,7 @@ export class AdminTimesheetReportComponent implements OnInit {
   period: TimesheetReportPeriod = 'Week';
   teamMemberId: number | null = null;
   resourceManagerUserId: number | null = null;
+  resourceManagerHoursOnly = false;
   rangeFrom: string | null = null;
   rangeTo: string | null = null;
   resourcesExpanded = false;
@@ -62,6 +65,8 @@ export class AdminTimesheetReportComponent implements OnInit {
   portal: TimesheetPortal = 'admin';
 
   readonly resourcePreviewCount = 3;
+  readonly formatHours = formatTotalLogged;
+  readonly personKey = timesheetPersonKey;
 
   readonly defaultPeriod: TimesheetReportPeriod = 'Week';
 
@@ -130,12 +135,12 @@ export class AdminTimesheetReportComponent implements OnInit {
 
   get entryTableData(): TimesheetEntryTableRow[] {
     return (this.report?.rows ?? []).map((row, index) => ({
-      id: `${row.workDate}-${row.teamMemberId}-${row.startTime}-${index}`,
+      id: `${row.workDate}-${timesheetPersonKey(row)}-${row.startTime}-${index}`,
       workDate: row.workDate,
       teamMemberName: row.teamMemberName,
       timeRange: `${row.startTime}-${row.endTime}`,
       description: row.description,
-      hoursDisplay: row.hours.toFixed(1),
+      hoursDisplay: formatTotalLogged(row.hours),
     }));
   }
 
@@ -145,7 +150,9 @@ export class AdminTimesheetReportComponent implements OnInit {
 
   get teamMemberOptions(): { id: number; name: string }[] {
     const source = this.isRmPortal
-      ? (this.overview?.resources ?? []).map(r => ({ id: r.teamMemberId, name: r.teamMemberName }))
+      ? (this.overview?.resources ?? []).flatMap(r =>
+          r.teamMemberId != null ? [{ id: r.teamMemberId, name: r.teamMemberName }] : []
+        )
       : (this.project?.teamMembers ?? []).map(m => ({ id: m.teamMemberId, name: m.teamMemberName }));
 
     const seen = new Set<number>();
@@ -212,13 +219,34 @@ export class AdminTimesheetReportComponent implements OnInit {
   }
 
   get activeScopeLabel(): string | null {
+    if (this.isRmPortal && this.resourceManagerHoursOnly) {
+      return 'My hours';
+    }
     if (this.isRmPortal && this.teamMemberId != null) {
       return this.teamMemberOptions.find(m => m.id === this.teamMemberId)?.name ?? null;
     }
-    if (!this.isRmPortal && !this.isTeamPortal && this.resourceManagerUserId != null) {
-      return this.resourceManagerOptions.find(rm => rm.id === this.resourceManagerUserId)?.name ?? null;
+    if (!this.isRmPortal && !this.isTeamPortal) {
+      const rmName =
+        this.resourceManagerUserId != null
+          ? this.resourceManagerOptions.find(rm => rm.id === this.resourceManagerUserId)?.name ?? null
+          : null;
+      if (this.resourceManagerHoursOnly) {
+        return rmName ? `${rmName} (own hours)` : 'Resource managers’ own hours';
+      }
+      return rmName;
     }
     return null;
+  }
+
+  /** RM portal filter value: a team member id, 'mine' for the RM's own hours, or null for all. */
+  get rmPersonFilter(): number | 'mine' | null {
+    return this.resourceManagerHoursOnly ? 'mine' : this.teamMemberId;
+  }
+
+  onRmPersonFilterChange(value: number | 'mine' | null): void {
+    this.resourceManagerHoursOnly = value === 'mine';
+    this.teamMemberId = value === 'mine' ? null : value;
+    this.onFiltersChange();
   }
 
   get hasExportData(): boolean {
@@ -230,6 +258,7 @@ export class AdminTimesheetReportComponent implements OnInit {
     if (this.rangeFrom || this.rangeTo) return true;
     if (this.isRmPortal && this.teamMemberId != null) return true;
     if (!this.isHoursOnlyPortal && !this.isRmPortal && this.resourceManagerUserId != null) return true;
+    if (!this.isHoursOnlyPortal && this.resourceManagerHoursOnly) return true;
     return false;
   }
 
@@ -237,33 +266,33 @@ export class AdminTimesheetReportComponent implements OnInit {
     this.resourcesExpanded = !this.resourcesExpanded;
   }
 
-  toggleResourceEntries(teamMemberId: number): void {
-    if (this.expandedResourceIds.has(teamMemberId)) {
-      this.expandedResourceIds.delete(teamMemberId);
+  toggleResourceEntries(personKey: number): void {
+    if (this.expandedResourceIds.has(personKey)) {
+      this.expandedResourceIds.delete(personKey);
       return;
     }
-    this.expandedResourceIds.add(teamMemberId);
+    this.expandedResourceIds.add(personKey);
   }
 
-  isResourceEntriesExpanded(teamMemberId: number): boolean {
-    return this.expandedResourceIds.has(teamMemberId);
+  isResourceEntriesExpanded(personKey: number): boolean {
+    return this.expandedResourceIds.has(personKey);
   }
 
-  entriesForResource(teamMemberId: number): TimesheetEntryTableRow[] {
+  entriesForResource(personKey: number): TimesheetEntryTableRow[] {
     return (this.report?.rows ?? [])
-      .filter(row => row.teamMemberId === teamMemberId)
+      .filter(row => timesheetPersonKey(row) === personKey)
       .map((row, index) => ({
-        id: `${row.workDate}-${row.teamMemberId}-${row.startTime}-${index}`,
+        id: `${row.workDate}-${personKey}-${row.startTime}-${index}`,
         workDate: row.workDate,
         teamMemberName: row.teamMemberName,
         timeRange: `${row.startTime}-${row.endTime}`,
         description: row.description,
-        hoursDisplay: row.hours.toFixed(1),
+        hoursDisplay: formatTotalLogged(row.hours),
       }));
   }
 
-  entryCountForResource(teamMemberId: number): number {
-    return this.entriesForResource(teamMemberId).length;
+  entryCountForResource(personKey: number): number {
+    return this.entriesForResource(personKey).length;
   }
 
   get estimatedCost(): number {
@@ -311,6 +340,7 @@ export class AdminTimesheetReportComponent implements OnInit {
     this.rangeTo = null;
     this.teamMemberId = null;
     this.resourceManagerUserId = null;
+    this.resourceManagerHoursOnly = false;
     this.resourcesExpanded = false;
     this.expandedResourceIds.clear();
     this.loadReport();
@@ -524,6 +554,7 @@ export class AdminTimesheetReportComponent implements OnInit {
       teamMemberId: this.isRmPortal ? this.teamMemberId ?? undefined : undefined,
       resourceManagerUserId:
         !this.isRmPortal && !this.isHoursOnlyPortal ? this.resourceManagerUserId ?? undefined : undefined,
+      resourceManagerHoursOnly: !this.isHoursOnlyPortal && this.resourceManagerHoursOnly,
       rangeStart: useCustomRange ? this.rangeFrom! : undefined,
       rangeEnd: useCustomRange ? this.rangeTo! : undefined,
     };

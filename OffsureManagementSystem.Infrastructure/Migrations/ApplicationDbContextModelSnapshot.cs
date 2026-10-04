@@ -1222,7 +1222,10 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TeamMemberId")
+                    b.Property<int?>("ResourceManagerUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TeamMemberId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1236,13 +1239,22 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ResourceManagerUserId");
+
                     b.HasIndex("TeamMemberId");
+
+                    b.HasIndex("ProjectId", "ResourceManagerUserId", "WorkDate")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0 AND [ResourceManagerUserId] IS NOT NULL");
 
                     b.HasIndex("ProjectId", "TeamMemberId", "WorkDate")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("[IsDeleted] = 0 AND [TeamMemberId] IS NOT NULL");
 
-                    b.ToTable("Timesheets");
+                    b.ToTable("Timesheets", t =>
+                        {
+                            t.HasCheckConstraint("CK_Timesheets_SingleOwner", "([TeamMemberId] IS NOT NULL AND [ResourceManagerUserId] IS NULL) OR ([TeamMemberId] IS NULL AND [ResourceManagerUserId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.TimesheetEntry", b =>
@@ -1981,13 +1993,19 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "ResourceManagerUser")
+                        .WithMany()
+                        .HasForeignKey("ResourceManagerUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.TeamMember", "TeamMember")
                         .WithMany()
                         .HasForeignKey("TeamMemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Project");
+
+                    b.Navigation("ResourceManagerUser");
 
                     b.Navigation("TeamMember");
                 });

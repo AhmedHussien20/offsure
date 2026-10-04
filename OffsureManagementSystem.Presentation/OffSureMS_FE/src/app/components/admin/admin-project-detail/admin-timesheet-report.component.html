@@ -87,7 +87,7 @@
     }
     <div class="hours-costs-kpi">
       <span class="hours-costs-kpi__label">Hours this period</span>
-      <span class="hours-costs-kpi__value">{{ totalHoursLogged | number: '1.1-1' }}h</span>
+      <span class="hours-costs-kpi__value">{{ formatHours(totalHoursLogged) }}</span>
     </div>
     @if (isClientPortal) {
       <div class="hours-costs-kpi hours-costs-kpi--accent">
@@ -130,33 +130,33 @@
         <p class="text-muted small mb-0 py-2">No hours logged for the selected filters.</p>
       } @else {
         <ul class="hours-resource-list">
-          @for (r of visibleFilteredResources; track r.teamMemberId) {
-            <li class="hours-resource-group" [class.hours-resource-group--open]="isResourceEntriesExpanded(r.teamMemberId)">
+          @for (r of visibleFilteredResources; track personKey(r)) {
+            <li class="hours-resource-group" [class.hours-resource-group--open]="isResourceEntriesExpanded(personKey(r))">
               <button
                 type="button"
                 class="hours-resource-item"
-                [attr.aria-expanded]="isResourceEntriesExpanded(r.teamMemberId)"
-                (click)="toggleResourceEntries(r.teamMemberId)">
+                [attr.aria-expanded]="isResourceEntriesExpanded(personKey(r))"
+                (click)="toggleResourceEntries(personKey(r))">
                 <span class="hours-resource-item__chevron" aria-hidden="true">
-                  <i class="fe" [class.fe-chevron-down]="isResourceEntriesExpanded(r.teamMemberId)" [class.fe-chevron-right]="!isResourceEntriesExpanded(r.teamMemberId)"></i>
+                  <i class="fe" [class.fe-chevron-down]="isResourceEntriesExpanded(personKey(r))" [class.fe-chevron-right]="!isResourceEntriesExpanded(personKey(r))"></i>
                 </span>
                 <span class="hours-resource-item__avatar">{{ memberInitials(r.teamMemberName) }}</span>
                 <div class="hours-resource-item__body">
                   <span class="hours-resource-item__name">{{ r.teamMemberName }}</span>
-                  <span class="hours-resource-item__meta">{{ r.role }} · {{ entryCountForResource(r.teamMemberId) }} {{ entryCountForResource(r.teamMemberId) === 1 ? 'entry' : 'entries' }}</span>
+                  <span class="hours-resource-item__meta">{{ r.role }} · {{ entryCountForResource(personKey(r)) }} {{ entryCountForResource(personKey(r)) === 1 ? 'entry' : 'entries' }}</span>
                 </div>
                 <div class="hours-resource-item__stats">
                   @if (isClientPortal && r.costRate != null) {
                     <span class="hours-resource-item__rate">${{ r.costRate | number: '1.0-0' }}/hr</span>
                     <span class="hours-resource-item__cost">Est. cost: ${{ resourceLineCost(r.totalHours, r.costRate) | number: '1.0-0' }}</span>
                   }
-                  <span class="hours-resource-item__hours">{{ r.totalHours | number: '1.1-1' }}h logged</span>
+                  <span class="hours-resource-item__hours">{{ formatHours(r.totalHours) }} logged</span>
                 </div>
               </button>
 
-              @if (isResourceEntriesExpanded(r.teamMemberId)) {
+              @if (isResourceEntriesExpanded(personKey(r))) {
                 <div class="hours-resource-entries">
-                  @if (!entriesForResource(r.teamMemberId).length) {
+                  @if (!entriesForResource(personKey(r)).length) {
                     <p class="text-muted small mb-0">No entries for this period.</p>
                   } @else {
                     <table class="table table-sm hours-resource-entries__table mb-0">
@@ -169,7 +169,7 @@
                         </tr>
                       </thead>
                       <tbody>
-                        @for (entry of entriesForResource(r.teamMemberId); track entry.id) {
+                        @for (entry of entriesForResource(personKey(r)); track entry.id) {
                           <tr>
                             <td>{{ entry.workDate | date: 'mediumDate' }}</td>
                             <td>{{ entry.timeRange }}</td>
@@ -197,7 +197,7 @@
         @if (report) {
           <div class="hours-resource-total">
             <span>Total</span>
-            <strong>{{ report.totalHours | number: '1.1-1' }}h</strong>
+            <strong>{{ formatHours(report.totalHours) }}</strong>
             @if (isClientPortal) {
               <strong class="ms-3">${{ clientEstimatedCost | number: '1.0-0' }}</strong>
             }
@@ -270,9 +270,10 @@
               <span class="report-filters__field-label">Team member</span>
               <select
                 class="form-select form-select-sm report-filters__control"
-                [(ngModel)]="teamMemberId"
-                (ngModelChange)="onFiltersChange()">
-                <option [ngValue]="null">All team members</option>
+                [ngModel]="rmPersonFilter"
+                (ngModelChange)="onRmPersonFilterChange($event)">
+                <option [ngValue]="null">My team &amp; me</option>
+                <option ngValue="mine">My hours</option>
                 @for (m of teamMemberOptions; track m.id) {
                   <option [ngValue]="m.id">{{ m.name }}</option>
                 }
@@ -289,6 +290,17 @@
                 @for (rm of resourceManagerOptions; track rm.id) {
                   <option [ngValue]="rm.id">{{ rm.name }}</option>
                 }
+              </select>
+            </label>
+
+            <label class="report-filters__field report-filters__field--select">
+              <span class="report-filters__field-label">Hours from</span>
+              <select
+                class="form-select form-select-sm report-filters__control"
+                [(ngModel)]="resourceManagerHoursOnly"
+                (ngModelChange)="onFiltersChange()">
+                <option [ngValue]="false">{{ resourceManagerUserId != null ? 'Team & resource manager' : 'Everyone' }}</option>
+                <option [ngValue]="true">{{ resourceManagerUserId != null ? 'Resource manager only' : 'Resource managers only' }}</option>
               </select>
             </label>
           }
@@ -326,8 +338,8 @@
       </div>
     }
     <div class="hours-costs-kpi">
-      <span class="hours-costs-kpi__label">{{ isRmPortal ? 'Team hours logged' : 'Hours logged' }}</span>
-      <span class="hours-costs-kpi__value">{{ filteredHoursLogged | number: '1.1-1' }}h</span>
+      <span class="hours-costs-kpi__label">{{ isRmPortal ? (resourceManagerHoursOnly ? 'My hours logged' : 'Team hours logged') : 'Hours logged' }}</span>
+      <span class="hours-costs-kpi__value">{{ formatHours(filteredHoursLogged) }}</span>
     </div>
     @if (!isRmPortal) {
       <div class="hours-costs-kpi">
@@ -336,7 +348,7 @@
       </div>
     }
     <div class="hours-costs-kpi" [class.hours-costs-kpi--accent]="isRmPortal">
-      <span class="hours-costs-kpi__label">{{ isRmPortal ? 'Team est. cost' : 'Est. cost' }}</span>
+      <span class="hours-costs-kpi__label">{{ isRmPortal ? (resourceManagerHoursOnly ? 'My est. cost' : 'Team est. cost') : 'Est. cost' }}</span>
       <span class="hours-costs-kpi__value">${{ estimatedCost | number: '1.0-0' }}</span>
     </div>
   </div>
@@ -369,33 +381,33 @@
         <p class="text-muted small mb-0 py-2">No hours logged for the selected filters.</p>
       } @else {
         <ul class="hours-resource-list">
-          @for (r of visibleFilteredResources; track r.teamMemberId) {
-            <li class="hours-resource-group" [class.hours-resource-group--open]="isResourceEntriesExpanded(r.teamMemberId)">
+          @for (r of visibleFilteredResources; track personKey(r)) {
+            <li class="hours-resource-group" [class.hours-resource-group--open]="isResourceEntriesExpanded(personKey(r))">
               <button
                 type="button"
                 class="hours-resource-item"
-                [attr.aria-expanded]="isResourceEntriesExpanded(r.teamMemberId)"
-                (click)="toggleResourceEntries(r.teamMemberId)">
+                [attr.aria-expanded]="isResourceEntriesExpanded(personKey(r))"
+                (click)="toggleResourceEntries(personKey(r))">
                 <span class="hours-resource-item__chevron" aria-hidden="true">
-                  <i class="fe" [class.fe-chevron-down]="isResourceEntriesExpanded(r.teamMemberId)" [class.fe-chevron-right]="!isResourceEntriesExpanded(r.teamMemberId)"></i>
+                  <i class="fe" [class.fe-chevron-down]="isResourceEntriesExpanded(personKey(r))" [class.fe-chevron-right]="!isResourceEntriesExpanded(personKey(r))"></i>
                 </span>
                 <span class="hours-resource-item__avatar">{{ memberInitials(r.teamMemberName) }}</span>
                 <div class="hours-resource-item__body">
                   <span class="hours-resource-item__name">{{ r.teamMemberName }}</span>
-                  <span class="hours-resource-item__meta">{{ r.role }} · {{ entryCountForResource(r.teamMemberId) }} {{ entryCountForResource(r.teamMemberId) === 1 ? 'entry' : 'entries' }}</span>
+                  <span class="hours-resource-item__meta">{{ r.role }} · {{ entryCountForResource(personKey(r)) }} {{ entryCountForResource(personKey(r)) === 1 ? 'entry' : 'entries' }}</span>
                 </div>
                 <div class="hours-resource-item__stats">
                   @if (r.costRate != null) {
                     <span class="hours-resource-item__rate">${{ r.costRate | number: '1.0-0' }}/hr cost</span>
                     <span class="hours-resource-item__cost">Line cost: ${{ resourceLineCost(r.totalHours, r.costRate) | number: '1.0-0' }}</span>
                   }
-                  <span class="hours-resource-item__hours">{{ r.totalHours | number: '1.1-1' }}h logged</span>
+                  <span class="hours-resource-item__hours">{{ formatHours(r.totalHours) }} logged</span>
                 </div>
               </button>
 
-              @if (isResourceEntriesExpanded(r.teamMemberId)) {
+              @if (isResourceEntriesExpanded(personKey(r))) {
                 <div class="hours-resource-entries">
-                  @if (!entriesForResource(r.teamMemberId).length) {
+                  @if (!entriesForResource(personKey(r)).length) {
                     <p class="text-muted small mb-0">No entries for this period.</p>
                   } @else {
                     <table class="table table-sm hours-resource-entries__table mb-0">
@@ -407,7 +419,7 @@
                         </tr>
                       </thead>
                       <tbody>
-                        @for (entry of entriesForResource(r.teamMemberId); track entry.id) {
+                        @for (entry of entriesForResource(personKey(r)); track entry.id) {
                           <tr>
                             <td>{{ entry.workDate | date: 'mediumDate' }}</td>
                             <td>{{ entry.description || '—' }}</td>
@@ -433,7 +445,7 @@
         }
         <div class="hours-resource-total">
           <span>Total</span>
-          <strong>{{ filteredHoursLogged | number: '1.1-1' }}h</strong>
+          <strong>{{ formatHours(filteredHoursLogged) }}</strong>
           <strong>${{ estimatedCost | number: '1.0-0' }}</strong>
         </div>
       }

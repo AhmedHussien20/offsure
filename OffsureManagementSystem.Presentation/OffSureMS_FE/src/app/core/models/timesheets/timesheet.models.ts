@@ -10,12 +10,14 @@ export interface UpsertTimesheetEntryDto {
 export interface UpsertTimesheetDto {
   projectId: number;
   workDate: string;
+  teamMemberId?: number | null;
   entries: UpsertTimesheetEntryDto[];
 }
 
 export interface AppendTimesheetEntriesDto {
   projectId: number;
   workDate: string;
+  teamMemberId?: number | null;
   entries: UpsertTimesheetEntryDto[];
 }
 
@@ -37,7 +39,8 @@ export interface TimesheetDayDto {
   id: number;
   projectId: number;
   projectName: string;
-  teamMemberId: number;
+  teamMemberId: number | null;
+  resourceManagerUserId: number | null;
   teamMemberName: string;
   workDate: string;
   totalHours: number;
@@ -52,7 +55,8 @@ export interface HourlyProjectDaySummaryDto {
 }
 
 export interface HourlyProjectResourceSummaryDto {
-  teamMemberId: number;
+  teamMemberId: number | null;
+  resourceManagerUserId: number | null;
   teamMemberName: string;
   role: string;
   costRate: number | null;
@@ -70,7 +74,8 @@ export interface HourlyProjectOverviewDto {
 
 export interface TimesheetReportRowDto {
   workDate: string;
-  teamMemberId: number;
+  teamMemberId: number | null;
+  resourceManagerUserId: number | null;
   teamMemberName: string;
   startTime: string;
   endTime: string;
@@ -94,6 +99,7 @@ export interface TimesheetReportRequest {
   period: TimesheetReportPeriod;
   teamMemberId?: number;
   resourceManagerUserId?: number;
+  resourceManagerHoursOnly?: boolean;
   rangeStart?: string;
   rangeEnd?: string;
 }

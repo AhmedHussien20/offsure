@@ -7,8 +7,11 @@ import {
   TimesheetReportRowDto,
   UpdateTimesheetEntryDto,
 } from 'app/core/models/timesheets/timesheet.models';
+import { ProjectDto } from 'app/core/models/projects/project.models';
+import { AuthService } from 'app/core/services/auth.service';
 import { BreadcrumbService } from 'app/core/services/breadcrumb.service';
 import { ProjectsService } from 'app/core/services/projects.service';
+import { ResourceManagerPortalService } from 'app/core/services/resource-manager-portal.service';
 import { TimesheetsService } from 'app/core/services/timesheets.service';
 import { isHourlyBudgetProject } from 'app/core/utils/project-budget-form.util';
 import {
@@ -60,6 +63,12 @@ interface TimesheetEntryInput {
   description: string;
 }
 
+/** `teamMemberId` null means the Resource Manager logs for themselves. */
+interface LogForOption {
+  teamMemberId: number | null;
+  label: string;
+}
+
 @Component({
   selector: 'app-team-daily-timesheet',
   standalone: true,
@@ -102,6 +111,10 @@ export class TeamDailyTimesheetComponent implements OnInit {
   editingEntryId = 0;
   popupForm: FormGroup;
 
+  isRmPortal = false;
+  logForOptions: LogForOption[] = [];
+  logForTeamMemberId: number | null = null;
+
   readonly hours = Array.from({ length: 24 }, (_, index) => index);
   readonly hourHeightPx = 56;
   readonly weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -111,6 +124,8 @@ export class TeamDailyTimesheetComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private projectsService: ProjectsService,
+    private rmPortal: ResourceManagerPortalService,
+    private auth: AuthService,
     private timesheetsService: TimesheetsService,
     private breadcrumbService: BreadcrumbService,
     private confirmDialog: ConfirmDialogService,
@@ -123,6 +138,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.isRmPortal = this.route.snapshot.data['portal'] === 'rm';
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
     if (!this.projectId) {
       this.loadError = 'Project not found.';
@@ -138,11 +154,30 @@ export class TeamDailyTimesheetComponent implements OnInit {
   }
 
   get projectDetailLink(): (string | number)[] {
-    return ['/team', 'projects', this.projectId];
+    return this.isRmPortal
+      ? ['/resource-manager', 'projects', this.projectId]
+      : ['/team', 'projects', this.projectId];
   }
 
   get timesheetHistoryLink(): (string | number)[] {
-    return ['/team', 'projects', this.projectId, 'timesheet-report'];
+    return this.isRmPortal
+      ? ['/resource-manager', 'projects', this.projectId, 'timesheet-report']
+      : ['/team', 'projects', this.projectId, 'timesheet-report'];
+  }
+
+  /** Team member to log for on behalf (RM portal only); null = own timesheet. */
+  private get ownerTeamMemberId(): number | null {
+    return this.isRmPortal ? this.logForTeamMemberId : null;
+  }
+
+  onLogForChange(): void {
+    const scrollY = window.scrollY;
+    this.closePopup();
+    if (this.calendarView === 'month') {
+      this.refreshMonthView(true, scrollY);
+    } else {
+      this.loadDay(true, scrollY);
+    }
   }
 
   get popupFieldsDisabled(): boolean {
@@ -420,6 +455,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
       .appendEntries({
         projectId: this.projectId,
         workDate: this.workDate,
+        teamMemberId: this.ownerTeamMemberId,
         entries,
       })
       .subscribe({
@@ -521,7 +557,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
   }
 
   private loadDayForPopup(isoDate: string, openAdd: boolean): void {
-    this.timesheetsService.getDay(this.projectId, isoDate).subscribe({
+    this.timesheetsService.getDay(this.projectId, isoDate, this.ownerTeamMemberId).subscribe({
       next: res => {
         this.dayEntries = res.data?.entries ?? [];
         this.totalHours = res.data?.totalHours ?? 0;
@@ -543,13 +579,27 @@ export class TeamDailyTimesheetComponent implements OnInit {
     this.loading = true;
     this.loadError = null;
 
-    this.projectsService.getTeamMyById(this.projectId).subscribe({
+    const request$ = this.isRmPortal
+      ? this.rmPortal.getProjectById(this.projectId)
+      : this.projectsService.getTeamMyById(this.projectId);
+
+    request$.subscribe({
       next: res => {
         const project = res.data;
         if (!project || !isHourlyBudgetProject(project)) {
           this.loadError = 'Time logging is only available for hourly projects.';
           this.loading = false;
           return;
+        }
+
+        if (this.isRmPortal) {
+          this.logForOptions = this.buildLogForOptions(project);
+          if (!this.logForOptions.length) {
+            this.loadError = 'You are not assigned to this project and none of your team members are on it.';
+            this.loading = false;
+            return;
+          }
+          this.logForTeamMemberId = this.logForOptions[0].teamMemberId;
         }
 
         this.projectName = project.name;
@@ -565,11 +615,17 @@ export class TeamDailyTimesheetComponent implements OnInit {
         this.calendarMonthKey = monthKeyFromIso(this.workDate);
 
         this.breadcrumbService.setTrail(
-          [
-            { key: 'My Projects', route: ['team', 'projects'] },
-            { key: project.name, route: ['team', 'projects', this.projectId] },
-            'Daily timesheet',
-          ],
+          this.isRmPortal
+            ? [
+                { key: 'Projects', route: ['resource-manager', 'projects'] },
+                { key: project.name, route: ['resource-manager', 'projects', this.projectId] },
+                'Daily timesheet',
+              ]
+            : [
+                { key: 'My Projects', route: ['team', 'projects'] },
+                { key: project.name, route: ['team', 'projects', this.projectId] },
+                'Daily timesheet',
+              ],
           'Daily timesheet'
         );
         this.loadDay();
@@ -585,7 +641,7 @@ export class TeamDailyTimesheetComponent implements OnInit {
     if (!silent) {
       this.loading = true;
     }
-    this.timesheetsService.getDay(this.projectId, this.workDate).subscribe({
+    this.timesheetsService.getDay(this.projectId, this.workDate, this.ownerTeamMemberId).subscribe({
       next: res => {
         this.dayEntries = res.data?.entries ?? [];
         this.totalHours = res.data?.totalHours ?? 0;
@@ -618,13 +674,17 @@ export class TeamDailyTimesheetComponent implements OnInit {
       .getReport({
         projectId: this.projectId,
         period: 'Month',
+        teamMemberId: this.ownerTeamMemberId ?? undefined,
         rangeStart,
         rangeEnd,
       })
       .subscribe({
         next: res => {
           const map = new Map<string, MonthDaySummary>();
-          for (const row of res.data?.rows ?? []) {
+          const rows = (res.data?.rows ?? []).filter(
+            row => !this.isRmPortal || this.ownerTeamMemberId != null || row.teamMemberId == null
+          );
+          for (const row of rows) {
             const existing = map.get(row.workDate) ?? { totalHours: 0, entries: [] };
             existing.totalHours += row.hours;
             existing.entries.push(row);
@@ -651,6 +711,24 @@ export class TeamDailyTimesheetComponent implements OnInit {
     requestAnimationFrame(() => {
       window.scrollTo({ top: scrollY, left: 0, behavior: 'instant' as ScrollBehavior });
     });
+  }
+
+  private buildLogForOptions(project: ProjectDto): LogForOption[] {
+    const userId = this.auth.getCurrentUser()?.id;
+    if (userId == null) return [];
+
+    const options: LogForOption[] = [];
+    if ((project.resourceManagers ?? []).some(rm => rm.userId === userId)) {
+      options.push({ teamMemberId: null, label: 'Myself' });
+    }
+
+    const seen = new Set<number>();
+    for (const assignment of project.teamMembers ?? []) {
+      if (assignment.resourceManagerId !== userId || seen.has(assignment.teamMemberId)) continue;
+      seen.add(assignment.teamMemberId);
+      options.push({ teamMemberId: assignment.teamMemberId, label: assignment.teamMemberName });
+    }
+    return options;
   }
 
   private resolveMilestoneEndDate(project: {

@@ -765,11 +765,26 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                 entity.HasOne(e => e.TeamMember)
                     .WithMany()
                     .HasForeignKey(e => e.TeamMemberId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ResourceManagerUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ResourceManagerUserId)
+                    .IsRequired(false)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(e => new { e.ProjectId, e.TeamMemberId, e.WorkDate })
                     .IsUnique()
-                    .HasFilter("[IsDeleted] = 0");
+                    .HasFilter("[IsDeleted] = 0 AND [TeamMemberId] IS NOT NULL");
+
+                entity.HasIndex(e => new { e.ProjectId, e.ResourceManagerUserId, e.WorkDate })
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0 AND [ResourceManagerUserId] IS NOT NULL");
+
+                entity.ToTable(t => t.HasCheckConstraint(
+                    "CK_Timesheets_SingleOwner",
+                    "([TeamMemberId] IS NOT NULL AND [ResourceManagerUserId] IS NULL) OR ([TeamMemberId] IS NULL AND [ResourceManagerUserId] IS NOT NULL)"));
 
                 entity.HasQueryFilter(t => !t.IsDeleted && !t.Project.IsDeleted);
             });

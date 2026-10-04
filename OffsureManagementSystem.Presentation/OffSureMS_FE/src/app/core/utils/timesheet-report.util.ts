@@ -5,6 +5,14 @@ import {
 } from 'app/core/models/timesheets/timesheet.models';
 import { ProjectDto } from 'app/core/models/projects/project.models';
 
+/** Stable id for a timesheet owner: team member id, or negative user id for a Resource Manager. */
+export function timesheetPersonKey(owner: {
+  teamMemberId: number | null;
+  resourceManagerUserId?: number | null;
+}): number {
+  return owner.teamMemberId ?? -(owner.resourceManagerUserId ?? 0);
+}
+
 export function buildResourceSummariesFromReport(
   report: TimesheetReportDto | null | undefined,
   overview: HourlyProjectOverviewDto | null | undefined,
@@ -20,7 +28,7 @@ export function buildResourceSummariesFromReport(
   >();
 
   for (const resource of overview?.resources ?? []) {
-    metaByMember.set(resource.teamMemberId, {
+    metaByMember.set(timesheetPersonKey(resource), {
       role: resource.role,
       costRate: resource.costRate,
       teamMemberName: resource.teamMemberName,
@@ -40,18 +48,20 @@ export function buildResourceSummariesFromReport(
   const grouped = new Map<number, HourlyProjectResourceSummaryDto>();
 
   for (const row of report.rows) {
-    const meta = metaByMember.get(row.teamMemberId);
-    const existing = grouped.get(row.teamMemberId);
+    const key = timesheetPersonKey(row);
+    const meta = metaByMember.get(key);
+    const existing = grouped.get(key);
 
     if (existing) {
       existing.totalHours += row.hours;
       continue;
     }
 
-    grouped.set(row.teamMemberId, {
+    grouped.set(key, {
       teamMemberId: row.teamMemberId,
+      resourceManagerUserId: row.resourceManagerUserId,
       teamMemberName: row.teamMemberName,
-      role: meta?.role ?? '—',
+      role: meta?.role ?? (row.resourceManagerUserId != null ? 'Resource Manager' : '—'),
       costRate: meta?.costRate ?? null,
       totalHours: row.hours,
     });
