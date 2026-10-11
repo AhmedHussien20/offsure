@@ -69,9 +69,19 @@
 } @else {
   <!-- Specialists of the chosen team -->
   @if (!flatMode) {
-    <button type="button" class="team-catalog__back" (click)="backToTeams()">
-      <i class="ti ti-arrow-left"></i> All teams
-    </button>
+    <nav class="team-catalog__nav" aria-label="Breadcrumb">
+      <button type="button" class="team-catalog__back" (click)="backToTeams()">
+        <span class="team-catalog__back-icon"><i class="ti ti-arrow-narrow-left"></i></span>
+        Back to all teams
+      </button>
+      <ol class="team-catalog__crumbs">
+        <li>
+          <button type="button" (click)="backToTeams()">Offshore teams</button>
+        </li>
+        <li aria-hidden="true"><i class="ti ti-chevron-right"></i></li>
+        <li aria-current="page">{{ selectedTeam?.name ?? 'Other specialists' }}</li>
+      </ol>
+    </nav>
   }
 
   @if (selectedTeam; as team) {

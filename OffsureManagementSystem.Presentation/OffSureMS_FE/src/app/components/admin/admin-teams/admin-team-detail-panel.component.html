@@ -21,14 +21,14 @@
             type="button"
             class="btn btn-sm btn-outline-primary no-expand"
             (click)="startEdit()">
-            <i class="ti ti-pencil"></i> Edit
+            <i class="ti ti-edit"></i> Edit
           </button>
           <button
             type="button"
             class="btn btn-sm btn-outline-danger no-expand"
             [disabled]="deleting"
             (click)="deleteTeam()">
-            <i class="ti ti-trash"></i> {{ deleting ? 'Deleting…' : 'Delete' }}
+            <i class="ti ti-trash-x"></i> {{ deleting ? 'Deleting…' : 'Delete' }}
           </button>
         } @else {
           <button
@@ -36,7 +36,7 @@
             class="btn btn-sm btn-primary no-expand"
             [disabled]="saving"
             (click)="saveEdit()">
-            <i class="ti ti-check"></i> {{ saving ? 'Saving…' : 'Save changes' }}
+            <i class="fe fe-check"></i> {{ saving ? 'Saving…' : 'Save changes' }}
           </button>
           <button
             type="button"
@@ -58,6 +58,7 @@
 
           @if (editing) {
             <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+            <app-admin-team-settings-fields [form]="form" />
           } @else {
             <dl class="team-panel__facts">
               <div class="team-panel__fact team-panel__fact--full">
@@ -136,7 +137,7 @@
               class="btn btn-sm btn-primary no-expand"
               [disabled]="saving"
               (click)="saveEdit()">
-              <i class="ti ti-check"></i> {{ saving ? 'Saving…' : 'Save changes' }}
+              <i class="fe fe-check"></i> {{ saving ? 'Saving…' : 'Save changes' }}
             </button>
             <button
               type="button"
@@ -172,7 +173,7 @@
                   (change)="onCoverSelected($event)" />
               </label>
               @if (pendingCoverFile) {
-                <span class="small text-muted align-self-center"><i class="ti ti-file"></i> {{ pendingCoverFile.name }}</span>
+                <span class="small text-muted align-self-center"><i class="ti ti-file-text"></i> {{ pendingCoverFile.name }}</span>
                 <button
                   type="button"
                   class="btn btn-sm btn-light no-expand"

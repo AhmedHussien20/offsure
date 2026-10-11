@@ -10,13 +10,13 @@ const COVER_ICONS: Array<[RegExp, string]> = [
   [/noc|monitor|support|help ?desk/, 'ti-activity'],
   [/secur|soc\b|cyber/, 'ti-shield-check'],
   [/network/, 'ti-network'],
-  [/cloud|devops|dev ops/, 'ti-cloud'],
+  [/cloud|devops|dev ops/, 'ti-cloud-computing'],
   [/data|database|dba|\bbi\b|analytic/, 'ti-database'],
-  [/system|sysadmin|infra|server/, 'ti-server'],
+  [/system|sysadmin|infra|server/, 'ti-server-2'],
   [/enterprise|erp|business|dynamics|sap/, 'ti-building'],
   [/develop|software|engineer|web|mobile|\bapp/, 'ti-code'],
   [/qa|test|quality/, 'ti-checklist'],
-  [/design|ui|ux/, 'ti-palette'],
+  [/design|ui|ux/, 'ti-color-swatch'],
 ];
 
 /**

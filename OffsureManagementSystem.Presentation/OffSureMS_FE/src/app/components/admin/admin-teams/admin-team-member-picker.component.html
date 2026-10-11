@@ -1,0 +1,186 @@
+<!-- The roster: who is in the team and what they bring -->
+<section class="roster" [class.roster--empty]="!selectedMembers.length">
+  <header class="roster__head">
+    <div>
+      <span class="roster__eyebrow">In this team</span>
+      <strong class="roster__total">
+        {{ selectedMembers.length }} {{ selectedMembers.length === 1 ? 'specialist' : 'specialists' }}
+      </strong>
+    </div>
+    @if (selectedMembers.length) {
+      <button type="button" class="roster__clear" (click)="clearSelection()">
+        <i class="ti ti-x"></i> Remove all
+      </button>
+    }
+  </header>
+
+  @if (selectedMembers.length) {
+    <ul class="roster__people">
+      @for (member of selectedMembers; track member.id) {
+        <li class="roster__person" [class.roster__person--moving]="isInOtherTeam(member)">
+          @if (photoSrc(member); as src) {
+            <img [src]="src" alt="" class="roster__avatar" (error)="onPhotoError(member)" />
+          } @else {
+            <span class="roster__avatar" [style.background]="avatarColor(member.fullName)">
+              {{ initials(member.fullName) }}
+            </span>
+          }
+          <span class="roster__name" [title]="member.fullName">{{ member.fullName }}</span>
+          <button
+            type="button"
+            class="roster__remove"
+            [attr.aria-label]="'Remove ' + member.fullName"
+            (click)="remove(member)">
+            <i class="ti ti-x"></i>
+          </button>
+        </li>
+      }
+    </ul>
+
+    <div class="roster__covers">
+      <span class="roster__covers-label"><i class="ti ti-layout-cards"></i> Shown on the team card</span>
+      <div class="roster__skills">
+        @for (skill of coveredSkills; track skill) {
+          <span class="roster__skill">{{ skill }}</span>
+        } @empty {
+          <span class="roster__muted">These people have no skills listed yet.</span>
+        }
+      </div>
+    </div>
+
+    @if (movingCount) {
+      <p class="roster__warning">
+        <i class="ti ti-switch-horizontal"></i>
+        {{ movingCount }} {{ movingCount === 1 ? 'person moves' : 'people move' }} here from another team
+        when you save.
+      </p>
+    }
+  } @else {
+    <p class="roster__placeholder">
+      <i class="ti ti-hand-click"></i>
+      Nobody yet. Pick people below and they will appear here.
+    </p>
+  }
+</section>
+
+<!-- Everyone else -->
+<section class="pool">
+  <div class="pool__toolbar">
+    <div class="pool__search">
+      <i class="fe fe-search"></i>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Search name, title or skill"
+        aria-label="Search specialists"
+        [(ngModel)]="search" />
+      @if (search) {
+        <button type="button" class="pool__search-clear" aria-label="Clear search" (click)="search = ''">
+          <i class="ti ti-x"></i>
+        </button>
+      }
+    </div>
+
+    <div class="pool__scopes" role="group" aria-label="Show">
+      <button type="button" class="pool__scope" [class.pool__scope--on]="scope === 'all'" (click)="setScope('all')">
+        Everyone <span>{{ scopeCounts.all }}</span>
+      </button>
+      <button
+        type="button"
+        class="pool__scope"
+        [class.pool__scope--on]="scope === 'unassigned'"
+        (click)="setScope('unassigned')">
+        Not in a team <span>{{ scopeCounts.unassigned }}</span>
+      </button>
+      <button
+        type="button"
+        class="pool__scope"
+        [class.pool__scope--on]="scope === 'other'"
+        (click)="setScope('other')">
+        In other teams <span>{{ scopeCounts.other }}</span>
+      </button>
+    </div>
+  </div>
+
+  @if (quickSkills.length) {
+    <div class="pool__skills" role="group" aria-label="Filter by skill">
+      @for (skill of quickSkills; track skill) {
+        <button
+          type="button"
+          class="pool__skill"
+          [class.pool__skill--on]="skillFilter === skill"
+          [attr.aria-pressed]="skillFilter === skill"
+          (click)="toggleSkillFilter(skill)">
+          {{ skill }}
+        </button>
+      }
+    </div>
+  }
+
+  <div class="pool__meta">
+    <span>{{ visibleMembers.length }} shown</span>
+    <span class="pool__meta-actions">
+      @if (hasFilters) {
+        <button type="button" class="pool__link" (click)="resetFilters()">Reset filters</button>
+      }
+      @if (visibleUnselectedCount) {
+        <button type="button" class="pool__link" (click)="addAllVisible()">
+          <i class="ti ti-circle-plus"></i> Add all shown ({{ visibleUnselectedCount }})
+        </button>
+      }
+    </span>
+  </div>
+
+  <div class="pool__grid">
+    @for (member of visibleMembers; track member.id) {
+      <button
+        type="button"
+        class="person"
+        [class.person--on]="isSelected(member)"
+        [class.person--moving]="isSelected(member) && isInOtherTeam(member)"
+        [attr.aria-pressed]="isSelected(member)"
+        (click)="toggle(member)">
+        <span class="person__check" aria-hidden="true"><i class="fe fe-check"></i></span>
+
+        @if (photoSrc(member); as src) {
+          <img [src]="src" alt="" class="person__avatar" (error)="onPhotoError(member)" />
+        } @else {
+          <span class="person__avatar" [style.background]="avatarColor(member.fullName)">
+            {{ initials(member.fullName) }}
+          </span>
+        }
+
+        <span class="person__name">{{ member.fullName }}</span>
+        <span class="person__title">{{ member.title || 'Specialist' }}</span>
+
+        @if (member.skills?.length) {
+          <span class="person__skills">
+            @for (skill of member.skills.slice(0, 2); track skill) {
+              <span class="person__skill" [class.person__skill--hit]="skill === skillFilter">{{ skill }}</span>
+            }
+            @if (member.skills.length > 2) {
+              <span class="person__skill person__skill--more">+{{ member.skills.length - 2 }}</span>
+            }
+          </span>
+        }
+
+        @if (isInOtherTeam(member)) {
+          <span class="person__team">
+            <i class="ti ti-switch-horizontal"></i>
+            {{ isSelected(member) ? 'Moving from ' + member.teamName : 'In ' + member.teamName }}
+          </span>
+        } @else if (!member.teamId) {
+          <span class="person__team person__team--free">Not in a team</span>
+        }
+      </button>
+    } @empty {
+      <div class="pool__empty">
+        <i class="ti ti-user-search"></i>
+        <p>{{ members.length ? 'Nobody matches these filters.' : 'No specialists yet.' }}</p>
+        @if (hasFilters) {
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="resetFilters()">Reset filters</button>
+        }
+      </div>
+    }
+  </div>
+</section>

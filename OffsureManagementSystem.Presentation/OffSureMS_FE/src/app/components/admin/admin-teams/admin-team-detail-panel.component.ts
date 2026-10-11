@@ -12,13 +12,14 @@ import { of, Subject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { ADMIN_TEAM_FORM_CONFIG, adminTeamFormValue, buildAdminTeamForm } from './admin-team-form.config';
 import { AdminTeamMemberPickerComponent } from './admin-team-member-picker.component';
+import { AdminTeamSettingsFieldsComponent } from './admin-team-settings-fields.component';
 
 const ALLOWED_COVER_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 @Component({
   selector: 'app-admin-team-detail-panel',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent, TeamCardComponent, AdminTeamMemberPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent, TeamCardComponent, AdminTeamMemberPickerComponent, AdminTeamSettingsFieldsComponent],
   templateUrl: './admin-team-detail-panel.component.html',
   styleUrl: './admin-team-detail-panel.component.scss',
 })
@@ -210,7 +211,7 @@ export class AdminTeamDetailPanelComponent implements OnChanges, OnDestroy {
       title: 'Delete team',
       message: `Delete ${this.team.name}? Its members stay in the system and move to "Other specialists".`,
       confirmLabel: 'Delete',
-      icon: 'ti-trash',
+      icon: 'ti-trash-x',
     });
     if (!confirmed) return;
 

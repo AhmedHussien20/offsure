@@ -11,6 +11,7 @@ import { Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ADMIN_TEAM_FORM_CONFIG, adminTeamFormValue, buildAdminTeamForm } from './admin-team-form.config';
 import { AdminTeamMemberPickerComponent } from './admin-team-member-picker.component';
+import { AdminTeamSettingsFieldsComponent } from './admin-team-settings-fields.component';
 
 const ALLOWED_COVER_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
@@ -18,7 +19,7 @@ const ALLOWED_COVER_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 @Component({
   selector: 'app-admin-team-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent, TeamCardComponent, AdminTeamMemberPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormComponent, TeamCardComponent, AdminTeamMemberPickerComponent, AdminTeamSettingsFieldsComponent],
   templateUrl: './admin-team-create.component.html',
   styleUrl: './admin-team-create.component.scss',
 })
