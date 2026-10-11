@@ -1,0 +1,193 @@
+<div class="admin-detail-panel no-expand" (click)="$event.stopPropagation()">
+  @if (loading) {
+    <div class="admin-detail-panel__loading text-muted">Loading team details…</div>
+  } @else if (loadError) {
+    <div class="alert alert-danger mb-0">{{ loadError }}</div>
+  } @else if (team) {
+    <div class="admin-detail-panel__header">
+      <div>
+        <h5 class="admin-detail-panel__title mb-0">{{ team.name }}</h5>
+        <p class="admin-detail-panel__meta mb-0">Offshore team · order {{ team.displayOrder }}</p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span
+          class="badge rounded-pill"
+          [class.bg-success-transparent]="team.isActive"
+          [class.bg-secondary-transparent]="!team.isActive">
+          {{ team.isActive ? 'Shown in TechX' : 'Hidden from clients' }}
+        </span>
+        @if (!editing) {
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary no-expand"
+            (click)="startEdit()">
+            <i class="ti ti-pencil"></i> Edit
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger no-expand"
+            [disabled]="deleting"
+            (click)="deleteTeam()">
+            <i class="ti ti-trash"></i> {{ deleting ? 'Deleting…' : 'Delete' }}
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="btn btn-sm btn-primary no-expand"
+            [disabled]="saving"
+            (click)="saveEdit()">
+            <i class="ti ti-check"></i> {{ saving ? 'Saving…' : 'Save changes' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-light no-expand"
+            [disabled]="saving"
+            (click)="cancelEdit()">
+            <i class="ti ti-x"></i> Cancel
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="admin-detail-grid">
+      <div class="admin-detail-main team-panel__main">
+        <section class="admin-detail-card">
+          <div class="team-panel__card-head">
+            <h6 class="admin-detail-card__title mb-0">Team details</h6>
+          </div>
+
+          @if (editing) {
+            <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+          } @else {
+            <dl class="team-panel__facts">
+              <div class="team-panel__fact team-panel__fact--full">
+                <dt>Description</dt>
+                <dd>{{ display(team.description) }}</dd>
+              </div>
+              <div class="team-panel__fact">
+                <dt>Display order</dt>
+                <dd>{{ team.displayOrder }} <small>(lower shows first)</small></dd>
+              </div>
+              <div class="team-panel__fact">
+                <dt>Visibility</dt>
+                <dd>{{ team.isActive ? 'Shown in Offshore TechX' : 'Hidden from clients' }}</dd>
+              </div>
+            </dl>
+          }
+        </section>
+
+        <section class="admin-detail-card">
+          <div class="team-panel__card-head">
+            <h6 class="admin-detail-card__title mb-0">
+              Members <span class="team-panel__count">{{ previewMemberCount }}</span>
+            </h6>
+          </div>
+
+          @if (editing) {
+            <app-admin-team-member-picker
+              [members]="memberOptions"
+              [teamId]="team.id"
+              [selectedIds]="selectedMemberIds"
+              (selectedIdsChange)="selectedMemberIds = $event" />
+          } @else if (currentMembers.length) {
+            <ul class="team-panel__members">
+              @for (member of currentMembers; track member.id) {
+                <li class="team-panel__member-card">
+                  @if (photoSrc(member); as src) {
+                    <img [src]="src" alt="" class="team-panel__avatar" (error)="onPhotoError(member)" />
+                  } @else {
+                    <span
+                      class="team-panel__avatar team-panel__avatar--initials"
+                      [style.background]="avatarColor(member.fullName)">
+                      {{ initials(member.fullName) }}
+                    </span>
+                  }
+                  <div class="team-panel__member-info">
+                    <strong class="team-panel__member-name">{{ member.fullName }}</strong>
+                    <small class="team-panel__member-title">{{ member.title || 'Specialist' }}</small>
+                    @if (member.skills?.length) {
+                      <div class="team-panel__member-skills">
+                        @for (skill of member.skills.slice(0, 2); track skill) {
+                          <span class="team-panel__member-skill">{{ skill }}</span>
+                        }
+                        @if (member.skills.length > 2) {
+                          <span class="team-panel__member-skill team-panel__member-skill--more">
+                            +{{ member.skills.length - 2 }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="team-panel__empty">
+              <i class="ti ti-users"></i>
+              <p class="mb-0">No members yet. Teams without members are hidden from clients.</p>
+            </div>
+          }
+        </section>
+
+        @if (editing) {
+          <div class="admin-detail-form-actions">
+            <button
+              type="button"
+              class="btn btn-sm btn-primary no-expand"
+              [disabled]="saving"
+              (click)="saveEdit()">
+              <i class="ti ti-check"></i> {{ saving ? 'Saving…' : 'Save changes' }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-light no-expand"
+              [disabled]="saving"
+              (click)="cancelEdit()">
+              <i class="ti ti-x"></i> Cancel
+            </button>
+          </div>
+        }
+      </div>
+
+      <aside class="admin-detail-sidebar">
+        <section class="admin-detail-card">
+          <h6 class="admin-detail-card__title">How clients see it</h6>
+          <app-team-card
+            [name]="previewName"
+            [description]="previewDescription"
+            [coverImageUrl]="previewCoverImageUrl"
+            [memberCount]="previewMemberCount"
+            [skills]="previewSkills"
+            [faces]="previewFaces" />
+
+          @if (editing) {
+            <div class="team-panel__cover-actions">
+              <label class="btn btn-sm btn-outline-primary mb-0 no-expand">
+                <i class="ti ti-photo"></i>
+                {{ pendingCoverFile || team.coverImageUrl ? 'Change cover' : 'Upload cover' }}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  hidden
+                  (change)="onCoverSelected($event)" />
+              </label>
+              @if (pendingCoverFile) {
+                <span class="small text-muted align-self-center"><i class="ti ti-file"></i> {{ pendingCoverFile.name }}</span>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-light no-expand"
+                  (click)="clearPendingCover()">
+                  Cancel image
+                </button>
+              }
+            </div>
+          }
+          <p class="admin-detail-hint mt-2 mb-0">
+            The cover is optional; wide images (about 16:7) fit best. The skills on the card are picked
+            automatically from the members' most common skills.
+          </p>
+        </section>
+      </aside>
+    </div>
+  }
+</div>

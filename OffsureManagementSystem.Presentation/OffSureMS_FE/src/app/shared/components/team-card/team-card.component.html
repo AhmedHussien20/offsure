@@ -1,0 +1,31 @@
+<app-team-cover [name]="name || 'New team'" [coverImageUrl]="coverImageUrl">
+  <span class="team-card__count">{{ countLabel }}</span>
+</app-team-cover>
+<div class="team-card__body">
+  <span class="team-card__name">{{ name || 'Team name' }}</span>
+  @if (description) {
+    <span class="team-card__desc">{{ description }}</span>
+  }
+  @if (shownSkills.length) {
+    <span class="team-card__chips">
+      @for (skill of shownSkills; track skill) {
+        <span class="team-card__chip" [class.team-card__chip--match]="skill === matchedSkill">{{ skill }}</span>
+      }
+      @if (moreSkills > 0) {
+        <span class="team-card__chip team-card__chip--more">+{{ moreSkills }}</span>
+      }
+    </span>
+  }
+  <span class="team-card__foot">
+    <span class="team-card__faces" aria-hidden="true">
+      @for (face of faces; track $index) {
+        @if (photoSrc(face); as src) {
+          <img [src]="src" alt="" class="team-card__face" (error)="onPhotoError(face)" />
+        } @else {
+          <span class="team-card__face">{{ initials(face.fullName) }}</span>
+        }
+      }
+    </span>
+    <span class="team-card__cue">{{ cue }} <i class="ti ti-arrow-right"></i></span>
+  </span>
+</div>

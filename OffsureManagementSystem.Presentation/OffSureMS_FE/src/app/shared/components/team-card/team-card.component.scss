@@ -1,0 +1,112 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  text-align: start;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #fff;
+}
+
+.team-card__count {
+  position: absolute;
+  z-index: 1;
+  top: 0.75rem;
+  inset-inline-end: 0.75rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.team-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.team-card__name {
+  font-size: 1rem;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.team-card__desc {
+  margin-top: -0.35rem;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.team-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.team-card__chip {
+  padding: 0.18rem 0.55rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+
+  &--more {
+    color: #64748b;
+  }
+
+  &--match {
+    border-color: rgba(var(--primary-rgb), 0.4);
+    color: rgb(var(--primary-rgb));
+    background: rgba(var(--primary-rgb), 0.1);
+  }
+}
+
+.team-card__foot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.team-card__faces {
+  display: flex;
+}
+
+.team-card__face {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-inline-start: -0.45rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  object-fit: cover;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgb(var(--primary-rgb));
+  background: rgba(var(--primary-rgb), 0.12);
+
+  &:first-child {
+    margin-inline-start: 0;
+  }
+}
+
+.team-card__cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgb(var(--primary-rgb));
+}

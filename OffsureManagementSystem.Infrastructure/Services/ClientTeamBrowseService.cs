@@ -105,6 +105,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
 
             query = TeamMemberBrowseFilters.ApplyNameSearch(query, request.NameSearch);
             query = TeamMemberBrowseFilters.ApplyExperienceBand(query, request.ExperienceBand);
+            query = TeamMemberBrowseFilters.ApplyTeam(query, request.TeamId, request.WithoutTeam);
 
             var total = await query.CountAsync();
             var members = await query
@@ -204,6 +205,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             query = TeamMemberBrowseFilters.ApplyNameSearch(query, request.NameSearch);
             query = TeamMemberBrowseFilters.ApplySkillSearch(query, request.SkillSearch);
             query = TeamMemberBrowseFilters.ApplyExperienceBand(query, request.ExperienceBand);
+            query = TeamMemberBrowseFilters.ApplyTeam(query, request.TeamId, request.WithoutTeam);
 
             var total = await query.CountAsync();
             var members = await query

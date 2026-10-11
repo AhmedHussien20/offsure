@@ -1,6 +1,7 @@
 namespace OffshoreManagementSystem.Domain.Entities
 {
     using OffshoreManagementSystem.Domain.BaseEntity;
+    using OffsureManagementSystem.Domain.Entities;
 
     public class TeamMember : BaseEntity
     {
@@ -15,10 +16,13 @@ namespace OffshoreManagementSystem.Domain.Entities
         public bool IsAvailable { get; set; } = true;
         /// <summary>Default hourly salary/rate entered by admin when creating the member.</summary>
         public decimal? HourlySalary { get; set; }
+        /// <summary>Offshore team catalog this member is shown under (null = not assigned yet).</summary>
+        public int? TeamId { get; set; }
 
         // Navigation Properties
         public virtual User User { get; set; }
         public virtual User ResourceManager { get; set; }
+        public virtual Team Team { get; set; }
         public virtual ICollection<TeamMemberSkill> TeamMemberSkills { get; set; } = new List<TeamMemberSkill>();
         public virtual ICollection<TeamMemberCertificate> Certificates { get; set; } = new List<TeamMemberCertificate>();
         public virtual ICollection<TeamMemberExperience> Experiences { get; set; } = new List<TeamMemberExperience>();

@@ -40,6 +40,7 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
         public DbSet<Role> Roles { get; set; }
         public DbSet<SkillCategory> SkillCategories { get; set; }
         public DbSet<ServiceCategory> ServiceCategories { get; set; }
+        public DbSet<Team> Teams { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -237,6 +238,38 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                     .WithOne(p => p.TeamMember)
                     .HasForeignKey(p => p.TeamMemberId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Team)
+                    .WithMany(t => t.Members)
+                    .HasForeignKey(e => e.TeamId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+            });
+
+            // TEAM (OFFSHORE TEAM CATALOG) ENTITY CONFIGURATION
+            modelBuilder.Entity<Team>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.CoverImage)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.DisplayOrder)
+                    .HasDefaultValue(0);
+
+                entity.Property(e => e.IsActive)
+                    .HasDefaultValue(true);
+
+                entity.HasIndex(e => e.Name)
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
             });
 
 

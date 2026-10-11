@@ -73,6 +73,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             query = TeamMemberBrowseFilters.ApplyNameSearch(query, request.NameSearch);
             query = TeamMemberBrowseFilters.ApplySkillSearch(query, request.SkillSearch);
             query = TeamMemberBrowseFilters.ApplyExperienceBand(query, request.ExperienceBand);
+            query = TeamMemberBrowseFilters.ApplyTeam(query, request.TeamId, request.WithoutTeam);
 
             List<(int TeamMemberId, int ProjectId)> memberProjectMap;
             if (projectFilterIds is not null)

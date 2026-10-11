@@ -45,6 +45,13 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     requiredRole: 'Administrator',
   },
   {
+    title: 'Offshore Teams',
+    path: '/admin/teams',
+    type: 'link',
+    icon: 'ti-layout-grid2',
+    requiredRole: 'Administrator',
+  },
+  {
     title: 'Resource Managers',
     path: '/admin/resource-managers',
     type: 'link',

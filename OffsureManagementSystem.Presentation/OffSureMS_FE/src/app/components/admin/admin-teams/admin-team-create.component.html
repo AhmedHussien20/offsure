@@ -1,0 +1,105 @@
+<div class="modal-header">
+  <h5 class="modal-title">Add Team</h5>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body">
+  <ol class="team-steps" aria-label="Steps">
+    <li class="team-steps__step" [class.team-steps__step--active]="step === 1" [class.team-steps__step--done]="step > 1">
+      <span class="team-steps__num">
+        @if (step > 1) { <i class="ti ti-check"></i> } @else { 1 }
+      </span>
+      <span>
+        <strong>Team details</strong>
+        <small>Name, description and cover</small>
+      </span>
+    </li>
+    <li class="team-steps__line" aria-hidden="true"></li>
+    <li class="team-steps__step" [class.team-steps__step--active]="step === 2">
+      <span class="team-steps__num">2</span>
+      <span>
+        <strong>Members</strong>
+        <small>Who belongs to this team</small>
+      </span>
+    </li>
+  </ol>
+
+  <div class="team-create">
+    <div class="team-create__main">
+      @if (step === 1) {
+        <app-generic-form [formGroup]="form" [formConfig]="formConfig" [showSubmit]="false"></app-generic-form>
+
+        <div class="team-create__cover">
+          <div>
+            <span class="team-create__label">Cover image <small>(optional)</small></span>
+            <p class="team-create__hint">
+              Without an image, a coloured cover with an icon is generated from the team name.
+              Wide images (about 16:7) fit best.
+            </p>
+          </div>
+          <div class="team-create__cover-actions">
+            <label class="btn btn-sm btn-outline-primary mb-0">
+              <i class="ti ti-photo"></i>
+              {{ coverFile ? 'Change image' : 'Upload image' }}
+              <input type="file" accept="image/png,image/jpeg,image/webp" hidden (change)="onCoverSelected($event)" />
+            </label>
+            @if (coverFile) {
+              <button type="button" class="btn btn-sm btn-light" (click)="clearCover()">
+                <i class="ti ti-x"></i> Remove
+              </button>
+            }
+          </div>
+          @if (coverFile) {
+            <span class="team-create__file"><i class="ti ti-file"></i> {{ coverFile.name }}</span>
+          }
+          @if (coverError) {
+            <span class="text-danger small">{{ coverError }}</span>
+          }
+        </div>
+      } @else {
+        @if (membersLoading) {
+          <div class="text-center text-muted py-5">Loading team members…</div>
+        } @else {
+          <p class="team-create__hint mb-3">
+            Tick the people who belong to <strong>{{ previewName }}</strong>. Someone can only be in one
+            team, so ticking a member of another team moves them here. You can also do this later.
+          </p>
+          <app-admin-team-member-picker
+            [members]="memberOptions"
+            [selectedIds]="selectedMemberIds"
+            (selectedIdsChange)="selectedMemberIds = $event" />
+        }
+      }
+    </div>
+
+    <aside class="team-create__preview">
+      <span class="team-create__label">How clients will see it</span>
+      <app-team-card
+        [name]="previewName"
+        [description]="previewDescription"
+        [coverImageUrl]="coverPreviewUrl"
+        [memberCount]="selectedMemberIds.size"
+        [skills]="previewSkills"
+        [faces]="previewFaces" />
+      <p class="team-create__hint mt-2 mb-0">
+        The skills on the card are picked automatically from the members' most common skills.
+      </p>
+    </aside>
+  </div>
+</div>
+
+<div class="modal-footer">
+  @if (step === 1) {
+    <button type="button" class="btn btn-light" (click)="activeModal.dismiss()">Cancel</button>
+    <button type="button" class="btn btn-primary" (click)="next()">
+      Next: members <i class="ti ti-arrow-right"></i>
+    </button>
+  } @else {
+    <button type="button" class="btn btn-light me-auto" [disabled]="saving" (click)="back()">
+      <i class="ti ti-arrow-left"></i> Back
+    </button>
+    <button type="button" class="btn btn-primary" [disabled]="saving" (click)="create()">
+      {{ saving ? 'Creating…' : 'Create team' }}
+    </button>
+  }
+</div>

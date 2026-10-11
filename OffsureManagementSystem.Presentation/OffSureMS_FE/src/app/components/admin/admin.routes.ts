@@ -55,6 +55,12 @@ export const adminRoutes: Routes = [
           import('./admin-team-list/admin-team-list.component').then(m => m.AdminTeamListComponent),
       },
       {
+        path: 'teams',
+        data: { breadcrumb: 'Teams', title: 'Offshore Teams' },
+        loadComponent: () =>
+          import('./admin-teams/admin-teams.component').then(m => m.AdminTeamsComponent),
+      },
+      {
         path: 'resource-managers',
         data: { breadcrumb: 'Resource Managers', title: 'Resource Managers' },
         loadComponent: () =>

@@ -14,6 +14,7 @@ internal static class LocalStorageBootstrap
     public const string TeamIntroVideoRootKey = "Storage:TeamIntroVideoRoot";
     public const string PortfolioImageRootKey = "Storage:PortfolioImageRoot";
     public const string ProjectInvoiceRootKey = "Storage:ProjectInvoiceRoot";
+    public const string TeamCoverRootKey = "Storage:TeamCoverRoot";
 
     public static void Configure(WebApplicationBuilder builder)
     {
@@ -23,12 +24,14 @@ internal static class LocalStorageBootstrap
         var introVideoRoot = Path.Combine(storageRoot, "team-videos");
         var portfolioRoot = Path.Combine(storageRoot, "portfolio-images");
         var invoiceRoot = Path.Combine(storageRoot, "project-invoices");
+        var teamCoverRoot = Path.Combine(storageRoot, "team-covers");
 
         Directory.CreateDirectory(cvRoot);
         Directory.CreateDirectory(photoRoot);
         Directory.CreateDirectory(introVideoRoot);
         Directory.CreateDirectory(portfolioRoot);
         Directory.CreateDirectory(invoiceRoot);
+        Directory.CreateDirectory(teamCoverRoot);
 
         var overrides = new Dictionary<string, string?>();
         if (string.IsNullOrWhiteSpace(builder.Configuration[StorageRootKey]))
@@ -43,6 +46,8 @@ internal static class LocalStorageBootstrap
             overrides[PortfolioImageRootKey] = portfolioRoot;
         if (string.IsNullOrWhiteSpace(builder.Configuration[ProjectInvoiceRootKey]))
             overrides[ProjectInvoiceRootKey] = invoiceRoot;
+        if (string.IsNullOrWhiteSpace(builder.Configuration[TeamCoverRootKey]))
+            overrides[TeamCoverRootKey] = teamCoverRoot;
 
         if (overrides.Count > 0)
             builder.Configuration.AddInMemoryCollection(overrides);
@@ -55,6 +60,7 @@ internal static class LocalStorageBootstrap
         MapStaticFolder(app, TeamIntroVideoRootKey, "/storage/team-videos");
         MapStaticFolder(app, PortfolioImageRootKey, "/portfolio-images");
         MapStaticFolder(app, ProjectInvoiceRootKey, "/storage/project-invoices");
+        MapStaticFolder(app, TeamCoverRootKey, "/storage/team-covers");
     }
 
     private static void MapStaticFolder(WebApplication app, string configKey, string requestPath)

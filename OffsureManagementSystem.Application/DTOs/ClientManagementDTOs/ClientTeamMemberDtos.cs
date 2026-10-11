@@ -10,6 +10,10 @@ namespace OffsureManagementSystem.Application.DTOs.ClientManagementDTOs
         /// <summary>0-3, 3-5, 5+, or 10+</summary>
         public string? ExperienceBand { get; set; }
         public int? ProjectId { get; set; }
+        /// <summary>Only members of this offshore team.</summary>
+        public int? TeamId { get; set; }
+        /// <summary>Only members not shown under any active team ("Other specialists").</summary>
+        public bool WithoutTeam { get; set; }
     }
 
     public class ClientTeamMemberCardDto

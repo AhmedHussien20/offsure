@@ -36,7 +36,7 @@
           <i class="ti ti-users" aria-hidden="true"></i>
           <span>
             <strong>People</strong>
-            <small>Offshore specialists</small>
+            <small>Offshore teams</small>
           </span>
         </button>
         <button
@@ -231,109 +231,7 @@
         <a ngbNavLink class="nav-link">Offshore team</a>
         <ng-template ngbNavContent>
           <div class="profile-tab-content">
-            <div class="client-techx__panel-head">
-              <div>
-                <h3 class="client-techx__panel-title">Meet the specialists</h3>
-                <p class="client-techx__panel-text mb-0">
-                  Filter by name, skill, or experience, then open a profile for skills, history,
-                  certificates, and introduction.
-                </p>
-              </div>
-              @if (teamHasLoaded && teamTotalCount > 0) {
-                <span class="client-techx__panel-count">{{ teamTotalCount }} specialists</span>
-              }
-            </div>
-
-            <div class="client-team-members__toolbar row g-3 align-items-end mb-3">
-              <div class="col-lg-4 col-md-6">
-                <label class="form-label mb-1" for="otxNameSearch">Search by name</label>
-                <div class="client-team-members__search">
-                  <i class="fe fe-user client-team-members__search-icon"></i>
-                  <input
-                    id="otxNameSearch"
-                    type="text"
-                    class="form-control client-team-members__search-input"
-                    placeholder="Team member name"
-                    [(ngModel)]="teamNameSearch"
-                    (ngModelChange)="onTeamNameSearchInput()" />
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-6">
-                <label class="form-label mb-1" for="otxSkillSearch">Search by skill</label>
-                <div class="client-team-members__search">
-                  <i class="fe fe-search client-team-members__search-icon"></i>
-                  <input
-                    id="otxSkillSearch"
-                    type="text"
-                    class="form-control client-team-members__search-input"
-                    placeholder="e.g. Angular, Cisco, DevOps"
-                    [(ngModel)]="teamSkillSearch"
-                    (ngModelChange)="onTeamSkillSearchInput()" />
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-6">
-                <app-toolbar-select
-                  inputId="otxExperienceBand"
-                  label="Experience"
-                  [options]="experienceOptions"
-                  [(ngModel)]="teamExperienceBand"
-                  (selectionChange)="onTeamExperienceChange()" />
-              </div>
-            </div>
-
-            @if (teamLoading && !teamHasLoaded) {
-              <div class="text-center py-5 text-muted">Loading team...</div>
-            } @else if (!teamRefreshing && teamHasLoaded && teamMembers.length === 0) {
-              <div class="client-techx__empty text-center py-5">
-                <i class="ti ti-users client-techx__empty-icon"></i>
-                <p class="mb-0 text-muted">No team members match your filters.</p>
-              </div>
-            } @else {
-              <div
-                class="client-team-members__grid"
-                [class.client-techx__grid--refreshing]="teamRefreshing">
-                @for (member of teamMembers; track member.id) {
-                  <button type="button" class="client-member-card" (click)="openMemberProfile(member)">
-                    @if (photoUrl(member)) {
-                      <img
-                        [src]="photoUrl(member)!"
-                        [alt]="member.fullName"
-                        class="client-member-card__photo" />
-                    } @else {
-                      <span class="client-member-card__avatar">{{ memberInitials(member) }}</span>
-                    }
-                    <div class="client-member-card__body">
-                      <p class="client-member-card__name mb-0">{{ member.fullName }}</p>
-                      <p class="client-member-card__meta mb-1">{{ member.title || 'Specialist' }}</p>
-                      <p class="client-member-card__years mb-2">
-                        {{ member.yearsOfExperience }} years experience
-                      </p>
-                      @if (member.skills.length) {
-                        <div class="client-member-card__tags">
-                          @for (skill of member.skills.slice(0, 4); track skill) {
-                            <span class="badge bg-light text-dark">{{ skill }}</span>
-                          }
-                          @if (member.skills.length > 4) {
-                            <span class="badge bg-secondary-transparent">
-                              +{{ member.skills.length - 4 }}
-                            </span>
-                          }
-                        </div>
-                      }
-                      <span class="client-techx__card-cue">View profile</span>
-                    </div>
-                  </button>
-                }
-              </div>
-              @if (teamRefreshing) {
-                <p class="client-techx__scroll-hint text-muted small mb-0">Updating results…</p>
-              } @else if (teamLoading) {
-                <p class="client-techx__scroll-hint text-muted small mb-0">Loading more…</p>
-              } @else if (teamHasMore) {
-                <div #teamSentinel class="client-techx__scroll-sentinel" aria-hidden="true"></div>
-                <p class="client-techx__scroll-hint text-muted small mb-0">Scroll for more…</p>
-              }
-            }
+            <app-team-catalog-browser source="client-showcase" />
           </div>
         </ng-template>
       </li>

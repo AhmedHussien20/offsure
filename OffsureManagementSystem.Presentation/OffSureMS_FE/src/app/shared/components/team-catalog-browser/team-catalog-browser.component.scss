@@ -1,0 +1,137 @@
+@import '../../styles/team-members-browse.scss';
+@import '../../styles/techx-browse.scss';
+
+:host {
+  display: block;
+  --techx-border: #e2e8f0;
+  --techx-muted: #64748b;
+}
+
+.team-catalog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+
+/* Clickable wrapper around app-team-card, which draws the card itself. */
+.team-catalog__card {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0.85rem;
+  background: none;
+  text-align: start;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(var(--primary-rgb), 0.3);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgb(var(--primary-rgb));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover,
+    &:focus-visible {
+      transform: none;
+    }
+  }
+}
+
+.team-catalog__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.team-catalog__chip {
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--techx-border);
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #334155;
+  background: #f8fafc;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(var(--primary-rgb), 0.4);
+  }
+
+  &--active {
+    color: #fff;
+    background: rgb(var(--primary-rgb));
+    border-color: rgb(var(--primary-rgb));
+  }
+}
+
+.team-catalog__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: 700;
+  color: rgb(var(--primary-rgb));
+  cursor: pointer;
+}
+
+.team-catalog__banner {
+  margin-bottom: 1rem;
+  border-radius: 0.85rem;
+  overflow: hidden;
+}
+
+.team-catalog__banner-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.35rem;
+  max-width: 42rem;
+  padding: 1.35rem 1.4rem;
+}
+
+.team-catalog__banner-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.team-catalog__banner-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.team-catalog__banner-desc {
+  opacity: 0.92;
+}
+
+.team-catalog__focus {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.team-catalog__focus-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--techx-muted);
+}

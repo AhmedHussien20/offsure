@@ -1,0 +1,209 @@
+@if (!scope) {
+  <!-- Team folders -->
+  <div class="client-techx__panel-head">
+    <div>
+      <h3 class="client-techx__panel-title">Browse offshore teams</h3>
+      <p class="client-techx__panel-text mb-0">
+        Open a team to meet the specialists behind each technology.
+      </p>
+    </div>
+    @if (catalog && catalog.totalSpecialists > 0) {
+      <span class="client-techx__panel-count">
+        {{ catalog.teams.length }} teams · {{ specialistsLabel(catalog.totalSpecialists) }}
+      </span>
+    }
+  </div>
+
+  <div class="client-techx__toolbar mb-3">
+    <div class="client-techx__search">
+      <i class="fe fe-search client-techx__search-icon"></i>
+      <input
+        type="text"
+        class="form-control client-techx__search-input"
+        placeholder="Search teams or a technology, e.g. Azure"
+        aria-label="Search teams or a technology"
+        [(ngModel)]="teamSearch"
+        (ngModelChange)="onTeamSearchInput()" />
+    </div>
+  </div>
+
+  @if (catalogLoading && !catalog) {
+    <div class="text-center py-5 text-muted">Loading teams...</div>
+  } @else if (catalogError && !catalog) {
+    <div class="alert alert-warning mb-0">{{ catalogError }}</div>
+  } @else if (catalog && catalog.teams.length === 0 && !showOtherCard) {
+    <div class="client-techx__empty text-center py-5">
+      <i class="ti ti-users client-techx__empty-icon"></i>
+      <p class="mb-2 text-muted">No team covers “{{ teamSearch.trim() }}”.</p>
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="searchAllSpecialists()">
+        Search all specialists instead
+      </button>
+    </div>
+  } @else if (catalog) {
+    <div class="team-catalog__grid" [class.client-techx__grid--refreshing]="catalogRefreshing">
+      @for (team of catalog.teams; track team.id) {
+        <button type="button" class="team-catalog__card" (click)="openTeam(team)">
+          <app-team-card
+            [name]="team.name"
+            [description]="team.description"
+            [coverImageUrl]="team.coverImageUrl"
+            [memberCount]="team.memberCount"
+            [skills]="team.topSkills"
+            [skillCount]="team.skillCount"
+            [matchedSkill]="team.matchedSkill"
+            [faces]="team.memberPreviews" />
+        </button>
+      }
+
+      @if (showOtherCard) {
+        <button type="button" class="team-catalog__card" (click)="openOtherSpecialists()">
+          <app-team-card
+            name="Other specialists"
+            description="Specialists who are not listed under a team yet."
+            [memberCount]="catalog.unassignedCount"
+            cue="Browse" />
+        </button>
+      }
+    </div>
+  }
+} @else {
+  <!-- Specialists of the chosen team -->
+  @if (!flatMode) {
+    <button type="button" class="team-catalog__back" (click)="backToTeams()">
+      <i class="ti ti-arrow-left"></i> All teams
+    </button>
+  }
+
+  @if (selectedTeam; as team) {
+    <app-team-cover class="team-catalog__banner" variant="banner" [name]="team.name" [coverImageUrl]="team.coverImageUrl">
+      <div class="team-catalog__banner-content">
+        <span class="team-catalog__banner-eyebrow">Offshore team</span>
+        <h3 class="team-catalog__banner-title">{{ team.name }}</h3>
+        @if (team.description) {
+          <p class="team-catalog__banner-desc mb-0">{{ team.description }}</p>
+        }
+      </div>
+    </app-team-cover>
+
+    @if (team.topSkills.length) {
+      <div class="team-catalog__focus">
+        <span class="team-catalog__focus-label">What this team covers · select to filter</span>
+        <div class="team-catalog__chips">
+          @for (skill of team.topSkills; track skill) {
+            <button
+              type="button"
+              class="team-catalog__chip"
+              [class.team-catalog__chip--active]="teamSkillSearch === skill"
+              [attr.aria-pressed]="teamSkillSearch === skill"
+              (click)="toggleSkillFilter(skill)">
+              {{ skill }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <div class="client-techx__panel-head">
+    <div>
+      @if (scope.kind === 'team') {
+        <h3 class="client-techx__panel-title">Team members</h3>
+      } @else if (scope.kind === 'other') {
+        <h3 class="client-techx__panel-title">Other specialists</h3>
+      } @else {
+        <h3 class="client-techx__panel-title">Meet the specialists</h3>
+      }
+      <p class="client-techx__panel-text mb-0">
+        Filter by name, skill, or experience, then open a profile for skills, history,
+        certificates, and introduction.
+      </p>
+    </div>
+    @if (teamHasLoaded && teamTotalCount > 0) {
+      <span class="client-techx__panel-count">{{ specialistsLabel(teamTotalCount) }}</span>
+    }
+  </div>
+
+  <div class="client-team-members__toolbar row g-3 align-items-end mb-3">
+    <div class="col-lg-4 col-md-6">
+      <label class="form-label mb-1" for="otxNameSearch">Search by name</label>
+      <div class="client-team-members__search">
+        <i class="fe fe-user client-team-members__search-icon"></i>
+        <input
+          id="otxNameSearch"
+          type="text"
+          class="form-control client-team-members__search-input"
+          placeholder="Team member name"
+          [(ngModel)]="teamNameSearch"
+          (ngModelChange)="onTeamNameSearchInput()" />
+      </div>
+    </div>
+    <div class="col-lg-4 col-md-6">
+      <label class="form-label mb-1" for="otxSkillSearch">Search by skill</label>
+      <div class="client-team-members__search">
+        <i class="fe fe-search client-team-members__search-icon"></i>
+        <input
+          id="otxSkillSearch"
+          type="text"
+          class="form-control client-team-members__search-input"
+          placeholder="e.g. Angular, Cisco, DevOps"
+          [(ngModel)]="teamSkillSearch"
+          (ngModelChange)="onTeamSkillSearchInput()" />
+      </div>
+    </div>
+    <div class="col-lg-4 col-md-6">
+      <app-toolbar-select
+        inputId="otxExperienceBand"
+        label="Experience"
+        [options]="experienceOptions"
+        [(ngModel)]="teamExperienceBand"
+        (selectionChange)="onTeamExperienceChange()" />
+    </div>
+  </div>
+
+  @if (teamLoading && !teamHasLoaded) {
+    <div class="text-center py-5 text-muted">Loading team...</div>
+  } @else if (!teamRefreshing && teamHasLoaded && teamMembers.length === 0) {
+    <div class="client-techx__empty text-center py-5">
+      <i class="ti ti-users client-techx__empty-icon"></i>
+      <p class="mb-0 text-muted">No team members match your filters.</p>
+    </div>
+  } @else {
+    <div class="client-team-members__grid" [class.client-techx__grid--refreshing]="teamRefreshing">
+      @for (member of teamMembers; track member.id) {
+        <button type="button" class="client-member-card" (click)="openMemberProfile(member)">
+          @if (photoUrl(member.profilePhotoUrl); as src) {
+            <img [src]="src" [alt]="member.fullName" class="client-member-card__photo" />
+          } @else {
+            <span class="client-member-card__avatar">{{ initials(member.fullName) }}</span>
+          }
+          <div class="client-member-card__body">
+            <p class="client-member-card__name mb-0">{{ member.fullName }}</p>
+            <p class="client-member-card__meta mb-1">{{ member.title || 'Specialist' }}</p>
+            <p class="client-member-card__years mb-2">
+              {{ member.yearsOfExperience }} years experience
+            </p>
+            @if (member.skills.length) {
+              <div class="client-member-card__tags">
+                @for (skill of member.skills.slice(0, 4); track skill) {
+                  <span class="badge bg-light text-dark">{{ skill }}</span>
+                }
+                @if (member.skills.length > 4) {
+                  <span class="badge bg-secondary-transparent">+{{ member.skills.length - 4 }}</span>
+                }
+              </div>
+            }
+            <span class="client-techx__card-cue">View profile</span>
+          </div>
+        </button>
+      }
+    </div>
+    @if (teamRefreshing) {
+      <p class="client-techx__scroll-hint text-muted small mb-0">Updating results…</p>
+    } @else if (teamLoading) {
+      <p class="client-techx__scroll-hint text-muted small mb-0">Loading more…</p>
+    } @else if (teamHasMore) {
+      <div #teamSentinel class="client-techx__scroll-sentinel" aria-hidden="true"></div>
+      <p class="client-techx__scroll-hint text-muted small mb-0">Scroll for more…</p>
+    }
+  }
+}

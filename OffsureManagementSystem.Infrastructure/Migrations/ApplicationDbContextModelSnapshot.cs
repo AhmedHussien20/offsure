@@ -984,6 +984,9 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.Property<int?>("ResourceManagerId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TeamId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1006,6 +1009,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ResourceManagerId");
+
+                    b.HasIndex("TeamId");
 
                     b.HasIndex("UserId");
 
@@ -1697,6 +1702,69 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                     b.ToTable("SkillCategories");
                 });
 
+            modelBuilder.Entity("OffsureManagementSystem.Domain.Entities.Team", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CoverImage")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("Teams");
+                });
+
             modelBuilder.Entity("OffshoreManagementSystem.Domain.Entities.Client", b =>
                 {
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.Client", "ParentClient")
@@ -1933,6 +2001,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .HasForeignKey("ResourceManagerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("OffsureManagementSystem.Domain.Entities.Team", "Team")
+                        .WithMany("Members")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("OffshoreManagementSystem.Domain.Entities.User", "User")
                         .WithMany("TeamMembers")
                         .HasForeignKey("UserId")
@@ -1940,6 +2013,8 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("ResourceManager");
+
+                    b.Navigation("Team");
 
                     b.Navigation("User");
                 });
@@ -2121,6 +2196,11 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
             modelBuilder.Entity("OffsureManagementSystem.Domain.Entities.SkillCategory", b =>
                 {
                     b.Navigation("Skills");
+                });
+
+            modelBuilder.Entity("OffsureManagementSystem.Domain.Entities.Team", b =>
+                {
+                    b.Navigation("Members");
                 });
 #pragma warning restore 612, 618
         }

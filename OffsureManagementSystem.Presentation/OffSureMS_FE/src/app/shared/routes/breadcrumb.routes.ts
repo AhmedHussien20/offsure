@@ -10,6 +10,7 @@ export const BREADCRUMB_ROUTES: Record<string, string> = {
   'Admin Team': '/admin/team',
   Services: '/admin/services',
   Skills: '/admin/skills',
+  Teams: '/admin/teams',
   Portfolio: '/admin/portfolio',
   Companies: '/admin/companies',
   Clients: '/admin/companies',

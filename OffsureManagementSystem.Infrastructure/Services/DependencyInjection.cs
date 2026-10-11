@@ -40,6 +40,7 @@ namespace OffsureManagementSystem.Infrastructure.Services
             services.AddScoped<ILandingPageContentService, LandingPageContentService>();
             services.AddScoped<ISkillManagementService, SkillManagementService>();
             services.AddScoped<IDashboardStatisticsService, DashboardStatisticsService>();
+            services.AddScoped<ITeamCatalogService, TeamCatalogService>();
 
 
             return services;

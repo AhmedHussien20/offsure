@@ -5,6 +5,10 @@ export interface ClientTeamMemberBrowseRequest {
   skillSearch?: string;
   experienceBand?: ClientTeamExperienceBand;
   projectId?: number;
+  /** Only members of this offshore team. */
+  teamId?: number;
+  /** Only members not shown under any active team ("Other specialists"). */
+  withoutTeam?: boolean;
   pageIndex?: number;
   pageSize?: number;
 }

@@ -1,5 +1,6 @@
 @import '../../../shared/styles/profile-layout.scss';
 @import '../../../shared/styles/team-members-browse.scss';
+@import '../../../shared/styles/techx-browse.scss';
 
 // UI browse enhancement (2026-08-04) — revert this file + matching HTML/TS if unwanted.
 
@@ -189,100 +190,6 @@
       color: #fff;
     }
   }
-}
-
-.client-techx__panel-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem 1.25rem;
-  margin-bottom: 1.1rem;
-  padding-bottom: 0.95rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.client-techx__panel-title {
-  margin: 0 0 0.25rem;
-  font-size: 1.05rem;
-  font-weight: 750;
-  color: #0f172a;
-}
-
-.client-techx__panel-text {
-  color: var(--techx-muted);
-  font-size: 0.88rem;
-  line-height: 1.45;
-  max-width: 40rem;
-}
-
-.client-techx__panel-count {
-  flex-shrink: 0;
-  padding: 0.3rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: rgb(var(--primary-rgb));
-  background: rgba(var(--primary-rgb), 0.1);
-}
-
-.client-techx__card-cue {
-  display: inline-block;
-  margin-top: 0.55rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: rgb(var(--primary-rgb));
-}
-
-.client-techx__empty {
-  border: 1px dashed var(--techx-border);
-  border-radius: 0.75rem;
-  background: #f8fafc;
-}
-
-.client-techx__empty-icon {
-  display: block;
-  font-size: 1.75rem;
-  color: rgb(var(--primary-rgb) / 70%);
-  margin-bottom: 0.65rem;
-}
-
-.client-techx__toolbar {
-  max-width: 28rem;
-}
-
-.client-techx__scroll-sentinel {
-  height: 1px;
-  width: 100%;
-  pointer-events: none;
-}
-
-.client-techx__scroll-hint {
-  text-align: center;
-  padding: 0.75rem 0 0.25rem;
-}
-
-.client-techx__grid--refreshing {
-  opacity: 0.55;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.client-techx__search {
-  position: relative;
-}
-
-.client-techx__search-icon {
-  position: absolute;
-  left: 0.85rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-.client-techx__search-input {
-  padding-left: 2.35rem;
 }
 
 .client-techx__category-grid {

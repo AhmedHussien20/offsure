@@ -4,12 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgbModal, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { SERVICE_PROVIDER_NAME } from 'app/core/constants/branding.constants';
-import {
-  CLIENT_TEAM_EXPERIENCE_BANDS,
-  ClientTeamExperienceBand,
-  ClientTeamMemberBrowseRequest,
-  ClientTeamMemberCardDto,
-} from 'app/core/models/clients/client-team-member.models';
 import { PortfolioDto } from 'app/core/models/portfolios/portfolio.models';
 import { ServiceRequestCreatePrefill } from 'app/core/models/services/service-request-prefill.model';
 import {
@@ -17,16 +11,13 @@ import {
   ServiceCategoryRequest,
 } from 'app/core/models/services/service.models';
 import { resolveStorageAssetUrl } from 'app/core/models/team-members/team-member.models';
-import { ClientsService } from 'app/core/services/clients.service';
 import { PortfoliosService } from 'app/core/services/portfolios.service';
 import { RouteViewStateService } from 'app/core/services/route-view-state.service';
 import { ServiceCategoriesService } from 'app/core/services/service-categories.service';
 import { ClientRequestCreateComponent } from 'app/components/client/client-request-form/client-request-create.component';
 import { LandingPortfolioCard } from 'app/components/landingpage/landing-page/landing-portfolio.models';
 import { LandingPortfolioDetailModalComponent } from 'app/components/landingpage/landing-page/landing-portfolio-detail-modal.component';
-import { TeamMemberProfileModalComponent } from 'app/shared/components/team-member-profile-modal/team-member-profile-modal.component';
-import { ToolbarSelectComponent } from 'app/shared/components/toolbar-select/toolbar-select.component';
-import { ToolbarSelectOption } from 'app/shared/components/toolbar-select/toolbar-select.models';
+import { TeamCatalogBrowserComponent } from 'app/shared/components/team-catalog-browser/team-catalog-browser.component';
 import { SharedModule } from 'app/shared/shared.module';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
@@ -49,7 +40,6 @@ interface ShowcaseCategory {
 const SEARCH_DEBOUNCE_MS = 400;
 const CATEGORY_PAGE_SIZE = 8;
 const PROJECT_PAGE_SIZE = 12;
-const TEAM_PAGE_SIZE = 12;
 
 @Component({
   selector: 'app-client-offshore-techx',
@@ -59,15 +49,13 @@ const TEAM_PAGE_SIZE = 12;
     FormsModule,
     SharedModule,
     NgbNavModule,
-    ToolbarSelectComponent,
+    TeamCatalogBrowserComponent,
   ],
   templateUrl: './client-offshore-techx.component.html',
   styleUrl: './client-offshore-techx.component.scss',
 })
 export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
   readonly providerName = SERVICE_PROVIDER_NAME;
-  readonly experienceOptions: ToolbarSelectOption<ClientTeamExperienceBand>[] =
-    CLIENT_TEAM_EXPERIENCE_BANDS.map(b => ({ label: b.label, value: b.value }));
 
   activeTab: 'services' | 'team' | 'projects' = 'services';
   loading = true;
@@ -94,31 +82,15 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
   projectsHasLoaded = false;
   projectsHasMore = false;
 
-  teamMembers: ClientTeamMemberCardDto[] = [];
-  teamLoading = false;
-  teamHasLoaded = false;
-  teamNameSearch = '';
-  teamSkillSearch = '';
-  teamExperienceBand: ClientTeamExperienceBand = '';
-  teamPage = 1;
-  teamPageSize = TEAM_PAGE_SIZE;
-  teamTotalCount = 0;
-  teamHasMore = false;
-
   private readonly destroy$ = new Subject<void>();
   private readonly serviceSearch$ = new Subject<string>();
   private readonly projectSearch$ = new Subject<string>();
-  private readonly teamNameSearch$ = new Subject<string>();
-  private readonly teamSkillSearch$ = new Subject<string>();
-  private teamLoadRequestId = 0;
   private projectLoadRequestId = 0;
   private categoryLoadRequestId = 0;
   private categoriesObserver: IntersectionObserver | null = null;
   private projectsObserver: IntersectionObserver | null = null;
-  private teamObserver: IntersectionObserver | null = null;
   private categoriesSentinelEl: HTMLElement | null = null;
   private projectsSentinelEl: HTMLElement | null = null;
-  private teamSentinelEl: HTMLElement | null = null;
 
   @ViewChild('categoriesSentinel')
   set categoriesSentinel(ref: ElementRef<HTMLElement> | undefined) {
@@ -132,16 +104,9 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     this.bindProjectsObserver();
   }
 
-  @ViewChild('teamSentinel')
-  set teamSentinel(ref: ElementRef<HTMLElement> | undefined) {
-    this.teamSentinelEl = ref?.nativeElement ?? null;
-    this.bindTeamObserver();
-  }
-
   constructor(
     private portfoliosService: PortfoliosService,
     private serviceCategoriesService: ServiceCategoriesService,
-    private clientsService: ClientsService,
     private modalService: NgbModal,
     private router: Router,
     private viewState: RouteViewStateService
@@ -166,24 +131,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
       )
       .subscribe(() => this.loadProjects(true));
 
-    this.teamNameSearch$
-      .pipe(
-        debounceTime(SEARCH_DEBOUNCE_MS),
-        map(() => this.teamNameSearch.trim()),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => this.loadTeamMembers(true));
-
-    this.teamSkillSearch$
-      .pipe(
-        debounceTime(SEARCH_DEBOUNCE_MS),
-        map(() => this.teamSkillSearch.trim()),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => this.loadTeamMembers(true));
-
     this.restoreBrowseTabIfNeeded();
     this.persistBrowseTab();
     this.loadShowcase();
@@ -192,7 +139,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.categoriesObserver?.disconnect();
     this.projectsObserver?.disconnect();
-    this.teamObserver?.disconnect();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -206,18 +152,11 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     return this.projectsLoading && this.projectsHasLoaded && this.projectPage === 1;
   }
 
-  get teamRefreshing(): boolean {
-    return this.teamLoading && this.teamHasLoaded && this.teamPage === 1;
-  }
-
   onTabChange(tab: string | number | null | undefined): void {
     this.closeCategoryDrawer();
     const next = String(tab ?? 'services') as 'services' | 'team' | 'projects';
     this.activeTab = next;
     this.persistBrowseTab();
-    if (next === 'team' && !this.teamHasLoaded) {
-      this.loadTeamMembers(true);
-    }
     if (next === 'projects' && !this.projectsHasLoaded) {
       this.loadProjects(true);
     }
@@ -251,18 +190,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
 
   onProjectSearchInput(): void {
     this.projectSearch$.next(this.projectSearch);
-  }
-
-  onTeamNameSearchInput(): void {
-    this.teamNameSearch$.next(this.teamNameSearch);
-  }
-
-  onTeamSkillSearchInput(): void {
-    this.teamSkillSearch$.next(this.teamSkillSearch);
-  }
-
-  onTeamExperienceChange(): void {
-    this.loadTeamMembers(true);
   }
 
   serviceCountLabel(count: number): string {
@@ -311,16 +238,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
     modalRef.componentInstance.prefill = prefill;
   }
 
-  openMemberProfile(member: ClientTeamMemberCardDto): void {
-    const modalRef = this.modalService.open(TeamMemberProfileModalComponent, {
-      centered: true,
-      size: 'lg',
-      scrollable: true,
-    });
-    modalRef.componentInstance.memberId = member.id;
-    modalRef.componentInstance.source = 'client-showcase';
-  }
-
   openProjectDetail(project: PortfolioDto): void {
     const modalRef = this.modalService.open(LandingPortfolioDetailModalComponent, {
       centered: true,
@@ -328,18 +245,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
       scrollable: true,
     });
     modalRef.componentInstance.portfolio = this.toLandingCard(project);
-  }
-
-  photoUrl(member: ClientTeamMemberCardDto): string | null {
-    return resolveStorageAssetUrl(member.profilePhotoUrl);
-  }
-
-  memberInitials(member: ClientTeamMemberCardDto): string {
-    const parts = member.fullName.trim().split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
-    }
-    return (parts[0]?.charAt(0) ?? '?').toUpperCase();
   }
 
   projectThumb(project: PortfolioDto): string | null {
@@ -546,78 +451,6 @@ export class ClientOffshoreTechxComponent implements OnInit, OnDestroy {
         this.projectsHasMore = false;
         this.projectsLoading = false;
         this.projectsHasLoaded = true;
-      },
-    });
-  }
-
-  private bindTeamObserver(): void {
-    this.teamObserver?.disconnect();
-    this.teamObserver = null;
-    const el = this.teamSentinelEl;
-    if (!el) return;
-
-    this.teamObserver = new IntersectionObserver(
-      entries => {
-        if (!entries.some(e => e.isIntersecting)) return;
-        this.loadMoreTeamIfNeeded();
-      },
-      { root: null, rootMargin: '240px 0px', threshold: 0 }
-    );
-    this.teamObserver.observe(el);
-  }
-
-  private loadMoreTeamIfNeeded(): void {
-    if (!this.teamHasMore || this.teamLoading || this.teamRefreshing) return;
-    if (!this.teamSentinelEl || !this.isNearViewport(this.teamSentinelEl)) return;
-    this.teamPage += 1;
-    this.loadTeamMembers(false);
-  }
-
-  private loadTeamMembers(reset: boolean): void {
-    const keepStale = reset && this.teamHasLoaded;
-    if (reset) {
-      this.teamPage = 1;
-      this.teamHasMore = false;
-      if (!keepStale) {
-        this.teamMembers = [];
-      }
-    }
-
-    const requestId = ++this.teamLoadRequestId;
-    this.teamLoading = true;
-
-    const request: ClientTeamMemberBrowseRequest = {
-      pageIndex: this.teamPage,
-      pageSize: this.teamPageSize,
-    };
-    const name = this.teamNameSearch.trim();
-    const skill = this.teamSkillSearch.trim();
-    if (name) request.nameSearch = name;
-    if (skill) request.skillSearch = skill;
-    if (this.teamExperienceBand) request.experienceBand = this.teamExperienceBand;
-
-    this.clientsService.browseShowcaseTeamMembers(request).subscribe({
-      next: res => {
-        if (requestId !== this.teamLoadRequestId) return;
-        const pageItems = res.data?.data ?? [];
-        this.teamMembers = reset ? pageItems : [...this.teamMembers, ...pageItems];
-        this.teamTotalCount = res.data?.totalCount ?? 0;
-        this.teamHasMore = this.teamMembers.length < this.teamTotalCount;
-        this.teamLoading = false;
-        this.teamHasLoaded = true;
-        if (!keepStale) {
-          queueMicrotask(() => this.loadMoreTeamIfNeeded());
-        }
-      },
-      error: () => {
-        if (requestId !== this.teamLoadRequestId) return;
-        if (reset && !keepStale) {
-          this.teamMembers = [];
-          this.teamTotalCount = 0;
-        }
-        this.teamHasMore = false;
-        this.teamLoading = false;
-        this.teamHasLoaded = true;
       },
     });
   }

@@ -28,6 +28,17 @@ namespace OffsureManagementSystem.Infrastructure.Services
                     && ts.Skill.Name.Contains(term)));
         }
 
+        public static IQueryable<TeamMember> ApplyTeam(IQueryable<TeamMember> query, int? teamId, bool withoutTeam)
+        {
+            if (teamId.HasValue)
+                return query.Where(t => t.TeamId == teamId.Value);
+
+            if (withoutTeam)
+                return query.Where(t => t.TeamId == null || t.Team == null || !t.Team.IsActive);
+
+            return query;
+        }
+
         public static IQueryable<TeamMember> ApplyExperienceBand(IQueryable<TeamMember> query, string? band)
         {
             if (string.IsNullOrWhiteSpace(band))
