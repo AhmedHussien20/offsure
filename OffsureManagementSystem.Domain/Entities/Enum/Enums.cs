@@ -52,7 +52,8 @@ namespace OffsureManagementSystem.Domain.Entities.Enum
         Client = 2,
         TeamMember = 3,
         ResourceManager = 4,
-        Sales = 5
+        Sales = 5,
+        Viewer = 6
     }
 
     /// <summary>

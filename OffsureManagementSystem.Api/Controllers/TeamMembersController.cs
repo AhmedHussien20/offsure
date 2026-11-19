@@ -162,6 +162,65 @@ namespace OffsureManagementSystem.API.Controllers
             return Ok(ApiResponse<object>.Ok(null!, "Sales user password reset successfully."));
         }
 
+        [HttpGet("viewer-users")]
+        public async Task<ActionResult<ApiResponse<PagedResponse<ViewerUserDto>>>> GetViewerUsers(
+            [FromQuery] ViewerUserRequest request)
+        {
+            var users = await _teamManagementService.GetViewerUsersAsync(request);
+            return Ok(ApiResponse<PagedResponse<ViewerUserDto>>.Ok(users));
+        }
+
+        [HttpGet("viewer-users/{id:int}")]
+        public async Task<ActionResult<ApiResponse<ViewerUserDto>>> GetViewerUserById(int id)
+        {
+            var user = await _teamManagementService.GetViewerUserByIdAsync(id);
+            return Ok(ApiResponse<ViewerUserDto>.Ok(user));
+        }
+
+        [HttpPost("viewer-users")]
+        public async Task<ActionResult<ApiResponse<ViewerUserDto>>> CreateViewerUser(CreateViewerUserDto dto)
+        {
+            var user = await _teamManagementService.CreateViewerUserAsync(dto);
+            return Ok(ApiResponse<ViewerUserDto>.Ok(user, "Viewer user created successfully."));
+        }
+
+        [HttpPut("viewer-users/{id:int}")]
+        public async Task<ActionResult<ApiResponse<ViewerUserDto>>> UpdateViewerUser(int id, UpdateViewerUserDto dto)
+        {
+            var user = await _teamManagementService.UpdateViewerUserAsync(id, dto);
+            return Ok(ApiResponse<ViewerUserDto>.Ok(user, "Viewer user updated successfully."));
+        }
+
+        [HttpPatch("viewer-users/{id:int}/deactivate")]
+        public async Task<ActionResult<ApiResponse<ViewerUserDto>>> DeactivateViewerUser(int id)
+        {
+            var user = await _teamManagementService.DeactivateViewerUserAsync(id);
+            return Ok(ApiResponse<ViewerUserDto>.Ok(user, "Viewer user deactivated successfully."));
+        }
+
+        [HttpPatch("viewer-users/{id:int}/activate")]
+        public async Task<ActionResult<ApiResponse<ViewerUserDto>>> ActivateViewerUser(int id)
+        {
+            var user = await _teamManagementService.ActivateViewerUserAsync(id);
+            return Ok(ApiResponse<ViewerUserDto>.Ok(user, "Viewer user activated successfully."));
+        }
+
+        [HttpDelete("viewer-users/{id:int}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteViewerUser(int id)
+        {
+            await _teamManagementService.DeleteViewerUserAsync(id);
+            return Ok(ApiResponse<object>.Ok(null!, "Viewer user deleted successfully."));
+        }
+
+        [HttpPost("viewer-users/{id:int}/reset-password")]
+        public async Task<ActionResult<ApiResponse<object>>> ResetViewerUserPassword(
+            int id,
+            ResetTeamMemberPasswordDto dto)
+        {
+            await _teamManagementService.ResetViewerUserPasswordAsync(id, dto);
+            return Ok(ApiResponse<object>.Ok(null!, "Viewer user password reset successfully."));
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApiResponse<TeamMemberDto>>> Create(CreateTeamMemberDto dto)
         {

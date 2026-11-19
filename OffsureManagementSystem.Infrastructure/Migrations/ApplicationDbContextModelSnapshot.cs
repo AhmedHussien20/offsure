@@ -1595,6 +1595,15 @@ namespace OffsureManagementSystem.Infrastructure.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Sales"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Read-only portal; view projects, service requests, and clients without modification access.",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Viewer"
                         });
                 });
 

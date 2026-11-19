@@ -7,6 +7,7 @@ import {
   CreateTeamMemberDto,
   CreateResourceManagerDto,
   CreateSalesUserDto,
+  CreateViewerUserDto,
   CvStorageResultDto,
   ResourceManagerRequest,
   ResourceManagerUserDto,
@@ -18,8 +19,11 @@ import {
   UpdateResourceManagerDto,
   UpdateSalesUserDto,
   UpdateTeamMemberDto,
+  UpdateViewerUserDto,
   UpsertTeamMemberSkillDto,
   ResetTeamMemberPasswordDto,
+  ViewerUserDto,
+  ViewerUserRequest,
 } from '../models/team-members/team-member.models';
 
 @Injectable({ providedIn: 'root' })
@@ -146,6 +150,42 @@ export class TeamMembersService {
 
   resetSalesUserPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {
     return this.api.post<BaseResponse<object>>(this.service, `sales-users/${id}/reset-password`, dto);
+  }
+
+  getViewerUsers(request?: ViewerUserRequest): Observable<BaseResponse<PagedResponse<ViewerUserDto>>> {
+    return this.api.get<BaseResponse<PagedResponse<ViewerUserDto>>>(
+      this.service,
+      'viewer-users',
+      request as Record<string, unknown>
+    );
+  }
+
+  getViewerUserById(id: number): Observable<BaseResponse<ViewerUserDto>> {
+    return this.api.get<BaseResponse<ViewerUserDto>>(this.service, `viewer-users/${id}`);
+  }
+
+  createViewerUser(dto: CreateViewerUserDto): Observable<BaseResponse<ViewerUserDto>> {
+    return this.api.post<BaseResponse<ViewerUserDto>>(this.service, 'viewer-users', dto);
+  }
+
+  updateViewerUser(id: number, dto: UpdateViewerUserDto): Observable<BaseResponse<ViewerUserDto>> {
+    return this.api.put<BaseResponse<ViewerUserDto>>(this.service, `viewer-users/${id}`, dto);
+  }
+
+  deactivateViewerUser(id: number): Observable<BaseResponse<ViewerUserDto>> {
+    return this.api.patch<BaseResponse<ViewerUserDto>>(this.service, `viewer-users/${id}/deactivate`, {});
+  }
+
+  activateViewerUser(id: number): Observable<BaseResponse<ViewerUserDto>> {
+    return this.api.patch<BaseResponse<ViewerUserDto>>(this.service, `viewer-users/${id}/activate`, {});
+  }
+
+  deleteViewerUser(id: number): Observable<BaseResponse<object>> {
+    return this.api.delete<BaseResponse<object>>(this.service, `viewer-users/${id}`);
+  }
+
+  resetViewerUserPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {
+    return this.api.post<BaseResponse<object>>(this.service, `viewer-users/${id}/reset-password`, dto);
   }
 
   resetResourceManagerPassword(id: number, dto: ResetTeamMemberPasswordDto): Observable<BaseResponse<object>> {

@@ -192,6 +192,10 @@ export class AuthService {
     return this.getUserRole() === 'Sales';
   }
 
+  isViewer(): boolean {
+    return this.getUserRole() === 'Viewer';
+  }
+
   hasPermission(permission: string): boolean {
     return this.getUser()?.permissions?.includes(permission) ?? false;
   }

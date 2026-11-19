@@ -38,6 +38,13 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task<SalesUserDto> DeactivateSalesUserAsync(int userId);
         Task<SalesUserDto> ActivateSalesUserAsync(int userId);
         Task DeleteSalesUserAsync(int userId);
+        Task<PagedResponse<ViewerUserDto>> GetViewerUsersAsync(ViewerUserRequest request);
+        Task<ViewerUserDto> GetViewerUserByIdAsync(int userId);
+        Task<ViewerUserDto> CreateViewerUserAsync(CreateViewerUserDto dto);
+        Task<ViewerUserDto> UpdateViewerUserAsync(int userId, UpdateViewerUserDto dto);
+        Task<ViewerUserDto> DeactivateViewerUserAsync(int userId);
+        Task<ViewerUserDto> ActivateViewerUserAsync(int userId);
+        Task DeleteViewerUserAsync(int userId);
         Task<PagedResponse<TeamMemberDto>> GetManagedTeamMembersAsync(int resourceManagerUserId, TeamMemberRequest request);
         Task<TeamMemberDto> GetManagedTeamMemberByIdAsync(int resourceManagerUserId, int teamMemberId);
         Task<TeamMemberDto> CreateManagedTeamMemberAsync(int resourceManagerUserId, CreateTeamMemberDto dto);
@@ -49,6 +56,7 @@ namespace OffsureManagementSystem.Application.Interfaces.Services
         Task ResetTeamMemberPasswordAsync(int teamMemberId, ResetTeamMemberPasswordDto dto);
         Task ResetManagedTeamMemberPasswordAsync(int resourceManagerUserId, int teamMemberId, ResetTeamMemberPasswordDto dto);
         Task ResetSalesUserPasswordAsync(int userId, ResetTeamMemberPasswordDto dto);
+        Task ResetViewerUserPasswordAsync(int userId, ResetTeamMemberPasswordDto dto);
         Task ResetResourceManagerPasswordAsync(int userId, ResetTeamMemberPasswordDto dto);
         Task<TeamMemberDto> StoreProfilePhotoForUserAsync(int userId, Stream content, string fileName);
         Task<(Stream Stream, string FileName, string ContentType)?> OpenCvForUserAsync(int userId);

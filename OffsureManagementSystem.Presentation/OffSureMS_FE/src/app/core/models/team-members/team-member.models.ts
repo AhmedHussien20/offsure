@@ -125,6 +125,35 @@ export interface SalesUserDto {
   isActive: boolean;
 }
 
+export interface ViewerUserRequest {
+  pageIndex?: number;
+  pageSize?: number;
+  searchKey?: string;
+  isActive?: boolean;
+}
+
+export interface CreateViewerUserDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface UpdateViewerUserDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface ViewerUserDto {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+}
+
 export interface TeamMemberSkillDto {
   id: number;
   skillId: number;

@@ -190,6 +190,15 @@ namespace OffshoreManagementSystem.Infrastructure.DataContext
                         IsActive = true,
                         CreatedAt = rolesSeededAt,
                         IsDeleted = false
+                    },
+                    new Role
+                    {
+                        Id = 6,
+                        Name = "Viewer",
+                        Description = "Read-only portal; view projects, service requests, and clients without modification access.",
+                        IsActive = true,
+                        CreatedAt = rolesSeededAt,
+                        IsDeleted = false
                     });
             });
 

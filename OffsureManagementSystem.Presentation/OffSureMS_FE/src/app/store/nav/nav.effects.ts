@@ -66,6 +66,13 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     requiredRole: 'Administrator',
   },
   {
+    title: 'Viewers',
+    path: '/admin/viewers',
+    type: 'link',
+    icon: 'ti-eye',
+    requiredRole: 'Administrator',
+  },
+  {
     title: 'Services',
     path: '/admin/services',
     type: 'link',
@@ -106,6 +113,38 @@ private ADMIN_MENUITEMS: MenuItem[] = [
     type: 'link',
     icon: 'ti-id-badge',
     requiredRole: 'Administrator',
+  },
+];
+
+private VIEWER_MENUITEMS: MenuItem[] = [
+  { headTitle: 'Viewer Portal' },
+  {
+    title: 'Projects',
+    path: '/viewer/projects',
+    type: 'link',
+    icon: 'ti-folder',
+    requiredRole: 'Viewer',
+  },
+  {
+    title: 'Requests',
+    path: '/viewer/requests',
+    type: 'link',
+    icon: 'ti-clipboard',
+    requiredRole: 'Viewer',
+  },
+  {
+    title: 'Companies',
+    path: '/viewer/companies',
+    type: 'link',
+    icon: 'ti-briefcase',
+    requiredRole: 'Viewer',
+  },
+  {
+    title: 'All Client Members',
+    path: '/viewer/client-members',
+    type: 'link',
+    icon: 'ti-id-badge',
+    requiredRole: 'Viewer',
   },
 ];
 
@@ -510,6 +549,9 @@ private MENUITEMS: MenuItem[] = [
     }
     if (this.auth.isSales()) {
       return this.SALES_MENUITEMS;
+    }
+    if (this.auth.isViewer()) {
+      return this.VIEWER_MENUITEMS;
     }
     if (this.auth.isAdministrator()) {
       return this.ADMIN_MENUITEMS;

@@ -21,7 +21,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,Viewer")]
         public async Task<ActionResult<ApiResponse<PagedResponse<ProjectDto>>>> GetAllProjects(
             [FromQuery] ProjectFilterRequest request)
         {
@@ -68,7 +68,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,Viewer")]
         public async Task<ActionResult<ApiResponse<ProjectDto>>> GetProjectById(int id)
         {
             var project = await _projectManagementService.GetProjectByIdAsync(id);

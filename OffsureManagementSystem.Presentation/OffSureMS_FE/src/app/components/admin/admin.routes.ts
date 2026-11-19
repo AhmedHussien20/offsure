@@ -77,6 +77,14 @@ export const adminRoutes: Routes = [
           ),
       },
       {
+        path: 'viewers',
+        data: { breadcrumb: 'Viewers', title: 'Viewers' },
+        loadComponent: () =>
+          import('./admin-viewers-list/admin-viewers-list.component').then(
+            m => m.AdminViewersListComponent
+          ),
+      },
+      {
         path: 'team/new',
         data: {
           breadcrumb: 'Add Member',

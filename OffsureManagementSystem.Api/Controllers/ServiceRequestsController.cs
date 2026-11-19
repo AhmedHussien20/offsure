@@ -20,7 +20,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,Viewer")]
         public async Task<ActionResult<ApiResponse<PagedResponse<ServiceRequestDto>>>> GetAllRequests(
             [FromQuery] ServiceRequestFilterRequest request)
         {
@@ -29,7 +29,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("client/{clientId:int}")]
-        [Authorize(Roles = "Administrator,Client")]
+        [Authorize(Roles = "Administrator,Client,Viewer")]
         public async Task<ActionResult<ApiResponse<PagedResponse<ServiceRequestDto>>>> GetClientRequests(
             int clientId,
             [FromQuery] ServiceRequestFilterRequest request)
@@ -43,7 +43,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Administrator,Client")]
+        [Authorize(Roles = "Administrator,Client,Viewer")]
         public async Task<ActionResult<ApiResponse<ServiceRequestDto>>> GetRequestById(int id)
         {
             var request = await _serviceRequestManagementService.GetRequestByIdForCallerAsync(

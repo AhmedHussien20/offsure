@@ -25,7 +25,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,Viewer")]
         public async Task<ActionResult<ApiResponse<PagedResponse<ClientDto>>>> GetAllClients(
             [FromQuery] ClientFilterRequest request)
         {
@@ -52,7 +52,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{ownerClientId:int}/members")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,Viewer")]
         public async Task<ActionResult<ApiResponse<IReadOnlyList<ClientDto>>>> GetOrganizationMembers(int ownerClientId)
         {
             var members = await _clientManagementService.GetOrganizationMembersAsync(ownerClientId);
@@ -60,7 +60,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,Viewer")]
         public async Task<ActionResult<ApiResponse<ClientDto>>> GetClientById(int id)
         {
             var client = await _clientManagementService.GetClientByIdAsync(id);
@@ -68,7 +68,7 @@ namespace OffsureManagementSystem.API.Controllers
         }
 
         [HttpGet("{id:int}/recent-requests")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator,Viewer")]
         public async Task<ActionResult<ApiResponse<IReadOnlyList<ClientServiceRequestSummaryDto>>>> GetClientRecentRequests(
             int id,
             [FromQuery] int limit = 5)

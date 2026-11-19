@@ -1,0 +1,259 @@
+<app-page-header></app-page-header>
+
+@if (loading) {
+  <div class="text-center py-5 text-muted">Loading project...</div>
+} @else if (loadError || !project) {
+  <div class="card custom-card">
+    <div class="card-body">
+      <div class="alert alert-warning mb-3">{{ loadError || 'Project not found.' }}</div>
+      <a routerLink="/viewer/projects" class="btn btn-light btn-sm">Back to projects</a>
+    </div>
+  </div>
+} @else {
+  <div class="project-detail-stats">
+    @if (!isHourlyBudget) {
+      <div class="project-detail-stat project-detail-stat--budget">
+        <span class="project-detail-stat__label">Budget</span>
+        <span class="project-detail-stat__value">{{ project.budget != null ? (project.budget | number: '1.0-0') : '—' }}</span>
+        <span class="project-detail-stat__hint">{{ budgetTypeLabel }}</span>
+      </div>
+    }
+    <div class="project-detail-stat project-detail-stat--deadline">
+      <span class="project-detail-stat__label">Deadline</span>
+      <span class="project-detail-stat__value">
+        {{ project.targetEndDate ? (project.targetEndDate | date: 'MMM d, y') : '—' }}
+      </span>
+      <span class="project-detail-stat__hint">Target end date</span>
+    </div>
+    @if (usesMilestones) {
+      <div class="project-detail-stat project-detail-stat--milestones">
+        <span class="project-detail-stat__label">Milestones paid</span>
+        <span class="project-detail-stat__value">{{ milestonesPaidLabel }}</span>
+        <span class="project-detail-stat__hint">Completed phases</span>
+      </div>
+    } @else if (isHourlyBudget) {
+      <div class="project-detail-stat project-detail-stat--billing">
+        <span class="project-detail-stat__label">Billing rate</span>
+        <span class="project-detail-stat__value">
+          {{ project.hourlyRate != null ? ('$' + (project.hourlyRate | number: '1.0-0') + '/hr') : '—' }}
+        </span>
+        <span class="project-detail-stat__hint">Client rate</span>
+      </div>
+    }
+    <div class="project-detail-stat">
+      <span class="project-detail-stat__label">Sales person</span>
+      <span class="project-detail-stat__value fs-6">{{ salesPersonLabel }}</span>
+      <span class="project-detail-stat__hint">{{ commissionSummary }}</span>
+    </div>
+    <button
+      type="button"
+      class="project-detail-stat project-detail-stat--action project-detail-stat--team"
+      (click)="openTeamSummaryModal()">
+      <span class="project-detail-stat__label">Assigned team</span>
+      <span class="project-detail-stat__value">{{ teamMemberCount }}</span>
+      <span class="project-detail-stat__hint project-detail-stat__hint--action">View members</span>
+      <i class="fe fe-arrow-right project-detail-stat__arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  @if (usesMilestones && (project.milestones?.length ?? 0) > 0) {
+    <div class="card custom-card mb-3">
+      <div class="card-header border-bottom-0">
+        <h5 class="mb-0">Milestones</h5>
+      </div>
+      <div class="card-body pt-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Milestone</th>
+                <th>Payment %</th>
+                <th>Amount</th>
+                <th>Dates</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (milestone of project.milestones; track milestone.id) {
+                <tr>
+                  <td>{{ milestone.order }}</td>
+                  <td>
+                    <strong>{{ milestone.name }}</strong>
+                    @if (milestone.description) {
+                      <div class="text-muted small">{{ milestone.description }}</div>
+                    }
+                  </td>
+                  <td>{{ milestone.paymentPercentage }}%</td>
+                  <td>{{ milestone.paymentAmount | number: '1.0-2' }}</td>
+                  <td class="text-muted small">
+                    {{ milestone.startDate ? (milestone.startDate | date: 'mediumDate') : '—' }}
+                    –
+                    {{ milestone.endDate ? (milestone.endDate | date: 'mediumDate') : '—' }}
+                  </td>
+                  <td>
+                    <span class="badge rounded-pill {{ milestoneStatusBadgeClass(milestone.status) }}">
+                      {{ milestoneStatusLabel(milestone.status) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <div class="card custom-card h-100 mb-0">
+        <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center gap-2">
+          <h5 class="mb-0">Project details</h5>
+          <span class="badge bg-light text-muted">Read-only</span>
+        </div>
+        <div class="card-body">
+          <dl class="project-detail-info-grid">
+            <div class="project-detail-info-grid__item">
+              <dt>Company</dt>
+              <dd>{{ project.clientName || '—' }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Member</dt>
+              <dd>{{ project.clientMemberName || '—' }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Service</dt>
+              <dd>{{ project.serviceName || '—' }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Start</dt>
+              <dd>{{ project.startDate ? (project.startDate | date: 'mediumDate') : '—' }}</dd>
+            </div>
+            <div class="project-detail-info-grid__item">
+              <dt>Deadline</dt>
+              <dd>{{ project.targetEndDate ? (project.targetEndDate | date: 'mediumDate') : '—' }}</dd>
+            </div>
+            @if (!isHourlyBudget) {
+              <div class="project-detail-info-grid__item">
+                <dt>Budget</dt>
+                <dd>{{ project.budget != null ? (project.budget | number: '1.0-2') : '—' }}</dd>
+              </div>
+              <div class="project-detail-info-grid__item">
+                <dt>Budget type</dt>
+                <dd>{{ budgetTypeLabel }}</dd>
+              </div>
+            } @else {
+              <div class="project-detail-info-grid__item">
+                <dt>Hourly rate</dt>
+                <dd>{{ project.hourlyRate != null ? ('$' + (project.hourlyRate | number: '1.0-2') + '/hr') : '—' }}</dd>
+              </div>
+              <div class="project-detail-info-grid__item">
+                <dt>Expected hours</dt>
+                <dd>{{ project.expectedHours != null ? project.expectedHours : '—' }}</dd>
+              </div>
+            }
+          </dl>
+
+          <div class="project-detail-description">
+            <div class="project-detail-description__label">Description</div>
+            <p class="text-muted mb-0 small">{{ project.description || 'No description.' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card custom-card h-100 mb-0">
+        <div class="card-header border-bottom-0">
+          <h5 class="mb-0">Progress &amp; status</h5>
+        </div>
+        <div class="card-body">
+          <div class="project-delivery-block">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-semibold mb-0">Progress</label>
+              <span class="project-delivery-value">{{ project.progress ?? 0 }}%</span>
+            </div>
+            <div class="delivery-progress-slider delivery-progress-slider--readonly" [style.--progress]="(project.progress ?? 0) + '%'">
+              <div class="delivery-progress-slider__track">
+                <div class="delivery-progress-slider__fill" [style.width.%]="project.progress ?? 0"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="project-delivery-block project-delivery-block--status">
+            <label class="form-label fw-semibold mb-2 d-block">Status</label>
+            <span class="badge {{ statusBadgeClass(project.status) }}">{{ statusLabel(project.status) }}</span>
+          </div>
+
+          <div class="project-delivery-block mt-3">
+            <label class="form-label fw-semibold mb-2 d-block">Resource managers</label>
+            @if ((project.resourceManagers?.length ?? 0) > 0) {
+              <div class="project-detail-rm-list">
+                @for (rm of project.resourceManagers; track rm.userId) {
+                  <span class="project-detail-rm-chip">
+                    <span class="project-detail-rm-chip__avatar">{{ memberInitials(rm.fullName) }}</span>
+                    {{ rm.fullName }}
+                  </span>
+                }
+              </div>
+            } @else {
+              <p class="text-muted small mb-0">No resource managers assigned.</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card custom-card">
+    <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0">Assigned team</h5>
+        <span class="fs-12 text-muted d-block mt-1">
+          {{ teamMemberCount }} {{ teamMemberCount === 1 ? 'member' : 'members' }} assigned to this project
+        </span>
+      </div>
+    </div>
+    <div class="card-body pt-0">
+      @if (assignedTeam.length === 0) {
+        <p class="text-muted small mb-0">No team members assigned yet.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Role</th>
+                <th>Allocated hours</th>
+                <th>Assigned</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (member of assignedTeam; track member.id) {
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="project-detail-rm-chip__avatar">{{ memberInitials(member.teamMemberName) }}</span>
+                      <div>
+                        <strong>{{ member.teamMemberName }}</strong>
+                        @if (member.teamMemberTitle) {
+                          <div class="text-muted small">{{ member.teamMemberTitle }}</div>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ assignmentRoleLabel(member) }}</td>
+                  <td>{{ member.allocatedHours != null ? member.allocatedHours + ' hrs' : '—' }}</td>
+                  <td class="text-muted small">
+                    {{ member.assignedDate ? (member.assignedDate | date: 'mediumDate') : '—' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+}

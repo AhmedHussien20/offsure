@@ -15,7 +15,7 @@ import {
   passwordStrengthValidator,
 } from 'app/core/constants/password-rules.constants';
 
-export type AdminPasswordResetAccountType = 'teamMember' | 'salesUser' | 'resourceManager';
+export type AdminPasswordResetAccountType = 'teamMember' | 'salesUser' | 'resourceManager' | 'viewerUser';
 
 @Component({
   selector: 'app-team-member-reset-password-modal',
@@ -172,9 +172,11 @@ export class TeamMemberResetPasswordModalComponent {
       ? this.resourceManagerPortal.resetTeamMemberPassword(this.memberId, dto)
       : this.accountType === 'salesUser'
         ? this.teamMembersService.resetSalesUserPassword(this.memberId, dto)
-        : this.accountType === 'resourceManager'
-          ? this.teamMembersService.resetResourceManagerPassword(this.memberId, dto)
-          : this.teamMembersService.resetPassword(this.memberId, dto);
+        : this.accountType === 'viewerUser'
+          ? this.teamMembersService.resetViewerUserPassword(this.memberId, dto)
+          : this.accountType === 'resourceManager'
+            ? this.teamMembersService.resetResourceManagerPassword(this.memberId, dto)
+            : this.teamMembersService.resetPassword(this.memberId, dto);
 
     request$.subscribe({
       next: () => {

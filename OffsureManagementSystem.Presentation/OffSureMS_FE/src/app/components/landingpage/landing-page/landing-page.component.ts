@@ -489,6 +489,9 @@ export class LandingPageComponent implements OnInit {
     if (this.authService.isResourceManager()) {
       return '/resource-manager/dashboard';
     }
+    if (this.authService.isViewer()) {
+      return '/viewer/projects';
+    }
     return '/';
   }
 

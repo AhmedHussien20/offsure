@@ -18,6 +18,7 @@ import { CLIENT_HEADER_SHORTCUTS } from 'app/components/client/client-shortcuts.
 import { RM_HEADER_SHORTCUTS } from 'app/components/resource-manager/rm-shortcuts.config';
 import { SALES_HEADER_SHORTCUTS } from 'app/components/sales/sales-shortcuts.config';
 import { TEAM_HEADER_SHORTCUTS } from 'app/components/team/team-shortcuts.config';
+import { VIEWER_HEADER_SHORTCUTS } from 'app/components/viewer/viewer-shortcuts.config';
 
 interface Item {
   user: any;
@@ -147,6 +148,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
     if (this.authService.isSales()) {
       return SALES_HEADER_SHORTCUTS;
+    }
+    if (this.authService.isViewer()) {
+      return VIEWER_HEADER_SHORTCUTS;
     }
 
     return this.headerShortcuts;

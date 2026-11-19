@@ -1060,6 +1060,185 @@ namespace OffsureManagementSystem.Infrastructure.Services
             await _userRepo.SaveChangesAsync();
         }
 
+        public async Task<PagedResponse<ViewerUserDto>> GetViewerUsersAsync(ViewerUserRequest request)
+        {
+            var query = _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .Where(u =>
+                    u.Role.Name == nameof(UserRole.Viewer)
+                    && !u.IsDeleted);
+
+            if (request.IsActive.HasValue)
+                query = query.Where(u => u.IsActive == request.IsActive.Value);
+            else
+                query = query.Where(u => u.IsActive);
+
+            if (!string.IsNullOrWhiteSpace(request.searchKey))
+            {
+                var searchKey = Normalize(request.searchKey);
+                query = query.Where(u =>
+                    u.FirstName.ToLower().Contains(searchKey)
+                    || u.LastName.ToLower().Contains(searchKey)
+                    || u.Email.ToLower().Contains(searchKey));
+            }
+
+            var totalCount = await query.CountAsync();
+            var users = await query
+                .OrderBy(u => u.LastName)
+                .ThenBy(u => u.FirstName)
+                .Skip(GetSkipCount(request))
+                .Take(GetPageSize(request))
+                .ToListAsync();
+
+            return new PagedResponse<ViewerUserDto>(
+                users.Select(MapViewerUser).ToList(),
+                totalCount,
+                GetPageIndex(request),
+                GetPageSize(request));
+        }
+
+        public async Task<ViewerUserDto> CreateViewerUserAsync(CreateViewerUserDto dto)
+        {
+            ValidateUserInput(dto.FirstName, dto.LastName, dto.Email, dto.Password);
+
+            var normalizedEmail = NormalizeEmail(dto.Email);
+            var emailExists = await _userRepo
+                .GetAll(u => u.Email == normalizedEmail)
+                .AnyAsync();
+
+            if (emailExists)
+                throw new AppException("Email already exists.", 400);
+
+            var role = await _roleRepo
+                .GetAll(r => r.Name == nameof(UserRole.Viewer))
+                .FirstOrDefaultAsync();
+
+            if (role is null)
+                throw new AppException("Resource not found.", 404);
+
+            var user = new User
+            {
+                FirstName = dto.FirstName.Trim(),
+                LastName = dto.LastName.Trim(),
+                Email = normalizedEmail,
+                PasswordHash = HashPassword(dto.Password),
+                RoleId = role.Id,
+                IsEmailVerified = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _userRepo.AddAsync(user);
+            await _userRepo.SaveChangesAsync();
+
+            return MapViewerUser(user);
+        }
+
+        public async Task<ViewerUserDto> GetViewerUserByIdAsync(int userId)
+        {
+            var user = await GetViewerUserEntityAsync(userId, includeInactive: true);
+            return MapViewerUser(user);
+        }
+
+        public async Task<ViewerUserDto> UpdateViewerUserAsync(int userId, UpdateViewerUserDto dto)
+        {
+            ValidateUserInput(dto.FirstName, dto.LastName, dto.Email);
+
+            var user = await GetViewerUserEntityAsync(userId, includeInactive: true);
+
+            var normalizedEmail = NormalizeEmail(dto.Email);
+            var emailExists = await _userRepo
+                .GetAll(u => u.Email == normalizedEmail && u.Id != user.Id)
+                .AnyAsync();
+
+            if (emailExists)
+                throw new AppException("Email already exists.", 400);
+
+            user.FirstName = dto.FirstName.Trim();
+            user.LastName = dto.LastName.Trim();
+            user.Email = normalizedEmail;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.FirstName),
+                nameof(user.LastName),
+                nameof(user.Email),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+
+            return MapViewerUser(user);
+        }
+
+        public async Task<ViewerUserDto> DeactivateViewerUserAsync(int userId)
+        {
+            var user = await GetViewerUserEntityAsync(userId, includeInactive: true);
+
+            if (!user.IsActive)
+                throw new AppException("Viewer user is already inactive.", 400);
+
+            user.IsActive = false;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.IsActive),
+                nameof(user.RefreshToken),
+                nameof(user.RefreshTokenExpiry),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+
+            return MapViewerUser(user);
+        }
+
+        public async Task<ViewerUserDto> ActivateViewerUserAsync(int userId)
+        {
+            var user = await GetViewerUserEntityAsync(userId, includeInactive: true);
+
+            if (user.IsActive)
+                throw new AppException("Viewer user is already active.", 400);
+
+            user.IsActive = true;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.IsActive),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+
+            return MapViewerUser(user);
+        }
+
+        public async Task DeleteViewerUserAsync(int userId)
+        {
+            var user = await GetViewerUserEntityAsync(userId, includeInactive: true);
+
+            UserAccountLifecycle.SoftDeleteUserAccount(user);
+
+            _userRepo.SaveInclude(
+                user,
+                nameof(user.IsActive),
+                nameof(user.IsDeleted),
+                nameof(user.DeletedAt),
+                nameof(user.Email),
+                nameof(user.RefreshToken),
+                nameof(user.RefreshTokenExpiry),
+                nameof(user.PasswordResetToken),
+                nameof(user.PasswordResetTokenExpiry),
+                nameof(user.EmailVerificationToken),
+                nameof(user.EmailVerificationExpiry),
+                nameof(user.UpdatedAt));
+
+            await _userRepo.SaveChangesAsync();
+        }
+
         public async Task<PagedResponse<TeamMemberDto>> GetManagedTeamMembersAsync(
             int resourceManagerUserId,
             TeamMemberRequest request)
@@ -1187,6 +1366,9 @@ namespace OffsureManagementSystem.Infrastructure.Services
         public Task ResetSalesUserPasswordAsync(int userId, ResetTeamMemberPasswordDto dto)
             => ResetUserPasswordByRoleAsync(userId, dto, nameof(UserRole.Sales), "Sales user");
 
+        public Task ResetViewerUserPasswordAsync(int userId, ResetTeamMemberPasswordDto dto)
+            => ResetUserPasswordByRoleAsync(userId, dto, nameof(UserRole.Viewer), "Viewer user");
+
         public Task ResetResourceManagerPasswordAsync(int userId, ResetTeamMemberPasswordDto dto)
             => ResetUserPasswordByRoleAsync(userId, dto, nameof(UserRole.ResourceManager), "Resource manager");
 
@@ -1301,6 +1483,38 @@ namespace OffsureManagementSystem.Infrastructure.Services
                 FullName = UserDisplayName.FromUser(user),
                 IsActive = user.IsActive
             };
+        }
+
+        private static ViewerUserDto MapViewerUser(User user)
+        {
+            return new ViewerUserDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                FullName = UserDisplayName.FromUser(user),
+                IsActive = user.IsActive
+            };
+        }
+
+        private async Task<User> GetViewerUserEntityAsync(int userId, bool includeInactive = false)
+        {
+            var user = await _userRepo
+                .Query()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u =>
+                    u.Id == userId
+                    && !u.IsDeleted
+                    && u.Role.Name == nameof(UserRole.Viewer));
+
+            if (user is null)
+                throw new AppException("Resource not found.", 404);
+
+            if (!includeInactive && !user.IsActive)
+                throw new AppException("Resource not found.", 404);
+
+            return user;
         }
 
         private async Task<User> GetSalesUserEntityAsync(int userId, bool includeInactive = false)
